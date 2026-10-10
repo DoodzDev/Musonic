@@ -5,7 +5,7 @@
  *   with sort options, pin support, pull-to-refresh, and auto-recovery on
  *   connectivity restore.
  * @author DoodzProg
- * @version 1.0.5
+ * @version 1.0.6
  * @license MIT
  */
 
@@ -14,7 +14,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   Modal,
   PanResponder,
   RefreshControl,
@@ -28,6 +28,7 @@ import {
 } from 'react-native';
 import {FlashList} from '@shopify/flash-list';
 import {useHeaderTopInset} from '../../hooks/useHeaderTopInset';
+import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Circle, Path, Rect} from 'react-native-svg';
@@ -53,7 +54,6 @@ import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
 import {useDownloadStore} from '../../store/downloadStore';
 import DownloadIcon from '../../components/icons/DownloadIcon';
 
-const {width: SCREEN_W} = Dimensions.get('window');
 
 type ViewMode = 'list' | 'grid';
 type SortMode = LibrarySortMode;
@@ -551,6 +551,8 @@ function PlaylistGridCard({
 
 export default function LibraryScreen() {
   const t = useT();
+  const landscapePadding = useLandscapeSidebarPadding();
+  const {width: winW} = useWindowDimensions();
   const {open: openDrawer} = useDrawer();
 
   const SORT_LABELS: Partial<Record<SortMode, string>> = {
@@ -890,10 +892,10 @@ export default function LibraryScreen() {
     return [...fixed, ...pinned, ...rest];
   }, [allItems, sortMode, pinnedIds, lastPlayedPlaylists]);
 
-  const colWidth = Math.floor((SCREEN_W - 32) / 3);
+  const colWidth = Math.floor((winW - landscapePadding.paddingLeft - landscapePadding.paddingRight - 32) / 3);
 
   return (
-    <View style={[styles.root, {paddingTop: topInset}]}>
+    <View style={[styles.root, landscapePadding, {paddingTop: topInset}]}>
       <StatusBar barStyle="light-content" backgroundColor={darkTheme.background} />
 
       {/* ── Top Header ── */}

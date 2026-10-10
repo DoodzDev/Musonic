@@ -3,13 +3,13 @@
  * @description Bottom sheet for adding one or more tracks to existing playlists
  *   or creating a new one. Updates the playlist membership cache on success.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.0.5
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
+  useWindowDimensions,
   Modal,
   ScrollView,
   StyleSheet,
@@ -36,8 +36,7 @@ import {getStreamUrl, subsonicGet} from '../api/client';
 import CreatePlaylistModal from './CreatePlaylistModal';
 import type {SubsonicPlaylist} from '../api/types';
 
-const {height: SCREEN_HEIGHT} = Dimensions.get('window');
-const SHEET_HEIGHT = SCREEN_HEIGHT * 0.91;
+const SHEET_HEIGHT_RATIO = 0.91;
 
 type PlaylistItem = SubsonicPlaylist & {
   containsTrack: boolean;
@@ -135,7 +134,9 @@ export default function AddToPlaylistSheet({
   onToast,
 }: Props) {
   const t = useT();
-  const translateY = useSharedValue(SHEET_HEIGHT);
+  // Measured on every render so the sheet height follows rotation.
+  const sheetHeight = useWindowDimensions().height * SHEET_HEIGHT_RATIO;
+  const translateY = useSharedValue(sheetHeight);
   const overlayOpacity = useSharedValue(0);
   const [search, setSearch] = useState('');
   const [playlists, setPlaylists] = useState<PlaylistItem[]>([]);
@@ -210,11 +211,11 @@ export default function AddToPlaylistSheet({
       overlayOpacity.value = withTiming(0.78, {duration: 200});
       loadPlaylists();
     } else {
-      translateY.value = withTiming(SHEET_HEIGHT, {duration: 260, easing: Easing.in(Easing.cubic)});
+      translateY.value = withTiming(sheetHeight, {duration: 260, easing: Easing.in(Easing.cubic)});
       overlayOpacity.value = withTiming(0, {duration: 180});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, loadPlaylists]);
+  }, [visible, loadPlaylists, sheetHeight]);
 
   const handleToggle = useCallback(
     async (item: PlaylistItem) => {
@@ -421,7 +422,7 @@ export default function AddToPlaylistSheet({
           />
 
           {/* Sheet */}
-          <Animated.View style={[styles.sheet, sheetStyle]}>
+          <Animated.View style={[styles.sheet, {height: sheetHeight}, sheetStyle]}>
 
             {/* Handle */}
             <GestureDetector gesture={handleGesture}>
@@ -528,7 +529,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: SHEET_HEIGHT,
     backgroundColor: '#121212',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,

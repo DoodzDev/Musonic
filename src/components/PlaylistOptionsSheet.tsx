@@ -3,13 +3,13 @@
  * @description Bottom sheet with playlist-level actions: add all to queue,
  *   add all to another playlist, pin/unpin, rename, edit cover, and delete.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef} from 'react';
 import {
   Alert,
-  Dimensions,
+  useWindowDimensions,
   Modal,
   StyleSheet,
   Text,
@@ -17,7 +17,7 @@ import {
   View,
 } from 'react-native';
 import Animated, {useSharedValue, useAnimatedStyle, withTiming, withSpring, Easing, runOnJS} from 'react-native-reanimated';
-import {Gesture, GestureDetector, GestureHandlerRootView} from 'react-native-gesture-handler';
+import {Gesture, GestureDetector, GestureHandlerRootView, ScrollView} from 'react-native-gesture-handler';
 import Svg, {Circle, Path} from 'react-native-svg';
 import TrackPlayer from 'react-native-track-player';
 import CoverArt from './CoverArt';
@@ -27,7 +27,9 @@ import {getStreamUrl, getCoverArtUrl} from '../api/client';
 import {syncUpcomingFromRNTP} from '../services/playerActions';
 import {useT, getT} from '../i18n';
 
-const {height: SH} = Dimensions.get('window');
+const SHEET_MAX_WIDTH = 560;
+const SHEET_MAX_HEIGHT_RATIO = 0.9;
+
 const ICON_COLOR = '#B3B3B3';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -197,6 +199,11 @@ export default function PlaylistOptionsSheet({
   onDownload,
 }: Props) {
   const t = useT();
+  // Measured on every render so the hidden sheet stays off-screen after rotation.
+  const {width: winW, height: SH} = useWindowDimensions();
+  // Cap the height (content scrolls) and, in landscape, keep the sheet at a readable width.
+  const sideInset = winW > SH ? Math.max(0, (winW - SHEET_MAX_WIDTH) / 2) : 0;
+  const sheetLayout = {maxHeight: SH * SHEET_MAX_HEIGHT_RATIO, left: sideInset, right: sideInset};
   const translateY = useSharedValue(SH);
   const overlayOpacity = useSharedValue(0);
 
@@ -231,7 +238,7 @@ export default function PlaylistOptionsSheet({
       overlayOpacity.value = withTiming(0, {duration: 180});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }, [visible, SH]);
 
   const handleAddToQueue = useCallback(async () => {
     if (!p) return;
@@ -298,12 +305,13 @@ export default function PlaylistOptionsSheet({
           />
           <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
 
-          <Animated.View style={[styles.sheet, sheetStyle]}>
+          <Animated.View style={[styles.sheet, sheetLayout, sheetStyle]}>
             <GestureDetector gesture={handleGesture}>
               <View style={styles.handleWrap}>
                 <View style={styles.handle} />
               </View>
             </GestureDetector>
+            <ScrollView bounces={false}>
 
               {/* Header */}
               {p && (
@@ -346,6 +354,7 @@ export default function PlaylistOptionsSheet({
               />
 
               <View style={styles.bottomPad} />
+            </ScrollView>
           </Animated.View>
         </GestureHandlerRootView>
       </Modal>

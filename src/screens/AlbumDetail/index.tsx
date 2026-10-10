@@ -5,7 +5,7 @@
  *   animated parallax header, and a compact title (album, artist avatar +
  *   name) that fades into the fixed top bar once the header scrolls away.
  * @author DoodzProg
- * @version 1.0.5
+ * @version 1.0.6
  * @license MIT
  */
 
@@ -15,6 +15,7 @@ import {
   Alert,
   Animated,
   Dimensions,
+  useWindowDimensions,
   FlatList,
   Image,
   StatusBar,
@@ -61,8 +62,9 @@ import DownloadStatusIcon from '../../components/icons/DownloadStatusIcon';
 import PlusCircleIconComponent from '../../components/icons/PlusCircleIcon';
 import {useDownloadStore} from '../../store/downloadStore';
 
-const {width: SCREEN_W, height: SCREEN_H} = Dimensions.get('window');
-const COVER_SIZE = Math.min(SCREEN_W - 80, 260);
+// Based on the screen's shortest side so the cover keeps the same size in both orientations.
+const {width: _W, height: _H} = Dimensions.get('window');
+const COVER_SIZE = Math.min(Math.min(_W, _H) - 80, 260);
 const TOP_BAR_H = 52;
 // Landscape header cover — small framed thumbnail, not the huge portrait hero.
 // Frame follows the nested-radius rule: outer radius (14) = inner cover
@@ -322,6 +324,7 @@ type RouteT = RouteProp<LibraryStackParams, 'AlbumDetail'>;
 export default function AlbumDetailScreen() {
   const topInset = useHeaderTopInset();
   const landscapePadding = useLandscapeSidebarPadding();
+  const {height: winH} = useWindowDimensions();
   const navigation = useNavigation<NativeStackNavigationProp<LibraryStackParams, 'AlbumDetail'>>();
   const route = useRoute<RouteT>();
   const {albumId} = route.params;
@@ -584,7 +587,7 @@ export default function AlbumDetailScreen() {
   return (
     <View style={[styles.root, landscapePadding]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={[dominantColor, darkTheme.background]} locations={[0, 0.62]} style={styles.bgGradient} />
+      <LinearGradient colors={[dominantColor, darkTheme.background]} locations={[0, 0.62]} style={[styles.bgGradient, {height: winH * 0.62}]} />
 
       {loading ? (
         <View style={[styles.center, {paddingTop: topBarH}]}><ActivityIndicator size="large" color={darkTheme.accent} /></View>
@@ -662,7 +665,7 @@ const styles = StyleSheet.create({
   artistAvatarText: {color: '#fff', fontSize: 10, fontWeight: '700'},
   artistAvatarImg: {width: 24, height: 24, borderRadius: 12},
   root: { flex: 1, backgroundColor: darkTheme.background },
-  bgGradient: { position: 'absolute', top: 0, left: 0, right: 0, height: SCREEN_H * 0.62 },
+  bgGradient: { position: 'absolute', top: 0, left: 0, right: 0 },
   topBar: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20 },
   topBarBg: { backgroundColor: darkTheme.background },
   topBarInner: { flexDirection: 'row', alignItems: 'center', height: TOP_BAR_H, paddingHorizontal: 12 },

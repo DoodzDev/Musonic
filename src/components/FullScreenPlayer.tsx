@@ -8,7 +8,7 @@
  *   The heavy player body only mounts while the player is open; a light shell
  *   stays mounted to preload adjacent cover art.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.2.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -58,6 +58,7 @@ import {useT, getT} from '../i18n';
 import type {SubsonicSong} from '../api/types';
 import {getLyricsBySongId, type LyricsData} from '../api/endpoints/library';
 import {useIsLandscape} from '../hooks/useIsLandscape';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
 
 const HIT = {top: 12, bottom: 12, left: 12, right: 12};
 
@@ -629,6 +630,8 @@ function FullScreenPlayerContent() {
       animationType="none"
       statusBarTranslucent
       onRequestClose={handleClose}>
+      {/* A Modal is a separate native root: gestures inside it (queue sheet swipe-down) need their own root view. */}
+      <GestureHandlerRootView style={StyleSheet.absoluteFill}>
       <Animated.View
         style={[StyleSheet.absoluteFill, {transform: [{translateY}]}]}>
 
@@ -765,6 +768,7 @@ function FullScreenPlayerContent() {
         />
 
       </Animated.View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

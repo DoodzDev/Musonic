@@ -3,14 +3,14 @@
  * @description Bottom sheet showing the current playback queue. Supports
  *   drag-and-drop reordering, individual removal, and move-to-top actions.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   LayoutAnimation,
   StyleSheet,
   Text,
@@ -46,11 +46,9 @@ import {useActiveTrack, usePlaybackState, State} from 'react-native-track-player
 import {usePlayerStore, type Track, type ShuffleMode} from '../store/playerStore';
 import {useSettingsStore} from '../store/settingsStore';
 
-const {width: SW, height: SH} = Dimensions.get('window');
 const ORANGE = '#FF6B35';
-const SHEET_H = SH * 0.85;
+const SHEET_HEIGHT_RATIO = 0.85;
 // sheetInner paddingHorizontal=20 both sides (40 total), 2 gaps of 8px between 3 buttons.
-const BOTTOM_BTN_W = Math.floor((SW - 40 - 16) / 3);
 
 // ─── Animated Equalizer ───────────────────────────────────────────────────────
 
@@ -205,6 +203,10 @@ interface Props {
 }
 
 export default function QueueSheet({visible, onClose, slideY}: Props) {
+  // Measured on every render so the sheet follows rotation.
+  const {width: winW, height: winH} = useWindowDimensions();
+  const sheetHeight = winH * SHEET_HEIGHT_RATIO;
+  const bottomBtnWidth = Math.floor((winW - 40 - 16) / 3);
   const t = useT();
   const currentTrack = useActiveTrack();
   const {state} = usePlaybackState();
@@ -297,7 +299,7 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
         <View style={StyleSheet.absoluteFill} />
       </TouchableWithoutFeedback>
 
-      <Animated.View style={[styles.sheet, {transform: [{translateY: slideY}]}]}>
+      <Animated.View style={[styles.sheet, {height: sheetHeight, transform: [{translateY: slideY}]}]}>
         <SafeAreaView style={styles.sheetInner} edges={['bottom']}>
 
           {/* ── Top zone with swipe-to-close ── */}
@@ -379,7 +381,7 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
           ) : (
             <View style={styles.bottomBar}>
               <TouchableOpacity
-                style={[styles.bottomBtn, isFetchingMagic && styles.dimmed]}
+                style={[styles.bottomBtn, {width: bottomBtnWidth}, isFetchingMagic && styles.dimmed]}
                 onPress={() => {
                   if (isOfflineMode && shuffleMode === 'on') { setShuffleMode('off'); return; }
                   toggleShuffle();
@@ -395,7 +397,7 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.bottomBtn}
+                style={[styles.bottomBtn, {width: bottomBtnWidth}]}
                 onPress={cycleRepeat}
                 activeOpacity={0.7}>
                 <RepeatIcon color={repeatActive ? ORANGE : '#fff'} />
@@ -404,7 +406,7 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.bottomBtn} activeOpacity={0.7}>
+              <TouchableOpacity style={[styles.bottomBtn, {width: bottomBtnWidth}]} activeOpacity={0.7}>
                 <TimerIcon />
                 <Text style={styles.bottomBtnLabel}>{t.queue.timer}</Text>
               </TouchableOpacity>
@@ -431,7 +433,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: SHEET_H,
     backgroundColor: '#121212',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -580,7 +581,6 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255,255,255,0.08)',
   },
   bottomBtn: {
-    width: BOTTOM_BTN_W,
     backgroundColor: '#2A2A2A',
     borderRadius: 8,
     alignItems: 'center',

@@ -4,12 +4,13 @@
  *   bar, like/add-to-playlist/download actions per row, and remove-from-liked
  *   actions.
  * @author DoodzProg
- * @version 1.0.5
+ * @version 1.0.6
  * @license MIT
  */
 
 import React, {useState, useCallback, useMemo} from 'react';
 import {useStableCallback} from '../../hooks/useStableCallback';
+import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
 import {
   View,
   Text,
@@ -152,6 +153,7 @@ const SongRow = React.memo(function SongRow({song, index, onPress, onMore, onAdd
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function LikedSongsScreen() {
+  const landscapePadding = useLandscapeSidebarPadding();
   const t = useT();
   const navigation = useNavigation<any>();
   const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
@@ -224,7 +226,7 @@ export default function LikedSongsScreen() {
   }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.root} edges={isFullscreenMode ? [] : ['top']}>
+    <SafeAreaView style={[styles.root, landscapePadding]} edges={isFullscreenMode ? [] : ['top']}>
       <StatusBar barStyle="light-content" backgroundColor={darkTheme.background} />
 
       {/* Fixed row — back button + search never scroll away, unlike the

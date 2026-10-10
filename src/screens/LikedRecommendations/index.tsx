@@ -5,12 +5,13 @@
  *   Navidrome getSimilarSongs on native liked tracks, deduped against what's
  *   already liked, shuffled, and capped at 50.
  * @author DoodzProg
- * @version 1.0.5
+ * @version 1.0.6
  * @license MIT
  */
 
 import React, {useCallback, useState} from 'react';
 import {useStableCallback} from '../../hooks/useStableCallback';
+import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
 import {
   View,
   Text,
@@ -169,6 +170,7 @@ const SongRow = React.memo(function SongRow({song, index, onPress, onAddToPlayli
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function LikedRecommendationsScreen() {
+  const landscapePadding = useLandscapeSidebarPadding();
   const t = useT();
   const navigation = useNavigation<any>();
   const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
@@ -204,7 +206,7 @@ export default function LikedRecommendationsScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.root} edges={isFullscreenMode ? [] : ['top']}>
+    <SafeAreaView style={[styles.root, landscapePadding]} edges={isFullscreenMode ? [] : ['top']}>
       <StatusBar barStyle="light-content" backgroundColor={darkTheme.background} />
 
       <View style={styles.header}>

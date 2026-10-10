@@ -3,13 +3,13 @@
  * @description Modal for viewing and editing playlist metadata (name, description,
  *   cover art). Also provides the delete playlist action.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useState} from 'react';
 import {
   Alert,
-  Dimensions,
+  useWindowDimensions,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -30,7 +30,6 @@ import {storage} from '../store/storage';
 import {getT} from '../i18n';
 
 const ACCENT = '#FF6B35';
-const {height: SCREEN_H} = Dimensions.get('window');
 
 function coverKey(playlistId: string) {
   return `coverart_pl_${playlistId}`;
@@ -106,6 +105,7 @@ export default function PlaylistInfoModal({
   initialView,
 }: Props) {
   const t = getT();
+  const {height: winH} = useWindowDimensions();
   const [view, setView] = useState<'info' | 'cover'>(initialView ?? 'info');
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
@@ -220,7 +220,7 @@ export default function PlaylistInfoModal({
       />
 
       <KeyboardAvoidingView
-        style={styles.sheetWrap}
+        style={[styles.sheetWrap, {maxHeight: winH * 0.88}]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <SafeAreaView style={styles.sheet} edges={['bottom']}>
           {/* Drag handle */}
@@ -311,7 +311,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    maxHeight: SCREEN_H * 0.88,
   },
   sheet: {
     backgroundColor: '#121212',

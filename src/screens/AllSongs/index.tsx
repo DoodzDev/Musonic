@@ -6,12 +6,13 @@
  *   single Subsonic "get everything" endpoint exists), then filtered client-side
  *   by the search bar.
  * @author DoodzProg
- * @version 1.0.5
+ * @version 1.0.6
  * @license MIT
  */
 
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useStableCallback} from '../../hooks/useStableCallback';
+import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
 import {
   View,
   Text,
@@ -149,6 +150,7 @@ const SongRow = React.memo(function SongRow({song, index, onPress, onAddToPlayli
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function AllSongsScreen() {
+  const landscapePadding = useLandscapeSidebarPadding();
   const t = useT();
   const navigation = useNavigation<any>();
   const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
@@ -197,7 +199,7 @@ export default function AllSongsScreen() {
   }, [searchedSongs, isShuffled]);
 
   return (
-    <SafeAreaView style={styles.root} edges={isFullscreenMode ? [] : ['top']}>
+    <SafeAreaView style={[styles.root, landscapePadding]} edges={isFullscreenMode ? [] : ['top']}>
       <StatusBar barStyle="light-content" backgroundColor={darkTheme.background} />
 
       <View style={styles.topBar}>

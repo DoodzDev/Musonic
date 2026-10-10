@@ -3,12 +3,12 @@
  * @description Bottom sheet with album-level actions: star/unstar, add all tracks
  *   to queue, add to playlist, and navigate to artist.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useState} from 'react';
 import {
-  Dimensions,
+  useWindowDimensions,
   Modal,
   StyleSheet,
   Text,
@@ -16,7 +16,7 @@ import {
   View,
 } from 'react-native';
 import Animated, {useSharedValue, useAnimatedStyle, withTiming, withSpring, Easing, runOnJS} from 'react-native-reanimated';
-import {Gesture, GestureDetector, GestureHandlerRootView} from 'react-native-gesture-handler';
+import {Gesture, GestureDetector, GestureHandlerRootView, ScrollView} from 'react-native-gesture-handler';
 import Svg, {Path} from 'react-native-svg';
 import CheckCircleGreenIcon from './icons/CheckCircleGreenIcon';
 import PlusCircleIcon from './icons/PlusCircleIcon';
@@ -27,7 +27,9 @@ import CoverArt from './CoverArt';
 import AddToPlaylistSheet from './AddToPlaylistSheet';
 import {useT, getT} from '../i18n';
 
-const {height: SH} = Dimensions.get('window');
+const SHEET_MAX_WIDTH = 560;
+const SHEET_MAX_HEIGHT_RATIO = 0.9;
+
 const ICON_COLOR = '#B3B3B3';
 
 function PlaylistAddIcon() {
@@ -71,6 +73,11 @@ export default function AlbumOptionsSheet({
   onToast,
 }: Props) {
   const t = useT();
+  // Measured on every render so the hidden sheet stays off-screen after rotation.
+  const {width: winW, height: SH} = useWindowDimensions();
+  // Cap the height (content scrolls) and, in landscape, keep the sheet at a readable width.
+  const sideInset = winW > SH ? Math.max(0, (winW - SHEET_MAX_WIDTH) / 2) : 0;
+  const sheetLayout = {maxHeight: SH * SHEET_MAX_HEIGHT_RATIO, left: sideInset, right: sideInset};
   const translateY = useSharedValue(SH);
   const overlayOpacity = useSharedValue(0);
   const [addPlaylistVisible, setAddPlaylistVisible] = useState(false);
@@ -102,7 +109,7 @@ export default function AlbumOptionsSheet({
       overlayOpacity.value = withTiming(0, {duration: 180});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }, [visible, SH]);
 
   return (
     <>
@@ -112,10 +119,11 @@ export default function AlbumOptionsSheet({
           <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
 
           <GestureDetector gesture={handleGesture}>
-            <Animated.View style={[styles.sheet, sheetStyle]}>
+            <Animated.View style={[styles.sheet, sheetLayout, sheetStyle]}>
               <View style={styles.handleWrap}>
                 <View style={styles.handle} />
               </View>
+              <ScrollView bounces={false}>
 
               <View style={styles.header}>
                 <CoverArt id={coverArtId} size={48} borderRadius={4} />
@@ -155,6 +163,7 @@ export default function AlbumOptionsSheet({
               />
 
               <View style={styles.bottomPad} />
+              </ScrollView>
             </Animated.View>
           </GestureDetector>
         </GestureHandlerRootView>

@@ -4,7 +4,7 @@
  *   drag-and-drop reordering, inline search, edit mode, recommended track
  *   suggestions, and full CRUD support (add, remove, rename).
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.0.5
  * @license CC-BY-NC-4.0
  */
 
@@ -14,6 +14,7 @@ import {
   Alert,
   Animated,
   Dimensions,
+  useWindowDimensions,
   Image,
   StatusBar,
   StyleSheet,
@@ -24,6 +25,7 @@ import {
 } from 'react-native';
 import {FlashList} from '@shopify/flash-list';
 import {useHeaderTopInset} from '../../hooks/useHeaderTopInset';
+import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import type {RouteProp} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -68,8 +70,9 @@ import PlusCircleIconComponent from '../../components/icons/PlusCircleIcon';
 import {useDownloadStore, type DownloadedTrack} from '../../store/downloadStore';
 import {useSettingsStore} from '../../store/settingsStore';
 
-const {width: SCREEN_W, height: SCREEN_H} = Dimensions.get('window');
-const COVER_SIZE = Math.min(SCREEN_W - 80, 260);
+// Based on the screen's shortest side so the cover keeps the same size in both orientations.
+const {width: _W, height: _H} = Dimensions.get('window');
+const COVER_SIZE = Math.min(Math.min(_W, _H) - 80, 260);
 const TOP_BAR_H = 52;
 
 // ─── Vivid color extraction via react-native-image-colors ────────────────────
@@ -681,6 +684,8 @@ type RouteT = RouteProp<LibraryStackParams, 'PlaylistDetail'>;
 
 export default function PlaylistDetailScreen() {
   const topInset = useHeaderTopInset();
+  const landscapePadding = useLandscapeSidebarPadding();
+  const {height: winH} = useWindowDimensions();
   const navigation =
     useNavigation<NativeStackNavigationProp<LibraryStackParams, 'PlaylistDetail'>>();
   const route = useRoute<RouteT>();
@@ -1173,7 +1178,7 @@ export default function PlaylistDetailScreen() {
   );
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, landscapePadding]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* Background — gradient normally, opaque when editing */}
@@ -1183,7 +1188,7 @@ export default function PlaylistDetailScreen() {
         <LinearGradient
           colors={[dominantColor, darkTheme.background]}
           locations={[0, 0.72]}
-          style={styles.bgGradient}
+          style={[styles.bgGradient, {height: winH * 0.78}]}
         />
       )}
 
@@ -1332,7 +1337,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: SCREEN_H * 0.78,
   },
   // Fixed top bar
   topBar: {

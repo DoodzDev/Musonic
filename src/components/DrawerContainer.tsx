@@ -4,7 +4,7 @@
  *   Replaces @react-navigation/drawer which caused a WorkletsError with
  *   react-native-reanimated v4 on New Architecture.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import React, {
@@ -16,7 +16,7 @@ import React, {
 } from 'react';
 import {
   Animated,
-  Dimensions,
+  useWindowDimensions,
   Easing,
   StyleSheet,
   TouchableWithoutFeedback,
@@ -27,8 +27,7 @@ import {runOnJS} from 'react-native-reanimated';
 import {darkTheme} from '../theme';
 import CustomDrawerContent from './CustomDrawerContent';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const DRAWER_WIDTH = SCREEN_WIDTH * 0.8;
+const DRAWER_WIDTH_RATIO = 0.8;
 
 type DrawerCtx = {open: () => void; close: () => void};
 const DrawerContext = createContext<DrawerCtx>({open: () => {}, close: () => {}});
@@ -37,6 +36,8 @@ export const useDrawer = () => useContext(DrawerContext);
 type Props = {children: React.ReactNode};
 
 export default function DrawerContainer({children}: Props) {
+  // Measured on every render so the drawer width follows rotation.
+  const drawerWidth = useWindowDimensions().width * DRAWER_WIDTH_RATIO;
   const progress = useRef(new Animated.Value(0)).current;
   const [visible, setVisible] = useState(false);
 
@@ -61,12 +62,12 @@ export default function DrawerContainer({children}: Props) {
 
   const drawerTranslateX = progress.interpolate({
     inputRange: [0, 1],
-    outputRange: [-DRAWER_WIDTH, 0],
+    outputRange: [-drawerWidth, 0],
   });
 
   const contentTranslateX = progress.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, DRAWER_WIDTH],
+    outputRange: [0, drawerWidth],
   });
 
   const contentScale = progress.interpolate({
@@ -102,6 +103,7 @@ export default function DrawerContainer({children}: Props) {
             <Animated.View
               style={[
                 styles.drawer,
+                {width: drawerWidth},
                 {transform: [{translateX: drawerTranslateX}]},
               ]}>
               <CustomDrawerContent onClose={close} />
@@ -150,7 +152,6 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: DRAWER_WIDTH,
     zIndex: 0,
   },
   content: {
