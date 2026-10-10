@@ -5,8 +5,10 @@
  *   and queue access. In landscape, a StandBy-style 40/60 split: a hero cover
  *   fills its own column (order set by fullPlayerCoverSide), the other column
  *   carries header, progress, controls, and lyrics top-to-bottom.
+ *   The heavy player body only mounts while the player is open; a light shell
+ *   stays mounted to preload adjacent cover art.
  * @author DoodzProg
- * @version 1.1.1
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -145,7 +147,51 @@ function AmbientBackground({coverArtId}: {coverArtId?: string}) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+// Lyrics of recently opened tracks, so reopening the player shows them instantly.
+const LYRICS_CACHE_SIZE = 20;
+const lyricsCache = new Map<string, NonNullable<LyricsData>>();
+
+function rememberLyrics(trackId: string, data: NonNullable<LyricsData>) {
+  lyricsCache.delete(trackId);
+  lyricsCache.set(trackId, data);
+  if (lyricsCache.size > LYRICS_CACHE_SIZE) {
+    const oldest = lyricsCache.keys().next().value;
+    if (oldest !== undefined) lyricsCache.delete(oldest);
+  }
+}
+
+/**
+ * Always-mounted shell. The player body (and its per-second useProgress
+ * re-render) mounts only while `isFullScreenOpen` is true; the body calls
+ * closeFullScreen() at the end of its close animation, which unmounts it.
+ * Adjacent cover art is preloaded here so track changes stay instant even
+ * while the player is closed. Audio is not prefetched: a JS fetch does not
+ * warm ExoPlayer's cache and forces OctoFiesta to download ext- tracks.
+ */
 export default function FullScreenPlayer() {
+  const isFullScreenOpen = usePlayerStore(s => s.isFullScreenOpen);
+  const activeTrack = useActiveTrack();
+  const activeTrackId = activeTrack?.id;
+
+  useEffect(() => {
+    if (!activeTrackId) return;
+    TrackPlayer.getQueue().then(queue => {
+      const idx = queue.findIndex(qt => String(qt.id) === String(activeTrackId));
+      if (idx === -1) return;
+      const coverUris: Array<{uri: string; priority: 'low' | 'normal' | 'high'}> = [];
+      for (const adj of [queue[idx - 1], queue[idx + 1]]) {
+        if (!adj) continue;
+        if (adj.coverArt) coverUris.push({uri: getCoverArtUrl(String(adj.coverArt), 600), priority: FastImage.priority.high});
+        if (typeof adj.artwork === 'string' && adj.artwork) coverUris.push({uri: adj.artwork, priority: FastImage.priority.high});
+      }
+      if (coverUris.length > 0) FastImage.preload(coverUris);
+    }).catch(() => {});
+  }, [activeTrackId]);
+
+  return isFullScreenOpen ? <FullScreenPlayerContent /> : null;
+}
+
+function FullScreenPlayerContent() {
   const t = useT();
   const navigation = useNavigation<any>();
   const {width: winW, height: winH} = useWindowDimensions();
@@ -201,17 +247,23 @@ export default function FullScreenPlayer() {
   const setShuffleMode = usePlayerStore(s => s.setShuffleMode);
 
 
-  // Background lyrics pre-fetch — undefined=loading (hides card), null=no lyrics, data=ready.
+  // Lyrics are fetched while the player is open — undefined=loading (hides card), null=no lyrics, data=ready.
   useEffect(() => {
     if (!currentTrack?.id) { setLyricsData(null); return; }
+    const trackId = String(currentTrack.id);
+    if (lyricsCache.has(trackId)) { setLyricsData(lyricsCache.get(trackId)); return; }
     setLyricsData(undefined);
     let cancelled = false;
     getLyricsBySongId(
-      String(currentTrack.id),
+      trackId,
       currentTrack.artist,
       currentTrack.title,
       currentTrack.duration,
-    ).then(data => { if (!cancelled) setLyricsData(data); })
+    ).then(data => {
+      // Only cache found lyrics: a null may come from a transient network error.
+      if (data) rememberLyrics(trackId, data);
+      if (!cancelled) setLyricsData(data);
+    })
      .catch(() => { if (!cancelled) setLyricsData(null); });
     return () => { cancelled = true; };
   }, [currentTrack?.id, currentTrack?.artist, currentTrack?.title, currentTrack?.duration]);
@@ -285,25 +337,6 @@ export default function FullScreenPlayer() {
     }
     useDownloadStore.getState().enqueueTrack(currentTrackAsSong);
   }, [fspTrackId, currentTrackAsSong]);
-
-  // Prefetch adjacent cover art and audio chunk for seamless transitions
-  useEffect(() => {
-    if (!currentTrack?.id) return;
-    TrackPlayer.getQueue().then(queue => {
-      const idx = queue.findIndex(qt => String(qt.id) === String(currentTrack.id));
-      if (idx === -1) return;
-      const prevT = idx > 0 ? queue[idx - 1] : undefined;
-      const nextT = idx < queue.length - 1 ? queue[idx + 1] : undefined;
-      const coverUris: Array<{uri: string; priority: 'low' | 'normal' | 'high'}> = [];
-      for (const adj of [prevT, nextT]) {
-        if (!adj) continue;
-        if (adj.coverArt) coverUris.push({uri: getCoverArtUrl(String(adj.coverArt), 600), priority: FastImage.priority.high});
-        if (typeof adj.artwork === 'string' && adj.artwork) coverUris.push({uri: adj.artwork, priority: FastImage.priority.high});
-        if (adj.url) fetch(String(adj.url), {headers: {Range: 'bytes=0-65535'}}).catch(() => {});
-      }
-      if (coverUris.length > 0) FastImage.preload(coverUris);
-    }).catch(() => {});
-  }, [currentTrack?.id, currentTrack?.coverArt]);
 
   // Queue sheet
   const [queueVisible, setQueueVisible] = useState(false);
