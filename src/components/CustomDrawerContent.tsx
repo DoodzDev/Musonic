@@ -3,7 +3,7 @@
  * @description Content rendered inside the slide-in drawer. Shows navigation
  *   links, offline mode toggle, app version, and credits section.
  * @author DoodzProg
- * @version 1.0.2
+ * @version 1.0.3
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -27,7 +27,7 @@ import {pingServer} from '../api/client';
 import {withTimeout} from '../services/connectivityService';
 import {useT} from '../i18n';
 
-const APP_VERSION = 'v1.0.4';
+const APP_VERSION = 'v1.0.5';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
