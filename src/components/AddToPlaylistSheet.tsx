@@ -3,7 +3,7 @@
  * @description Bottom sheet for adding one or more tracks to existing playlists
  *   or creating a new one. Updates the playlist membership cache on success.
  * @author DoodzProg
- * @version 1.0.2
+ * @version 1.0.3
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
@@ -391,7 +391,7 @@ export default function AddToPlaylistSheet({
         console.warn('[AddToPlaylistSheet] create error:', msg);
       }
     },
-    [trackId, onClose, onToast, setPlaylistSong, bumpPlaylistVersion, cacheAdd],
+    [trackId, trackTitle, onClose, onToast, setPlaylistSong, bumpPlaylistVersion, cacheAdd],
   );
 
   const filtered = search

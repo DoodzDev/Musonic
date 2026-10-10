@@ -6,7 +6,7 @@
  *   fills its own column (order set by fullPlayerCoverSide), the other column
  *   carries header, progress, controls, and lyrics top-to-bottom.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.1.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -263,7 +263,7 @@ export default function FullScreenPlayer() {
         showToast(wasLiked ? getT().likes.removedFromLiked : getT().likes.addedToLiked);
       }
     }
-  }, [fspTrackId, localLikeOverrides, likedSongIds, toggleLike, showToast]);
+  }, [fspTrackId, currentTrack?.title, currentTrack?.artist, localLikeOverrides, likedSongIds, toggleLike, showToast]);
 
   const handleDownloadPress = useCallback(() => {
     if (!fspTrackId || !currentTrackAsSong) return;

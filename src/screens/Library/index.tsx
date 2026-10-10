@@ -5,7 +5,7 @@
  *   with sort options, pin support, pull-to-refresh, and auto-recovery on
  *   connectivity restore.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.0.5
  * @license MIT
  */
 
@@ -1099,7 +1099,7 @@ export default function LibraryScreen() {
                     onPress={handleCreatePlaylist}
                     disabled={isCreating || !newPlaylistName.trim()}
                     style={styles.createModalBtn}>
-                    <Text style={[styles.createModalBtnConfirm, (!newPlaylistName.trim() || isCreating) && {opacity: 0.4}]}>
+                    <Text style={[styles.createModalBtnConfirm, (!newPlaylistName.trim() || isCreating) && styles.disabledOpacity]}>
                       {t.library.createPlaylistConfirm}
                     </Text>
                   </TouchableOpacity>
@@ -1380,6 +1380,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: darkTheme.textSecondary,
   },
+  disabledOpacity: {opacity: 0.4},
   createModalBtnConfirm: {
     fontSize: 15,
     color: darkTheme.accent,

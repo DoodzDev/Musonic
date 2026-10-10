@@ -4,7 +4,7 @@
  *   drag-and-drop reordering, inline search, edit mode, recommended track
  *   suggestions, and full CRUD support (add, remove, rename).
  * @author DoodzProg
- * @version 1.0.3
+ * @version 1.0.4
  * @license CC-BY-NC-4.0
  */
 
@@ -258,16 +258,6 @@ function dedupeById(tracks: DeezerTrack[]): DeezerTrack[] {
   return tracks.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
 }
 
-function dedupeByArtistMax3(tracks: DeezerTrack[]): DeezerTrack[] {
-  const artistCount = new Map<number, number>();
-  return tracks.filter(t => {
-    const count = artistCount.get(t.artist.id) ?? 0;
-    if (count >= 3) return false;
-    artistCount.set(t.artist.id, count + 1);
-    return true;
-  });
-}
-
 function deezerTrackToInternalTrack(t: DeezerTrack): Track {
   const sid = `ext-deezer-song-${t.id}`;
   return {
@@ -354,7 +344,7 @@ function SongRow({song, isActive, onPress, onMorePress, onDownloadPress}: SongRo
         onPress={handleToggleLike}
         disabled={pendingLikes.has(trackId)}>
         {pendingLikes.has(trackId)
-          ? <ActivityIndicator size="small" color="#E8553E" style={{width: 18, height: 18}} />
+          ? <ActivityIndicator size="small" color="#E8553E" style={styles.likeSpinner} />
           : <HeartIcon size={18} color={isLiked ? '#E8553E' : '#444'} filled={isLiked} />}
       </TouchableOpacity>
       <TouchableOpacity
@@ -406,7 +396,7 @@ function PlaylistHeader({
   coverArtId,
   localCoverUri,
   playlistName,
-  owner,
+  owner: _owner,
   songCount,
   totalDuration,
   isShuffled: _isShuffled,
@@ -794,7 +784,7 @@ export default function PlaylistDetailScreen() {
       })
       .catch(e => console.warn('getPlaylist error', e))
       .finally(() => setLoading(false));
-  }, [playlistId, isOfflineMode]);
+  }, [playlistId, isOfflineMode, activeServerUsername]);
 
   useEffect(() => {
     if (isOfflineMode) return;
@@ -901,7 +891,7 @@ export default function PlaylistDetailScreen() {
   const filteredRecoTracks = useMemo(() => {
     if (!recoTracks.length) return recoTracks;
     const songKeys = new Set(songs.map(s => `${s.title}|||${s.artist}`));
-    return recoTracks.filter(t => !songKeys.has(`${t.title}|||${t.artist.name}`)).slice(0, 10);
+    return recoTracks.filter(track => !songKeys.has(`${track.title}|||${track.artist.name}`)).slice(0, 10);
   }, [recoTracks, songs]);
 
   const offlineSuggestions = useMemo<DownloadedTrack[]>(() => {
@@ -986,8 +976,8 @@ export default function PlaylistDetailScreen() {
           albumCount: 0,
           artistCount: 0,
         });
-        const songs: any[] = res.searchResult3?.song ?? [];
-        const match = songs.find(
+        const found: any[] = res.searchResult3?.song ?? [];
+        const match = found.find(
           s => !String(s.id).startsWith('ext-') && s.title === title && s.artist === artist,
         );
         if (match) { navidromeId = String(match.id); break; }
@@ -1331,6 +1321,7 @@ export default function PlaylistDetailScreen() {
 
 const styles = StyleSheet.create({
   pillTextIndent: {marginLeft: 5},
+  likeSpinner: {width: 18, height: 18},
   editBarRight: {alignItems: 'flex-end'},
   root: {
     flex: 1,

@@ -5,7 +5,7 @@
  *   animated parallax header, and a compact title (album, artist avatar +
  *   name) that fades into the fixed top bar once the header scrolls away.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.0.5
  * @license MIT
  */
 
@@ -169,7 +169,7 @@ function SongRow({song, isActive, index, onPress, onMore, onAddToPlaylist, onDow
           onPress={() => toggleLike(id, song.title, song.artist)}
           disabled={pendingLikes.has(id)}>
           {pendingLikes.has(id)
-            ? <ActivityIndicator size="small" color={darkTheme.accent} style={{width: 20, height: 20}} />
+            ? <ActivityIndicator size="small" color={darkTheme.accent} style={styles.likeSpinner} />
             : <HeartIcon size={20} color={isLiked ? darkTheme.accent : '#444'} filled={isLiked} />}
         </TouchableOpacity>
         <TouchableOpacity
@@ -657,6 +657,7 @@ export default function AlbumDetailScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  likeSpinner: {width: 20, height: 20},
   coverPlaceholder: {width: COVER_SIZE, height: COVER_SIZE, backgroundColor: '#333', borderRadius: 8},
   artistAvatarText: {color: '#fff', fontSize: 10, fontWeight: '700'},
   artistAvatarImg: {width: 24, height: 24, borderRadius: 12},

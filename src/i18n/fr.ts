@@ -4,7 +4,7 @@
  *   Add keys here first, then mirror them in en.ts. The i18n/index.ts hook
  *   selects the active locale based on settingsStore.language.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.0.5
  * @license CC-BY-NC-4.0
  */
 // French UI strings — single source of truth for all user-visible text.
@@ -286,7 +286,7 @@ export const t = {
     sortButton: 'Trier',
     newPlaylist: 'Nouvelle playlist',
     savedIn: 'Enregistrée dans',
-    addedTo: (title: string, name: string) => { const t = title.length > 15 ? title.slice(0, 15) + '…' : title; const n = name.length > 15 ? name.slice(0, 15) + '…' : name; return `Titre « ${t} » ajouté à la playlist « ${n} ».`; },
+    addedTo: (title: string, name: string) => { const shortTitle = title.length > 15 ? title.slice(0, 15) + '…' : title; const n = name.length > 15 ? name.slice(0, 15) + '…' : name; return `Titre « ${shortTitle} » ajouté à la playlist « ${n} ».`; },
     removedFrom: (name: string) => `Supprimé de ${name}.`,
     queuedTracks: (n: number) => `${n} titres ajoutés à la file d'attente`,
     queueError: "Erreur lors de l'ajout à la file d'attente",

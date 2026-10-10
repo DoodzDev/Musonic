@@ -4,10 +4,11 @@ on:
   pull_request:
     branches:
       - main
-      - develop
+      - design-v2
   push:
     branches:
-      - develop
+      - main
+      - design-v2
 
 jobs:
   lint:
