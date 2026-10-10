@@ -4,7 +4,7 @@
  *   portrait (swipe-left/right to skip, tap to open the full-screen player),
  *   or as a compact tile attached to the nav sidebar in landscape.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.0.5
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useRef, useState} from 'react';
@@ -225,10 +225,12 @@ export default function MiniPlayer() {
             style={styles.info}
             onPress={openFullScreen}
             activeOpacity={0.7}>
+            {/* Scroll a long title once per track, then stop: an endless marquee keeps
+                redrawing the screen and roughly doubles CPU use, even while paused. */}
             <TextTicker
               style={styles.title}
               duration={8000}
-              loop
+              loop={false}
               bounce={false}
               repeatSpacer={50}
               marqueeDelay={2000}>

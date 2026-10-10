@@ -4,7 +4,7 @@
  *   every 15 s and updates networkStore.isOffline. Used by ConnectivityMonitor
  *   and the Home screen auto-recovery logic.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {getActiveServer, pingServer} from '../api/client';
@@ -27,9 +27,13 @@ export function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 const INTERVAL_NORMAL_MS = 10_000;
 const INTERVAL_DEGRADED_MS = 5_000;
 const PING_TIMEOUT_MS = 5_000;
+// Consecutive failed pings before switching to offline mode: a single slow
+// request must not take the whole app offline (ISS-032).
+const FAILURES_BEFORE_OFFLINE = 3;
 
 let timerId: ReturnType<typeof setTimeout> | null = null;
 let active = false;
+let consecutiveFailures = 0;
 
 async function tick() {
   if (!active) return;
@@ -38,18 +42,29 @@ async function tick() {
     schedule(INTERVAL_DEGRADED_MS);
     return;
   }
+  const startedAt = Date.now();
   try {
     await withTimeout(pingServer(server), PING_TIMEOUT_MS);
+    if (consecutiveFailures > 0) {
+      console.log(`[connectivity] ping ok after ${consecutiveFailures} failure(s), ${Date.now() - startedAt} ms`);
+    }
+    consecutiveFailures = 0;
     useNetworkStore.getState().setServerReachable(true);
     const s = useSettingsStore.getState();
     if (s.isOfflineMode && s.autoOnlineMode) {
+      console.log('[connectivity] back online');
       s.setOfflineMode(false);
     }
     schedule(INTERVAL_NORMAL_MS);
-  } catch {
+  } catch (e) {
+    consecutiveFailures++;
+    // No URL in the log: it carries the account credentials.
+    const reason = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    console.warn(`[connectivity] ping failed #${consecutiveFailures} after ${Date.now() - startedAt} ms (${reason})`);
     useNetworkStore.getState().setServerReachable(false);
     const s = useSettingsStore.getState();
-    if (!s.isOfflineMode) {
+    if (!s.isOfflineMode && consecutiveFailures >= FAILURES_BEFORE_OFFLINE) {
+      console.warn('[connectivity] switching to offline mode');
       s.setOfflineMode(true);
     }
     schedule(INTERVAL_DEGRADED_MS);
@@ -66,6 +81,7 @@ function schedule(ms: number) {
 
 export function start(): () => void {
   active = true;
+  consecutiveFailures = 0;
   tick();
   return stop;
 }
