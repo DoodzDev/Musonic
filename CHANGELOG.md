@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.5] - 2026-10-10
+
+### Fixed
+- **Lyrics never showing** — LRCLIB (behind Cloudflare) started rejecting requests sent with the default Android HTTP client signature (HTTP 520), so every track fell back to "No lyrics available". Musonic now identifies itself with its own User-Agent.
+- **Unsynced lyrics when a synced version exists** — when LRCLIB's best match only has plain text, Musonic now searches other releases of the same track and uses the synced lyrics whose duration matches (±3 s).
+
 ## [1.0.4] - 2026-10-10
 
 ### Added

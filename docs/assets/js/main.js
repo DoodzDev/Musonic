@@ -19,7 +19,7 @@ const TRANSLATIONS = {
     'nav.setup':       'Setup',
     'nav.stack':       'Stack',
 
-    'hero.badge':          'v1.0.4 · Now available',
+    'hero.badge':          'v1.0.5 · Now available',
     'hero.headline':       'Self-hosted music,',
     'hero.headline.accent':'beautifully played.',
     'hero.subline':        'Open-source music player for Navidrome and Subsonic. Synced lyrics, ambient art, and no compromises.',
@@ -90,7 +90,7 @@ const TRANSLATIONS = {
     'nav.setup':       'Installation',
     'nav.stack':       'Stack',
 
-    'hero.badge':          'v1.0.4 · Disponible maintenant',
+    'hero.badge':          'v1.0.5 · Disponible maintenant',
     'hero.headline':       'Votre musique,',
     'hero.headline.accent':'magnifiquement jouée.',
     'hero.subline':        'Lecteur de musique open-source pour Navidrome et Subsonic. Paroles synchronisées, visuels ambiants, sans compromis.',

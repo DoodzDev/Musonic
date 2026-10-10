@@ -7,7 +7,7 @@
  *   rotation lock, landscape navigation bar position (shown only while rotation
  *   is unlocked), and fullscreen mode (hides the OS status bar).
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.0.5
  * @license MIT
  */
 
@@ -455,7 +455,7 @@ export default function SettingsScreen() {
             {checkingUpdate ? (
               <ActivityIndicator size="small" color={ACCENT} />
             ) : (
-              <Text style={styles.versionText}>v1.0.4</Text>
+              <Text style={styles.versionText}>v1.0.5</Text>
             )}
           </TouchableOpacity>
         </View>

@@ -3,7 +3,7 @@
  * @description Subsonic library API endpoints: recently/frequently played albums,
  *   starred items, similar songs/artists, and star/unstar actions.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import {subsonicGet} from '../client';
@@ -91,6 +91,47 @@ function parseLrc(lrc: string): LyricLine[] {
   return lines;
 }
 
+const LRCLIB_HEADERS = {
+  // LRCLIB sits behind Cloudflare, which rejects the default OkHttp User-Agent (HTTP 520).
+  'User-Agent': 'Musonic (https://github.com/DoodzProg/Musonic)',
+  'Lrclib-Client': 'Musonic (https://github.com/DoodzProg/Musonic)',
+};
+const LRCLIB_DURATION_TOLERANCE_S = 3;
+
+function toPlainLines(text: string): LyricLine[] {
+  return text
+    .split('\n')
+    .map(v => v.trim())
+    .filter(Boolean)
+    .map(value => ({value}));
+}
+
+// LRCLIB's /api/get returns a single best match, which is sometimes a plain-only
+// release while other releases of the same track have synced lyrics. Search them
+// and keep the synced one whose duration is closest to the track's.
+async function searchLrclibSynced(
+  artistName: string,
+  trackTitle: string,
+  duration?: number,
+): Promise<LyricLine[] | null> {
+  const qs = new URLSearchParams({artist_name: artistName, track_name: trackTitle});
+  const resp = await fetch(`https://lrclib.net/api/search?${qs}`, {headers: LRCLIB_HEADERS});
+  if (!resp.ok) return null;
+  const results: any[] = await resp.json();
+  const candidates = results.filter(r =>
+    r.syncedLyrics &&
+    (duration == null || Math.abs(Number(r.duration) - duration) <= LRCLIB_DURATION_TOLERANCE_S),
+  );
+  if (duration != null) {
+    candidates.sort((a, b) => Math.abs(a.duration - duration) - Math.abs(b.duration - duration));
+  }
+  for (const c of candidates) {
+    const lines = parseLrc(String(c.syncedLyrics));
+    if (lines.length > 0) return lines;
+  }
+  return null;
+}
+
 export async function getLyricsBySongId(
   songId: string,
   artistName?: string,
@@ -137,24 +178,19 @@ export async function getLyricsBySongId(
         track_name: trackTitle,
         ...(duration != null ? {duration: String(Math.round(duration))} : {}),
       });
-      const resp = await fetch(`https://lrclib.net/api/get?${qs}`, {
-        headers: {'Lrclib-Client': 'Musonic (https://github.com/DoodzProg/Musonic)'},
-      });
+      const resp = await fetch(`https://lrclib.net/api/get?${qs}`, {headers: LRCLIB_HEADERS});
+      let plainLines: LyricLine[] = [];
       if (resp.ok) {
         const data = await resp.json();
         if (data.syncedLyrics) {
           const lines = parseLrc(String(data.syncedLyrics));
           if (lines.length > 0) return {synced: true, lines};
         }
-        if (data.plainLyrics) {
-          const lines = (data.plainLyrics as string)
-            .split('\n')
-            .map((v: string) => v.trim())
-            .filter(Boolean)
-            .map((value: string) => ({value}));
-          if (lines.length > 0) return {synced: false, lines};
-        }
+        if (data.plainLyrics) plainLines = toPlainLines(String(data.plainLyrics));
       }
+      const syncedLines = await searchLrclibSynced(artistName, trackTitle, duration);
+      if (syncedLines) return {synced: true, lines: syncedLines};
+      if (plainLines.length > 0) return {synced: false, lines: plainLines};
     } catch { /* LRCLIB unreachable */ }
   }
 
