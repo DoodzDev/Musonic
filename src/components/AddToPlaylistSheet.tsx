@@ -3,7 +3,7 @@
  * @description Bottom sheet for adding one or more tracks to existing playlists
  *   or creating a new one. Updates the playlist membership cache on success.
  * @author DoodzProg
- * @version 1.0.3
+ * @version 1.0.4
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
@@ -154,7 +154,8 @@ export default function AddToPlaylistSheet({
 
   const bumpPlaylistVersion = usePlayerStore(s => s.bumpPlaylistVersion);
   const setPlaylistSong = usePlayerStore(s => s.setPlaylistSong);
-  const {addTracks: cacheAdd, removeTrack: cacheRemove} = usePlaylistCacheStore();
+  const cacheAdd = usePlaylistCacheStore(s => s.addTracks);
+  const cacheRemove = usePlaylistCacheStore(s => s.removeTrack);
 
   const isMultiMode = !!(trackIds?.length);
 

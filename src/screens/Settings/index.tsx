@@ -7,7 +7,7 @@
  *   rotation lock, landscape navigation bar position (shown only while rotation
  *   is unlocked), and fullscreen mode (hides the OS status bar).
  * @author DoodzProg
- * @version 1.0.5
+ * @version 1.0.6
  * @license MIT
  */
 
@@ -28,6 +28,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import Svg, {Path, Circle, Rect, G} from 'react-native-svg';
 import BackArrowIcon from '../../components/icons/BackArrowIcon';
+import {useShallow} from 'zustand/react/shallow';
 import {useSettingsStore} from '../../store/settingsStore';
 import {useIsLandscape} from '../../hooks/useIsLandscape';
 import Slider from '@react-native-community/slider';
@@ -157,7 +158,30 @@ export default function SettingsScreen() {
     setAutoOnlineMode,
     locale,
     setLocale,
-  } = useSettingsStore();
+  } = useSettingsStore(
+    useShallow(s => ({
+      useWaveformScrubber: s.useWaveformScrubber,
+      setUseWaveformScrubber: s.setUseWaveformScrubber,
+      crossfadeDuration: s.crossfadeDuration,
+      setCrossfadeDuration: s.setCrossfadeDuration,
+      rotationLocked: s.rotationLocked,
+      setRotationLocked: s.setRotationLocked,
+      navBarPosition: s.navBarPosition,
+      setNavBarPosition: s.setNavBarPosition,
+      isFullscreenMode: s.isFullscreenMode,
+      setIsFullscreenMode: s.setIsFullscreenMode,
+      fullPlayerCoverSide: s.fullPlayerCoverSide,
+      setFullPlayerCoverSide: s.setFullPlayerCoverSide,
+      isAutoplayEnabled: s.isAutoplayEnabled,
+      setIsAutoplayEnabled: s.setIsAutoplayEnabled,
+      isAutoDownloadEnabled: s.isAutoDownloadEnabled,
+      setIsAutoDownloadEnabled: s.setIsAutoDownloadEnabled,
+      autoOnlineMode: s.autoOnlineMode,
+      setAutoOnlineMode: s.setAutoOnlineMode,
+      locale: s.locale,
+      setLocale: s.setLocale,
+    })),
+  );
 
   const t = useT();
 

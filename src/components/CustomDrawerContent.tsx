@@ -3,7 +3,7 @@
  * @description Content rendered inside the slide-in drawer. Shows navigation
  *   links, offline mode toggle, app version, and credits section.
  * @author DoodzProg
- * @version 1.0.3
+ * @version 1.0.4
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -120,8 +120,10 @@ function formatBytes(bytes: number): string {
 export default function CustomDrawerContent({onClose}: Props) {
   const t = useT();
   const navigation = useNavigation<any>();
-  const {getActiveServer, disconnectServer, isOfflineMode, setOfflineMode} = useSettingsStore();
-  const server = getActiveServer();
+  const server = useSettingsStore(s => s.servers.find(x => x.id === s.activeServerId) ?? null);
+  const disconnectServer = useSettingsStore(s => s.disconnectServer);
+  const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
+  const setOfflineMode = useSettingsStore(s => s.setOfflineMode);
   const [isPinging, setIsPinging] = useState(false);
   const totalSizeBytes = useDownloadStore(s => s.getTotalSizeBytes());
 

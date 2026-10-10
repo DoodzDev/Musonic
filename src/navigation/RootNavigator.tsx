@@ -6,7 +6,7 @@
  *   full-screen player overlay, and clears per-account local caches (playlist
  *   membership, search history) when the active server/account changes.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.0.5
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useRef} from 'react';
@@ -33,8 +33,10 @@ function MainWithDrawer() {
 }
 
 export default function RootNavigator() {
-  const {getActiveServer, rotationLocked, isFullscreenMode} = useSettingsStore();
-  const activeServer = getActiveServer();
+  // Atomic selectors: the root must not re-render on unrelated settings writes.
+  const activeServer = useSettingsStore(s => s.servers.find(x => x.id === s.activeServerId) ?? null);
+  const rotationLocked = useSettingsStore(s => s.rotationLocked);
+  const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
 
   if (activeServer) {
     configureClient(activeServer);

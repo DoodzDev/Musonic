@@ -4,7 +4,7 @@
  *   username and password, validates credentials against the Subsonic API, and
  *   persists the server configuration via settingsStore.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license MIT
  */
 
@@ -58,7 +58,8 @@ export default function ServerSetupScreen() {
   const [status, setStatus] = useState<'idle' | 'ok' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const {addServer, setActiveServer} = useSettingsStore();
+  const addServer = useSettingsStore(s => s.addServer);
+  const setActiveServer = useSettingsStore(s => s.setActiveServer);
 
   async function handleConnect() {
     if (!url.startsWith('http') || !username || !password) {

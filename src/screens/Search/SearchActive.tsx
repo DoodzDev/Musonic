@@ -4,7 +4,7 @@
  *   interleave. Subsonic results are immediate; Deezer artist images are enriched
  *   asynchronously using a generation counter to prevent race conditions.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.0.5
  * @license CC-BY-NC-4.0
  */
 import React, {useState, useEffect, useRef, useCallback, memo} from 'react';
@@ -232,7 +232,9 @@ export default function SearchActive() {
   const genRef = useRef(0);
   const allSongsRef = useRef<SubsonicSong[]>([]);
 
-  const {history, addItem, clearHistory} = useSearchHistoryStore();
+  const history = useSearchHistoryStore(s => s.history);
+  const addItem = useSearchHistoryStore(s => s.addItem);
+  const clearHistory = useSearchHistoryStore(s => s.clearHistory);
   const [selectedSong, setSelectedSong] = useState<SubsonicSong | null>(null);
   const [songOptsVisible, setSongOptsVisible] = useState(false);
 
