@@ -5,11 +5,12 @@
  *   Navidrome getSimilarSongs on native liked tracks, deduped against what's
  *   already liked, shuffled, and capped at 50.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.0.5
  * @license MIT
  */
 
 import React, {useCallback, useState} from 'react';
+import {useStableCallback} from '../../hooks/useStableCallback';
 import {
   View,
   Text,
@@ -114,11 +115,12 @@ async function buildRecommendations(likedSongs: SubsonicSong[]): Promise<Subsoni
 
 type SongRowProps = {
   song: SubsonicSong;
-  onPress: () => void;
-  onAddToPlaylist: () => void;
+  index: number;
+  onPress: (index: number) => void;
+  onAddToPlaylist: (song: SubsonicSong) => void;
 };
 
-const SongRow = React.memo(function SongRow({song, onPress, onAddToPlaylist}: SongRowProps) {
+const SongRow = React.memo(function SongRow({song, index, onPress, onAddToPlaylist}: SongRowProps) {
   const likedSongIds = usePlayerStore(s => s.likedSongIds);
   const localLikeOverrides = usePlayerStore(s => s.localLikeOverrides);
   const pendingLikes = usePlayerStore(s => s.pendingLikes);
@@ -129,7 +131,7 @@ const SongRow = React.memo(function SongRow({song, onPress, onAddToPlaylist}: So
   const isInPlaylist = savedSet.has(id);
 
   return (
-    <TouchableOpacity style={styles.songRow} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.songRow} onPress={() => onPress(index)} activeOpacity={0.7}>
       <CoverArt id={song.coverArt} size={48} borderRadius={4} />
       <View style={styles.songInfo}>
         <Text style={styles.songTitle} numberOfLines={1}>{song.title}</Text>
@@ -146,7 +148,7 @@ const SongRow = React.memo(function SongRow({song, onPress, onAddToPlaylist}: So
         </TouchableOpacity>
         <TouchableOpacity
           hitSlop={{top: 10, bottom: 10, left: 6, right: 6}}
-          onPress={onAddToPlaylist}>
+          onPress={() => onAddToPlaylist(song)}>
           {isInPlaylist
             ? <CheckCircleGreenIcon size={20} />
             : <PlusCircleIconComponent size={20} color="#444" />}
@@ -159,7 +161,10 @@ const SongRow = React.memo(function SongRow({song, onPress, onAddToPlaylist}: So
       </View>
     </TouchableOpacity>
   );
-}, (prev, next) => prev.song.id === next.song.id && prev.song.title === next.song.title);
+// Callbacks are stable (useStableCallback) and receive the row's index/song,
+// so comparing data and position is enough and no stale closure can run.
+}, (prev, next) =>
+  prev.song.id === next.song.id && prev.song.title === next.song.title && prev.index === next.index);
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
@@ -191,6 +196,12 @@ export default function LikedRecommendationsScreen() {
   const handlePressSong = useCallback((index: number) => {
     loadAndPlayTracks(displayedSongs.map(songToTrack), index);
   }, [displayedSongs]);
+
+  const onRowPress = useStableCallback(handlePressSong);
+  const onRowAddToPlaylist = useStableCallback((song: SubsonicSong) => {
+    setAddToPlaylistSong(song);
+    setAddToPlaylistVisible(true);
+  });
 
   return (
     <SafeAreaView style={styles.root} edges={isFullscreenMode ? [] : ['top']}>
@@ -224,8 +235,9 @@ export default function LikedRecommendationsScreen() {
           renderItem={({item, index}) => (
             <SongRow
               song={item}
-              onPress={() => handlePressSong(index)}
-              onAddToPlaylist={() => { setAddToPlaylistSong(item); setAddToPlaylistVisible(true); }}
+              index={index}
+              onPress={onRowPress}
+              onAddToPlaylist={onRowAddToPlaylist}
             />
           )}
           contentContainerStyle={styles.listContent}

@@ -4,11 +4,12 @@
  *   bar, like/add-to-playlist/download actions per row, and remove-from-liked
  *   actions.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.0.5
  * @license MIT
  */
 
 import React, {useState, useCallback, useMemo} from 'react';
+import {useStableCallback} from '../../hooks/useStableCallback';
 import {
   View,
   Text,
@@ -69,12 +70,13 @@ function songToTrack(s: SubsonicSong): Track {
 
 type SongRowProps = {
   song: SubsonicSong;
-  onPress: () => void;
-  onMore: () => void;
-  onAddToPlaylist: () => void;
+  index: number;
+  onPress: (index: number) => void;
+  onMore: (song: SubsonicSong) => void;
+  onAddToPlaylist: (song: SubsonicSong) => void;
 };
 
-const SongRow = React.memo(function SongRow({song, onPress, onMore, onAddToPlaylist}: SongRowProps) {
+const SongRow = React.memo(function SongRow({song, index, onPress, onMore, onAddToPlaylist}: SongRowProps) {
   const likedSongIds = usePlayerStore(s => s.likedSongIds);
   const localLikeOverrides = usePlayerStore(s => s.localLikeOverrides);
   const pendingLikes = usePlayerStore(s => s.pendingLikes);
@@ -106,7 +108,7 @@ const SongRow = React.memo(function SongRow({song, onPress, onMore, onAddToPlayl
   }, [id, song]);
 
   return (
-    <TouchableOpacity style={styles.songRow} onPress={onPress} onLongPress={onMore} delayLongPress={400} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.songRow} onPress={() => onPress(index)} onLongPress={() => onMore(song)} delayLongPress={400} activeOpacity={0.7}>
       <CoverArt id={song.coverArt} size={48} borderRadius={4} />
       <View style={styles.songInfo}>
         <Text style={styles.songTitle} numberOfLines={1}>{song.title}</Text>
@@ -123,7 +125,7 @@ const SongRow = React.memo(function SongRow({song, onPress, onMore, onAddToPlayl
         </TouchableOpacity>
         <TouchableOpacity
           hitSlop={{top: 10, bottom: 10, left: 6, right: 6}}
-          onPress={onAddToPlaylist}>
+          onPress={() => onAddToPlaylist(song)}>
           {isInPlaylist
             ? <CheckCircleGreenIcon size={20} />
             : <PlusCircleIconComponent size={20} color="#444" />}
@@ -136,13 +138,16 @@ const SongRow = React.memo(function SongRow({song, onPress, onMore, onAddToPlayl
         <TouchableOpacity
           style={styles.moreBtn}
           hitSlop={{top: 8, bottom: 8, left: 4, right: 8}}
-          onPress={onMore}>
+          onPress={() => onMore(song)}>
           <DotsVerticalIcon size={20} color="#b3b3b3" />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
-}, (prev, next) => prev.song.id === next.song.id && prev.song.title === next.song.title);
+// Callbacks are stable (useStableCallback) and receive the row's index/song,
+// so comparing data and position is enough and no stale closure can run.
+}, (prev, next) =>
+  prev.song.id === next.song.id && prev.song.title === next.song.title && prev.index === next.index);
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
@@ -202,6 +207,13 @@ export default function LikedSongsScreen() {
     setSelectedSong(song);
     setSongOptsVisible(true);
   }, []);
+
+  const onRowPress = useStableCallback(handlePressSong);
+  const onRowMore = useStableCallback(handleMore);
+  const onRowAddToPlaylist = useStableCallback((song: SubsonicSong) => {
+    setAddToPlaylistSong(song);
+    setAddToPlaylistVisible(true);
+  });
 
   const handleNavigateAlbum = useCallback((albumId: string) => {
     navigation.navigate('AlbumDetail', {albumId});
@@ -290,9 +302,10 @@ export default function LikedSongsScreen() {
         renderItem={({item, index}) => (
           <SongRow
             song={item}
-            onPress={() => handlePressSong(index)}
-            onMore={() => handleMore(item)}
-            onAddToPlaylist={() => { setAddToPlaylistSong(item); setAddToPlaylistVisible(true); }}
+            index={index}
+            onPress={onRowPress}
+            onMore={onRowMore}
+            onAddToPlaylist={onRowAddToPlaylist}
           />
         )}
         contentContainerStyle={styles.listContent}
