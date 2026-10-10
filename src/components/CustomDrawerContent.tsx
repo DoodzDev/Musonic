@@ -27,7 +27,7 @@ import {pingServer} from '../api/client';
 import {withTimeout} from '../services/connectivityService';
 import {useT} from '../i18n';
 
-const APP_VERSION = 'v1.0.3';
+const APP_VERSION = 'v1.0.4';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 

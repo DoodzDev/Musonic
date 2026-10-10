@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.4] - 2026-10-10
+
+### Added
+- **Landscape navigation** — in landscape, the bottom tab bar becomes a side navigation bar and the mini-player switches to a compact layout.
+- **Fullscreen mode** — new toggle in Settings > Display that hides the system status bar (clock, network, battery, notifications) in both orientations; headers move up accordingly.
+- **Landscape full player** — new split layout: the cover fills its own column, header/progress/controls/lyrics sit in the other one. Cover side can be swapped in Settings.
+- **AlbumDetail compact title** — album title and artist fade into the fixed top bar once the header scrolls away (portrait and landscape).
+- **Rotation lock icon** — rotation setting now shows a lock badge when the orientation is locked.
+- **Debug build variant** — debug builds use the `com.musonic.debug` package ("Musonic Dev") and install next to the released app; `keystore.properties` is now optional for local builds. Build guide added to `CONTRIBUTING.md`.
+
+### Changed
+- **Settings layout** — settings reorganized into captioned card sections.
+- **Back buttons** — every screen now uses the same bare chevron.
+- **Offline mode** — "beta" label removed.
+
+### Fixed
+- **Crossfade volume blip** — the fade-out now starts earlier, so tracks no longer play a brief burst at full volume before the fade-in.
+- **Liked Songs header** — back/search row stays fixed instead of scrolling away with the list.
+- **Full player cover size after rotation** — cover size is now computed from the current window size instead of a stale value.
+- **Waveform preview** — baseline alignment fixed in the Settings preview.
+
 ## [1.0.3] - 2026-07-19
 
 ### Added
