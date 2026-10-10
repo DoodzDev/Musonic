@@ -7,7 +7,7 @@
  *      song arrays used for offline mode data resilience.
  *   All slices are persisted to MMKV and available synchronously after rehydration.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -81,6 +81,11 @@ export const usePlaylistCacheStore = create<PlaylistCacheState>()(
     {
       name: 'musonic-playlist-cache',
       storage: createJSONStorage(() => mmkvStorage),
+      // Bump on any change to the persisted shape and handle the old version in `migrate`.
+      // Without `migrate`, a version mismatch discards the stored data.
+      version: 1,
+      // v0 (unversioned) -> v1: same shape, versioning only.
+      migrate: persistedState => persistedState as PlaylistCacheState,
       partialize: (s) => ({
         savedTrackIds: s.savedTrackIds,
         cachedPlaylists: s.cachedPlaylists,

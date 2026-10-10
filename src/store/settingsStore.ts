@@ -6,7 +6,7 @@
  *   landscape full-player cover/progress column order. Persisted across
  *   restarts; consumed by RootNavigator to gate the server-setup flow.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.0.5
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -125,6 +125,11 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'musonic-settings',
       storage: createJSONStorage(() => mmkvStorage),
+      // Bump on any change to the persisted shape and handle the old version in `migrate`.
+      // Without `migrate`, a version mismatch discards the stored data.
+      version: 1,
+      // v0 (unversioned) -> v1: same shape, versioning only.
+      migrate: persistedState => persistedState as SettingsState,
     },
   ),
 );

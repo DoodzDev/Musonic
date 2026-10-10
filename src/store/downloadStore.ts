@@ -6,7 +6,7 @@
  *   indexed tracks are downloadable; Deezer-sourced tracks (ext- prefix) are
  *   silently ignored because they cannot be streamed through Navidrome.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -396,6 +396,11 @@ export const useDownloadStore = create<DownloadState>()(
     {
       name: 'musonic-downloads',
       storage: createJSONStorage(() => mmkvStorage),
+      // Bump on any change to the persisted shape and handle the old version in `migrate`.
+      // Without `migrate`, a version mismatch discards the stored data.
+      version: 1,
+      // v0 (unversioned) -> v1: same shape, versioning only.
+      migrate: persistedState => persistedState as DownloadState,
       // Only persist completed downloads. In-progress state is ephemeral —
       // partially-downloaded files are safely overwritten on the next attempt.
       partialize: (state) => ({downloads: state.downloads}),

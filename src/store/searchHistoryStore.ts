@@ -4,7 +4,7 @@
  *   unique items (text queries, artists, albums, songs); shown in SearchActive
  *   when the input is focused and empty.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.1.1
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -50,6 +50,11 @@ export const useSearchHistoryStore = create<SearchHistoryState>()(
     {
       name: 'musonic-search-history-v2',
       storage: createJSONStorage(() => mmkvStorage),
+      // Bump on any change to the persisted shape and handle the old version in `migrate`.
+      // Without `migrate`, a version mismatch discards the stored data.
+      version: 1,
+      // v0 (unversioned) -> v1: same shape, versioning only.
+      migrate: persistedState => persistedState as SearchHistoryState,
     },
   ),
 );
