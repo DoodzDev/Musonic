@@ -35,6 +35,53 @@ Naming prefixes:
 
 ---
 
+## Building from Source (Android)
+
+### Prerequisites
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| Node.js | `22.11.0` | Pinned in `.nvmrc`. A version manager such as `fnm` or `nvm` picks it up automatically. |
+| JDK | 17 **and** 21 | JDK 21 runs Gradle. The React Native Gradle plugin also requires a JDK 17 toolchain; without it, Gradle tries to download one and fails. |
+| Android SDK | Platform 36, Build-Tools 36.0.0 | Install with the command-line tools (`sdkmanager`) or Android Studio. |
+| Android NDK | `27.1.12297006` | Plus CMake `3.22.1`. |
+
+Point Gradle to the SDK with `ANDROID_HOME`, or create `android/local.properties` (gitignored):
+
+```
+sdk.dir=/path/to/Android/Sdk
+```
+
+### Build variants
+
+| Variant | Package | App name | Use |
+|---------|---------|----------|-----|
+| `debug` | `com.musonic.debug` | Musonic Dev | Development with Metro and fast refresh. Installs next to the released app. |
+| `release` | `com.musonic` | Musonic | Production build. Signed with the release key when `android/keystore.properties` is present, otherwise with the debug key. |
+
+The release keystore and `android/keystore.properties` are never committed. Official releases are built and signed by the CI on version tags.
+
+### Commands
+
+```bash
+npm install                      # also applies patches/ via patch-package
+
+# Development build on a connected device (USB debugging enabled)
+npx react-native start
+adb reverse tcp:8081 tcp:8081
+npx react-native run-android --mode debug --appIdSuffix debug
+
+# Standalone APKs
+cd android
+./gradlew assembleDebug          # app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleRelease        # app/build/outputs/apk/release/app-release.apk
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
+The first build compiles native code and can take 10 to 15 minutes. Later builds use the Gradle cache.
+
+---
+
 ## Opening a Pull Request
 
 1. **Target `develop`**, never push directly to `main`.
