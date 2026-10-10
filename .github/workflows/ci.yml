@@ -12,7 +12,7 @@ on:
 
 jobs:
   lint:
-    name: Lint & Type Check
+    name: Lint, Type Check & Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -33,3 +33,6 @@ jobs:
 
       - name: Type check
         run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npx jest --ci

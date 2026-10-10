@@ -3,7 +3,7 @@
  * @description Subsonic library API endpoints: recently/frequently played albums,
  *   starred items, similar songs/artists, and star/unstar actions.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import {subsonicGet} from '../client';
@@ -78,7 +78,7 @@ export type LyricLine = {start?: number; value: string};
 export type LyricsData = {synced: boolean; lines: LyricLine[]} | null;
 
 // Parses LRC format "[mm:ss.xx] text" into timestamped lines.
-function parseLrc(lrc: string): LyricLine[] {
+export function parseLrc(lrc: string): LyricLine[] {
   const lines: LyricLine[] = [];
   for (const raw of lrc.split('\n')) {
     const m = raw.match(/^\[(\d{1,2}):(\d{2})\.(\d{2,3})\](.*)/);
