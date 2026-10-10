@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.6] - 2026-10-11
+
+### Added
+- **Adaptive app icon** — the launcher icon now follows the shape of your launcher (no more white circle on Pixel) and supports Android 13+ themed icons.
+- **Launch screen** — Android 12+ now shows the Musonic logo on a dark background at startup instead of the default system icon.
+
+### Changed
+- **Full player loads on demand** — the full-screen player is only built when you open it, and lyrics are fetched when it opens (recently opened lyrics are cached).
+- **No more audio prefetch of neighbouring tracks** — this prefetch did not speed up playback and forced the server to download the previous and next Deezer tracks.
+- **Fewer re-renders** — screens now only react to the settings they actually use.
+
+### Fixed
+- **Battery drain with long titles** — a long track title scrolled forever in the mini player, keeping the screen redrawing and roughly doubling CPU use even while paused. It now scrolls once per track.
+- **Stuck in offline mode** — a single slow request no longer switches the app offline (three consecutive failures are needed), dead network connections are now detected and dropped, and the app comes back online on its own as soon as the server answers again.
+- **Wrong queue after a search** — in Liked Songs, My Music and Recommended tracks, tapping a song after filtering the list now plays the filtered list instead of the full one.
+- **Stale titles in confirmations** — liking a track or creating a playlist from the player or a song menu could show or send the title of a previous track.
+- **Playlist owner after switching accounts** — the playlist screen now reloads when the active account changes.
+- **Rotation** — sheets, the queue, the side menu and the Library grid now follow the screen size after rotating instead of keeping the size measured at launch.
+- **Landscape layout** — Library, playlists, Liked Songs, My Music and Recommended tracks no longer draw underneath the side navigation bar; song, album and playlist menus no longer overflow the screen.
+- **Queue swipe-to-close** — swiping the queue sheet down from the full player now closes it.
+
 ## [1.0.5] - 2026-10-10
 
 ### Fixed
