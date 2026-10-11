@@ -7,7 +7,7 @@
  *   rotation lock, landscape navigation bar position (shown only while rotation
  *   is unlocked), and fullscreen mode (hides the OS status bar).
  * @author DoodzProg
- * @version 1.0.6
+ * @version 1.1.0
  * @license MIT
  */
 
@@ -152,6 +152,8 @@ export default function SettingsScreen() {
     setFullPlayerCoverSide,
     isAutoplayEnabled,
     setIsAutoplayEnabled,
+    isAlwaysPrevious,
+    setIsAlwaysPrevious,
     isAutoDownloadEnabled,
     setIsAutoDownloadEnabled,
     autoOnlineMode,
@@ -174,6 +176,8 @@ export default function SettingsScreen() {
       setFullPlayerCoverSide: s.setFullPlayerCoverSide,
       isAutoplayEnabled: s.isAutoplayEnabled,
       setIsAutoplayEnabled: s.setIsAutoplayEnabled,
+      isAlwaysPrevious: s.isAlwaysPrevious,
+      setIsAlwaysPrevious: s.setIsAlwaysPrevious,
       isAutoDownloadEnabled: s.isAutoDownloadEnabled,
       setIsAutoDownloadEnabled: s.setIsAutoDownloadEnabled,
       autoOnlineMode: s.autoOnlineMode,
@@ -317,6 +321,21 @@ export default function SettingsScreen() {
             <Switch
               value={isAutoplayEnabled}
               onValueChange={setIsAutoplayEnabled}
+              trackColor={{false: '#535353', true: ACCENT}}
+              thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+            />
+          </View>
+
+          <View style={styles.cardDivider} />
+
+          <View style={styles.settingRow}>
+            <View style={styles.textBlock}>
+              <Text style={styles.settingLabel}>{t.settings.playback.alwaysPreviousLabel}</Text>
+              <Text style={styles.settingDesc}>{t.settings.playback.alwaysPreviousDesc}</Text>
+            </View>
+            <Switch
+              value={isAlwaysPrevious}
+              onValueChange={setIsAlwaysPrevious}
               trackColor={{false: '#535353', true: ACCENT}}
               thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
             />

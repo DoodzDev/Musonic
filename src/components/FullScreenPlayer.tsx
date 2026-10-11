@@ -4,11 +4,12 @@
  *   animated cover art, waveform scrubber, playback controls, lyrics preview,
  *   and queue access. In landscape, a StandBy-style 40/60 split: a hero cover
  *   fills its own column (order set by fullPlayerCoverSide), the other column
- *   carries header, progress, controls, and lyrics top-to-bottom.
+ *   carries header, progress, controls, and lyrics top-to-bottom. Being a
+ *   Modal, it hosts its own Design v2 toast.
  *   The heavy player body only mounts while the player is open; a light shell
  *   stays mounted to preload adjacent cover art.
  * @author DoodzProg
- * @version 1.2.1
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -59,6 +60,10 @@ import type {SubsonicSong} from '../api/types';
 import {getLyricsBySongId, type LyricsData} from '../api/endpoints/library';
 import {useIsLandscape} from '../hooks/useIsLandscape';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {ToastHost} from './ui/Toast';
+
+/** Toast distance from the bottom of the full player. */
+const PLAYER_TOAST_BOTTOM = 48;
 
 const HIT = {top: 12, bottom: 12, left: 12, right: 12};
 
@@ -768,6 +773,9 @@ function FullScreenPlayerContent() {
         />
 
       </Animated.View>
+
+      {/* A Modal covers the app's toast host: toasts need their own host here. */}
+      <ToastHost bottom={PLAYER_TOAST_BOTTOM} />
       </GestureHandlerRootView>
     </Modal>
   );

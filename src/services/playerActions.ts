@@ -3,7 +3,7 @@
  * @description Imperative playback action helpers used across screens. Every list now starts through the playback engine (launchers.ts); the
  *   legacy loaders are gone. Skips always go through the engine.
  * @author DoodzProg
- * @version 2.1.0
+ * @version 2.2.0
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer from 'react-native-track-player';
@@ -12,6 +12,7 @@ import {getSimilarSongs} from '../api/endpoints/library';
 import {getDeezerArtistId, getDeezerArtistTopTracks} from '../api/deezer';
 import {playbackBridge} from '../store/playerStore';
 import {useDownloadStore} from '../store/downloadStore';
+import {useSettingsStore} from '../store/settingsStore';
 import type {Track} from '../store/playerStore';
 
 /**
@@ -59,8 +60,9 @@ export function skipNext(): void {
   playbackBridge()?.next();
 }
 
+/** Previous: restarts the track after 3 s, unless "Previous always goes back" is on (C1). */
 export async function skipPrev(): Promise<void> {
-  await playbackBridge()?.previous(false);
+  await playbackBridge()?.previous(useSettingsStore.getState().isAlwaysPrevious);
 }
 
 export function skipPrevForce(): void {

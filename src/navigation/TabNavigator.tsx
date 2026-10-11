@@ -7,8 +7,9 @@
  *   capsule and search circle), the Design v2 Rail in landscape (glass tab
  *   capsule, search circle and mini player tile, left or right per settings)
  *   — same navigator state/behavior, only the visual arrangement differs.
+ *   Also hosts the app-wide Design v2 toast, just above the Dock.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback} from 'react';
@@ -29,6 +30,8 @@ import FullScreenPlayer from '../components/FullScreenPlayer';
 import AudioPlayer from '../components/AudioPlayer';
 import ConnectivityMonitor from '../components/ConnectivityMonitor';
 import {GlobalToast} from '../components/Toast';
+import {ToastHost} from '../components/ui/Toast';
+import {DOCK_GAP, useDockInset} from './dockLayout';
 import {useImageColor} from '../hooks/useImageColor';
 
 const Tab = createBottomTabNavigator();
@@ -111,8 +114,14 @@ export default function TabNavigator() {
       <AudioPlayer />
       <FullScreenPlayer />
       <GlobalToast />
+      <AppToastHost />
     </View>
   );
+}
+
+/** App-wide toast host, right above the Dock (and the mini player). */
+function AppToastHost() {
+  return <ToastHost bottom={useDockInset() - DOCK_GAP} />;
 }
 
 const styles = StyleSheet.create({

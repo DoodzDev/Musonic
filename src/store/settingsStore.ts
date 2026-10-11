@@ -3,10 +3,11 @@
  * @description Zustand + MMKV store for user preferences: server credentials,
  *   language, waveform display, crossfade, mono audio, rotation lock, landscape
  *   nav bar position, fullscreen mode (hides the OS status bar), the
- *   landscape full-player cover/progress column order, and haptic feedback.
+ *   landscape full-player cover/progress column order, haptic feedback and
+ *   the "Previous always goes back" playback rule.
  *   Persisted across restarts; consumed by RootNavigator to gate the server-setup flow.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -51,6 +52,9 @@ type SettingsState = {
   setFullPlayerCoverSide: (side: FullPlayerCoverSide) => void;
   isAutoplayEnabled: boolean;
   setIsAutoplayEnabled: (enabled: boolean) => void;
+  /** Previous always goes to the previous track (no 3-second restart, C1). */
+  isAlwaysPrevious: boolean;
+  setIsAlwaysPrevious: (enabled: boolean) => void;
   hapticsEnabled: boolean;
   setHapticsEnabled: (enabled: boolean) => void;
   isAutoDownloadEnabled: boolean;
@@ -96,6 +100,8 @@ export const useSettingsStore = create<SettingsState>()(
       setFullPlayerCoverSide: side => set({fullPlayerCoverSide: side}),
       isAutoplayEnabled: true,
       setIsAutoplayEnabled: enabled => set({isAutoplayEnabled: enabled}),
+      isAlwaysPrevious: false,
+      setIsAlwaysPrevious: enabled => set({isAlwaysPrevious: enabled}),
       hapticsEnabled: true,
       setHapticsEnabled: enabled => set({hapticsEnabled: enabled}),
       isAutoDownloadEnabled: false,

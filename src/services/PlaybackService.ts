@@ -5,9 +5,10 @@
  *   app is backgrounded or killed. Track changes and the end of the queue are
  *   forwarded to the playback engine; manual skips are never crossfaded. The
  *   playing position is saved on pause, in the background and every few
- *   seconds, so the queue can be restored at the same place.
+ *   seconds, so the queue can be restored at the same place. Stream errors
+ *   go to the engine, which skips the unplayable track.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import {AppState} from 'react-native';
@@ -170,6 +171,14 @@ export async function PlaybackService() {
 
   TrackPlayer.addEventListener(Event.PlaybackState, ({state}) => {
     if (state === State.Paused || state === State.Stopped) saveCurrentPosition();
+    if (state === State.Playing) playbackEngine.onPlaying();
+  });
+
+  // Unplayable track (stream error): the engine skips it (E4). Only the code
+  // is logged: the message may quote the stream URL, which holds credentials.
+  TrackPlayer.addEventListener(Event.PlaybackError, ({code}) => {
+    console.warn('[playback] error', code);
+    playbackEngine.onPlaybackError();
   });
 
   TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());

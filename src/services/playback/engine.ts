@@ -17,6 +17,8 @@
  *     position, when the app is reopened.
  *   - Every track entering the queue gets its own entry id, so a track
  *     present twice can be moved or removed copy by copy.
+ *   - A track that cannot play is skipped with a discreet toast (E4); after
+ *     a few failures in a row (no network) playback stops instead.
  * @author DoodzProg
  * @version 1.1.0
  * @license CC-BY-NC-4.0
@@ -25,7 +27,10 @@ import TrackPlayer, {RepeatMode as NativeRepeat} from 'react-native-track-player
 import {setEngineBridge, usePlayerStore, type RepeatModeUI, type ShuffleMode, type Track} from '../../store/playerStore';
 import {useSettingsStore} from '../../store/settingsStore';
 import {useDownloadStore} from '../../store/downloadStore';
+import {AppState} from 'react-native';
 import {getActiveServer, getCoverArtUrl, getStreamUrl} from '../../api/client';
+import {getT} from '../../i18n';
+import {toast} from '../../components/ui/Toast';
 import {fetchAutoplayTracks, toRNTPTrack} from '../playerActions';
 import {fetchMagicSuggestions} from './magic';
 import * as Q from './buildQueue';
@@ -46,6 +51,9 @@ let manualSkip = false;
 /** Native calls made by the current action (debug measurements). */
 let nativeCalls = 0;
 let entrySeq = 0;
+/** Unplayable tracks in a row; reset as soon as a track actually plays (E4). */
+let failures = 0;
+const MAX_FAILURES = 3;
 /** Zones emptied by the last "Clear queue", kept for its Undo. */
 let cleared: {currentKey: string; userQueue: Track[]; upcoming: Track[]; autoplay: Track[]} | null = null;
 /** Unique even across restarts (restored entries keep their ids). */
@@ -400,6 +408,39 @@ export const playbackEngine = {
       state = result.state;
       publish();
       await loadNative();
+      afterChange();
+    });
+  },
+
+  /** A track really plays: the unplayable-track counter starts again (E4). */
+  onPlaying(): void {
+    failures = 0;
+  },
+
+  /**
+   * The current track cannot play (stream error, E4): skip to the next one
+   * with a discreet toast. After `MAX_FAILURES` in a row, or with nothing
+   * left, playback stops with an error toast instead.
+   */
+  onPlaybackError(): Promise<void> {
+    if (!active) return Promise.resolve();
+    return run('playbackError', async () => {
+      const t = getT().queue;
+      const foreground = AppState.currentState === 'active';
+      failures++;
+      const result = Q.next(state, modes(), Math.random);
+      if (failures >= MAX_FAILURES || result.ended) {
+        failures = 0;
+        await native(TrackPlayer.pause());
+        if (foreground) toast.error(t.playbackFailedToast);
+        return;
+      }
+      state = result.state;
+      manualSkip = true;
+      publish();
+      // After an error the native player is stuck: reload it from the model.
+      await loadNative();
+      if (foreground) toast.show(t.unreadableToast);
       afterChange();
     });
   },
