@@ -3,7 +3,7 @@
  * @description Green filled circle with a white checkmark. Used for "in playlist" /
  *   "saved" / "fully downloaded" states.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -18,7 +18,7 @@ export default function CheckCircleGreenIcon({size = 24}: Props) {
       <Path
         d="M7.5 12 L10.5 15 L16.5 9"
         stroke="white"
-        strokeWidth={2.5}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"

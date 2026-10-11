@@ -2,7 +2,7 @@
  * @file LibraryIcon.tsx
  * @description SVG library icon for the bottom tab navigator.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -29,7 +29,7 @@ export default function LibraryIcon({size = 24, color = '#fff', filled = false}:
           d="M15.5 2.134A1 1 0 0 0 14 3v18a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V6.464a1 1 0 0 0-.5-.866l-6-3.464"
           fill="none"
           stroke={color}
-          strokeWidth={1.5}
+          strokeWidth={2}
           strokeLinejoin="round"
         />
       )}

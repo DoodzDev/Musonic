@@ -1,12 +1,12 @@
 /**
  * @file index.tsx
  * @description Design screen, debug builds only. Shows every Design v2 token
- *   (colours, type scale, radii, spacing, shadows, glass, motion, haptics)
- *   rendered on the device, plus pressables to try the animations and
+ *   (colours, type scale, radii, spacing, shadows, glass, motion, haptics) and
+ *   the icon set, rendered on the device, plus pressables to try the animations and
  *   vibrations by hand: the app's internal design reference. Reached from the
  *   drawer in Musonic Dev.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -20,6 +20,31 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import BackArrowIcon from '../../components/icons/BackArrowIcon';
+import ChevronDownIcon from '../../components/icons/ChevronDownIcon';
+import CloseIcon from '../../components/icons/CloseIcon';
+import DotsHorizontalIcon from '../../components/icons/DotsHorizontalIcon';
+import DotsVerticalIcon from '../../components/icons/DotsVerticalIcon';
+import DownloadIcon from '../../components/icons/DownloadIcon';
+import HeartIcon from '../../components/icons/HeartIcon';
+import HomeIcon from '../../components/icons/HomeIcon';
+import LibraryIcon from '../../components/icons/LibraryIcon';
+import NextIcon from '../../components/icons/NextIcon';
+import PauseIcon from '../../components/icons/PauseIcon';
+import PersonIcon from '../../components/icons/PersonIcon';
+import PlayIcon from '../../components/icons/PlayIcon';
+import PrevIcon from '../../components/icons/PrevIcon';
+import PlusCircleIcon from '../../components/icons/PlusCircleIcon';
+import ProfileIcon from '../../components/icons/ProfileIcon';
+import QueueAddIcon from '../../components/icons/QueueAddIcon';
+import RepeatIcon from '../../components/icons/RepeatIcon';
+import SearchIcon from '../../components/icons/SearchIcon';
+import ShuffleIcon from '../../components/icons/ShuffleIcon';
+import ShuffleMagicIcon from '../../components/icons/ShuffleMagicIcon';
+import TrackMagicIcon from '../../components/icons/TrackMagicIcon';
+import CheckCircleGreenIcon from '../../components/icons/CheckCircleGreenIcon';
+import CloudIcon from '../../components/icons/CloudIcon';
+import SparkleIcon from '../../components/icons/SparkleIcon';
+import InfinityIcon from '../../components/icons/InfinityIcon';
 import Text from '../../components/ui/Text';
 import PressableScale from '../../components/ui/PressableScale';
 import GlassSurface from '../../components/ui/GlassSurface';
@@ -101,6 +126,70 @@ function GlassDemo() {
           blur {GLASS_BLUR}
         </Text>
       </GlassSurface>
+    </View>
+  );
+}
+
+const ICON_SIZE = 28;
+
+/** Every icon of the set, drawn the same size and colour to compare strokes. */
+const ICONS: {name: string; render: () => React.ReactNode}[] = [
+  {name: 'BackArrow', render: () => <BackArrowIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'ChevronDown', render: () => <ChevronDownIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Close', render: () => <CloseIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'DotsH', render: () => <DotsHorizontalIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'DotsV', render: () => <DotsVerticalIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Download', render: () => <DownloadIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Heart', render: () => <HeartIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Heart plein', render: () => <HeartIcon size={ICON_SIZE} color={colors.accent} filled />},
+  {name: 'Home', render: () => <HomeIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Library', render: () => <LibraryIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Search', render: () => <SearchIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Play', render: () => <PlayIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Pause', render: () => <PauseIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Prev', render: () => <PrevIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Next', render: () => <NextIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Shuffle', render: () => <ShuffleIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'ShuffleMagic', render: () => <ShuffleMagicIcon size={ICON_SIZE} />},
+  {name: 'Repeat', render: () => <RepeatIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'QueueAdd', render: () => <QueueAddIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'PlusCircle', render: () => <PlusCircleIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Person', render: () => <PersonIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Profile', render: () => <ProfileIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'TrackMagic', render: () => <TrackMagicIcon size={ICON_SIZE} />},
+  {name: 'CheckCircle', render: () => <CheckCircleGreenIcon size={ICON_SIZE} />},
+  {name: 'Cloud', render: () => <CloudIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'Sparkle', render: () => <SparkleIcon size={ICON_SIZE} color={colors.accent} />},
+  {name: 'Infinity', render: () => <InfinityIcon size={ICON_SIZE} color={colors.textPrimary} />},
+];
+
+/** Badge marking online-catalogue content, in place of the "Deezer" name. */
+const SOURCE_BADGE = 'En ligne';
+
+function SourceBadge({label}: {label: string}) {
+  return (
+    <View style={styles.badge}>
+      <CloudIcon size={12} color={colors.textPrimary} />
+      <Text variant="caption">{label}</Text>
+    </View>
+  );
+}
+
+function BadgeRow({label}: {label: string}) {
+  return (
+    <View style={styles.trackRow}>
+      <View style={styles.trackCover} />
+      <View style={styles.flex}>
+        <Text variant="body" numberOfLines={1}>
+          Titre de démonstration
+        </Text>
+        <View style={styles.trackMeta}>
+          <SourceBadge label={label} />
+          <Text variant="subhead" color="textSecondary" numberOfLines={1}>
+            Artiste
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -239,6 +328,23 @@ export default function DesignScreen() {
             Fais défiler les couleurs : le flou suit le contenu.
           </Text>
           <GlassDemo />
+        </Section>
+
+        <Section title="Icônes">
+          <View style={styles.iconGrid}>
+            {ICONS.map(({name, render}) => (
+              <View key={name} style={styles.iconCell}>
+                {render()}
+                <Text variant="caption" color="textSecondary" numberOfLines={1}>
+                  {name}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </Section>
+
+        <Section title="Badge de source">
+          <BadgeRow label={SOURCE_BADGE} />
         </Section>
 
         <Section title="Vibrations">
@@ -384,6 +490,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  iconGrid: {flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.m},
+  iconCell: {width: '25%', alignItems: 'center', gap: spacing.xs},
+  badge: {
+    height: 20,
+    paddingHorizontal: spacing.s,
+    borderRadius: radii.full,
+    backgroundColor: colors.fill,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  trackRow: {
+    minHeight: sizes.listRowMin,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.m,
+  },
+  trackCover: {
+    width: 48,
+    height: 48,
+    borderRadius: radii.cover,
+    backgroundColor: colors.surface2,
+  },
+  trackMeta: {flexDirection: 'row', alignItems: 'center', gap: spacing.s},
   hapticGrid: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.s},
   hapticButton: {flexGrow: 1, flexBasis: '40%'},
   dimmed: {opacity: 0.5},

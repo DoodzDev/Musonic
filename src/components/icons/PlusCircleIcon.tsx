@@ -2,7 +2,7 @@
  * @file PlusCircleIcon.tsx
  * @description Outlined circle with a plus sign. Used for add-to-library actions.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -12,12 +12,12 @@ type Props = {size?: number; color?: string};
 
 export default function PlusCircleIcon({size = 26, color = '#fff'}: Props) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 26 26">
-      <Circle cx={13} cy={13} r={11.5} stroke={color} strokeWidth={1.5} fill="none" />
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Circle cx={12} cy={12} r={10} stroke={color} strokeWidth={2} fill="none" />
       <Path
-        d="M13 8 L13 18 M8 13 L18 13"
+        d="M12 7.5 L12 16.5 M7.5 12 L16.5 12"
         stroke={color}
-        strokeWidth={1.8}
+        strokeWidth={2}
         strokeLinecap="round"
         fill="none"
       />

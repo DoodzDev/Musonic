@@ -4,7 +4,7 @@
  *   Three visual states: idle (circled arrow), in-progress (spinner), complete
  *   (green check). Renders nothing for ext- (Deezer) tracks.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -27,11 +27,11 @@ export default function DownloadStatusIcon({trackId, size = 22}: Props) {
   if (isDownloaded) {
     return (
       <Svg width={size} height={size} viewBox="0 0 24 24">
-        <Circle cx={12} cy={12} r={9} stroke="#1ED760" strokeWidth={1.8} fill="none" />
+        <Circle cx={12} cy={12} r={9} stroke="#1ED760" strokeWidth={2} fill="none" />
         <Path
           d="M12 7 V14 M9 12 L12 15 L15 12"
           stroke="#1ED760"
-          strokeWidth={1.8}
+          strokeWidth={2}
           strokeLinecap="round"
           strokeLinejoin="round"
           fill="none"
@@ -50,11 +50,11 @@ export default function DownloadStatusIcon({trackId, size = 22}: Props) {
 
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Circle cx={12} cy={12} r={9} stroke="#B3B3B3" strokeWidth={1.8} fill="none" />
+      <Circle cx={12} cy={12} r={9} stroke="#B3B3B3" strokeWidth={2} fill="none" />
       <Path
         d="M12 7 V14 M9 12 L12 15 L15 12"
         stroke="#B3B3B3"
-        strokeWidth={1.8}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"

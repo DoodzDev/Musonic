@@ -2,7 +2,7 @@
  * @file HomeIcon.tsx
  * @description SVG home icon for the bottom tab navigator.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -24,7 +24,7 @@ export default function HomeIcon({size = 24, color = '#fff', filled = false}: Pr
         d={PATH}
         fill={filled ? color : 'none'}
         stroke={filled ? 'none' : color}
-        strokeWidth={1.8}
+        strokeWidth={2}
         strokeLinejoin="round"
         strokeLinecap="round"
       />

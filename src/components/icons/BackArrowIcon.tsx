@@ -5,7 +5,7 @@
  *   so the icon stays visually identical across the whole app (was previously
  *   inconsistent: some screens used a full arrow, others a bare chevron).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.1.1
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -19,7 +19,7 @@ export default function BackArrowIcon({size = 24, color = '#fff'}: Props) {
       <Path
         d="m15 19-7-7 7-7"
         stroke={color}
-        strokeWidth={2.2}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
