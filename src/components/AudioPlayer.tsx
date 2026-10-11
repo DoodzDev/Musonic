@@ -2,11 +2,14 @@
  * @file AudioPlayer.tsx
  * @description Null-render RNTP event bridge. Mounts once in App.tsx and syncs
  *   RNTP playback events (track change, queue updates) into playerStore so the
- *   rest of the UI stays reactive without subscribing to RNTP directly.
+ *   rest of the UI stays reactive without subscribing to RNTP directly. On
+ *   mount it also picks up a track already playing (app reopened while the
+ *   playback service kept running), so the mini player shows straight away.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
+import {useEffect} from 'react';
 import TrackPlayer, {Event, useTrackPlayerEvents} from 'react-native-track-player';
 import {usePlayerStore} from '../store/playerStore';
 import type {Track} from '../store/playerStore';
@@ -30,24 +33,35 @@ function mapToTrack(t: any): Track {
   };
 }
 
+/** Shows the mini player and mirrors the RNTP queue around the active index. */
+async function syncActiveTrack(index: number) {
+  const store = usePlayerStore.getState();
+  store.onTrackChanged();
+  try {
+    const queue = await TrackPlayer.getQueue();
+    const history = queue.slice(0, index).map(mapToTrack);
+    const upcoming = queue.slice(index + 1).map(mapToTrack);
+    store.setHistory(history);
+    store.setUpcoming(
+      store.repeatMode === 'all' ? [...upcoming, ...history] : upcoming,
+    );
+  } catch {}
+}
+
 export default function AudioPlayer() {
   useTrackPlayerEvents(SYNC_EVENTS, async event => {
     if (event.type !== Event.PlaybackActiveTrackChanged || !event.track) return;
-
-    const store = usePlayerStore.getState();
-    store.onTrackChanged();
-
-    try {
-      const queue = await TrackPlayer.getQueue();
-      const idx = event.index ?? 0;
-      const history = queue.slice(0, idx).map(mapToTrack);
-      const upcoming = queue.slice(idx + 1).map(mapToTrack);
-      store.setHistory(history);
-      store.setUpcoming(
-        store.repeatMode === 'all' ? [...upcoming, ...history] : upcoming,
-      );
-    } catch {}
+    await syncActiveTrack(event.index ?? 0);
   });
+
+  // App reopened while the service kept playing: no track-change event comes.
+  useEffect(() => {
+    TrackPlayer.getActiveTrackIndex()
+      .then(index => {
+        if (index !== undefined) syncActiveTrack(index);
+      })
+      .catch(() => {}); // Player not set up yet: the next track change will sync.
+  }, []);
 
   return null;
 }
