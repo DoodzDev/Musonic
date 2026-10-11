@@ -24,6 +24,14 @@ export const t = {
     badgeMagic: 'Magique',
     badgeDownloaded: 'Téléchargé',
     badgeLossless: 'Lossless',
+    like: 'Ajouter aux titres likés',
+    unlike: 'Retirer des titres likés',
+    addToPlaylist: 'Ajouter à une playlist',
+    download: 'Télécharger',
+    downloading: 'Téléchargement en cours',
+    nowPlaying: 'En cours de lecture',
+    unavailableOffline: 'Indisponible hors ligne',
+    open: 'Ouvrir',
   },
 
   // ─── Server Setup ──────────────────────────────────────────────────────────

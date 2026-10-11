@@ -5,9 +5,10 @@
  *   controls global fullscreen mode (OS status bar visibility), manages the
  *   full-screen player overlay, and clears per-account local caches (playlist
  *   membership, search history) when the active server/account changes.
- *   Debug builds also register the Design v2 reference screen.
+ *   Debug builds also register the Design v2 reference screen and its
+ *   track-list scroll test.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useRef} from 'react';
@@ -23,6 +24,7 @@ import DrawerContainer from '../components/DrawerContainer';
 import ServerSetupScreen from '../screens/ServerSetup';
 import SettingsScreen from '../screens/Settings';
 import DesignScreen from '../screens/Design';
+import DesignTrackListTest from '../screens/Design/TrackListTest';
 
 const Stack = createNativeStackNavigator();
 
@@ -88,6 +90,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Settings" component={SettingsScreen} options={{ presentation: 'modal' }} />
           {/* Design v2 reference screen: debug builds (Musonic Dev) only. */}
           {__DEV__ && <Stack.Screen name="Design" component={DesignScreen} />}
+          {__DEV__ && <Stack.Screen name="DesignTrackList" component={DesignTrackListTest} />}
         </>
       )}
       </Stack.Navigator>

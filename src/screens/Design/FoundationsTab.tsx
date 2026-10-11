@@ -5,7 +5,7 @@
  *   the icon set, rendered on the device, with pressables to try the
  *   animations and vibrations by hand.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -42,6 +42,7 @@ import CheckCircleGreenIcon from '../../components/icons/CheckCircleGreenIcon';
 import CloudIcon from '../../components/icons/CloudIcon';
 import SparkleIcon from '../../components/icons/SparkleIcon';
 import InfinityIcon from '../../components/icons/InfinityIcon';
+import DownloadArrowIcon from '../../components/icons/DownloadArrowIcon';
 import Text from '../../components/ui/Text';
 import PressableScale from '../../components/ui/PressableScale';
 import Section from './DesignSection';
@@ -150,6 +151,7 @@ const ICONS: {name: string; render: () => React.ReactNode}[] = [
   {name: 'Cloud', render: () => <CloudIcon size={ICON_SIZE} color={colors.textPrimary} />},
   {name: 'Sparkle', render: () => <SparkleIcon size={ICON_SIZE} color={colors.accent} />},
   {name: 'Infinity', render: () => <InfinityIcon size={ICON_SIZE} color={colors.textPrimary} />},
+  {name: 'DownloadArrow', render: () => <DownloadArrowIcon size={ICON_SIZE} color={colors.textPrimary} />},
 ];
 
 const HAPTIC_DEMOS: {kind: HapticKind; label: string}[] = [

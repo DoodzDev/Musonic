@@ -3,11 +3,12 @@
  * @description "Components" tab of the Design screen: every Design v2
  *   component in its states, live and touchable.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
-import React, {useState} from 'react';
-import {StyleSheet, View} from 'react-native';
+import React, {useMemo, useState} from 'react';
+import {ScrollView, StyleSheet, View} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
 import Section from './DesignSection';
 import Text from '../../components/ui/Text';
 import Button from '../../components/ui/Button';
@@ -21,6 +22,17 @@ import PlayIcon from '../../components/icons/PlayIcon';
 import HeartIcon from '../../components/icons/HeartIcon';
 import PlusCircleIcon from '../../components/icons/PlusCircleIcon';
 import DotsHorizontalIcon from '../../components/icons/DotsHorizontalIcon';
+import SearchIcon from '../../components/icons/SearchIcon';
+import CloudIcon from '../../components/icons/CloudIcon';
+import Cover from '../../components/ui/Cover';
+import ArtistAvatar from '../../components/ui/ArtistAvatar';
+import TrackRow, {type RowPlayback} from '../../components/ui/TrackRow';
+import CollectionRow from '../../components/ui/CollectionRow';
+import CollectionCard from '../../components/ui/CollectionCard';
+import {ListGroup, ListItem} from '../../components/ui/ListGroup';
+import EmptyState from '../../components/ui/EmptyState';
+import {SkeletonCard, SkeletonTrackRow} from '../../components/ui/Skeleton';
+import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
 import {colors, sizes, spacing} from '../../theme';
 
 const FILTERS = ['Tout', 'Playlists', 'Albums', 'Artistes'];
@@ -141,7 +153,118 @@ function TogglesDemo() {
   );
 }
 
+/** Real songs and playlists already cached on the device, for lifelike demos. */
+function useSamples() {
+  const playlists = usePlaylistCacheStore(s => s.cachedPlaylists);
+  const songsByPlaylist = usePlaylistCacheStore(s => s.cachedPlaylistSongs);
+  return useMemo(() => {
+    const songs = Object.values(songsByPlaylist).flat();
+    return {playlists: playlists.slice(0, 6), songs: songs.slice(0, 6)};
+  }, [playlists, songsByPlaylist]);
+}
+
+function CoversDemo() {
+  const {songs} = useSamples();
+  const id = songs[0]?.coverArt;
+  return (
+    <>
+      <View style={styles.coverRow}>
+        <Cover id={id} size="row" />
+        <Cover id={id} size="tile" />
+        <Cover id={songs[1]?.coverArt} size="card" />
+      </View>
+      <View style={styles.heroBox}>
+        <Cover id={songs[2]?.coverArt ?? id} size="hero" tint={colors.accent} />
+      </View>
+      <View style={styles.coverRow}>
+        <ArtistAvatar name={songs[0]?.artist ?? 'Nova Arden'} id={songs[0]?.artistId ? `ar-${songs[0].artistId}` : undefined} />
+        <ArtistAvatar name="Les Saisons" size={64} />
+      </View>
+    </>
+  );
+}
+
+function TrackRowsDemo() {
+  const {songs} = useSamples();
+  const [liked, setLiked] = useState(false);
+  const [playback, setPlayback] = useState<RowPlayback>('playing');
+  const s = (i: number) => songs[i] ?? songs[0];
+  const title = (i: number) => s(i)?.title ?? 'Titre de démonstration';
+  const artist = (i: number) => s(i)?.artist ?? 'Artiste';
+  return (
+    <View style={styles.bleed}>
+      <TrackRow
+        title={title(0)}
+        subtitle={artist(0)}
+        coverId={s(0)?.coverArt}
+        playback={playback}
+        liked={liked}
+        download="done"
+        onPress={() => setPlayback(p => (p === 'playing' ? 'current' : 'playing'))}
+        onToggleLike={() => setLiked(l => !l)}
+      />
+      <TrackRow title={title(1)} subtitle={artist(1)} coverId={s(1)?.coverArt} badges={['online']} />
+      <TrackRow title={title(2)} subtitle={artist(2)} coverId={s(2)?.coverArt} badges={['magic']} download="downloading" />
+      <TrackRow title={title(3)} subtitle={artist(3)} coverId={s(3)?.coverArt} unavailable />
+      <TrackRow number={1} title={title(4)} subtitle="3:58" liked />
+      <TrackRow number={2} title={title(5)} subtitle="4:12" playback="current" />
+    </View>
+  );
+}
+
+function CollectionsDemo() {
+  const {playlists} = useSamples();
+  return (
+    <>
+      <View style={styles.bleed}>
+        {playlists.slice(0, 2).map(p => (
+          <CollectionRow
+            key={p.id}
+            kind="playlist"
+            name={p.name}
+            subtitle={`Playlist · ${p.songCount} titres`}
+            coverId={p.coverArt}
+            playlistId={p.id}
+            badges={['downloaded']}
+          />
+        ))}
+        <CollectionRow kind="artist" name="Nova Arden" subtitle="Artiste · 3 albums" />
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
+        {playlists.map(p => (
+          <CollectionCard
+            key={p.id}
+            kind="playlist"
+            name={p.name}
+            subtitle={`${p.songCount} titres`}
+            coverId={p.coverArt}
+            playlistId={p.id}
+          />
+        ))}
+        <CollectionCard kind="artist" name="Les Saisons" subtitle="Artiste" />
+      </ScrollView>
+    </>
+  );
+}
+
+function ListGroupDemo() {
+  const [autoplay, setAutoplay] = useState(true);
+  return (
+    <>
+      <ListGroup caption="Lecture" note="La lecture automatique ajoute des titres similaires à la fin de la file.">
+        <ListItem label="Lecture automatique" toggle={{value: autoplay, onValueChange: setAutoplay}} />
+        <ListItem label="Fondu enchaîné" value="4 s" accessory="chevron" onPress={() => {}} />
+        <ListItem label="Langue" value="Français" accessory="chevron" onPress={() => {}} />
+      </ListGroup>
+      <ListGroup>
+        <ListItem label="Se déconnecter" destructive onPress={() => {}} />
+      </ListGroup>
+    </>
+  );
+}
+
 export default function ComponentsTab() {
+  const navigation = useNavigation();
   return (
     <>
       <Section title="Boutons">
@@ -175,6 +298,56 @@ export default function ComponentsTab() {
         </View>
       </Section>
 
+      <Section title="Pochettes et artistes">
+        <CoversDemo />
+      </Section>
+
+      <Section title="Lignes de titre">
+        <Text variant="footnote" color="textSecondary">
+          Touche la 1re ligne : lecture / pause. Le cœur se like.
+        </Text>
+        <TrackRowsDemo />
+        <Button
+          variant="tinted"
+          label="Test de fluidité : 500 lignes"
+          onPress={() => navigation.navigate('DesignTrackList' as never)}
+        />
+      </Section>
+
+      <Section title="Collections">
+        <CollectionsDemo />
+      </Section>
+
+      <Section title="Listes groupées">
+        <ListGroupDemo />
+      </Section>
+
+      <Section title="État vide">
+        <EmptyState
+          icon={<SearchIcon size={40} color={colors.textSecondary} />}
+          title="Aucun résultat"
+          message="Essaie un autre mot, ou cherche dans tout le catalogue en ligne."
+          action={{label: 'Chercher partout', onPress: () => {}}}
+        />
+        <EmptyState
+          icon={<CloudIcon size={40} color={colors.textSecondary} />}
+          title="Hors ligne"
+          message="Seuls tes titres téléchargés sont disponibles."
+        />
+      </Section>
+
+      <Section title="Chargement">
+        <View style={styles.bleed}>
+          <SkeletonTrackRow />
+          <SkeletonTrackRow />
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </ScrollView>
+      </Section>
+
       <Section title="En-têtes de section">
         <SectionHeader title="Écoutés récemment" onSeeAll={() => {}} />
         <SectionHeader title="Pour vous" subtitle="D'après Nova Arden et Les Saisons" />
@@ -188,6 +361,11 @@ const styles = StyleSheet.create({
   row: {flexDirection: 'row', gap: spacing.s},
   rowCenter: {flexDirection: 'row', alignItems: 'center', gap: spacing.m},
   chips: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.s},
+  coverRow: {flexDirection: 'row', alignItems: 'flex-end', gap: spacing.m},
+  heroBox: {alignItems: 'center', paddingVertical: spacing.l},
+  /** Rows carry their own 20 pt gutter: cancel the card padding. */
+  bleed: {marginHorizontal: -spacing.m},
+  carousel: {gap: spacing.m - 2},
   toggleRow: {
     minHeight: sizes.touchTarget,
     flexDirection: 'row',

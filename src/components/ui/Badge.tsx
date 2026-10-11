@@ -3,7 +3,7 @@
  * @description Design v2 badges: Online (catalogue content), Magic, Downloaded
  *   and Lossless. Labels come from i18n; `small` fits inside list rows.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -11,6 +11,7 @@ import {StyleSheet, View} from 'react-native';
 import Text from './Text';
 import CloudIcon from '../icons/CloudIcon';
 import SparkleIcon from '../icons/SparkleIcon';
+import DownloadArrowIcon from '../icons/DownloadArrowIcon';
 import {colors, radii, spacing} from '../../theme';
 import {useT} from '../../i18n';
 
@@ -52,6 +53,7 @@ export default function Badge({kind, size = 'regular'}: Props) {
       ]}>
       {kind === 'online' && <CloudIcon size={iconSize} color={color} />}
       {kind === 'magic' && <SparkleIcon size={iconSize} color={color} />}
+      {kind === 'downloaded' && <DownloadArrowIcon size={iconSize} color={color} />}
       <Text
         variant="caption"
         style={[{color}, kind === 'lossless' && styles.losslessText]}>

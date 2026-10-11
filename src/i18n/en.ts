@@ -21,6 +21,14 @@ export const en = {
     badgeMagic: 'Magic',
     badgeDownloaded: 'Downloaded',
     badgeLossless: 'Lossless',
+    like: 'Add to liked songs',
+    unlike: 'Remove from liked songs',
+    addToPlaylist: 'Add to a playlist',
+    download: 'Download',
+    downloading: 'Downloading',
+    nowPlaying: 'Now playing',
+    unavailableOffline: 'Unavailable offline',
+    open: 'Open',
   },
 
   // ─── Server Setup ──────────────────────────────────────────────────────────

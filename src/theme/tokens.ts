@@ -29,6 +29,8 @@ export const colors = {
   /** Downloaded / success state. */
   success: '#30D158',
   destructive: '#FF6961',
+  /** Dark veil over images (equalizer on a cover, text on artwork). */
+  scrim: 'rgba(0,0,0,0.45)',
   /** Selected segment of a segmented control. */
   segmentThumb: '#636366',
   /** Light fill behind neutral badges. */
