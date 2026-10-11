@@ -1,17 +1,16 @@
 /**
  * @file playerActions.ts
  * @description Imperative playback action helpers used across screens. Every list now starts through the playback engine (launchers.ts); the
- *   legacy loaders are gone. Skips go through the engine while it drives the
- *   player.
+ *   legacy loaders are gone. Skips always go through the engine.
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.1.0
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer from 'react-native-track-player';
 import {getStreamUrl, getCoverArtUrl} from '../api/client';
 import {getSimilarSongs} from '../api/endpoints/library';
 import {getDeezerArtistId, getDeezerArtistTopTracks} from '../api/deezer';
-import {activeEngine, usePlayerStore} from '../store/playerStore';
+import {playbackBridge} from '../store/playerStore';
 import {useDownloadStore} from '../store/downloadStore';
 import type {Track} from '../store/playerStore';
 
@@ -57,64 +56,19 @@ export function toRNTPTrack(t: Track) {
 }
 
 export function skipNext(): void {
-  const engine = activeEngine();
-  if (engine) {
-    engine.next();
-    return;
-  }
-  TrackPlayer.skipToNext().catch(() => {});
+  playbackBridge()?.next();
 }
 
 export async function skipPrev(): Promise<void> {
-  const engine = activeEngine();
-  if (engine) return engine.previous(false);
-  const position = await TrackPlayer.getPosition();
-  if (position > 3) {
-    TrackPlayer.seekTo(0);
-  } else {
-    TrackPlayer.skipToPrevious().catch(() => {});
-  }
+  await playbackBridge()?.previous(false);
 }
 
 export function skipPrevForce(): void {
-  const engine = activeEngine();
-  if (engine) {
-    engine.previous(true);
-    return;
-  }
-  TrackPlayer.skipToPrevious().catch(() => {});
+  playbackBridge()?.previous(true);
 }
 
 export function seekTo(seconds: number): void {
   TrackPlayer.seekTo(seconds);
-}
-
-export async function syncUpcomingFromRNTP(): Promise<void> {
-  try {
-    const [queue, activeIdx] = await Promise.all([
-      TrackPlayer.getQueue(),
-      TrackPlayer.getActiveTrackIndex(),
-    ]);
-    if (activeIdx == null) return;
-    const toT = (t: any): Track => ({
-      id: String(t.id),
-      title: String(t.title ?? ''),
-      artist: String(t.artist ?? ''),
-      album: String(t.album ?? ''),
-      duration: Number(t.duration ?? 0),
-      coverArt: t.coverArt ? String(t.coverArt) : undefined,
-      url: String(t.url ?? ''),
-      artwork: t.artwork ? String(t.artwork) : undefined,
-      isMagic: (t as any).isMagic ? true : undefined,
-      isAutoplay: (t as any).isAutoplay ? true : undefined,
-    });
-    const store = usePlayerStore.getState();
-    const after = queue.slice(activeIdx + 1).map(toT);
-    const upcoming = store.repeatMode === 'all'
-      ? [...after, ...queue.slice(0, activeIdx).map(toT)]
-      : after;
-    store.setUpcoming(upcoming);
-  } catch {}
 }
 
 export async function fetchAutoplayTracks(

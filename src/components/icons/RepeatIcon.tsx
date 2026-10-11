@@ -1,10 +1,11 @@
 /**
  * @file RepeatIcon.tsx
  * @description Repeat playback icon. When `mode` is provided, handles color and
- *   active-dot automatically. When only `color` is provided, renders the icon
- *   with that color and no dot (used in bottom sheets).
+ *   active-dot automatically and shows a "1" for repeat one. When `color` is
+ *   provided, it wins and no dot is drawn (bottom sheets); with `mode` too,
+ *   the "1" still shows.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -54,7 +55,7 @@ export default function RepeatIcon({mode, color, size = 22}: Props) {
           />
         )}
       </Svg>
-      {active && <View style={styles.dot} />}
+      {active && color === undefined && <View style={styles.dot} />}
     </View>
   );
 }

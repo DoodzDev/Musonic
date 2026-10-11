@@ -4,7 +4,7 @@
  *   add all to another playlist, pin/unpin, rename, edit cover, and delete.
  *   "Add to queue" goes through the playback engine when it drives the player.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef} from 'react';
@@ -20,13 +20,12 @@ import {
 import Animated, {useSharedValue, useAnimatedStyle, withTiming, withSpring, Easing, runOnJS} from 'react-native-reanimated';
 import {Gesture, GestureDetector, GestureHandlerRootView, ScrollView} from 'react-native-gesture-handler';
 import Svg, {Circle, Path} from 'react-native-svg';
-import TrackPlayer from 'react-native-track-player';
 import CoverArt from './CoverArt';
 import {darkTheme} from '../theme';
 import {getPlaylist, deletePlaylist} from '../api/endpoints/playlists';
 import {getStreamUrl, getCoverArtUrl} from '../api/client';
-import {syncUpcomingFromRNTP} from '../services/playerActions';
-import {activeEngine, type Track} from '../store/playerStore';
+import {playbackEngine} from '../services/playback/engine';
+import type {Track} from '../store/playerStore';
 import {useT, getT} from '../i18n';
 
 const SHEET_MAX_WIDTH = 560;
@@ -257,14 +256,7 @@ export default function PlaylistOptionsSheet({
         album: s.album,
         duration: s.duration,
       }));
-      const engine = activeEngine();
-      if (engine) {
-        await engine.playNext(tracks as Track[]);
-      } else {
-        const idx = await TrackPlayer.getActiveTrackIndex();
-        await TrackPlayer.add(tracks, idx != null ? idx + 1 : undefined);
-        await syncUpcomingFromRNTP();
-      }
+      await playbackEngine.playNext(tracks as Track[]);
       onToast(getT().playlistOptions.queuedToast(tracks.length));
     } catch {
       onToast(getT().playlistOptions.queueError);

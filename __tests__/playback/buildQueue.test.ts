@@ -312,6 +312,16 @@ describe('D. Manual queue', () => {
     expect(ids(upcomingOrder(s))).toEqual(['s2', 'mine', '10', 's1', '9']);
   });
 
+  it('D4 ter: a track present twice is moved and removed copy by copy (entry ids)', () => {
+    const dup = (entryId: string) => track('x', {entryId});
+    let s = startContext(emptyQueue<T>(), {source: playlist, tracks: [track('1'), dup('e1'), track('2'), dup('e2'), track('3')]}, OFF, seeded());
+    // The second copy goes to the top; the first one stays where it was.
+    s = moveById(s, 'e2', 'e1');
+    expect(s.upcoming.map(t => t.entryId ?? t.id)).toEqual(['e2', 'e1', '2', '3']);
+    s = removeById(s, ['e1']);
+    expect(s.upcoming.map(t => t.entryId ?? t.id)).toEqual(['e2', '2', '3']);
+  });
+
   it('"Clear queue": everything to come goes, the current track stays', () => {
     const s = clearQueue(addToQueue(start(OFF), track('a')));
     expect(s.current?.id).toBe('1');

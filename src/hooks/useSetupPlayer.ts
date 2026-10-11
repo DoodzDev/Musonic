@@ -2,9 +2,11 @@
  * @file useSetupPlayer.ts
  * @description Hook that initialises react-native-track-player once on app mount:
  *   calls setupPlayer, configures capabilities (play, pause, skip, seek, like),
- *   and registers notification/lock-screen options.
+ *   and registers notification/lock-screen options. Then the playback engine
+ *   restores the saved queue (also when the player was already set up by a
+ *   service that kept running).
  * @author DoodzProg
- * @version 1.0.2
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {useEffect, useRef} from 'react';
@@ -15,6 +17,7 @@ import TrackPlayer, {
 } from 'react-native-track-player';
 import {useSettingsStore} from '../store/settingsStore';
 import {usePlayerStore} from '../store/playerStore';
+import {playbackEngine} from '../services/playback/engine';
 
 export function useSetupPlayer() {
   const initialized = useRef(false);
@@ -56,6 +59,7 @@ export function useSetupPlayer() {
           RepeatMode.Off;
         TrackPlayer.setRepeatMode(rnRepeat).catch(() => {});
       })
-      .catch(e => console.log('[TrackPlayer] setup:', e));
+      .catch(e => console.log('[TrackPlayer] setup:', e))
+      .then(() => playbackEngine.restore());
   }, []);
 }

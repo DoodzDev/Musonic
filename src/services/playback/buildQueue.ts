@@ -8,13 +8,18 @@
  *   injected (`Rng`) to keep tests deterministic. Natural end of a track with
  *   repeat one (C5) and the crossfade rule (E3) are handled by the engine.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 
 /** Minimal shape the rules need; real tracks carry more fields. */
 export type QueueTrack = {
   id: string;
+  /**
+   * Unique per queue entry (set by the engine): the same track twice in a
+   * queue gets two entries, so a move or a removal targets the right copy.
+   */
+  entryId?: string;
   /** Suggestion inserted by the Magic shuffle. */
   isMagic?: boolean;
   /** Suggestion added by autoplay at the end of the queue. */
@@ -78,6 +83,11 @@ export const HISTORY_LIMIT = 200;
 
 export function emptyQueue<T extends QueueTrack>(): QueueState<T> {
   return {source: null, contextTracks: [], history: [], current: null, userQueue: [], upcoming: [], autoplay: []};
+}
+
+/** What queue edits target: the entry, or the track id when no entry id is set. */
+export function entryKey(t: QueueTrack): string {
+  return t.entryId ?? t.id;
 }
 
 /** Fisher-Yates shuffle on a copy. */
@@ -211,9 +221,9 @@ export function addToQueue<T extends QueueTrack>(state: QueueState<T>, track: T)
   return {...state, userQueue: [...state.userQueue, track]};
 }
 
-/** Removes tracks to come by id, never by position (D4). */
-export function removeById<T extends QueueTrack>(state: QueueState<T>, ids: readonly string[]): QueueState<T> {
-  const keep = (t: T) => !ids.includes(t.id);
+/** Removes entries to come by entry key, never by position (D4). */
+export function removeById<T extends QueueTrack>(state: QueueState<T>, keys: readonly string[]): QueueState<T> {
+  const keep = (t: T) => !keys.includes(entryKey(t));
   return {...state, userQueue: state.userQueue.filter(keep), upcoming: state.upcoming.filter(keep), autoplay: state.autoplay.filter(keep)};
 }
 
@@ -231,15 +241,15 @@ function joinZone<T extends QueueTrack>(t: T, zone: Zone): T {
 }
 
 /**
- * Moves a track to come before `beforeId` (null = the very end), by id (D4).
- * The list may cross zones: the track then belongs to the zone it lands in
- * (dropped among "added by you", it becomes one of them).
+ * Moves an entry to come before `beforeId` (null = the very end), by entry
+ * key (D4). The list may cross zones: the track then belongs to the zone it
+ * lands in (dropped among "added by you", it becomes one of them).
  */
 export function moveById<T extends QueueTrack>(state: QueueState<T>, id: string, beforeId: string | null): QueueState<T> {
   if (id === beforeId) return state;
-  const from = ZONES.find(z => state[z].some(t => t.id === id));
+  const from = ZONES.find(z => state[z].some(t => entryKey(t) === id));
   if (!from) return state;
-  const fromIndex = state[from].findIndex(t => t.id === id);
+  const fromIndex = state[from].findIndex(t => entryKey(t) === id);
   const moved = state[from][fromIndex];
   const without: QueueState<T> = {...state, [from]: state[from].filter((_, i) => i !== fromIndex)};
 
@@ -249,10 +259,10 @@ export function moveById<T extends QueueTrack>(state: QueueState<T>, id: string,
     target = [...ZONES].reverse().find(z => without[z].length > 0) ?? from;
     index = without[target].length;
   } else {
-    const found = ZONES.find(z => without[z].some(t => t.id === beforeId));
+    const found = ZONES.find(z => without[z].some(t => entryKey(t) === beforeId));
     if (!found) return state;
     target = found;
-    index = without[target].findIndex(t => t.id === beforeId);
+    index = without[target].findIndex(t => entryKey(t) === beforeId);
   }
   const zone = without[target];
   return {...without, [target]: [...zone.slice(0, index), joinZone(moved, target), ...zone.slice(index)]};

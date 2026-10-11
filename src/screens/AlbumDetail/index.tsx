@@ -6,7 +6,7 @@
  *   name) that fades into the fixed top bar once the header scrolls away.
  *   Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license MIT
  */
 
@@ -40,8 +40,6 @@ import SongOptionsSheet from '../../components/SongOptionsSheet';
 import AlbumOptionsSheet from '../../components/AlbumOptionsSheet';
 import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
 import {useActiveTrack} from 'react-native-track-player';
-import TrackPlayer from 'react-native-track-player';
-import {syncUpcomingFromRNTP} from '../../services/playerActions';
 import {playFromList} from '../../services/playback/launchers';
 import {playbackEngine} from '../../services/playback/engine';
 import {usePlayerStore} from '../../store/playerStore';
@@ -544,30 +542,12 @@ export default function AlbumDetailScreen() {
   const handleAlbumAddToQueue = useCallback(async () => {
     if (!songs.length) return;
     try {
-      if (playbackEngine.isActive()) {
-        await playbackEngine.playNext(albumTracks());
-        showToast(getT().playlistOptions.queuedToast(songs.length));
-        return;
-      }
-      const idx = await TrackPlayer.getActiveTrackIndex();
-      const insertAt = idx != null ? idx + 1 : undefined;
-      const rnTracks = songs.map(s => ({
-        id: String(s.id),
-        url: getStreamUrl(String(s.id)),
-        title: s.title,
-        artist: s.artist,
-        artwork: getCoverArtUrl(s.coverArt || String(s.id), 300),
-        coverArt: s.coverArt,
-        album: s.album || albumName,
-        duration: s.duration,
-      }));
-      await TrackPlayer.add(rnTracks, insertAt);
-      await syncUpcomingFromRNTP();
+      await playbackEngine.playNext(albumTracks());
       showToast(getT().playlistOptions.queuedToast(songs.length));
     } catch {
       showToast(getT().playlistOptions.queueError);
     }
-  }, [songs, albumName, albumTracks]);
+  }, [songs, albumTracks]);
 
   const renderItem = useCallback(({item, index}: {item: SubsonicSong, index: number}) => (
     <SongRow

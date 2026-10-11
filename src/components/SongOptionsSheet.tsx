@@ -5,7 +5,7 @@
  *   artist. Preserves last non-null track during the close animation. "Add to
  *   queue" goes through the playback engine when it drives the player.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
@@ -24,7 +24,6 @@ import CheckCircleGreenIcon from './icons/CheckCircleGreenIcon';
 import PlusCircleIcon from './icons/PlusCircleIcon';
 import PersonIcon from './icons/PersonIcon';
 import QueueAddIcon from './icons/QueueAddIcon';
-import TrackPlayer from 'react-native-track-player';
 import CoverArt from './CoverArt';
 import HeartIcon from './icons/HeartIcon';
 import DownloadIcon from './icons/DownloadIcon';
@@ -32,9 +31,9 @@ import AddToPlaylistSheet from './AddToPlaylistSheet';
 import {darkTheme} from '../theme';
 import {updatePlaylist} from '../api/endpoints/playlists';
 import {getStreamUrl, getCoverArtUrl} from '../api/client';
-import {syncUpcomingFromRNTP} from '../services/playerActions';
+import {playbackEngine} from '../services/playback/engine';
 import {useDownloadStore} from '../store/downloadStore';
-import {activeEngine, usePlayerStore, type Track} from '../store/playerStore';
+import {usePlayerStore, type Track} from '../store/playerStore';
 import {usePlaylistCacheStore, fetchAndCachePlaylistSongs} from '../store/playlistCacheStore';
 import {useT, getT} from '../i18n';
 import type {SubsonicSong} from '../api/types';
@@ -180,14 +179,7 @@ export default function SongOptionsSheet({
       duration: tr.duration,
     };
     try {
-      const engine = activeEngine();
-      if (engine) {
-        await engine.playNext([rnTrack as Track]);
-      } else {
-        const idx = await TrackPlayer.getActiveTrackIndex();
-        await TrackPlayer.add(rnTrack, idx != null ? idx + 1 : undefined);
-        await syncUpcomingFromRNTP();
-      }
+      await playbackEngine.playNext([rnTrack as Track]);
       onToast(getT().songOptions.addedToQueue);
     } catch {
       onToast(getT().songOptions.addError);

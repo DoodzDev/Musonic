@@ -1,0 +1,21 @@
+diff --git a/node_modules/react-native-reorderable-list/src/components/ReorderableListCore.tsx b/node_modules/react-native-reorderable-list/src/components/ReorderableListCore.tsx
+index 81bdff2..5cb9862 100644
+--- a/node_modules/react-native-reorderable-list/src/components/ReorderableListCore.tsx
++++ b/node_modules/react-native-reorderable-list/src/components/ReorderableListCore.tsx
+@@ -1007,8 +1007,14 @@ const ReorderableListCore = <T,>(
+         return;
+       }
+ 
+-      // Allow new drag when item is completely released.
+-      if (state.value === ReorderableListState.IDLE) {
++      // Allow new drag when item is completely released, and only while the
++      // finger is still down: a drag requested after a quick tap was already
++      // released would stay stuck and follow the next touch.
++      if (
++        state.value === ReorderableListState.IDLE &&
++        (gestureState.value === State.BEGAN ||
++          gestureState.value === State.ACTIVE)
++      ) {
+         // Resetting shared values again fixes a flickeing bug in nested lists where
+         // after scrolling the parent list it would offset the new dragged item in another nested list.
+         resetSharedValues();

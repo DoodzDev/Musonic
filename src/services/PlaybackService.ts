@@ -3,9 +3,11 @@
  * @description RNTP headless task. Handles remote control events (play, pause,
  *   skip, seek, stop) fired from lock screen / notification buttons while the
  *   app is backgrounded or killed. Track changes and the end of the queue are
- *   forwarded to the playback engine; manual skips are never crossfaded.
+ *   forwarded to the playback engine; manual skips are never crossfaded. The
+ *   playing position is saved on pause, in the background and every few
+ *   seconds, so the queue can be restored at the same place.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import {AppState} from 'react-native';
@@ -14,12 +16,10 @@ import {useSettingsStore} from '../store/settingsStore';
 import {usePlayerStore} from '../store/playerStore';
 import {useDownloadStore} from '../store/downloadStore';
 import {subsonicGet} from '../api/client';
-import {fetchAutoplayTracks, skipNext, skipPrev, toRNTPTrack} from './playerActions';
+import {skipNext, skipPrev} from './playerActions';
 import {playbackEngine} from './playback/engine';
-import type {Track} from '../store/playerStore';
 
 let wasPlayingBeforeDuck = false;
-let isLoadingAutoplay = false;
 let fadeInTimer: ReturnType<typeof setInterval> | null = null;
 let fadeOutTimer: ReturnType<typeof setInterval> | null = null;
 let progressPoller: ReturnType<typeof setInterval> | null = null;
@@ -34,6 +34,17 @@ const SCROBBLE_MAX_THRESHOLD = 240;
 let scrobbleTrack: {id: string; duration: number} | null = null;
 let scrobblePosition = 0;
 let scrobblePoller: ReturnType<typeof setInterval> | null = null;
+
+/** Position save interval while playing, in scrobble poller ticks (1 s). */
+const POSITION_SAVE_TICKS = 15;
+let positionTicks = 0;
+
+async function saveCurrentPosition() {
+  try {
+    const [track, {position}] = await Promise.all([TrackPlayer.getActiveTrack(), TrackPlayer.getProgress()]);
+    if (track?.id != null) playbackEngine.savePosition(String(track.id), position);
+  } catch { /* no active track — ignore */ }
+}
 
 function resolveScrobbleId(trackId: string): string | undefined {
   if (!trackId.startsWith('ext-')) return trackId;
@@ -53,6 +64,10 @@ function startScrobblePoller() {
     try {
       const {position} = await TrackPlayer.getProgress();
       scrobblePosition = position;
+      if (++positionTicks >= POSITION_SAVE_TICKS && scrobbleTrack) {
+        positionTicks = 0;
+        playbackEngine.savePosition(scrobbleTrack.id, position);
+      }
     } catch { /* no active track — ignore */ }
   }, 1000);
 }
@@ -147,6 +162,14 @@ export async function PlaybackService() {
       clearAll();
       TrackPlayer.setVolume(1).catch(() => {});
     }
+    if (nextState === 'background') {
+      playbackEngine.flush();
+      saveCurrentPosition();
+    }
+  });
+
+  TrackPlayer.addEventListener(Event.PlaybackState, ({state}) => {
+    if (state === State.Paused || state === State.Stopped) saveCurrentPosition();
   });
 
   TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());
@@ -180,7 +203,7 @@ export async function PlaybackService() {
     const manualSkip = playbackEngine.consumeManualSkip();
     await submitScrobbleIfEligible();
 
-    const {crossfadeDuration, isAutoplayEnabled, isAutoDownloadEnabled} = useSettingsStore.getState();
+    const {crossfadeDuration, isAutoDownloadEnabled} = useSettingsStore.getState();
     clearAll();
     // Crossfade ramps volume via a JS setInterval — Android throttles JS timers
     // hard once the app is backgrounded (e.g. Waze in foreground during a
@@ -225,43 +248,5 @@ export async function PlaybackService() {
         }
       }
     } catch { /* silent */ }
-
-    // The engine fetches its own autoplay suggestions.
-    if (!isAutoplayEnabled || isLoadingAutoplay || playbackEngine.isActive()) return;
-    const {repeatMode, setUpcoming} = usePlayerStore.getState();
-    if (repeatMode !== 'none') return;
-
-    try {
-      const [queue, activeIdx] = await Promise.all([
-        TrackPlayer.getQueue(),
-        TrackPlayer.getActiveTrackIndex(),
-      ]);
-      if (activeIdx == null || queue.length === 0) return;
-      if (activeIdx < queue.length - 1) return;
-
-      const last = queue[queue.length - 1];
-      const seedTrack: Track = {
-        id: String(last.id),
-        title: String(last.title ?? ''),
-        artist: String(last.artist ?? ''),
-        album: String(last.album ?? ''),
-        duration: Number(last.duration ?? 0),
-        coverArt: last.coverArt ? String(last.coverArt) : undefined,
-        url: String(last.url ?? ''),
-        artwork: last.artwork ? String(last.artwork) : undefined,
-      };
-      const existingIds = new Set(queue.map(t => String(t.id)));
-
-      isLoadingAutoplay = true;
-      const autoplayTracks = await fetchAutoplayTracks(seedTrack, existingIds);
-      if (autoplayTracks.length > 0) {
-        await TrackPlayer.add(autoplayTracks.map(toRNTPTrack));
-        setUpcoming(autoplayTracks);
-      }
-    } catch (e) {
-      console.warn('[Autoplay]', e);
-    } finally {
-      isLoadingAutoplay = false;
-    }
   });
 }

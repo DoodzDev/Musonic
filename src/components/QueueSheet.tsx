@@ -2,12 +2,17 @@
  * @file QueueSheet.tsx
  * @description Bottom sheet showing the current playback queue. Supports
  *   drag-and-drop reordering, individual removal, and move-to-top actions.
- *   Rows are keyed by track; moves go through the playback engine, across zones.
+ *   Rows are keyed by queue entry (a track present twice has two entries);
+ *   moves go through the playback engine, across zones. The list keeps its
+ *   own order and only takes the engine's when it really differs, so a drop
+ *   is never followed by a second update mid-animation. The list is a
+ *   reorderable list driven on the UI thread: while a row is dragged the
+ *   list cannot scroll, and a swipe outside the handle only scrolls.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 2.0.0
  * @license CC-BY-NC-4.0
  */
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -29,10 +34,12 @@ import ReAnimated, {
   runOnJS,
 } from 'react-native-reanimated';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import DraggableFlatList, {
-  RenderItemParams,
-  ScaleDecorator,
-} from 'react-native-draggable-flatlist';
+import ReorderableList, {
+  reorderItems,
+  useIsActive,
+  useReorderableDrag,
+  type ReorderableListReorderEvent,
+} from 'react-native-reorderable-list';
 import {Gesture, GestureDetector, GestureHandlerRootView} from 'react-native-gesture-handler';
 import Svg, {Circle, Path, Rect} from 'react-native-svg';
 import CoverArt from './CoverArt';
@@ -142,54 +149,60 @@ function TimerIcon() {
 
 // ─── Queue Row ────────────────────────────────────────────────────────────────
 
+/** Queue entry key (the engine sets one per entry). */
+function rowKey(t: Track): string {
+  return t.entryId ?? t.id;
+}
+
+/** Same rows, same order, same roles: nothing worth re-rendering. */
+function sameRows(a: Track[], b: Track[]): boolean {
+  return a.length === b.length && a.every((t, i) =>
+    rowKey(t) === rowKey(b[i]) && !!t.isMagic === !!b[i].isMagic && !!t.isAutoplay === !!b[i].isAutoplay);
+}
+
 interface QueueRowProps {
   item: Track;
-  drag: () => void;
-  isActive: boolean;
   isEditMode: boolean;
   isSelected: boolean;
   onSelect: (id: string) => void;
 }
 
-const QueueRow = React.memo(function QueueRow({item, drag, isActive, isEditMode, isSelected, onSelect}: QueueRowProps) {
-  const dragRef = useRef(drag);
-  dragRef.current = drag;
+const QueueRow = React.memo(function QueueRow({item, isEditMode, isSelected, onSelect}: QueueRowProps) {
+  const drag = useReorderableDrag();
+  const isActive = useIsActive();
 
   return (
-    <ScaleDecorator>
-      <TouchableOpacity
-        style={[styles.queueRow, isActive && styles.queueRowDragging]}
-        onPress={() => isEditMode && onSelect(item.id)}
-        activeOpacity={isEditMode ? 0.6 : 1}>
-        {isEditMode && (
-          <View style={styles.checkWrapper}>
-            <CheckCircle selected={isSelected} />
-          </View>
-        )}
-        <CoverArt id={item.coverArt} size={48} borderRadius={4} />
-        <View style={styles.queueRowInfo}>
-          <Text style={styles.queueRowTitle} numberOfLines={1}>
-            {item.title}
-          </Text>
-          <View style={styles.queueRowArtistRow}>
-            {item.isMagic && <TrackMagicIcon size={10} />}
-            <Text style={styles.queueRowArtist} numberOfLines={1}>
-              {item.artist}
-            </Text>
-          </View>
+    <TouchableOpacity
+      style={[styles.queueRow, isActive && styles.queueRowDragging]}
+      onPress={() => isEditMode && onSelect(rowKey(item))}
+      activeOpacity={isEditMode ? 0.6 : 1}>
+      {isEditMode && (
+        <View style={styles.checkWrapper}>
+          <CheckCircle selected={isSelected} />
         </View>
-        <TouchableOpacity
-          onPressIn={() => dragRef.current()}
-          hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}
-          style={styles.dragHandle}>
-          <DragHandleIcon />
-        </TouchableOpacity>
+      )}
+      <CoverArt id={item.coverArt} size={48} borderRadius={4} />
+      <View style={styles.queueRowInfo}>
+        <Text style={styles.queueRowTitle} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <View style={styles.queueRowArtistRow}>
+          {item.isMagic && <TrackMagicIcon size={10} />}
+          <Text style={styles.queueRowArtist} numberOfLines={1}>
+            {item.artist}
+          </Text>
+        </View>
+      </View>
+      <TouchableOpacity
+        onPressIn={drag}
+        hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}
+        style={styles.dragHandle}>
+        <DragHandleIcon />
       </TouchableOpacity>
-    </ScaleDecorator>
+    </TouchableOpacity>
   );
 }, (prev, next) =>
   prev.item === next.item &&
-  prev.isActive === next.isActive &&
   prev.isEditMode === next.isEditMode &&
   prev.isSelected === next.isSelected &&
   prev.onSelect === next.onSelect,
@@ -212,16 +225,18 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
   const currentTrack = useActiveTrack();
   const {state} = usePlaybackState();
   const isPlaying = state === State.Playing;
-  const upcoming = usePlayerStore(s => s.upcoming);
-  // Rows keyed by track, not by position, so a reorder never remounts the
-  // wrong rows (a repeated track gets #2, #3…).
-  const rowKeys = useMemo(() => {
-    const seen: Record<string, number> = {};
-    return upcoming.map(t => {
-      seen[t.id] = (seen[t.id] ?? 0) + 1;
-      return seen[t.id] > 1 ? `${t.id}#${seen[t.id]}` : t.id;
-    });
-  }, [upcoming]);
+  const storeUpcoming = usePlayerStore(s => s.upcoming);
+  // The list's own order: set at once on a drop, then replaced by the
+  // engine's only when that one really differs (next track, removal…).
+  const [upcoming, setUpcoming] = useState<Track[]>(storeUpcoming);
+  const pendingMoves = useRef(0);
+  const syncFromStore = useCallback(() => {
+    const latest = usePlayerStore.getState().upcoming;
+    setUpcoming(prev => (sameRows(prev, latest) ? prev : latest));
+  }, []);
+  useEffect(() => {
+    if (pendingMoves.current === 0) syncFromStore();
+  }, [storeUpcoming, syncFromStore]);
   const currentPlaylistName = usePlayerStore(s => s.currentPlaylistName);
   const isShuffled = usePlayerStore(s => s.isShuffled);
   const shuffleMode = usePlayerStore(s => s.shuffleMode);
@@ -274,6 +289,24 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
     exitEditMode();
   }, [selectedIds, moveToTop, exitEditMode]);
 
+  // Moves by entry (the moved one and the one now after it), never by
+  // position: fast successive drags can't target a stale row.
+  const rowsRef = useRef(upcoming);
+  rowsRef.current = upcoming;
+  const handleReorder = useCallback(({from, to}: ReorderableListReorderEvent) => {
+    if (from === to) return;
+    const data = reorderItems(rowsRef.current, from, to);
+    const moved = data[to];
+    if (!moved) return;
+    rowsRef.current = data;
+    setUpcoming(data);
+    pendingMoves.current++;
+    reorderQueue(rowKey(moved), data[to + 1] ? rowKey(data[to + 1]) : null).finally(() => {
+      pendingMoves.current--;
+      if (pendingMoves.current === 0) syncFromStore();
+    });
+  }, [reorderQueue, syncFromStore]);
+
   const handleRemove = useCallback(() => {
     if (selectedIds.size === 0) return;
     removeFromQueue([...selectedIds]);
@@ -285,13 +318,11 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
   }, [visible, exitEditMode]);
 
   const renderItem = useCallback(
-    ({item, drag, isActive}: RenderItemParams<Track>) => (
+    ({item}: {item: Track}) => (
       <QueueRow
         item={item}
-        drag={drag}
-        isActive={isActive}
         isEditMode={isEditMode}
-        isSelected={selectedIds.has(item.id)}
+        isSelected={selectedIds.has(rowKey(item))}
         onSelect={toggleSelect}
       />
     ),
@@ -364,10 +395,11 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
 
           {/* ── Draggable list ── */}
           <GestureHandlerRootView style={styles.fill}>
-            <DraggableFlatList
+            <ReorderableList
               data={upcoming}
-              keyExtractor={(item, idx) => (rowKeys[idx]?.startsWith(item.id) ? rowKeys[idx] : item.id)}
-              onDragEnd={({from, to}) => reorderQueue(from, to)}
+              keyExtractor={rowKey}
+              onReorder={handleReorder}
+              shouldUpdateActiveItem
               renderItem={renderItem}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.listContent}
@@ -410,7 +442,7 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
                 style={[styles.bottomBtn, {width: bottomBtnWidth}]}
                 onPress={cycleRepeat}
                 activeOpacity={0.7}>
-                <RepeatIcon color={repeatActive ? ORANGE : '#fff'} />
+                <RepeatIcon mode={repeatMode} color={repeatActive ? ORANGE : '#fff'} />
                 <Text style={[styles.bottomBtnLabel, repeatActive && styles.bottomBtnLabelActive]}>
                   {t.queue.repeat}
                 </Text>
