@@ -1,11 +1,11 @@
 /**
  * @file tokens.ts
- * @description Design v2 tokens: colours, spacing, radii and touch sizes.
+ * @description Design v2 tokens: colours, glass blur, spacing, radii and touch sizes.
  *   New components read these instead of hard-coded values. The legacy
  *   `darkTheme` in colors.ts stays in place for the current screens until they
  *   are rebuilt on these tokens.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 
@@ -29,7 +29,14 @@ export const colors = {
   /** Downloaded / success state. */
   success: '#30D158',
   destructive: '#FF6961',
+  /** Tint laid over the blur of floating glass (dock, mini player). */
+  glassTint: 'rgba(44,44,48,0.68)',
+  /** Opaque stand-in for glass where blur is off or unsupported. */
+  glassFallback: 'rgba(28,28,30,0.92)',
 } as const;
+
+/** Blur strength of floating glass (0-100, about a 28 px radius). */
+export const GLASS_BLUR = 28;
 
 export type ColorToken = keyof typeof colors;
 

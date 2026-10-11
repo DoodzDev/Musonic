@@ -4,7 +4,7 @@
  *   Uses the cross-platform `boxShadow` style (New Architecture), so iOS and
  *   Android render the same shadow. Never put a shadow on list rows.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import type {ViewStyle} from 'react-native';
@@ -12,9 +12,15 @@ import {hexToRgba} from '../utils/colorUtils';
 
 export const shadows = {
   card: {boxShadow: '0px 12px 32px rgba(0,0,0,0.40)'},
-  glass: {
+  /** Drop shadow under floating glass. */
+  glass: {boxShadow: '0px 10px 30px rgba(0,0,0,0.45)'},
+  /**
+   * Light edge of floating glass. Inset shadows draw under children, so this
+   * goes on an overlay above the blur, not on the glass container itself.
+   */
+  glassEdge: {
     boxShadow:
-      '0px 10px 30px rgba(0,0,0,0.45), inset 0px 0.5px 0px rgba(255,255,255,0.18), inset 0px 0px 0px 0.5px rgba(255,255,255,0.08)',
+      'inset 0px 0.5px 0px rgba(255,255,255,0.18), inset 0px 0px 0px 0.5px rgba(255,255,255,0.08)',
   },
 } as const satisfies Record<string, ViewStyle>;
 

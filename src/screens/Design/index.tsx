@@ -1,11 +1,12 @@
 /**
  * @file index.tsx
  * @description Design screen, debug builds only. Shows every Design v2 token
- *   (colours, type scale, radii, spacing, shadows, motion) rendered on the
- *   device, plus pressables to try the animations by hand: the app's internal
- *   design reference. Reached from the drawer in Musonic Dev.
+ *   (colours, type scale, radii, spacing, shadows, glass, motion, haptics)
+ *   rendered on the device, plus pressables to try the animations and
+ *   vibrations by hand: the app's internal design reference. Reached from the
+ *   drawer in Musonic Dev.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -21,6 +22,9 @@ import Animated, {
 import BackArrowIcon from '../../components/icons/BackArrowIcon';
 import Text from '../../components/ui/Text';
 import PressableScale from '../../components/ui/PressableScale';
+import GlassSurface from '../../components/ui/GlassSurface';
+import {haptic, type HapticKind} from '../../services/haptics';
+import {useSettingsStore} from '../../store/settingsStore';
 import {
   colors,
   spacing,
@@ -31,6 +35,7 @@ import {
   heroShadow,
   springs,
   COVER_PAUSED_SCALE,
+  GLASS_BLUR,
   type TextVariant,
 } from '../../theme';
 
@@ -74,6 +79,39 @@ function CoverDemo() {
   );
 }
 
+const GLASS_STAGE_HEIGHT = 160;
+
+const GLASS_BACKDROP = [colors.accent, colors.success, colors.destructive, colors.textPrimary, colors.accent];
+
+function GlassDemo() {
+  return (
+    <View style={styles.glassStage}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {GLASS_BACKDROP.map((color, i) => (
+          <View key={i} style={[styles.glassBlock, {backgroundColor: color}]}>
+            <Text variant="title1" style={styles.glassBlockText}>
+              Musonic
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+      <GlassSurface style={styles.glassCapsule} pointerEvents="none">
+        <Text variant="headline">Verre flottant</Text>
+        <Text variant="footnote" color="textSecondary">
+          blur {GLASS_BLUR}
+        </Text>
+      </GlassSurface>
+    </View>
+  );
+}
+
+const HAPTIC_DEMOS: {kind: HapticKind; label: string}[] = [
+  {kind: 'light', label: 'Légère'},
+  {kind: 'selection', label: 'Sélection'},
+  {kind: 'success', label: 'Succès'},
+  {kind: 'warning', label: 'Alerte'},
+];
+
 const SHEET_HEIGHT = 96;
 
 function SheetDemo() {
@@ -108,6 +146,8 @@ function SheetDemo() {
 export default function DesignScreen() {
   const navigation = useNavigation();
   const reducedMotion = useReducedMotion();
+  const hapticsEnabled = useSettingsStore(s => s.hapticsEnabled);
+  const setHapticsEnabled = useSettingsStore(s => s.setHapticsEnabled);
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -192,12 +232,36 @@ export default function DesignScreen() {
               <Text variant="footnote">Pochette</Text>
             </View>
           </View>
-          <View style={[styles.capsule, shadows.glass]}>
-            <Text variant="headline">Verre flottant</Text>
-            <Text variant="footnote" color="textSecondary">
-              flou au lot 2
-            </Text>
+        </Section>
+
+        <Section title="Verre">
+          <Text variant="footnote" color="textSecondary">
+            Fais défiler les couleurs : le flou suit le contenu.
+          </Text>
+          <GlassDemo />
+        </Section>
+
+        <Section title="Vibrations">
+          <View style={styles.hapticGrid}>
+            {HAPTIC_DEMOS.map(({kind, label}) => (
+              <PressableScale
+                key={kind}
+                style={[styles.secondaryButton, styles.hapticButton]}
+                onPress={() => haptic(kind)}>
+                <Text variant="headline" color="accent">
+                  {label}
+                </Text>
+              </PressableScale>
+            ))}
           </View>
+          <PressableScale
+            style={[styles.secondaryButton, hapticsEnabled ? null : styles.dimmed]}
+            haptic="selection"
+            onPress={() => setHapticsEnabled(!hapticsEnabled)}>
+            <Text variant="headline">
+              Vibrations Musonic : {hapticsEnabled ? 'activées' : 'désactivées'}
+            </Text>
+          </PressableScale>
         </Section>
 
         <Section title="Mouvement">
@@ -297,16 +361,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  capsule: {
+  glassStage: {
+    height: GLASS_STAGE_HEIGHT,
+    borderRadius: radii.tile,
+    overflow: 'hidden',
+  },
+  glassBlock: {
+    width: 120,
+    height: GLASS_STAGE_HEIGHT,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  glassBlockText: {color: colors.background},
+  glassCapsule: {
+    position: 'absolute',
+    left: spacing.m,
+    right: spacing.m,
+    bottom: spacing.m,
     height: 56,
-    borderRadius: radii.capsule,
-    backgroundColor: colors.surface2,
     paddingHorizontal: spacing.gutter,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.s,
   },
+  hapticGrid: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.s},
+  hapticButton: {flexGrow: 1, flexBasis: '40%'},
+  dimmed: {opacity: 0.5},
   buttonRow: {flexDirection: 'row', gap: spacing.s},
   primaryButton: {
     height: 48,
