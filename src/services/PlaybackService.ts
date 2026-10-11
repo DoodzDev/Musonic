@@ -178,7 +178,7 @@ export async function PlaybackService() {
   // is logged: the message may quote the stream URL, which holds credentials.
   TrackPlayer.addEventListener(Event.PlaybackError, ({code}) => {
     console.warn('[playback] error', code);
-    playbackEngine.onPlaybackError();
+    playbackEngine.onPlaybackError(code);
   });
 
   TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());

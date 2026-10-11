@@ -8,7 +8,7 @@
  *   injected (`Rng`) to keep tests deterministic. Natural end of a track with
  *   repeat one (C5) and the crossfade rule (E3) are handled by the engine.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -106,9 +106,18 @@ function pushHistory<T extends QueueTrack>(history: T[], played: T | null): T[] 
   return grown.length > HISTORY_LIMIT ? grown.slice(grown.length - HISTORY_LIMIT) : grown;
 }
 
-/** What the native player must hold after the current track, in order. */
+/** Everything after the current track, in play order. */
 export function upcomingOrder<T extends QueueTrack>(state: QueueState<T>): T[] {
   return [...state.userQueue, ...state.upcoming, ...state.autoplay];
+}
+
+/**
+ * What the native player must hold after the current track: the play order
+ * without the tracks that cannot play (offline: not downloaded, E1). They
+ * stay in the model and come back once playable again.
+ */
+export function playableOrder<T extends QueueTrack>(state: QueueState<T>, isPlayable: (t: T) => boolean = () => true): T[] {
+  return upcomingOrder(state).filter(isPlayable);
 }
 
 export function isCurrentTrack<T extends QueueTrack>(state: QueueState<T>, trackId: string): boolean {
@@ -291,8 +300,25 @@ export type NextResult<T extends QueueTrack> = {state: QueueState<T>; ended: boo
  * you, then the context, then autoplay. Repeat one does not block a manual
  * Next (C4). At the very end: repeat all restarts the context, reshuffled
  * if shuffle is on (C6); otherwise the last track stays, paused (C7).
+ * Tracks that cannot play (offline, E1) are skipped.
  */
-export function next<T extends QueueTrack>(state: QueueState<T>, modes: Modes, rng: Rng): NextResult<T> {
+export function next<T extends QueueTrack>(
+  state: QueueState<T>,
+  modes: Modes,
+  rng: Rng,
+  isPlayable: (t: T) => boolean = () => true,
+): NextResult<T> {
+  let result = nextOnce(state, modes, rng);
+  // E1: tracks that cannot play are passed over silently, without joining the history.
+  const limit = upcomingOrder(state).length + state.contextTracks.length + 1;
+  for (let i = 0; i < limit && !result.ended && result.state.current && !isPlayable(result.state.current); i++) {
+    result = nextOnce({...result.state, current: null}, modes, rng);
+  }
+  if (result.ended || !result.state.current || !isPlayable(result.state.current)) return {state, ended: true};
+  return result;
+}
+
+function nextOnce<T extends QueueTrack>(state: QueueState<T>, modes: Modes, rng: Rng): NextResult<T> {
   const history = pushHistory(state.history, state.current);
   if (state.userQueue.length > 0) {
     return {state: {...state, history, current: state.userQueue[0], userQueue: state.userQueue.slice(1)}, ended: false};

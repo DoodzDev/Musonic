@@ -743,7 +743,6 @@ export default function PlaylistDetailScreen() {
   const isShuffled = usePlayerStore(s => s.isShuffled);
   const shuffleMode = usePlayerStore(s => s.shuffleMode);
   const toggleShuffle = usePlayerStore(s => s.toggleShuffle);
-  const setShuffleMode = usePlayerStore(s => s.setShuffleMode);
   const togglePlay = usePlayerStore(s => s.togglePlay);
   const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
   const activeServerUsername = useSettingsStore(s => {
@@ -863,13 +862,8 @@ export default function PlaylistDetailScreen() {
     }
   }, [isOfflineMode, songs, playlistName, isThisPlaylistActive, togglePlay, playlistId]);
 
-  const handleShuffle = useCallback(() => {
-    if (isOfflineMode && shuffleMode === 'on') {
-      setShuffleMode('off');
-    } else {
-      toggleShuffle();
-    }
-  }, [isOfflineMode, shuffleMode, toggleShuffle, setShuffleMode]);
+  // Offline, the engine skips Magic itself (E1).
+  const handleShuffle = toggleShuffle;
 
   // Pair each displayed song with its original index in `songs` so we can:
   // 1. Pass the exact startIndex to RNTP (correct playback position)

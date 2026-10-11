@@ -349,6 +349,7 @@ export const t = {
     clearedToast: 'File vidée',
     unreadableToast: 'Titre illisible, passage au suivant',
     playbackFailedToast: 'Lecture impossible. Vérifie ta connexion.',
+    magicOfflineToast: 'Magique indisponible hors ligne',
     undo: 'Annuler',
     shuffle: 'Lecture aléatoire',
     repeat: 'Répéter',

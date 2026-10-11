@@ -344,6 +344,7 @@ export const en = {
     clearedToast: 'Queue cleared',
     unreadableToast: 'Track unavailable, skipping to the next one',
     playbackFailedToast: 'Playback failed. Check your connection.',
+    magicOfflineToast: 'Magic is unavailable offline',
     undo: 'Undo',
     shuffle: 'Shuffle',
     repeat: 'Repeat',

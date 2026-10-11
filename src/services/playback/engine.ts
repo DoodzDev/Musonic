@@ -19,6 +19,8 @@
  *     present twice can be moved or removed copy by copy.
  *   - A track that cannot play is skipped with a discreet toast (E4); after
  *     a few failures in a row (no network) playback stops instead.
+ *   - Offline, the native player only holds downloaded tracks; the others
+ *     stay in the model and come back online. No Magic nor autoplay (E1).
  * @author DoodzProg
  * @version 1.1.0
  * @license CC-BY-NC-4.0
@@ -28,9 +30,11 @@ import {setEngineBridge, usePlayerStore, type RepeatModeUI, type ShuffleMode, ty
 import {useSettingsStore} from '../../store/settingsStore';
 import {useDownloadStore} from '../../store/downloadStore';
 import {AppState} from 'react-native';
-import {getActiveServer, getCoverArtUrl, getStreamUrl} from '../../api/client';
+import {configureClient, getActiveServer, getCoverArtUrl, getStreamUrl} from '../../api/client';
 import {getT} from '../../i18n';
 import {toast} from '../../components/ui/Toast';
+import {checkNow as checkServerNow} from '../connectivityService';
+import {useNetworkStore} from '../../store/networkStore';
 import {fetchAutoplayTracks, toRNTPTrack} from '../playerActions';
 import {fetchMagicSuggestions} from './magic';
 import * as Q from './buildQueue';
@@ -51,6 +55,11 @@ let manualSkip = false;
 /** Native calls made by the current action (debug measurements). */
 let nativeCalls = 0;
 let entrySeq = 0;
+/**
+ * A stream failed for lack of network: until the server answers again, only
+ * downloaded tracks can play, even before the app switches offline (E1).
+ */
+let networkDown = false;
 /** Unplayable tracks in a row; reset as soon as a track actually plays (E4). */
 let failures = 0;
 const MAX_FAILURES = 3;
@@ -89,14 +98,28 @@ function modes(): Q.Modes {
   };
 }
 
-/** Offline, only downloaded tracks can play (E1). */
+/** Offline or without network, only downloaded tracks can play (E1). */
 function isPlayable(t: Track): boolean {
-  if (!useSettingsStore.getState().isOfflineMode) return true;
+  if (!useSettingsStore.getState().isOfflineMode && !networkDown) return true;
   return !!useDownloadStore.getState().getLocalPath(String(t.id));
 }
 
 function accountId(): string | null {
   return useSettingsStore.getState().activeServerId;
+}
+
+/** What the native player holds after the current track (offline: downloaded only, E1). */
+function nativeOrder(): Track[] {
+  return Q.playableOrder(state, isPlayable);
+}
+
+function isOffline(): boolean {
+  return useSettingsStore.getState().isOfflineMode || networkDown;
+}
+
+/** Stream errors caused by the network, not by the track itself. */
+function isNetworkError(code: string | undefined): boolean {
+  return !!code && code.startsWith('android-io-network');
 }
 
 /** Mirrors the model into the UI store (queue sheet, mini player…) and saves it. */
@@ -111,6 +134,19 @@ function publish(): void {
   });
   const account = accountId();
   if (account) Snapshot.scheduleQueueSave(state, account);
+}
+
+/**
+ * The API client may not be configured yet when the player is set up (the
+ * navigator configures it while rendering): configure it from the settings.
+ */
+function ensureClient(): boolean {
+  if (getActiveServer()) return true;
+  const s = useSettingsStore.getState();
+  const server = s.servers.find(x => x.id === s.activeServerId);
+  if (!server) return false;
+  configureClient(server);
+  return true;
 }
 
 /** Rebuilds the URLs a snapshot leaves out (they carry the credentials). */
@@ -143,7 +179,7 @@ async function replaceUpcomingNative(): Promise<void> {
   if (nativeLength > 1) {
     await native(TrackPlayer.remove(Array.from({length: nativeLength - 1}, (_, i) => i + 1)));
   }
-  const rest = Q.upcomingOrder(state);
+  const rest = nativeOrder();
   if (rest.length > 0) await native(TrackPlayer.add(rest.map(toRNTPTrack)));
   nativeLength = 1 + rest.length;
 }
@@ -158,7 +194,7 @@ async function loadNative(play = true, position = 0): Promise<void> {
   await native(TrackPlayer.add([toRNTPTrack(state.current)]));
   if (position > 0) await native(TrackPlayer.seekTo(position));
   if (play) await native(TrackPlayer.play());
-  const rest = Q.upcomingOrder(state);
+  const rest = nativeOrder();
   if (rest.length > 0) await native(TrackPlayer.add(rest.map(toRNTPTrack)));
   nativeLength = 1 + rest.length;
 }
@@ -199,7 +235,7 @@ async function syncAfterAdd(): Promise<void> {
     await replaceUpcomingNative();
     return;
   }
-  const result = Q.next(state, modes(), Math.random);
+  const result = Q.next(state, modes(), Math.random, isPlayable);
   if (result.ended) return;
   state = result.state;
   active = true;
@@ -209,6 +245,7 @@ async function syncAfterAdd(): Promise<void> {
 }
 
 function scheduleMagic(): void {
+  if (isOffline()) return; // E1: no suggestions offline, Magic plays like shuffle on
   const expected = token;
   const seeds = state.upcoming.filter(t => !t.isMagic);
   const count = Math.max(1, Math.floor(seeds.length / Q.MAGIC_EVERY));
@@ -226,7 +263,7 @@ function scheduleMagic(): void {
 }
 
 function scheduleAutoplay(): void {
-  if (autoplayLoading || !state.current || !Q.needsAutoplay(state, modes())) return;
+  if (autoplayLoading || isOffline() || !state.current || !Q.needsAutoplay(state, modes())) return;
   autoplayLoading = true;
   const expected = token;
   const seed = state.current;
@@ -285,7 +322,7 @@ export const playbackEngine = {
   restore(): Promise<void> {
     return run('restore', async () => {
       const account = accountId();
-      if (active || !account || !getActiveServer()) return;
+      if (active || !account || !ensureClient()) return;
       const saved = Snapshot.loadQueue<Track>(account, hydrate);
       const [queue, index] = await Promise.all([
         native(TrackPlayer.getQueue()),
@@ -341,8 +378,8 @@ export const playbackEngine = {
   next(): Promise<void> {
     if (!active) return Promise.resolve();
     return run('next', async () => {
-      const expected = Q.upcomingOrder(state)[0];
-      const result = Q.next(state, modes(), Math.random);
+      const expected = nativeOrder()[0];
+      const result = Q.next(state, modes(), Math.random, isPlayable);
       if (result.ended) return;
       state = result.state;
       manualSkip = true;
@@ -385,13 +422,13 @@ export const playbackEngine = {
     if (!active || !trackId) return Promise.resolve();
     return run('trackChanged', async () => {
       if (state.current?.id === trackId) return; // our own skip, or repeat one
-      const expected = Q.upcomingOrder(state)[0];
+      const expected = nativeOrder()[0];
       if (!expected || expected.id !== trackId) {
         // The native queue changed outside the engine (car, system): take it over.
         if (await adoptNative()) publish();
         return;
       }
-      state = Q.next(state, modes(), Math.random).state;
+      state = Q.next(state, modes(), Math.random, isPlayable).state;
       publish();
       await native(TrackPlayer.remove([0]));
       nativeLength--;
@@ -403,13 +440,30 @@ export const playbackEngine = {
   onQueueEnded(): Promise<void> {
     if (!active) return Promise.resolve();
     return run('queueEnded', async () => {
-      const result = Q.next(state, modes(), Math.random);
+      const result = Q.next(state, modes(), Math.random, isPlayable);
       if (result.ended) return;
       state = result.state;
       publish();
       await loadNative();
       afterChange();
     });
+  },
+
+  /** Online / offline switched: the native queue follows what can play (E1). */
+  onAvailabilityChanged(): Promise<void> {
+    if (!active) return Promise.resolve();
+    return run('availability', async () => {
+      await replaceUpcomingNative();
+      publish();
+      afterChange(true);
+    });
+  },
+
+  /** The server answers again after a stream network error. */
+  onNetworkBack(): Promise<void> {
+    if (!networkDown) return Promise.resolve();
+    networkDown = false;
+    return playbackEngine.onAvailabilityChanged();
   },
 
   /** A track really plays: the unplayable-track counter starts again (E4). */
@@ -420,15 +474,25 @@ export const playbackEngine = {
   /**
    * The current track cannot play (stream error, E4): skip to the next one
    * with a discreet toast. After `MAX_FAILURES` in a row, or with nothing
-   * left, playback stops with an error toast instead.
+   * left, playback stops with an error toast instead. A network error means
+   * the network is gone: skip silently to the next downloaded track (E1)
+   * and check the server at once.
    */
-  onPlaybackError(): Promise<void> {
+  onPlaybackError(code?: string): Promise<void> {
     if (!active) return Promise.resolve();
     return run('playbackError', async () => {
       const t = getT().queue;
       const foreground = AppState.currentState === 'active';
-      failures++;
-      const result = Q.next(state, modes(), Math.random);
+      const network = isNetworkError(code);
+      if (network) {
+        networkDown = true;
+        checkServerNow().then(reachable => {
+          if (reachable) playbackEngine.onNetworkBack();
+        });
+      } else {
+        failures++;
+      }
+      const result = Q.next(state, modes(), Math.random, isPlayable);
       if (failures >= MAX_FAILURES || result.ended) {
         failures = 0;
         await native(TrackPlayer.pause());
@@ -440,13 +504,19 @@ export const playbackEngine = {
       publish();
       // After an error the native player is stuck: reload it from the model.
       await loadNative();
-      if (foreground) toast.show(t.unreadableToast);
+      if (foreground && !network) toast.show(t.unreadableToast);
       afterChange();
     });
   },
 
   /** Shuffle off / on / magic while playing (B1-B6). */
-  setShuffleMode(mode: ShuffleMode): Promise<void> {
+  setShuffleMode(requested: ShuffleMode): Promise<void> {
+    let mode = requested;
+    if (mode === 'magic' && isOffline()) {
+      // E1: Magic needs the network; the cycle goes on to "off", with a message.
+      mode = 'off';
+      if (AppState.currentState === 'active') toast.show(getT().queue.magicOfflineToast);
+    }
     usePlayerStore.getState().setShuffleMode(mode);
     if (!active) return Promise.resolve();
     return run('shuffle', async () => {
@@ -507,10 +577,10 @@ export const playbackEngine = {
   move(id: string, beforeId: string | null): Promise<void> {
     if (!active) return Promise.resolve();
     return run('move', async () => {
-      const before = Q.upcomingOrder(state);
+      const before = nativeOrder();
       state = Q.moveById(state, id, beforeId);
       publish();
-      const after = Q.upcomingOrder(state);
+      const after = nativeOrder();
       const from = before.findIndex(t => Q.entryKey(t) === id);
       const to = after.findIndex(t => Q.entryKey(t) === id);
       const simulated = [...before];
@@ -563,3 +633,11 @@ export const playbackEngine = {
 
 // Lets the player store and playerActions hand queue actions over to the engine.
 setEngineBridge(playbackEngine);
+
+// Online / offline (manual or automatic) changes what the native queue may hold.
+useSettingsStore.subscribe((s, prev) => {
+  if (s.isOfflineMode !== prev.isOfflineMode) playbackEngine.onAvailabilityChanged();
+});
+useNetworkStore.subscribe((s, prev) => {
+  if (s.serverReachable && !prev.serverReachable) playbackEngine.onNetworkBack();
+});

@@ -249,8 +249,6 @@ function FullScreenPlayerContent() {
   }, [currentTrack]);
   const isLiked = fspTrackId ? (localLikeOverrides[fspTrackId] ?? likedSongIds.has(fspTrackId)) : false;
   const useWaveformScrubber = useSettingsStore(s => s.useWaveformScrubber);
-  const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
-  const setShuffleMode = usePlayerStore(s => s.setShuffleMode);
 
 
   // Lyrics are fetched while the player is open — undefined=loading (hides card), null=no lyrics, data=ready.
@@ -581,10 +579,7 @@ function FullScreenPlayerContent() {
   const controlsNode = (
     <View style={isLandscape ? styles.controlsLandscape : styles.controls}>
       <TouchableOpacity
-        onPress={() => {
-          if (isOfflineMode && shuffleMode === 'on') { setShuffleMode('off'); return; }
-          toggleShuffle();
-        }}
+        onPress={toggleShuffle}
         hitSlop={HIT}
         disabled={isFetchingMagic}
         style={isFetchingMagic ? styles.dimmed : undefined}>

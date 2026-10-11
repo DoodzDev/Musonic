@@ -24,6 +24,7 @@ import {
   setAutoplay,
   setShuffle,
   startContext,
+  playableOrder,
   upcomingOrder,
   type Modes,
   type QueueState,
@@ -339,5 +340,30 @@ describe('E. Special cases', () => {
   it('E1 bis: nothing playable leaves an empty queue', () => {
     const s = startContext(emptyQueue<T>(), {source: playlist, tracks: TEN}, OFF, seeded(), () => false);
     expect(s.current).toBeNull();
+  });
+
+  it('E1 ter: going offline mid-queue, Next skips what cannot play without losing it', () => {
+    const downloaded = new Set(['1', '4', '5']);
+    const offline = (t: T) => downloaded.has(t.id);
+    const s = start(OFF);
+    // The native player only gets the downloaded tracks; the model keeps all of them.
+    expect(ids(playableOrder(s, offline))).toEqual(['4', '5']);
+    expect(ids(upcomingOrder(s))).toHaveLength(9);
+    const r = next(s, OFF, seeded(), offline);
+    expect(r.state.current?.id).toBe('4');
+    // Skipped tracks are not "played": they do not join the history.
+    expect(ids(r.state.history)).toEqual(['1']);
+    // Back online, what comes after 4 is all there again.
+    expect(ids(upcomingOrder(r.state))).toEqual(['5', '6', '7', '8', '9', '10']);
+  });
+
+  it('E1 quater: nothing playable left ends the queue, unchanged', () => {
+    const s = start(OFF);
+    const r = next(s, {...OFF, repeat: 'all'}, seeded(), t => t.id === '1');
+    // Repeat all only finds the current track again: playable, so it loops on it.
+    expect(r.state.current?.id).toBe('1');
+    const none = next(s, OFF, seeded(), () => false);
+    expect(none.ended).toBe(true);
+    expect(none.state).toBe(s);
   });
 });

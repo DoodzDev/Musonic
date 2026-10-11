@@ -55,7 +55,6 @@ import {useActiveTrack, usePlaybackState, State} from 'react-native-track-player
 import {usePlayerStore, type Track, type ShuffleMode} from '../store/playerStore';
 import {playbackEngine} from '../services/playback/engine';
 import {toast, ToastHost} from './ui/Toast';
-import {useSettingsStore} from '../store/settingsStore';
 
 const ORANGE = '#FF6B35';
 const SHEET_HEIGHT_RATIO = 0.85;
@@ -248,8 +247,6 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
   const repeatMode = usePlayerStore(s => s.repeatMode);
   const togglePlay = usePlayerStore(s => s.togglePlay);
   const toggleShuffle = usePlayerStore(s => s.toggleShuffle);
-  const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
-  const setShuffleMode = usePlayerStore(s => s.setShuffleMode);
   const isFetchingMagic = usePlayerStore(s => s.isFetchingMagic);
   const cycleRepeat = usePlayerStore(s => s.cycleRepeat);
   const reorderQueue = usePlayerStore(s => s.reorderQueue);
@@ -443,10 +440,7 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
             <View style={styles.bottomBar}>
               <TouchableOpacity
                 style={[styles.bottomBtn, {width: bottomBtnWidth}, isFetchingMagic && styles.dimmed]}
-                onPress={() => {
-                  if (isOfflineMode && shuffleMode === 'on') { setShuffleMode('off'); return; }
-                  toggleShuffle();
-                }}
+                onPress={toggleShuffle}
                 disabled={isFetchingMagic}
                 activeOpacity={0.7}>
                 {isFetchingMagic

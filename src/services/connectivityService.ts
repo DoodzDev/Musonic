@@ -2,9 +2,10 @@
  * @file connectivityService.ts
  * @description Background polling service that pings the active Subsonic server
  *   every 15 s and updates networkStore.isOffline. Used by ConnectivityMonitor
- *   and the Home screen auto-recovery logic.
+ *   and the Home screen auto-recovery logic. `checkNow` runs a check at once
+ *   (the playback engine calls it on a stream network error).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import {getActiveServer, pingServer} from '../api/client';
@@ -35,12 +36,13 @@ let timerId: ReturnType<typeof setTimeout> | null = null;
 let active = false;
 let consecutiveFailures = 0;
 
-async function tick() {
-  if (!active) return;
+/** One server check; true when the server answered. */
+async function tick(): Promise<boolean> {
+  if (!active) return false;
   const server = getActiveServer();
   if (!server) {
     schedule(INTERVAL_DEGRADED_MS);
-    return;
+    return false;
   }
   const startedAt = Date.now();
   try {
@@ -56,6 +58,7 @@ async function tick() {
       s.setOfflineMode(false);
     }
     schedule(INTERVAL_NORMAL_MS);
+    return true;
   } catch (e) {
     consecutiveFailures++;
     // No URL in the log: it carries the account credentials.
@@ -68,6 +71,7 @@ async function tick() {
       s.setOfflineMode(true);
     }
     schedule(INTERVAL_DEGRADED_MS);
+    return false;
   }
 }
 
@@ -84,6 +88,12 @@ export function start(): () => void {
   consecutiveFailures = 0;
   tick();
   return stop;
+}
+
+/** Checks the server now instead of waiting for the next tick. */
+export function checkNow(): Promise<boolean> {
+  if (timerId) clearTimeout(timerId);
+  return tick();
 }
 
 export function stop() {
