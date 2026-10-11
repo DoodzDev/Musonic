@@ -3,23 +3,23 @@
  * @description Bottom tab navigator with three tabs: Home, Search, Library.
  *   Each tab hosts its own stack so deep-link screens (AlbumDetail, ArtistDetail)
  *   are reachable from any tab without cross-stack navigation. Fully custom
- *   `tabBar` render: a classic bottom row in portrait, a vertical sidebar
- *   (left or right, per settings) in landscape — same navigator state/behavior,
- *   only the visual arrangement differs.
+ *   `tabBar` render: the Design v2 Dock in portrait (glass mini player, tab
+ *   capsule and search circle), a vertical sidebar (left or right, per
+ *   settings) in landscape — same navigator state/behavior, only the visual
+ *   arrangement differs.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback} from 'react';
-import {StyleSheet, View, TouchableOpacity, Text} from 'react-native';
+import {StyleSheet, View, TouchableOpacity} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
-import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useT} from '../i18n';
 import {useSettingsStore} from '../store/settingsStore';
 import {useIsLandscape} from '../hooks/useIsLandscape';
-import {TAB_H, SIDEBAR_WIDTH} from './shellConstants';
+import {SIDEBAR_WIDTH} from './shellConstants';
 import HomeStack from './HomeStack';
 import SearchStack from './SearchStack';
 import LibraryStack from './LibraryStack';
@@ -27,6 +27,7 @@ import HomeIcon from '../components/icons/HomeIcon';
 import SearchIcon from '../components/icons/SearchIcon';
 import LibraryIcon from '../components/icons/LibraryIcon';
 import MiniPlayer from '../components/MiniPlayer';
+import Dock from './Dock';
 import FullScreenPlayer from '../components/FullScreenPlayer';
 import AudioPlayer from '../components/AudioPlayer';
 import ConnectivityMonitor from '../components/ConnectivityMonitor';
@@ -91,39 +92,16 @@ function AppTabBar({state, descriptors, navigation}: BottomTabBarProps) {
     );
   }
 
-  return (
-    <View style={[styles.bottomBar, {height: TAB_H + insets.bottom, paddingBottom: 8 + insets.bottom}]}>
-      {state.routes.map((route, index) => {
-        const {options} = descriptors[route.key];
-        const isFocused = state.index === index;
-        const Icon = options.tabBarIcon as React.ComponentType<TabIconProps> | undefined;
-        const label = options.tabBarLabel as string;
-        return (
-          <TouchableOpacity
-            key={route.key}
-            onPress={() => handlePress(route, isFocused)}
-            style={styles.bottomBarItem}
-            activeOpacity={0.7}>
-            {Icon && <Icon focused={isFocused} color={isFocused ? COLOR_ACTIVE : COLOR_INACTIVE} size={ICON_SIZE} />}
-            <Text style={[styles.bottomBarLabel, {color: isFocused ? COLOR_ACTIVE : COLOR_INACTIVE}]}>
-              {label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
+  return <Dock state={state} descriptors={descriptors} navigation={navigation} insets={insets} />;
 }
 
 // ─── Navigator ─────────────────────────────────────────────────────────────────
 
 export default function TabNavigator() {
   const t = useT();
-  const insets = useSafeAreaInsets();
   const isLandscape = useIsLandscape();
   useImageColor();
 
-  const tabBarHeight = TAB_H + insets.bottom;
   const renderTabBar = useCallback((props: BottomTabBarProps) => <AppTabBar {...props} />, []);
 
   return (
@@ -169,19 +147,10 @@ export default function TabNavigator() {
         />
       </Tab.Navigator>
 
-      {/* Gradient fade — transparent → black, juste au-dessus de la tab bar (portrait only) */}
-      {!isLandscape && (
-        <View style={[styles.bottomFade, {bottom: tabBarHeight}]} pointerEvents="none">
-          <LinearGradient
-            colors={['transparent', '#000000']}
-            style={StyleSheet.absoluteFill}
-          />
-        </View>
-      )}
-
       <ConnectivityMonitor />
       <AudioPlayer />
-      <MiniPlayer />
+      {/* Portrait: the mini player lives in the Dock. Landscape keeps the side-bar tile until P3 lot 3. */}
+      {isLandscape && <MiniPlayer />}
       <FullScreenPlayer />
       <GlobalToast />
     </View>
@@ -190,33 +159,6 @@ export default function TabNavigator() {
 
 const styles = StyleSheet.create({
   fill: {flex: 1},
-  bottomFade: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 56,
-    zIndex: 6,
-  },
-  bottomBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: 'row',
-    borderTopWidth: 0,
-    backgroundColor: '#000000',
-    paddingTop: 8,
-  },
-  bottomBarItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 4,
-  },
-  bottomBarLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
   sidebar: {
     position: 'absolute',
     top: 0,

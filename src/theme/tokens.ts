@@ -5,7 +5,7 @@
  *   `darkTheme` in colors.ts stays in place for the current screens until they
  *   are rebuilt on these tokens.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -43,8 +43,11 @@ export const colors = {
   successFill: 'rgba(48,209,88,0.18)',
   /** Tint laid over the blur of floating glass (dock, mini player). */
   glassTint: 'rgba(44,44,48,0.68)',
-  /** Opaque stand-in for glass where blur is off or unsupported. */
-  glassFallback: 'rgba(28,28,30,0.92)',
+  /**
+   * Stand-in for glass where live blur is off (Android, reduced transparency).
+   * Fully opaque: at 96 %, list text still ghosted faintly through the Dock.
+   */
+  glassFallback: 'rgba(28,28,30,1)',
 } as const;
 
 /** Blur strength of floating glass (0-100, about a 28 px radius). */

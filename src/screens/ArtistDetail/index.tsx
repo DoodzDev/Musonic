@@ -6,7 +6,7 @@
  *   scrolled out of view. Shows top songs (tap to play), and album discography
  *   fetched from the Subsonic API.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.1.0
  * @license MIT
  */
 
@@ -44,6 +44,7 @@ import PlayIcon from '../../components/icons/PlayIcon';
 import CoverArt from '../../components/CoverArt';
 import {useT, getT} from '../../i18n';
 import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
+import {useDockInset} from '../../navigation/dockLayout';
 
 function artDedupeById(tracks: DeezerTrack[]): DeezerTrack[] {
   const seen = new Set<number>();
@@ -64,6 +65,7 @@ function artDedupeAlbums(tracks: DeezerTrack[]): DeezerTrack[] {
 type RouteT = RouteProp<LibraryStackParams, 'ArtistDetail'>;
 
 export default function ArtistDetailScreen() {
+  const dockInset = useDockInset();
   const t = useT();
   const topInset = useHeaderTopInset();
   const landscapePadding = useLandscapeSidebarPadding();
@@ -203,7 +205,7 @@ export default function ArtistDetailScreen() {
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event([{nativeEvent: {contentOffset: {y: scrollY}}}], {useNativeDriver: true})}
         scrollEventThrottle={16}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, {paddingBottom: dockInset}]}
       >
         <View style={styles.headerBlock} onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}>
           <Text style={styles.artistName} numberOfLines={2}>{artistName}</Text>

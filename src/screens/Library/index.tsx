@@ -5,7 +5,7 @@
  *   with sort options, pin support, pull-to-refresh, and auto-recovery on
  *   connectivity restore.
  * @author DoodzProg
- * @version 1.0.6
+ * @version 1.1.0
  * @license MIT
  */
 
@@ -53,6 +53,7 @@ import {useSettingsStore, type LibrarySortMode} from '../../store/settingsStore'
 import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
 import {useDownloadStore} from '../../store/downloadStore';
 import DownloadIcon from '../../components/icons/DownloadIcon';
+import {useDockInset} from '../../navigation/dockLayout';
 
 
 type ViewMode = 'list' | 'grid';
@@ -550,6 +551,7 @@ function PlaylistGridCard({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function LibraryScreen() {
+  const dockInset = useDockInset();
   const t = useT();
   const landscapePadding = useLandscapeSidebarPadding();
   const {width: winW} = useWindowDimensions();
@@ -959,6 +961,7 @@ export default function LibraryScreen() {
             contentContainerStyle={[
               styles.listContent,
               viewMode === 'grid' && styles.listContentGrid,
+              {paddingBottom: dockInset},
             ]}
             ListHeaderComponent={
               <View style={styles.controls}>

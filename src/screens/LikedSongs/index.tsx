@@ -4,7 +4,7 @@
  *   bar, like/add-to-playlist/download actions per row, and remove-from-liked
  *   actions.
  * @author DoodzProg
- * @version 1.0.6
+ * @version 1.1.0
  * @license MIT
  */
 
@@ -49,6 +49,7 @@ import SongOptionsSheet from '../../components/SongOptionsSheet';
 import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
 import {showToast} from '../../components/Toast';
 import {useT, getT} from '../../i18n';
+import {useDockInset} from '../../navigation/dockLayout';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -153,6 +154,7 @@ const SongRow = React.memo(function SongRow({song, index, onPress, onMore, onAdd
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function LikedSongsScreen() {
+  const dockInset = useDockInset();
   const landscapePadding = useLandscapeSidebarPadding();
   const t = useT();
   const navigation = useNavigation<any>();
@@ -310,7 +312,7 @@ export default function LikedSongsScreen() {
             onAddToPlaylist={onRowAddToPlaylist}
           />
         )}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, {paddingBottom: dockInset}]}
       />
 
       <AddToPlaylistSheet

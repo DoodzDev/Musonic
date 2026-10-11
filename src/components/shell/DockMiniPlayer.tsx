@@ -1,0 +1,154 @@
+/**
+ * @file DockMiniPlayer.tsx
+ * @description Design v2 mini player: a floating glass capsule in the Dock
+ *   with the cover, title, artist, previous, play / pause and next. Tapping
+ *   the cover or titles (never the buttons) or swiping up opens the full
+ *   player; swiping left / right skips to the next / previous track (shared
+ *   gesture module). A thin accent line shows progress.
+ * @author DoodzProg
+ * @version 1.0.0
+ * @license CC-BY-NC-4.0
+ */
+import React from 'react';
+import {Pressable, StyleSheet, View} from 'react-native';
+import {State, useActiveTrack, usePlaybackState, useProgress} from 'react-native-track-player';
+import GlassSurface from '../ui/GlassSurface';
+import Cover from '../ui/Cover';
+import Text from '../ui/Text';
+import {SwipeSurface} from '../ui/gestures';
+import PlayIcon from '../icons/PlayIcon';
+import PauseIcon from '../icons/PauseIcon';
+import NextIcon from '../icons/NextIcon';
+import PrevIcon from '../icons/PrevIcon';
+import {usePlayerStore} from '../../store/playerStore';
+import {skipNext, skipPrevForce} from '../../services/playerActions';
+import {haptic} from '../../services/haptics';
+import {colors, radii, sizes, spacing} from '../../theme';
+import {DOCK_MINI_HEIGHT} from '../../navigation/dockLayout';
+import {useT} from '../../i18n';
+
+function ProgressLine({duration}: {duration: number}) {
+  const {position} = useProgress();
+  const fraction = duration > 0 ? Math.min(position / duration, 1) : 0;
+  return (
+    <View style={styles.progressTrack} pointerEvents="none">
+      <View style={[styles.progressFill, {width: `${fraction * 100}%`}]} />
+    </View>
+  );
+}
+
+export default function DockMiniPlayer() {
+  const t = useT();
+  const track = useActiveTrack();
+  const {state} = usePlaybackState();
+  const togglePlay = usePlayerStore(s => s.togglePlay);
+  const openFullScreen = usePlayerStore(s => s.openFullScreen);
+  const visible = usePlayerStore(s => s.isMiniPlayerVisible);
+
+  if (!visible || !track?.id) return null;
+  const playing = state === State.Playing;
+
+  return (
+    <SwipeSurface onSwipeUp={openFullScreen} onSwipeLeft={skipNext} onSwipeRight={skipPrevForce}>
+      <GlassSurface style={styles.capsule}>
+        {/* Only the cover and titles open the player: the buttons just act. */}
+        <Pressable
+          onPress={openFullScreen}
+          style={styles.info}
+          accessibilityRole="button"
+          accessibilityLabel={[track.title, track.artist].filter(Boolean).join(', ')}
+          accessibilityHint={t.ui.openPlayer}
+          accessibilityActions={[
+            {name: 'activate'},
+            {name: 'next', label: t.ui.nextTrack},
+            {name: 'previous', label: t.ui.previousTrack},
+          ]}
+          onAccessibilityAction={e => {
+            if (e.nativeEvent.actionName === 'next') skipNext();
+            else if (e.nativeEvent.actionName === 'previous') skipPrevForce();
+            else openFullScreen();
+          }}>
+          <Cover
+            id={track.coverArt as string | undefined}
+            imageUrl={track.coverArt ? undefined : track.artwork}
+            size="row"
+            round
+          />
+          <View style={styles.text}>
+            <Text variant="subhead" numberOfLines={1} style={styles.title}>
+              {track.title ?? ''}
+            </Text>
+            <Text variant="footnote" color="textSecondary" numberOfLines={1}>
+              {track.artist ?? ''}
+            </Text>
+          </View>
+        </Pressable>
+        <Pressable
+          onPress={() => {
+            haptic('light');
+            skipPrevForce();
+          }}
+          hitSlop={4}
+          accessibilityRole="button"
+          accessibilityLabel={t.ui.previousTrack}
+          style={styles.control}>
+          <PrevIcon size={22} color={colors.textPrimary} />
+        </Pressable>
+        <Pressable
+          onPress={() => {
+            haptic('light');
+            togglePlay();
+          }}
+          hitSlop={4}
+          accessibilityRole="button"
+          accessibilityLabel={playing ? t.ui.pause : t.ui.play}
+          style={styles.control}>
+          {playing ? <PauseIcon size={24} color={colors.textPrimary} /> : <PlayIcon size={24} color={colors.textPrimary} />}
+        </Pressable>
+        <Pressable
+          onPress={() => {
+            haptic('light');
+            skipNext();
+          }}
+          hitSlop={4}
+          accessibilityRole="button"
+          accessibilityLabel={t.ui.nextTrack}
+          style={styles.control}>
+          <NextIcon size={22} color={colors.textPrimary} />
+        </Pressable>
+        <ProgressLine duration={track.duration ?? 0} />
+      </GlassSurface>
+    </SwipeSurface>
+  );
+}
+
+const styles = StyleSheet.create({
+  capsule: {
+    height: DOCK_MINI_HEIGHT,
+    borderRadius: radii.capsule + 4,
+    paddingLeft: spacing.s,
+    paddingRight: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  info: {flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: spacing.m - 4},
+  text: {flex: 1, minWidth: 0},
+  title: {fontWeight: '600'},
+  control: {
+    width: sizes.touchTarget,
+    height: sizes.touchTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressTrack: {
+    position: 'absolute',
+    left: 28,
+    right: 28,
+    bottom: 0,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: colors.fill,
+  },
+  progressFill: {height: 2, borderRadius: 1, backgroundColor: colors.accent},
+});

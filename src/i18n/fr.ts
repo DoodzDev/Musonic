@@ -4,7 +4,7 @@
  *   Add keys here first, then mirror them in en.ts. The i18n/index.ts hook
  *   selects the active locale based on settingsStore.language.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 // French UI strings — single source of truth for all user-visible text.
@@ -33,6 +33,12 @@ export const t = {
     unavailableOffline: 'Indisponible hors ligne',
     open: 'Ouvrir',
     close: 'Fermer',
+    play: 'Lecture',
+    pause: 'Pause',
+    nextTrack: 'Titre suivant',
+    previousTrack: 'Titre précédent',
+    openPlayer: 'Ouvre le lecteur',
+    searchTab: 'Recherche',
   },
 
   // ─── Server Setup ──────────────────────────────────────────────────────────

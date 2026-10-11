@@ -6,7 +6,7 @@
  *   single Subsonic "get everything" endpoint exists), then filtered client-side
  *   by the search bar.
  * @author DoodzProg
- * @version 1.0.6
+ * @version 1.1.0
  * @license MIT
  */
 
@@ -46,6 +46,7 @@ import {useDownloadStore} from '../../store/downloadStore';
 import type {SubsonicSong} from '../../api/types';
 import type {Track} from '../../store/playerStore';
 import {useT} from '../../i18n';
+import {useDockInset} from '../../navigation/dockLayout';
 
 const FULL_LIBRARY_PAGE_SIZE = 500;
 const FULL_LIBRARY_MAX_PAGES = 10;
@@ -150,6 +151,7 @@ const SongRow = React.memo(function SongRow({song, index, onPress, onAddToPlayli
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function AllSongsScreen() {
+  const dockInset = useDockInset();
   const landscapePadding = useLandscapeSidebarPadding();
   const t = useT();
   const navigation = useNavigation<any>();
@@ -260,7 +262,7 @@ export default function AllSongsScreen() {
             onAddToPlaylist={onRowAddToPlaylist}
           />
         )}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, {paddingBottom: dockInset}]}
       />
 
       <AddToPlaylistSheet

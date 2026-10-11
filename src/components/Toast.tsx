@@ -3,15 +3,13 @@
  * @description Global toast notification system. Exposes `showToast(message)`
  *   imperative helper and renders a short-lived overlay above the mini player.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useRef, useState} from 'react';
 import {Animated, StyleSheet, Text} from 'react-native';
-import {usePlayerStore} from '../store/playerStore';
+import {DOCK_GAP, useDockInset} from '../navigation/dockLayout';
 
-const TAB_H = 60;
-const MINI_H = 62;
 
 // ─── Imperative API (global singleton) ───────────────────────────────────────
 let _show: ((msg: string) => void) | null = null;
@@ -46,7 +44,6 @@ export function GlobalToast() {
   const [visible, setVisible] = useState(false);
   const [message, setMessage] = useState('');
   const opacity = useRef(new Animated.Value(0)).current;
-  const isMiniPlayerVisible = usePlayerStore(s => s.isMiniPlayerVisible);
 
   useEffect(() => {
     _show = (msg: string) => {
@@ -69,7 +66,8 @@ export function GlobalToast() {
     return () => clearTimeout(id);
   }, [visible, opacity]);
 
-  const bottomOffset = isMiniPlayerVisible ? TAB_H + 8 + MINI_H + 8 : TAB_H + 8;
+  // Sits just above the Dock (and the mini player when it shows).
+  const bottomOffset = useDockInset() - DOCK_GAP;
 
   return (
     <Animated.View

@@ -5,7 +5,7 @@
  *   Navidrome getSimilarSongs on native liked tracks, deduped against what's
  *   already liked, shuffled, and capped at 50.
  * @author DoodzProg
- * @version 1.0.6
+ * @version 1.1.0
  * @license MIT
  */
 
@@ -43,6 +43,7 @@ import {useDownloadStore} from '../../store/downloadStore';
 import type {SubsonicSong} from '../../api/types';
 import type {Track} from '../../store/playerStore';
 import {useT} from '../../i18n';
+import {useDockInset} from '../../navigation/dockLayout';
 
 const MAX_RECOMMENDATIONS = 50;
 const MAX_SEED_ARTISTS = 3;
@@ -170,6 +171,7 @@ const SongRow = React.memo(function SongRow({song, index, onPress, onAddToPlayli
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function LikedRecommendationsScreen() {
+  const dockInset = useDockInset();
   const landscapePadding = useLandscapeSidebarPadding();
   const t = useT();
   const navigation = useNavigation<any>();
@@ -242,7 +244,7 @@ export default function LikedRecommendationsScreen() {
               onAddToPlaylist={onRowAddToPlaylist}
             />
           )}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, {paddingBottom: dockInset}]}
         />
       )}
 

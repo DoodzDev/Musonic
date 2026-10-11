@@ -3,7 +3,7 @@
  * @description English UI strings. Mirrors the structure of fr.ts exactly.
  *   Swap the active locale in i18n/index.ts to enable English.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 export const en = {
@@ -30,6 +30,12 @@ export const en = {
     unavailableOffline: 'Unavailable offline',
     open: 'Open',
     close: 'Close',
+    play: 'Play',
+    pause: 'Pause',
+    nextTrack: 'Next track',
+    previousTrack: 'Previous track',
+    openPlayer: 'Opens the player',
+    searchTab: 'Search',
   },
 
   // ─── Server Setup ──────────────────────────────────────────────────────────

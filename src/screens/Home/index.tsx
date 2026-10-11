@@ -5,7 +5,7 @@
  *   section of similar artists. Supports filter pills, pull-to-refresh, and
  *   auto-recovery when connectivity is restored.
  * @author DoodzProg
- * @version 1.0.1
+ * @version 1.1.0
  * @license MIT
  */
 
@@ -50,6 +50,7 @@ import {useT} from '../../i18n';
 import {useNetworkStore} from '../../store/networkStore';
 import {useSettingsStore} from '../../store/settingsStore';
 import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
+import {useDockInset} from '../../navigation/dockLayout';
 
 type FilterKey = 'all' | 'recent' | 'frequent' | 'reco' | 'discover';
 
@@ -78,6 +79,7 @@ type HomeData = {
 };
 
 export default function HomeScreen() {
+  const dockInset = useDockInset();
   const t = useT();
   const filters: {key: FilterKey; label: string}[] = [
     {key: 'all', label: t.home.filters.all},
@@ -455,7 +457,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <View style={styles.bottomPad} />
+        <View style={{height: dockInset}} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -484,7 +486,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 4,
   },
-  bottomPad: {height: 200},
   errorState: {
     alignItems: 'center',
     justifyContent: 'center',

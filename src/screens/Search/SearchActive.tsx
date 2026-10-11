@@ -4,7 +4,7 @@
  *   interleave. Subsonic results are immediate; Deezer artist images are enriched
  *   asynchronously using a generation counter to prevent race conditions.
  * @author DoodzProg
- * @version 1.0.5
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState, useEffect, useRef, useCallback, memo} from 'react';
@@ -30,6 +30,7 @@ import {useT} from '../../i18n';
 import {useSearchHistoryStore, type HistoryItem} from '../../store/searchHistoryStore';
 import {useSettingsStore} from '../../store/settingsStore';
 import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
+import {useDockInset} from '../../navigation/dockLayout';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -219,6 +220,7 @@ function SearchHistorySection({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function SearchActive() {
+  const dockInset = useDockInset();
   const t = useT();
   const navigation = useNavigation<any>();
   const inputRef = useRef<TextInput>(null);
@@ -426,7 +428,7 @@ export default function SearchActive() {
           renderItem={renderItem}
           extraData={artistImages}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, {paddingBottom: dockInset}]}
         />
       )}
 

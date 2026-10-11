@@ -5,7 +5,7 @@
  *   the icon set, rendered on the device, with pressables to try the
  *   animations and vibrations by hand.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -269,7 +269,7 @@ export default function FoundationsTab() {
 
         <Section title="Verre">
           <Text variant="footnote" color="textSecondary">
-            Fais défiler les couleurs : le flou suit le contenu.
+            Sur Android, verre « figé » : pas de flou en direct, pour garder un défilement fluide.
           </Text>
           <GlassDemo />
         </Section>

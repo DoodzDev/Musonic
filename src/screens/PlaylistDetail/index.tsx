@@ -4,7 +4,7 @@
  *   drag-and-drop reordering, inline search, edit mode, recommended track
  *   suggestions, and full CRUD support (add, remove, rename).
  * @author DoodzProg
- * @version 1.0.5
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 
@@ -69,6 +69,7 @@ import DownloadStatusIcon from '../../components/icons/DownloadStatusIcon';
 import PlusCircleIconComponent from '../../components/icons/PlusCircleIcon';
 import {useDownloadStore, type DownloadedTrack} from '../../store/downloadStore';
 import {useSettingsStore} from '../../store/settingsStore';
+import {useDockInset} from '../../navigation/dockLayout';
 
 // Based on the screen's shortest side so the cover keeps the same size in both orientations.
 const {width: _W, height: _H} = Dimensions.get('window');
@@ -683,6 +684,7 @@ function OfflineFooter({label, tracks, onPressTrack}: {
 type RouteT = RouteProp<LibraryStackParams, 'PlaylistDetail'>;
 
 export default function PlaylistDetailScreen() {
+  const dockInset = useDockInset();
   const topInset = useHeaderTopInset();
   const landscapePadding = useLandscapeSidebarPadding();
   const {height: winH} = useWindowDimensions();
@@ -1206,7 +1208,7 @@ export default function PlaylistDetailScreen() {
             />
           )}
           onDragEnd={({data}) => setEditSongs(data)}
-          contentContainerStyle={[styles.listContent, {paddingTop: topInset + 56 + 16}]}
+          contentContainerStyle={[styles.listContent, {paddingTop: topInset + 56 + 16, paddingBottom: dockInset}]}
           showsVerticalScrollIndicator={false}
         />
       ) : loading ? (
@@ -1236,7 +1238,7 @@ export default function PlaylistDetailScreen() {
             )
           }
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, {paddingBottom: dockInset}]}
           onScroll={Animated.event(
             [{nativeEvent: {contentOffset: {y: scrollY}}}],
             {useNativeDriver: false},

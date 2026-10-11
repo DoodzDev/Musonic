@@ -5,7 +5,7 @@
  *   animated parallax header, and a compact title (album, artist avatar +
  *   name) that fades into the fixed top bar once the header scrolls away.
  * @author DoodzProg
- * @version 1.0.6
+ * @version 1.1.0
  * @license MIT
  */
 
@@ -61,6 +61,7 @@ import DownloadIcon from '../../components/icons/DownloadIcon';
 import DownloadStatusIcon from '../../components/icons/DownloadStatusIcon';
 import PlusCircleIconComponent from '../../components/icons/PlusCircleIcon';
 import {useDownloadStore} from '../../store/downloadStore';
+import {useDockInset} from '../../navigation/dockLayout';
 
 // Based on the screen's shortest side so the cover keeps the same size in both orientations.
 const {width: _W, height: _H} = Dimensions.get('window');
@@ -322,6 +323,7 @@ function AlbumHeader({
 type RouteT = RouteProp<LibraryStackParams, 'AlbumDetail'>;
 
 export default function AlbumDetailScreen() {
+  const dockInset = useDockInset();
   const topInset = useHeaderTopInset();
   const landscapePadding = useLandscapeSidebarPadding();
   const {height: winH} = useWindowDimensions();
@@ -598,7 +600,7 @@ export default function AlbumDetailScreen() {
           renderItem={renderItem}
           ListHeaderComponent={listHeader}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, {paddingBottom: dockInset}]}
           onScroll={Animated.event([{nativeEvent: {contentOffset: {y: scrollY}}}], {useNativeDriver: false})}
           scrollEventThrottle={16}
         />

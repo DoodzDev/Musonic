@@ -1,11 +1,14 @@
 /**
  * @file GlassSurface.tsx
- * @description Design v2 floating glass (dock, mini player, floating bars):
- *   live blur of what scrolls behind, a dark tint, a light edge and a drop
- *   shadow. Falls back to an opaque surface where blur is too costly (Android
- *   before 12) or when the user asked the OS to reduce transparency.
+ * @description Design v2 glass (dock, mini player, floating bars, top bars):
+ *   a dark tint, a light edge and a drop shadow, over a live blur where it is
+ *   cheap. On Android the blur library redraws everything behind the surface
+ *   on the CPU every frame: with the Dock over a scrolling list, 100 % of
+ *   frames were janky (2 % without blur). Performance comes first, so Android
+ *   uses a near-opaque "frosted" surface instead, unless a surface opts into
+ *   `liveBlur` over content that does not move. iOS keeps the native blur.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useState} from 'react';
@@ -21,8 +24,9 @@ function clear(rgba: string): string {
 const TINT_FADE = [colors.glassTint, colors.glassTint, clear(colors.glassTint)];
 const FALLBACK_FADE = [colors.glassFallback, colors.glassFallback, clear(colors.glassFallback)];
 
-/** Android 12 (API 31) brought GPU blur; older phones get the opaque fallback. */
-const PLATFORM_CAN_BLUR = Platform.OS !== 'android' || Number(Platform.Version) >= 31;
+/** iOS blurs on the GPU; Android only on request, and from Android 12 (API 31). */
+const IOS = Platform.OS === 'ios';
+const ANDROID_CAN_BLUR = Platform.OS === 'android' && Number(Platform.Version) >= 31;
 
 function useReduceTransparency(): boolean {
   const [enabled, setEnabled] = useState(false);
@@ -46,18 +50,24 @@ type Props = ViewProps & {
   variant?: 'floating' | 'bar' | 'fade';
   /** `fade` only: share of the height (0-1) kept fully frosted before fading. */
   solidRatio?: number;
+  /**
+   * Android: blur live even though it costs a full redraw per frame. Only for
+   * surfaces over content that never scrolls or animates behind them.
+   */
+  liveBlur?: boolean;
 };
 
 export default function GlassSurface({
   radius = radii.capsule,
   variant = 'floating',
   solidRatio = 0.5,
+  liveBlur = false,
   style,
   children,
   ...rest
 }: Props) {
   const reduceTransparency = useReduceTransparency();
-  const blur = PLATFORM_CAN_BLUR && !reduceTransparency;
+  const blur = !reduceTransparency && (IOS || (liveBlur && ANDROID_CAN_BLUR));
   const floating = variant === 'floating';
   const shape = {borderRadius: floating ? radius : 0};
 

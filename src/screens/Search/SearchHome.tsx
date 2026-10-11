@@ -5,7 +5,7 @@
  *   based on similar artists from the user's top liked artist.
  *   Recommendations are streamed via OctoFiesta using Deezer IDs as Subsonic IDs.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
@@ -40,6 +40,7 @@ import {
   enrichTracksWithAlbumType,
   type DeezerTrack,
 } from '../../api/deezer';
+import {useDockInset} from '../../navigation/dockLayout';
 
 // ─── Search icon ──────────────────────────────────────────────────────────────
 
@@ -140,6 +141,7 @@ const EMPTY_RECO: RecoState = {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function SearchHome() {
+  const dockInset = useDockInset();
   const t = useT();
   const navigation = useNavigation<any>();
   const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
@@ -300,7 +302,7 @@ export default function SearchHome() {
       <ScrollView
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
+        contentContainerStyle={[styles.scrollContent, {paddingBottom: dockInset}]}>
 
         <Text style={styles.discoverTitle}>{t.search.discover.sectionTitle}</Text>
 
