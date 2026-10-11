@@ -8,7 +8,7 @@
  *   Debug builds also register the Design v2 reference screen and its
  *   track-list and large-title demos.
  * @author DoodzProg
- * @version 1.4.0
+ * @version 1.5.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useRef} from 'react';
@@ -88,7 +88,7 @@ export default function RootNavigator() {
       ) : (
         <>
           <Stack.Screen name="Main" component={MainWithProfile} />
-          <Stack.Screen name="Settings" component={SettingsScreen} options={{ presentation: 'modal' }} />
+          <Stack.Screen name="Settings" component={SettingsScreen} options={{animation: 'slide_from_right'}} />
           {/* Design v2 reference screen: debug builds (Musonic Dev) only. */}
           {__DEV__ && <Stack.Screen name="Design" component={DesignScreen} />}
           {__DEV__ && <Stack.Screen name="DesignTrackList" component={DesignTrackListTest} />}
