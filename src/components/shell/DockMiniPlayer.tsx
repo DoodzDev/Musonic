@@ -4,9 +4,10 @@
  *   with the cover, title, artist, previous, play / pause and next. Tapping
  *   the cover or titles (never the buttons) or swiping up opens the full
  *   player; swiping left / right skips to the next / previous track (shared
- *   gesture module). A thin accent line shows progress.
+ *   gesture module). A thin accent line shows progress. The Previous button
+ *   follows the 3-second rule (ADR-009 C1); the swipe always changes track.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -21,7 +22,7 @@ import PauseIcon from '../icons/PauseIcon';
 import NextIcon from '../icons/NextIcon';
 import PrevIcon from '../icons/PrevIcon';
 import {usePlayerStore} from '../../store/playerStore';
-import {skipNext, skipPrevForce} from '../../services/playerActions';
+import {skipNext, skipPrev, skipPrevForce} from '../../services/playerActions';
 import {haptic} from '../../services/haptics';
 import {colors, radii, sizes, spacing} from '../../theme';
 import {DOCK_MINI_HEIGHT} from '../../navigation/dockLayout';
@@ -65,7 +66,7 @@ export default function DockMiniPlayer() {
           ]}
           onAccessibilityAction={e => {
             if (e.nativeEvent.actionName === 'next') skipNext();
-            else if (e.nativeEvent.actionName === 'previous') skipPrevForce();
+            else if (e.nativeEvent.actionName === 'previous') skipPrev();
             else openFullScreen();
           }}>
           <Cover
@@ -86,7 +87,7 @@ export default function DockMiniPlayer() {
         <Pressable
           onPress={() => {
             haptic('light');
-            skipPrevForce();
+            skipPrev();
           }}
           hitSlop={4}
           accessibilityRole="button"

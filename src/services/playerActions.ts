@@ -3,8 +3,10 @@
  * @description Imperative playback action helpers used across screens. All
  *   queue-loading functions resolve `currentPlaylistId` so the orange active-track
  *   indicator in PlaylistDetail stays accurate regardless of play context.
+ *   Legacy loaders hand the player back from the playback engine; skips go
+ *   through the engine while it drives the player.
  * @author DoodzProg
- * @version 1.0.2
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer from 'react-native-track-player';
@@ -12,7 +14,7 @@ import {getPlaylist} from '../api/endpoints/playlists';
 import {getStreamUrl, getCoverArtUrl, subsonicGet} from '../api/client';
 import {getSimilarSongs} from '../api/endpoints/library';
 import {getDeezerArtistId, getDeezerArtistTopTracks} from '../api/deezer';
-import {usePlayerStore} from '../store/playerStore';
+import {activeEngine, usePlayerStore} from '../store/playerStore';
 import {useDownloadStore} from '../store/downloadStore';
 import type {Track} from '../store/playerStore';
 
@@ -75,6 +77,7 @@ export async function loadAndPlayPlaylist(
   const playlistName = data.playlist?.name || 'Playlist';
 
   if (songs.length === 0) return;
+  activeEngine()?.detach();
 
   const tracks: Track[] = songs.map(s => ({
     id: s.id,
@@ -118,6 +121,7 @@ export async function loadAndPlayAlbum(
     const songs = album.song || [];
 
     if (songs.length === 0) return;
+    activeEngine()?.detach();
 
     const tracks: Track[] = songs.map((s: any) => ({
       id: s.id,
@@ -155,6 +159,7 @@ export async function loadAndPlayAlbum(
 }
 
 export function playTrack(track: Track): void {
+  activeEngine()?.detach();
   const store = usePlayerStore.getState();
   store.setCurrentPlaylist(null, null);
   store.setOriginalQueue([track]);
@@ -174,6 +179,7 @@ export async function loadAndPlayTracks(
   playlistContext?: {id: string; name: string},
 ): Promise<void> {
   if (tracks.length === 0) return;
+  activeEngine()?.detach();
   const idx = Math.max(0, Math.min(startIndex, tracks.length - 1));
   const store = usePlayerStore.getState();
   // Always resolve playlist context: set provided one, or clear it.
@@ -199,10 +205,17 @@ export async function loadAndPlayTracks(
 }
 
 export function skipNext(): void {
+  const engine = activeEngine();
+  if (engine) {
+    engine.next();
+    return;
+  }
   TrackPlayer.skipToNext().catch(() => {});
 }
 
 export async function skipPrev(): Promise<void> {
+  const engine = activeEngine();
+  if (engine) return engine.previous(false);
   const position = await TrackPlayer.getPosition();
   if (position > 3) {
     TrackPlayer.seekTo(0);
@@ -212,6 +225,11 @@ export async function skipPrev(): Promise<void> {
 }
 
 export function skipPrevForce(): void {
+  const engine = activeEngine();
+  if (engine) {
+    engine.previous(true);
+    return;
+  }
   TrackPlayer.skipToPrevious().catch(() => {});
 }
 

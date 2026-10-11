@@ -5,13 +5,15 @@
  *   rest of the UI stays reactive without subscribing to RNTP directly. On
  *   mount it also picks up a track already playing (app reopened while the
  *   playback service kept running), so the mini player shows straight away.
+ *   While the playback engine drives the player, it publishes the queue
+ *   itself: this bridge then only shows the mini player.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import {useEffect} from 'react';
 import TrackPlayer, {Event, useTrackPlayerEvents} from 'react-native-track-player';
-import {usePlayerStore} from '../store/playerStore';
+import {activeEngine, usePlayerStore} from '../store/playerStore';
 import type {Track} from '../store/playerStore';
 
 const SYNC_EVENTS = [Event.PlaybackActiveTrackChanged];
@@ -37,6 +39,7 @@ function mapToTrack(t: any): Track {
 async function syncActiveTrack(index: number) {
   const store = usePlayerStore.getState();
   store.onTrackChanged();
+  if (activeEngine()) return;
   try {
     const queue = await TrackPlayer.getQueue();
     const history = queue.slice(0, index).map(mapToTrack);

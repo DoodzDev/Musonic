@@ -8,7 +8,7 @@
  *   absorbs that side's safe-area inset: a front camera hole there falls in
  *   the empty middle, between the tabs (top) and search + player (bottom).
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -26,7 +26,7 @@ import PlayIcon from '../components/icons/PlayIcon';
 import PauseIcon from '../components/icons/PauseIcon';
 import {usePlayerStore} from '../store/playerStore';
 import {useSettingsStore} from '../store/settingsStore';
-import {skipNext, skipPrevForce} from '../services/playerActions';
+import {skipNext, skipPrev} from '../services/playerActions';
 import {haptic} from '../services/haptics';
 import {colors, radii, sizes} from '../theme';
 import {useT} from '../i18n';
@@ -80,7 +80,7 @@ function RailMiniPlayer() {
         ]}
         onAccessibilityAction={e => {
           if (e.nativeEvent.actionName === 'next') skipNext();
-          else if (e.nativeEvent.actionName === 'previous') skipPrevForce();
+          else if (e.nativeEvent.actionName === 'previous') skipPrev();
           else openFullScreen();
         }}>
         <Cover id={track.coverArt as string | undefined} imageUrl={track.coverArt ? undefined : track.artwork} size="row" />

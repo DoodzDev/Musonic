@@ -2,9 +2,10 @@
  * @file index.tsx
  * @description Playlist detail screen. Displays tracks in a playlist with
  *   drag-and-drop reordering, inline search, edit mode, recommended track
- *   suggestions, and full CRUD support (add, remove, rename).
+ *   suggestions, and full CRUD support (add, remove, rename). Play and track
+ *   taps go through the playback engine (`playContext`).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -41,7 +42,8 @@ import {
   enrichTracksWithAlbumType,
   type DeezerTrack,
 } from '../../api/deezer';
-import {loadAndPlayPlaylist, loadAndPlayTracks, fisherYates} from '../../services/playerActions';
+import {loadAndPlayTracks} from '../../services/playerActions';
+import {playbackEngine} from '../../services/playback/engine';
 import ShuffleIcon from '../../components/icons/ShuffleIcon';
 import TrackPlayer, {useActiveTrack, usePlaybackState, State} from 'react-native-track-player';
 import {usePlayerStore} from '../../store/playerStore';
@@ -683,6 +685,22 @@ function OfflineFooter({label, tracks, onPressTrack}: {
 
 type RouteT = RouteProp<LibraryStackParams, 'PlaylistDetail'>;
 
+/** Playlist songs as playable tracks (local files are picked at load time). */
+function songsToTracks(songs: SubsonicSong[]): Track[] {
+  return songs.map((s: any) => ({
+    id: String(s.id),
+    title: s.title || getT().home.unknownTitle,
+    artist: s.artist || getT().home.unknownArtist,
+    album: s.album || 'Single',
+    duration: s.duration || 0,
+    coverArt: s.coverArt || s.id,
+    artistId: s.artistId,
+    streamUrl: getStreamUrl(s.id),
+    url: getStreamUrl(s.id),
+    artwork: getCoverArtUrl(s.coverArt || s.id, 300),
+  }));
+}
+
 export default function PlaylistDetailScreen() {
   const dockInset = useDockInset();
   const topInset = useHeaderTopInset();
@@ -826,44 +844,24 @@ export default function PlaylistDetailScreen() {
       togglePlay();
       return;
     }
+    const downloadStore = useDownloadStore.getState();
+    if (isOfflineMode && !songs.some(s => downloadStore.isDownloaded(String(s.id)))) {
+      showToast(getT().playlistDetail.noDownloadedSongs);
+      return;
+    }
     setLoadingPlaylist(true);
     try {
-      if (isOfflineMode) {
-        const downloadStore = useDownloadStore.getState();
-        const downloadedSongs = songs.filter(s => downloadStore.isDownloaded(String(s.id)));
-        if (downloadedSongs.length === 0) {
-          showToast(getT().playlistDetail.noDownloadedSongs);
-          return;
-        }
-        const tracks: Track[] = downloadedSongs.map((s: any) => ({
-          id: s.id,
-          title: s.title || getT().home.unknownTitle,
-          artist: s.artist || getT().home.unknownArtist,
-          album: s.album || 'Single',
-          duration: s.duration || 0,
-          coverArt: s.coverArt || s.id,
-          streamUrl: downloadStore.getLocalPath(String(s.id)) ?? getStreamUrl(s.id),
-          url: downloadStore.getLocalPath(String(s.id)) ?? getStreamUrl(s.id),
-          artwork: getCoverArtUrl(s.coverArt || s.id, 300),
-        }));
-        const ordered = isShuffled ? fisherYates(tracks) : tracks;
-        await loadAndPlayTracks(ordered, 0, {id: playlistId, name: playlistName});
-      } else {
-        await loadAndPlayPlaylist(playlistId, isShuffled);
-        // Magic mode: fisher-yates alone is not enough — trigger magic interleaving
-        // after the queue is loaded by cycling on→magic via toggleShuffle.
-        if (shuffleMode === 'magic') {
-          const store = usePlayerStore.getState();
-          store.setShuffleMode('on');
-          store.toggleShuffle();
-        }
-      }
+      // The engine applies shuffle, Magic and offline itself (ADR-009).
+      await playbackEngine.playContext({
+        source: {type: 'playlist', id: playlistId, name: playlistName},
+        tracks: songsToTracks(songs),
+      });
     } catch (e) {
       console.warn('play error', e);
     } finally {
       setLoadingPlaylist(false);
     }
-  }, [isOfflineMode, songs, playlistName, isThisPlaylistActive, togglePlay, playlistId, isShuffled, shuffleMode]);
+  }, [isOfflineMode, songs, playlistName, isThisPlaylistActive, togglePlay, playlistId]);
 
   const handleShuffle = useCallback(() => {
     if (isOfflineMode && shuffleMode === 'on') {
@@ -925,18 +923,20 @@ export default function PlaylistDetailScreen() {
 
   const handlePlayTrack = useCallback(async (origIdx: number) => {
     if (!songs.length) return;
-    const tracks: Track[] = songs.map((s: any) => ({
-      id: s.id,
-      title: s.title || getT().home.unknownTitle,
-      artist: s.artist || getT().home.unknownArtist,
-      album: s.album || 'Single',
-      duration: s.duration || 0,
-      coverArt: s.coverArt || s.id,
-      streamUrl: getStreamUrl(s.id),
-      url: getStreamUrl(s.id),
-      artwork: getCoverArtUrl(s.coverArt || s.id, 300),
-    }));
-    await loadAndPlayTracks(tracks, origIdx, {id: playlistId, name: playlistName});
+    const tracks = songsToTracks(songs);
+    const tapped = tracks[origIdx];
+    if (!tapped) return;
+    // A9: tapping the track already playing opens the player, it does not restart.
+    const current = await TrackPlayer.getActiveTrack().catch(() => undefined);
+    if (current && String(current.id) === tapped.id) {
+      usePlayerStore.getState().openFullScreen();
+      return;
+    }
+    await playbackEngine.playContext({
+      source: {type: 'playlist', id: playlistId, name: playlistName},
+      tracks,
+      startTrackId: tapped.id,
+    });
   }, [songs, playlistId, playlistName]);
 
   const handleSongMore = useCallback((song: SubsonicSong, origIdx: number) => {

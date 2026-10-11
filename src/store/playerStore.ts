@@ -3,9 +3,11 @@
  * @description Central Zustand store for all playback UI state: queue, history,
  *   upcoming tracks, shuffle/repeat mode, liked-song overrides, playlist context,
  *   and full-screen player visibility. RNTP is the source of truth for audio;
- *   this store is the source of truth for UI.
+ *   this store is the source of truth for UI. While the playback engine
+ *   drives the player, queue and mode actions are handed over to it through
+ *   the engine bridge (registered by the engine, so no import cycle).
  * @author DoodzProg
- * @version 1.0.2
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -100,6 +102,30 @@ type PlayerState = {
   setShuffleMode: (mode: ShuffleMode) => void;
 };
 
+/** What the playback engine exposes to the store and to playerActions. */
+export type EngineBridge = {
+  isActive: () => boolean;
+  detach: () => void;
+  setShuffleMode: (mode: ShuffleMode) => Promise<void>;
+  applyRepeat: (mode: RepeatModeUI) => Promise<void>;
+  next: () => Promise<void>;
+  previous: (always?: boolean) => Promise<void>;
+  playNext: (tracks: Track[]) => Promise<void>;
+  remove: (ids: string[]) => Promise<void>;
+  move: (id: string, beforeId: string | null) => Promise<void>;
+};
+
+let engineBridge: EngineBridge | null = null;
+
+export function setEngineBridge(bridge: EngineBridge): void {
+  engineBridge = bridge;
+}
+
+/** The engine, only while it drives the player. */
+export function activeEngine(): EngineBridge | null {
+  return engineBridge && engineBridge.isActive() ? engineBridge : null;
+}
+
 async function addInChunks(tracks: any[], chunkSize = 15): Promise<void> {
   for (let i = 0; i < tracks.length; i += chunkSize) {
     await TrackPlayer.add(tracks.slice(i, i + chunkSize));
@@ -165,6 +191,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       shuffleMode === 'off' ? 'on' :
       shuffleMode === 'on' ? 'magic' :
       'off';
+    const engine = activeEngine();
+    if (engine) {
+      engine.setShuffleMode(nextMode);
+      return;
+    }
     const newShuffled = nextMode !== 'off';
     set({shuffleMode: nextMode, isShuffled: newShuffled});
     useSettingsStore.getState().setShuffleMode(nextMode);
@@ -350,6 +381,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({repeatMode: newMode});
     TrackPlayer.setRepeatMode(REPEAT_MAP[newMode]).catch(() => {});
     useSettingsStore.getState().setRepeatMode(newMode);
+
+    const engine = activeEngine();
+    if (engine) {
+      engine.applyRepeat(newMode);
+      return;
+    }
 
     // Immediately rebuild upcoming so queue display reflects the new repeat state
     // without waiting for the next track-change event.
@@ -588,6 +625,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   reorderQueue: (from, to) => {
+    const engine = activeEngine();
+    if (engine) {
+      const list = get().upcoming;
+      const moved = list[from];
+      const rest = list.filter((_, i) => i !== from);
+      if (moved) engine.move(moved.id, rest[to]?.id ?? null);
+      return;
+    }
     const arr = [...get().upcoming];
     const [item] = arr.splice(from, 1);
     arr.splice(to, 0, item);
@@ -601,6 +646,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   removeFromQueue: ids => {
+    const engine = activeEngine();
+    if (engine) {
+      engine.remove(ids);
+      return;
+    }
     set(s => ({upcoming: s.upcoming.filter(t => !ids.includes(t.id))}));
     TrackPlayer.getQueue()
       .then(queue => {
@@ -614,6 +664,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   moveToTop: ids => {
+    const engine = activeEngine();
+    if (engine) {
+      const picked = ids.map(id => get().upcoming.find(t => t.id === id)).filter(Boolean) as Track[];
+      engine.remove(ids).then(() => engine.playNext(picked));
+      return;
+    }
     const {upcoming} = get();
     const selected = ids
       .map(id => upcoming.find(t => t.id === id))

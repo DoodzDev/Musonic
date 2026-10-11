@@ -2,9 +2,10 @@
  * @file PlaybackService.ts
  * @description RNTP headless task. Handles remote control events (play, pause,
  *   skip, seek, stop) fired from lock screen / notification buttons while the
- *   app is backgrounded or killed.
+ *   app is backgrounded or killed. Track changes and the end of the queue are
+ *   forwarded to the playback engine; manual skips are never crossfaded.
  * @author DoodzProg
- * @version 1.0.3
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {AppState} from 'react-native';
@@ -13,7 +14,8 @@ import {useSettingsStore} from '../store/settingsStore';
 import {usePlayerStore} from '../store/playerStore';
 import {useDownloadStore} from '../store/downloadStore';
 import {subsonicGet} from '../api/client';
-import {fetchAutoplayTracks, toRNTPTrack} from './playerActions';
+import {fetchAutoplayTracks, skipNext, skipPrev, toRNTPTrack} from './playerActions';
+import {playbackEngine} from './playback/engine';
 import type {Track} from '../store/playerStore';
 
 let wasPlayingBeforeDuck = false;
@@ -149,8 +151,10 @@ export async function PlaybackService() {
 
   TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());
   TrackPlayer.addEventListener(Event.RemotePause, () => TrackPlayer.pause());
-  TrackPlayer.addEventListener(Event.RemoteNext, () => TrackPlayer.skipToNext());
-  TrackPlayer.addEventListener(Event.RemotePrevious, () => TrackPlayer.skipToPrevious());
+  TrackPlayer.addEventListener(Event.RemoteNext, () => skipNext());
+  TrackPlayer.addEventListener(Event.RemotePrevious, () => {
+    skipPrev();
+  });
   TrackPlayer.addEventListener(Event.RemoteSeek, ({position}) =>
     TrackPlayer.seekTo(position),
   );
@@ -158,6 +162,8 @@ export async function PlaybackService() {
     // Last track in queue finished — no further PlaybackActiveTrackChanged
     // will fire to trigger the submission scrobble, so flush it here.
     submitScrobbleIfEligible();
+    // Repeat all with the engine: a new round starts (C6).
+    playbackEngine.onQueueEnded();
   });
   TrackPlayer.addEventListener(Event.RemoteDuck, async ({permanent, paused}) => {
     if (permanent || paused) {
@@ -169,7 +175,9 @@ export async function PlaybackService() {
       wasPlayingBeforeDuck = false;
     }
   });
-  TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, async () => {
+  TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, async event => {
+    playbackEngine.onActiveTrackChanged(event.track?.id != null ? String(event.track.id) : undefined);
+    const manualSkip = playbackEngine.consumeManualSkip();
     await submitScrobbleIfEligible();
 
     const {crossfadeDuration, isAutoplayEnabled, isAutoDownloadEnabled} = useSettingsStore.getState();
@@ -179,7 +187,8 @@ export async function PlaybackService() {
     // drive), which can leave volume stuck at 0 indefinitely (track keeps
     // playing/advancing natively, just silently). Only fade while foregrounded,
     // where JS timers are reliable; jump straight to full volume otherwise.
-    if (crossfadeDuration > 0 && AppState.currentState === 'active') {
+    // No fade on a manual Next / Previous: the change is immediate (E3).
+    if (crossfadeDuration > 0 && AppState.currentState === 'active' && !manualSkip) {
       startFadeIn(crossfadeDuration);
       startProgressPoller(crossfadeDuration);
     } else {
@@ -217,7 +226,8 @@ export async function PlaybackService() {
       }
     } catch { /* silent */ }
 
-    if (!isAutoplayEnabled || isLoadingAutoplay) return;
+    // The engine fetches its own autoplay suggestions.
+    if (!isAutoplayEnabled || isLoadingAutoplay || playbackEngine.isActive()) return;
     const {repeatMode, setUpcoming} = usePlayerStore.getState();
     if (repeatMode !== 'none') return;
 
