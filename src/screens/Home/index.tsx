@@ -5,7 +5,7 @@
  *   section of similar artists. Supports filter pills, pull-to-refresh, and
  *   auto-recovery when connectivity is restored.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license MIT
  */
 
@@ -50,6 +50,7 @@ import {useT} from '../../i18n';
 import {useNetworkStore} from '../../store/networkStore';
 import {useSettingsStore} from '../../store/settingsStore';
 import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
+import {useIsLandscape} from '../../hooks/useIsLandscape';
 import {useDockInset} from '../../navigation/dockLayout';
 
 type FilterKey = 'all' | 'recent' | 'frequent' | 'reco' | 'discover';
@@ -109,6 +110,7 @@ export default function HomeScreen() {
   const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
   const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
   const landscapePadding = useLandscapeSidebarPadding();
+  const isLandscape = useIsLandscape();
 
   const navigation = useNavigation<any>();
 
@@ -266,9 +268,11 @@ export default function HomeScreen() {
   );
 
 
+  // Portrait: 3 rows of 2 tiles. Landscape: 2 rows of 3, leaving height for the carousels.
+  const quickCols = isLandscape ? 3 : 2;
   const quickRows: typeof quickItems[] = [];
-  for (let i = 0; i < Math.min(quickItems.length, 8); i += 2) {
-    quickRows.push(quickItems.slice(i, i + 2));
+  for (let i = 0; i < Math.min(quickItems.length, 8); i += quickCols) {
+    quickRows.push(quickItems.slice(i, i + quickCols));
   }
 
   return (

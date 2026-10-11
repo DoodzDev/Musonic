@@ -80,11 +80,12 @@ export const t = {
     home: 'Accueil',
     search: 'Recherche',
     library: 'Bibliothèque',
+    libraryShort: 'Biblio.',
   },
 
   // ─── Drawer / Navigation ───────────────────────────────────────────────────
   drawer: {
-    settings: 'Paramètres',
+    settings: 'Réglages',
     logout: 'Se déconnecter',
     logoutTitle: 'Se déconnecter',
     logoutMessage: (name: string, url: string) =>
@@ -371,7 +372,7 @@ export const t = {
 
   // ─── Settings ──────────────────────────────────────────────────────────────
   settings: {
-    title: 'Paramètres',
+    title: 'Réglages',
     language: {
       sectionTitle: 'Langue',
     },

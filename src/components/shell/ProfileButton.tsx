@@ -1,16 +1,16 @@
 /**
  * @file ProfileButton.tsx
  * @description Design v2 round account avatar shown at the top right of the
- *   main screens (ADR-010 B2). Shows the active account's initial and opens
- *   the Profile sheet.
+ *   main screens (ADR-010 B2). Shows the active account's initial on an
+ *   accent disc and opens the Profile sheet.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
 import {View} from 'react-native';
 import PressableScale from '../ui/PressableScale';
-import ArtistAvatar from '../ui/ArtistAvatar';
+import AccountAvatar from './AccountAvatar';
 import {useProfile} from '../ProfileProvider';
 import {useSettingsStore} from '../../store/settingsStore';
 import {useT} from '../../i18n';
@@ -26,9 +26,8 @@ export default function ProfileButton() {
 
   return (
     <PressableScale onPress={open} hitSlop={8} accessibilityLabel={t.ui.profile}>
-      {/* The button carries the label; hide the avatar's own "image" label. */}
       <View importantForAccessibility="no-hide-descendants">
-        <ArtistAvatar name={username || '?'} size={SIZE} />
+        <AccountAvatar name={username} size={SIZE} />
       </View>
     </PressableScale>
   );

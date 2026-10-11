@@ -1,12 +1,10 @@
 /**
  * @file shellConstants.ts
- * @description Shared sizing constants for the app shell (tab bar / sidebar +
- *   mini-player). Kept in a dependency-free module so TabNavigator and
- *   MiniPlayer can both import them without creating a circular import between
- *   the two components.
+ * @description Shared sizing constants for the app shell (landscape Rail).
+ *   Kept in a dependency-free module so the Rail and the screens' landscape
+ *   padding hook can both import it without a circular import.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
-export const TAB_H = 60;
 export const SIDEBAR_WIDTH = 72;

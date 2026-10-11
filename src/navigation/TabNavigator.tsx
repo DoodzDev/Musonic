@@ -4,30 +4,27 @@
  *   Each tab hosts its own stack so deep-link screens (AlbumDetail, ArtistDetail)
  *   are reachable from any tab without cross-stack navigation. Fully custom
  *   `tabBar` render: the Design v2 Dock in portrait (glass mini player, tab
- *   capsule and search circle), a vertical sidebar (left or right, per
- *   settings) in landscape — same navigator state/behavior, only the visual
- *   arrangement differs.
+ *   capsule and search circle), the Design v2 Rail in landscape (glass tab
+ *   capsule, search circle and mini player tile, left or right per settings)
+ *   — same navigator state/behavior, only the visual arrangement differs.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback} from 'react';
-import {StyleSheet, View, TouchableOpacity} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useT} from '../i18n';
-import {useSettingsStore} from '../store/settingsStore';
 import {useIsLandscape} from '../hooks/useIsLandscape';
-import {SIDEBAR_WIDTH} from './shellConstants';
 import HomeStack from './HomeStack';
 import SearchStack from './SearchStack';
 import LibraryStack from './LibraryStack';
 import HomeIcon from '../components/icons/HomeIcon';
 import SearchIcon from '../components/icons/SearchIcon';
 import LibraryIcon from '../components/icons/LibraryIcon';
-import MiniPlayer from '../components/MiniPlayer';
 import Dock from './Dock';
+import Rail from './Rail';
 import FullScreenPlayer from '../components/FullScreenPlayer';
 import AudioPlayer from '../components/AudioPlayer';
 import ConnectivityMonitor from '../components/ConnectivityMonitor';
@@ -52,54 +49,17 @@ function LibraryTabIcon({focused}: TabIconProps) {
   return <LibraryIcon size={ICON_SIZE} color={focused ? COLOR_ACTIVE : COLOR_INACTIVE} filled={focused} />;
 }
 
-// ─── Custom tab bar (portrait bottom row / landscape sidebar) ─────────────────
+// ─── Custom tab bar (portrait Dock / landscape Rail) ─────────────────
 
-function AppTabBar({state, descriptors, navigation}: BottomTabBarProps) {
-  const insets = useSafeAreaInsets();
+function AppTabBar(props: BottomTabBarProps) {
   const isLandscape = useIsLandscape();
-  const navBarPosition = useSettingsStore(s => s.navBarPosition);
-
-  const handlePress = (route: (typeof state.routes)[number], isFocused: boolean) => {
-    const event = navigation.emit({type: 'tabPress', target: route.key, canPreventDefault: true});
-    if (!isFocused && !event.defaultPrevented) {
-      navigation.navigate(route.name);
-    }
-  };
-
-  if (isLandscape) {
-    return (
-      <View
-        style={[
-          styles.sidebar,
-          navBarPosition === 'right' ? styles.sidebarRight : styles.sidebarLeft,
-          {paddingTop: insets.top + 16},
-        ]}>
-        {state.routes.map((route, index) => {
-          const {options} = descriptors[route.key];
-          const isFocused = state.index === index;
-          const Icon = options.tabBarIcon as React.ComponentType<TabIconProps> | undefined;
-          return (
-            <TouchableOpacity
-              key={route.key}
-              onPress={() => handlePress(route, isFocused)}
-              style={styles.sidebarItem}
-              activeOpacity={0.7}>
-              {Icon && <Icon focused={isFocused} color={isFocused ? COLOR_ACTIVE : COLOR_INACTIVE} size={ICON_SIZE} />}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    );
-  }
-
-  return <Dock state={state} descriptors={descriptors} navigation={navigation} insets={insets} />;
+  return isLandscape ? <Rail {...props} /> : <Dock {...props} />;
 }
 
 // ─── Navigator ─────────────────────────────────────────────────────────────────
 
 export default function TabNavigator() {
   const t = useT();
-  const isLandscape = useIsLandscape();
   useImageColor();
 
   const renderTabBar = useCallback((props: BottomTabBarProps) => <AppTabBar {...props} />, []);
@@ -149,8 +109,6 @@ export default function TabNavigator() {
 
       <ConnectivityMonitor />
       <AudioPlayer />
-      {/* Portrait: the mini player lives in the Dock. Landscape keeps the side-bar tile until P3 lot 3. */}
-      {isLandscape && <MiniPlayer />}
       <FullScreenPlayer />
       <GlobalToast />
     </View>
@@ -159,22 +117,4 @@ export default function TabNavigator() {
 
 const styles = StyleSheet.create({
   fill: {flex: 1},
-  sidebar: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: SIDEBAR_WIDTH,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    gap: 44,
-    zIndex: 10,
-  },
-  sidebarLeft: {left: 0},
-  sidebarRight: {right: 0},
-  sidebarItem: {
-    width: SIDEBAR_WIDTH,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-  },
 });

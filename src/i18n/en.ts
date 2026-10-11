@@ -77,6 +77,7 @@ export const en = {
     home: 'Home',
     search: 'Search',
     library: 'Library',
+    libraryShort: 'Library',
   },
 
   // ─── Drawer / Navigation ───────────────────────────────────────────────────

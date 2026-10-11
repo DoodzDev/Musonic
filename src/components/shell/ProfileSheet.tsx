@@ -7,7 +7,7 @@
  *   page. The identity block is the sheet's fixed header, so swiping down on
  *   it closes the sheet; in landscape it moves to a column on the left.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useState} from 'react';
@@ -17,7 +17,7 @@ import {ScrollView} from 'react-native-gesture-handler';
 import {useNavigation} from '@react-navigation/native';
 import Sheet from '../ui/Sheet';
 import Text from '../ui/Text';
-import ArtistAvatar from '../ui/ArtistAvatar';
+import AccountAvatar from './AccountAvatar';
 import {ListGroup, ListItem} from '../ui/ListGroup';
 import {toast} from '../ui/Toast';
 import CheckIcon from '../icons/CheckIcon';
@@ -125,7 +125,7 @@ export default function ProfileSheet({visible, onClose}: Props) {
 
   const identity = active ? (
     <View style={[styles.identity, isLandscape && styles.identitySide]} onLayout={measure(setIdentityH)}>
-      <ArtistAvatar name={active.username} size={72} />
+      <AccountAvatar name={active.username} size={72} />
       <Text variant="title2" numberOfLines={1}>
         {active.username}
       </Text>
