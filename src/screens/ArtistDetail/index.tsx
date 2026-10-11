@@ -5,8 +5,9 @@
  *   fades into the top bar next to the back button once the header has
  *   scrolled out of view. Shows top songs (tap to play), and album discography
  *   fetched from the Subsonic API.
+ *   Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license MIT
  */
 
@@ -35,7 +36,7 @@ import {
   enrichTracksWithAlbumType,
   type DeezerTrack,
 } from '../../api/deezer';
-import {loadAndPlayTracks} from '../../services/playerActions';
+import {playFromList} from '../../services/playback/launchers';
 import type {Track} from '../../store/playerStore';
 import type {LibraryStackParams} from '../../navigation/types';
 import AlbumCard from '../../components/AlbumCard';
@@ -175,13 +176,14 @@ export default function ArtistDetailScreen() {
 
   const handlePlayTopSongs = useCallback(async () => {
     if (!topSongs.length) return;
-    await loadAndPlayTracks(topSongsToTracks(), 0);
-  }, [topSongs, topSongsToTracks]);
+    // ISS-025: the popular tracks are the queue, shuffle respected.
+    await playFromList({type: 'artist', id: routeArtistId, name: routeArtistName}, topSongsToTracks());
+  }, [topSongs, topSongsToTracks, routeArtistId, routeArtistName]);
 
   const handlePressTopSong = useCallback(async (index: number) => {
     if (!topSongs.length) return;
-    await loadAndPlayTracks(topSongsToTracks(), index);
-  }, [topSongs, topSongsToTracks]);
+    await playFromList({type: 'artist', id: routeArtistId, name: routeArtistName}, topSongsToTracks(), index);
+  }, [topSongs, topSongsToTracks, routeArtistId, routeArtistName]);
 
   // Same compact header (name left, framed photo right) in both orientations
   // — no more huge full-bleed photo to scroll past. It's normal scrolling

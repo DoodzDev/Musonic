@@ -4,8 +4,9 @@
  *   of up to 50 tracks from Deezer top tracks of the user's most-liked artists and
  *   Navidrome getSimilarSongs on native liked tracks, deduped against what's
  *   already liked, shuffled, and capped at 50.
+ *   Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license MIT
  */
 
@@ -35,7 +36,8 @@ import {showToast} from '../../components/Toast';
 import {getStarred, getSimilarSongs} from '../../api/endpoints/library';
 import {getDeezerArtistId, getDeezerArtistTopTracks} from '../../api/deezer';
 import {getStreamUrl, getCoverArtUrl} from '../../api/client';
-import {loadAndPlayTracks, fisherYates} from '../../services/playerActions';
+import {playFromList} from '../../services/playback/launchers';
+import {shuffle} from '../../services/playback/buildQueue';
 import {usePlayerStore} from '../../store/playerStore';
 import {useSettingsStore} from '../../store/settingsStore';
 import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
@@ -110,7 +112,7 @@ async function buildRecommendations(likedSongs: SubsonicSong[]): Promise<Subsoni
     }),
   ]);
 
-  return fisherYates(pool).slice(0, MAX_RECOMMENDATIONS);
+  return shuffle(pool, Math.random).slice(0, MAX_RECOMMENDATIONS);
 }
 
 // ─── Song Row ────────────────────────────────────────────────────────────────
@@ -198,7 +200,7 @@ export default function LikedRecommendationsScreen() {
   const displayedSongs = songs.filter(s => localLikeOverrides[String(s.id)] !== false);
 
   const handlePressSong = useCallback((index: number) => {
-    loadAndPlayTracks(displayedSongs.map(songToTrack), index);
+    playFromList({type: 'recommendations'}, displayedSongs.map(songToTrack), index);
   }, [displayedSongs]);
 
   const onRowPress = useStableCallback(handlePressSong);

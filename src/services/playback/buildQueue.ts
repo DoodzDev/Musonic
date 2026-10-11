@@ -217,23 +217,45 @@ export function removeById<T extends QueueTrack>(state: QueueState<T>, ids: read
   return {...state, userQueue: state.userQueue.filter(keep), upcoming: state.upcoming.filter(keep), autoplay: state.autoplay.filter(keep)};
 }
 
+type Zone = 'userQueue' | 'upcoming' | 'autoplay';
+const ZONES: Zone[] = ['userQueue', 'upcoming', 'autoplay'];
+
+/** A track takes the role of the zone it lands in. */
+function joinZone<T extends QueueTrack>(t: T, zone: Zone): T {
+  const rest: T = {...t};
+  delete rest.isMagic;
+  delete rest.isAutoplay;
+  if (zone === 'autoplay') rest.isAutoplay = true;
+  else if (zone === 'upcoming' && t.isMagic) rest.isMagic = true;
+  return rest;
+}
+
 /**
- * Moves a track to come before another one, by id (D4). Works inside the
- * "added by you" zone or the context zone; a move across zones is ignored.
+ * Moves a track to come before `beforeId` (null = the very end), by id (D4).
+ * The list may cross zones: the track then belongs to the zone it lands in
+ * (dropped among "added by you", it becomes one of them).
  */
 export function moveById<T extends QueueTrack>(state: QueueState<T>, id: string, beforeId: string | null): QueueState<T> {
-  const move = (zone: T[]): T[] | null => {
-    const from = zone.findIndex(t => t.id === id);
-    if (from < 0) return null;
-    const rest = zone.filter((_, i) => i !== from);
-    const to = beforeId === null ? rest.length : rest.findIndex(t => t.id === beforeId);
-    if (to < 0) return null;
-    return [...rest.slice(0, to), zone[from], ...rest.slice(to)];
-  };
-  const user = move(state.userQueue);
-  if (user) return {...state, userQueue: user};
-  const upcoming = move(state.upcoming);
-  return upcoming ? {...state, upcoming} : state;
+  if (id === beforeId) return state;
+  const from = ZONES.find(z => state[z].some(t => t.id === id));
+  if (!from) return state;
+  const fromIndex = state[from].findIndex(t => t.id === id);
+  const moved = state[from][fromIndex];
+  const without: QueueState<T> = {...state, [from]: state[from].filter((_, i) => i !== fromIndex)};
+
+  let target: Zone;
+  let index: number;
+  if (beforeId === null) {
+    target = [...ZONES].reverse().find(z => without[z].length > 0) ?? from;
+    index = without[target].length;
+  } else {
+    const found = ZONES.find(z => without[z].some(t => t.id === beforeId));
+    if (!found) return state;
+    target = found;
+    index = without[target].findIndex(t => t.id === beforeId);
+  }
+  const zone = without[target];
+  return {...without, [target]: [...zone.slice(0, index), joinZone(moved, target), ...zone.slice(index)]};
 }
 
 /** "Clear queue": everything to come goes, the current track stays. */

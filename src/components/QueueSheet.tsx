@@ -2,11 +2,12 @@
  * @file QueueSheet.tsx
  * @description Bottom sheet showing the current playback queue. Supports
  *   drag-and-drop reordering, individual removal, and move-to-top actions.
+ *   Rows are keyed by track; moves go through the playback engine, across zones.
  * @author DoodzProg
- * @version 1.0.1
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -212,6 +213,15 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
   const {state} = usePlaybackState();
   const isPlaying = state === State.Playing;
   const upcoming = usePlayerStore(s => s.upcoming);
+  // Rows keyed by track, not by position, so a reorder never remounts the
+  // wrong rows (a repeated track gets #2, #3…).
+  const rowKeys = useMemo(() => {
+    const seen: Record<string, number> = {};
+    return upcoming.map(t => {
+      seen[t.id] = (seen[t.id] ?? 0) + 1;
+      return seen[t.id] > 1 ? `${t.id}#${seen[t.id]}` : t.id;
+    });
+  }, [upcoming]);
   const currentPlaylistName = usePlayerStore(s => s.currentPlaylistName);
   const isShuffled = usePlayerStore(s => s.isShuffled);
   const shuffleMode = usePlayerStore(s => s.shuffleMode);
@@ -356,7 +366,7 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
           <GestureHandlerRootView style={styles.fill}>
             <DraggableFlatList
               data={upcoming}
-              keyExtractor={(item, idx) => `${item.id}-${idx}`}
+              keyExtractor={(item, idx) => (rowKeys[idx]?.startsWith(item.id) ? rowKeys[idx] : item.id)}
               onDragEnd={({from, to}) => reorderQueue(from, to)}
               renderItem={renderItem}
               showsVerticalScrollIndicator={false}

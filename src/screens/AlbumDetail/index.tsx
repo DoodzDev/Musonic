@@ -4,8 +4,9 @@
  *   and playback controls for a specific album. Supports shuffle, star/unstar,
  *   animated parallax header, and a compact title (album, artist avatar +
  *   name) that fades into the fixed top bar once the header scrolls away.
+ *   Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license MIT
  */
 
@@ -40,7 +41,9 @@ import AlbumOptionsSheet from '../../components/AlbumOptionsSheet';
 import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
 import {useActiveTrack} from 'react-native-track-player';
 import TrackPlayer from 'react-native-track-player';
-import {loadAndPlayAlbum, loadAndPlayTracks, syncUpcomingFromRNTP} from '../../services/playerActions';
+import {syncUpcomingFromRNTP} from '../../services/playerActions';
+import {playFromList} from '../../services/playback/launchers';
+import {playbackEngine} from '../../services/playback/engine';
 import {usePlayerStore} from '../../store/playerStore';
 import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
 import {colorFromId} from '../../utils/colorUtils';
@@ -494,20 +497,7 @@ export default function AlbumDetailScreen() {
     }
   }, [isStarred, isStarPending, albumId, albumName, artistName, songs]);
 
-  const handlePlay = useCallback(async () => {
-    setLoadingAlbum(true);
-    try {
-      await loadAndPlayAlbum(albumId, isShuffled);
-    } catch (e) {
-      console.warn('play error', e);
-    } finally {
-      setLoadingAlbum(false);
-    }
-  }, [albumId, isShuffled]);
-
-  const handlePlayTrack = useCallback(async (startIndex: number) => {
-    if (!songs.length) return;
-    const tracks: Track[] = songs.map((s: any) => ({
+  const albumTracks = useCallback((): Track[] => songs.map((s: any) => ({
       id: s.id,
       title: s.title || getT().home.unknownTitle,
       artist: s.artist || getT().artistDetail.unknownArtist,
@@ -518,9 +508,27 @@ export default function AlbumDetailScreen() {
       streamUrl: getStreamUrl(s.id),
       url: getStreamUrl(s.id),
       artwork: getCoverArtUrl(s.coverArt || coverArtId || s.id, 300),
-    }));
-    await loadAndPlayTracks(tracks, startIndex);
-  }, [songs, albumName, coverArtId]);
+  })), [songs, albumName, coverArtId]);
+
+  const albumSource = useMemo(() => ({type: 'album' as const, id: albumId, name: albumName}), [albumId, albumName]);
+
+  const handlePlay = useCallback(async () => {
+    if (!songs.length) return;
+    setLoadingAlbum(true);
+    try {
+      // The engine applies shuffle (albums too, A7) and offline itself.
+      await playFromList(albumSource, albumTracks());
+    } catch (e) {
+      console.warn('play error', e);
+    } finally {
+      setLoadingAlbum(false);
+    }
+  }, [songs, albumSource, albumTracks]);
+
+  const handlePlayTrack = useCallback(async (startIndex: number) => {
+    if (!songs.length) return;
+    await playFromList(albumSource, albumTracks(), startIndex);
+  }, [songs, albumSource, albumTracks]);
 
   const handleSongMore = useCallback((song: SubsonicSong) => {
     setSelectedSong(song);
@@ -536,6 +544,11 @@ export default function AlbumDetailScreen() {
   const handleAlbumAddToQueue = useCallback(async () => {
     if (!songs.length) return;
     try {
+      if (playbackEngine.isActive()) {
+        await playbackEngine.playNext(albumTracks());
+        showToast(getT().playlistOptions.queuedToast(songs.length));
+        return;
+      }
       const idx = await TrackPlayer.getActiveTrackIndex();
       const insertAt = idx != null ? idx + 1 : undefined;
       const rnTracks = songs.map(s => ({
@@ -554,7 +567,7 @@ export default function AlbumDetailScreen() {
     } catch {
       showToast(getT().playlistOptions.queueError);
     }
-  }, [songs, albumName]);
+  }, [songs, albumName, albumTracks]);
 
   const renderItem = useCallback(({item, index}: {item: SubsonicSong, index: number}) => (
     <SongRow

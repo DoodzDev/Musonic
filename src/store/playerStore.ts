@@ -637,10 +637,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const [item] = arr.splice(from, 1);
     arr.splice(to, 0, item);
     set({upcoming: arr});
-    TrackPlayer.getActiveTrackIndex()
-      .then(activeIdx => {
+    // Legacy path (engine inactive): native indexes are checked against the
+    // real queue first, an out-of-range move crashes the native player.
+    Promise.all([TrackPlayer.getActiveTrackIndex(), TrackPlayer.getQueue()])
+      .then(([activeIdx, queue]) => {
         if (activeIdx == null) return;
-        return TrackPlayer.move(activeIdx + 1 + from, activeIdx + 1 + to);
+        const src = activeIdx + 1 + from;
+        const dst = activeIdx + 1 + to;
+        if (src >= queue.length || dst >= queue.length) return;
+        return TrackPlayer.move(src, dst);
       })
       .catch(() => {});
   },
@@ -682,7 +687,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         for (let i = 0; i < ids.length; i++) {
           const queue = await TrackPlayer.getQueue();
           const srcIdx = queue.findIndex(t => String(t.id) === ids[i]);
-          if (srcIdx !== -1) await TrackPlayer.move(srcIdx, activeIdx + 1 + i);
+          const dstIdx = activeIdx + 1 + i;
+          if (srcIdx !== -1 && dstIdx < queue.length) await TrackPlayer.move(srcIdx, dstIdx);
         }
       })
       .catch(() => {});

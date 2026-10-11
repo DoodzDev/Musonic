@@ -4,8 +4,9 @@
  *   played albums, frequently played albums, AI-recommended songs, and a discover
  *   section of similar artists. Supports filter pills, pull-to-refresh, and
  *   auto-recovery when connectivity is restored.
+ *   Singles play through the playback engine (playAlbumById).
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license MIT
  */
 
@@ -37,7 +38,7 @@ import {
   enrichTracksWithAlbumType,
   type DeezerTrack,
 } from '../../api/deezer';
-import {loadAndPlayAlbum} from '../../services/playerActions';
+import {playAlbumById} from '../../services/playback/launchers';
 import {usePlayerStore} from '../../store/playerStore';
 import type {SubsonicAlbum, SubsonicSimilarArtist, SubsonicPlaylist} from '../../api/types';
 import AlbumCard from '../../components/AlbumCard';
@@ -364,7 +365,7 @@ export default function HomeScreen() {
                   label={item.songCount === 1 ? t.home.typeSingle : t.home.typeAlbum}
                   onPress={() =>
                     item.songCount === 1
-                      ? loadAndPlayAlbum(item.id)
+                      ? playAlbumById(item.id)
                       : navigation.navigate('AlbumDetail', {albumId: item.id})
                   }
                 />
@@ -395,7 +396,7 @@ export default function HomeScreen() {
                   label={item.songCount === 1 ? t.home.typeSingle : t.home.typeAlbum}
                   onPress={() =>
                     item.songCount === 1
-                      ? loadAndPlayAlbum(item.id)
+                      ? playAlbumById(item.id)
                       : navigation.navigate('AlbumDetail', {albumId: item.id})
                   }
                 />

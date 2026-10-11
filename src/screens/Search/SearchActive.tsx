@@ -3,8 +3,9 @@
  * @description Live search screen. Single FlatList with 1:1:3 artist/album/song
  *   interleave. Subsonic results are immediate; Deezer artist images are enriched
  *   asynchronously using a generation counter to prevent race conditions.
+ *   Tapped results play alone, then autoplay (playback engine, ADR-009 A8).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState, useEffect, useRef, useCallback, memo} from 'react';
@@ -20,7 +21,7 @@ import DotsVerticalIcon from '../../components/icons/DotsVerticalIcon';
 import {darkTheme} from '../../theme';
 import {search, getDeezerArtistImageCached} from '../../api/endpoints/search';
 import {getStreamUrl, getCoverArtUrl} from '../../api/client';
-import {loadAndPlayTracks} from '../../services/playerActions';
+import {playFromList} from '../../services/playback/launchers';
 import type {SubsonicArtist, SubsonicAlbum, SubsonicSong} from '../../api/types';
 import type {Track} from '../../store/playerStore';
 import CoverArt from '../../components/CoverArt';
@@ -267,7 +268,7 @@ export default function SearchActive() {
         break;
       case 'song':
         addItem(item);
-        loadAndPlayTracks([{
+        playFromList({type: 'search'}, [{
           id: item.id,
           title: item.title,
           artist: item.artist,
@@ -340,7 +341,8 @@ export default function SearchActive() {
     const songs = allSongsRef.current;
     const tracks = songs.map(songToTrack);
     const startIndex = songs.findIndex(s => String(s.id) === String(song.id));
-    loadAndPlayTracks(tracks, startIndex >= 0 ? startIndex : 0);
+    // A8: a search result plays alone, autoplay follows.
+    playFromList({type: 'search'}, tracks, startIndex >= 0 ? startIndex : 0);
   }, [addItem]);
 
   const renderItem = useCallback(({item}: {item: SearchItem}) => {

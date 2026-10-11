@@ -42,8 +42,8 @@ import {
   enrichTracksWithAlbumType,
   type DeezerTrack,
 } from '../../api/deezer';
-import {loadAndPlayTracks} from '../../services/playerActions';
 import {playbackEngine} from '../../services/playback/engine';
+import {playFromList} from '../../services/playback/launchers';
 import ShuffleIcon from '../../components/icons/ShuffleIcon';
 import TrackPlayer, {useActiveTrack, usePlaybackState, State} from 'react-native-track-player';
 import {usePlayerStore} from '../../store/playerStore';
@@ -908,7 +908,7 @@ export default function PlaylistDetailScreen() {
   }, [isOfflineMode, downloads, songs]);
 
   const handlePressOfflineTrack = useCallback((track: DownloadedTrack) => {
-    loadAndPlayTracks([{
+    playFromList({type: 'other'}, [{
       id: track.trackId,
       title: track.title,
       artist: track.artist,
@@ -959,7 +959,7 @@ export default function PlaylistDetailScreen() {
   }, [playlistId]);
 
   const handlePressRec = useCallback((track: DeezerTrack) => {
-    loadAndPlayTracks([deezerTrackToInternalTrack(track)], 0);
+    playFromList({type: 'other'}, [deezerTrackToInternalTrack(track)], 0);
   }, []);
 
   const handleAddRec = useCallback(async (track: DeezerTrack) => {

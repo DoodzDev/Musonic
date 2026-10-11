@@ -1,31 +1,19 @@
 /**
  * @file playerActions.ts
- * @description Imperative playback action helpers used across screens. All
- *   queue-loading functions resolve `currentPlaylistId` so the orange active-track
- *   indicator in PlaylistDetail stays accurate regardless of play context.
- *   Legacy loaders hand the player back from the playback engine; skips go
- *   through the engine while it drives the player.
+ * @description Imperative playback action helpers used across screens. Every list now starts through the playback engine (launchers.ts); the
+ *   legacy loaders are gone. Skips go through the engine while it drives the
+ *   player.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 2.0.0
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer from 'react-native-track-player';
-import {getPlaylist} from '../api/endpoints/playlists';
-import {getStreamUrl, getCoverArtUrl, subsonicGet} from '../api/client';
+import {getStreamUrl, getCoverArtUrl} from '../api/client';
 import {getSimilarSongs} from '../api/endpoints/library';
 import {getDeezerArtistId, getDeezerArtistTopTracks} from '../api/deezer';
 import {activeEngine, usePlayerStore} from '../store/playerStore';
 import {useDownloadStore} from '../store/downloadStore';
 import type {Track} from '../store/playerStore';
-
-export function fisherYates(arr: Track[]): Track[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 /**
  * Converts an internal Track object to an RNTP-compatible track descriptor.
@@ -66,142 +54,6 @@ export function toRNTPTrack(t: Track) {
     isMagic: t.isMagic,
     isAutoplay: t.isAutoplay,
   };
-}
-
-export async function loadAndPlayPlaylist(
-  playlistId: string,
-  startRandom = false,
-): Promise<void> {
-  const data = await getPlaylist(playlistId);
-  const songs = data.songs || [];
-  const playlistName = data.playlist?.name || 'Playlist';
-
-  if (songs.length === 0) return;
-  activeEngine()?.detach();
-
-  const tracks: Track[] = songs.map(s => ({
-    id: s.id,
-    title: s.title,
-    artist: s.artist,
-    artistId: s.artistId,
-    album: s.album,
-    duration: s.duration,
-    coverArt: s.coverArt,
-    streamUrl: getStreamUrl(s.id),
-    url: getStreamUrl(s.id),
-    artwork: getCoverArtUrl(s.coverArt || s.albumId || s.id, 600),
-  }));
-
-  const ordered = startRandom ? fisherYates(tracks) : tracks;
-
-  const store = usePlayerStore.getState();
-  store.setCurrentPlaylist(playlistId, playlistName);
-  store.setOriginalQueue(tracks);
-  store.setQueue(ordered);
-  store.setHistory([]);
-  store.setUpcoming(ordered.slice(1));
-
-  await TrackPlayer.reset();
-  await TrackPlayer.add([toRNTPTrack(ordered[0])]);
-  await TrackPlayer.play();
-  if (ordered.length > 1) {
-    TrackPlayer.add(ordered.slice(1).map(toRNTPTrack))
-      .then(() => syncUpcomingFromRNTP())
-      .catch(() => {});
-  }
-}
-
-export async function loadAndPlayAlbum(
-  albumId: string,
-  startRandom = false,
-): Promise<void> {
-  try {
-    const res = await subsonicGet<any>('getAlbum.view', {id: albumId});
-    const album = res.album || {};
-    const songs = album.song || [];
-
-    if (songs.length === 0) return;
-    activeEngine()?.detach();
-
-    const tracks: Track[] = songs.map((s: any) => ({
-      id: s.id,
-      title: s.title,
-      artist: s.artist,
-      artistId: s.artistId || album.artistId,
-      album: s.album,
-      duration: s.duration,
-      coverArt: s.coverArt,
-      streamUrl: getStreamUrl(s.id),
-      url: getStreamUrl(s.id),
-      artwork: getCoverArtUrl(s.coverArt || album.id || s.id, 600),
-    }));
-
-    const ordered = startRandom ? fisherYates(tracks) : tracks;
-
-    const store = usePlayerStore.getState();
-    store.setCurrentPlaylist(null, null);
-    store.setOriginalQueue(tracks);
-    store.setQueue(ordered);
-    store.setHistory([]);
-    store.setUpcoming(ordered.slice(1));
-
-    await TrackPlayer.reset();
-    await TrackPlayer.add([toRNTPTrack(ordered[0])]);
-    await TrackPlayer.play();
-    if (ordered.length > 1) {
-      TrackPlayer.add(ordered.slice(1).map(toRNTPTrack))
-        .then(() => syncUpcomingFromRNTP())
-        .catch(() => {});
-    }
-  } catch (error) {
-    console.warn('Album playback error:', error);
-  }
-}
-
-export function playTrack(track: Track): void {
-  activeEngine()?.detach();
-  const store = usePlayerStore.getState();
-  store.setCurrentPlaylist(null, null);
-  store.setOriginalQueue([track]);
-  store.setQueue([track]);
-  store.setHistory([]);
-  store.setUpcoming([]);
-
-  TrackPlayer.reset()
-    .then(() => TrackPlayer.add([toRNTPTrack(track)]))
-    .then(() => TrackPlayer.play())
-    .catch(e => console.log('[TrackPlayer] playTrack:', e));
-}
-
-export async function loadAndPlayTracks(
-  tracks: Track[],
-  startIndex: number = 0,
-  playlistContext?: {id: string; name: string},
-): Promise<void> {
-  if (tracks.length === 0) return;
-  activeEngine()?.detach();
-  const idx = Math.max(0, Math.min(startIndex, tracks.length - 1));
-  const store = usePlayerStore.getState();
-  // Always resolve playlist context: set provided one, or clear it.
-  // This prevents orange-highlight bleed when playing from a non-playlist context
-  // (album, liked songs, search) while a playlist screen is still visible.
-  store.setCurrentPlaylist(playlistContext?.id ?? null, playlistContext?.name ?? null);
-  store.setOriginalQueue(tracks);
-  store.setQueue(tracks);
-  store.setHistory(tracks.slice(0, idx));
-  store.setUpcoming(tracks.slice(idx + 1));
-  await TrackPlayer.reset();
-  await TrackPlayer.add([toRNTPTrack(tracks[idx])]);
-  await TrackPlayer.play();
-  (async () => {
-    if (idx > 0) {
-      await TrackPlayer.add(tracks.slice(0, idx).map(toRNTPTrack), 0);
-    }
-    if (idx < tracks.length - 1) {
-      await TrackPlayer.add(tracks.slice(idx + 1).map(toRNTPTrack));
-    }
-    await syncUpcomingFromRNTP();
-  })().catch(() => {});
 }
 
 export function skipNext(): void {

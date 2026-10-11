@@ -298,6 +298,20 @@ describe('D. Manual queue', () => {
     expect(moveById(s, 'missing', '3')).toBe(s);
   });
 
+  it('D4 bis: moving across zones, the track joins the zone it lands in', () => {
+    let s = addToQueue(start(OFF, '8'), track('mine'));
+    s = setAutoplay(s, list('s1', 's2'), OFF);
+    // An autoplay suggestion dropped before "mine" becomes "added by you".
+    s = moveById(s, 's2', 'mine');
+    expect(ids(s.userQueue)).toEqual(['s2', 'mine']);
+    expect(s.userQueue[0].isAutoplay).toBeUndefined();
+    // A context track dropped at the very end becomes autoplay.
+    s = moveById(s, '9', null);
+    expect(ids(s.autoplay)).toEqual(['s1', '9']);
+    expect(s.autoplay[1].isAutoplay).toBe(true);
+    expect(ids(upcomingOrder(s))).toEqual(['s2', 'mine', '10', 's1', '9']);
+  });
+
   it('"Clear queue": everything to come goes, the current track stays', () => {
     const s = clearQueue(addToQueue(start(OFF), track('a')));
     expect(s.current?.id).toBe('1');

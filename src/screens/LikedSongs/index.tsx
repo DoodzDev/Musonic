@@ -3,8 +3,9 @@
  * @description Liked Songs screen. Text-only header (no cover) with a top search
  *   bar, like/add-to-playlist/download actions per row, and remove-from-liked
  *   actions.
+ *   Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license MIT
  */
 
@@ -32,7 +33,7 @@ import SearchIcon from '../../components/icons/SearchIcon';
 import DotsVerticalIcon from '../../components/icons/DotsVerticalIcon';
 import {getStarred} from '../../api/endpoints/library';
 import {getStreamUrl, getCoverArtUrl} from '../../api/client';
-import {loadAndPlayTracks} from '../../services/playerActions';
+import {playFromList} from '../../services/playback/launchers';
 import {usePlayerStore} from '../../store/playerStore';
 import {useSettingsStore} from '../../store/settingsStore';
 import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
@@ -159,7 +160,6 @@ export default function LikedSongsScreen() {
   const t = useT();
   const navigation = useNavigation<any>();
   const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
-  const isShuffled = usePlayerStore(s => s.isShuffled);
   const shuffleMode = usePlayerStore(s => s.shuffleMode);
   const toggleShuffle = usePlayerStore(s => s.toggleShuffle);
   const setLikedSongs = usePlayerStore(s => s.setLikedSongs);
@@ -195,14 +195,12 @@ export default function LikedSongsScreen() {
 
   const handlePlayAll = useCallback(() => {
     if (searchedSongs.length === 0) return;
-    const tracks = searchedSongs.map(songToTrack);
-    const ordered = isShuffled ? [...tracks].sort(() => Math.random() - 0.5) : tracks;
-    loadAndPlayTracks(ordered, 0);
-  }, [searchedSongs, isShuffled]);
+    playFromList({type: 'liked'}, searchedSongs.map(songToTrack));
+  }, [searchedSongs]);
 
   const handlePressSong = useCallback(
     (index: number) => {
-      loadAndPlayTracks(searchedSongs.map(songToTrack), index);
+      playFromList({type: 'liked'}, searchedSongs.map(songToTrack), index);
     },
     [searchedSongs],
   );

@@ -4,8 +4,9 @@
  *   recommendation sections: based on liked songs, based on recent listens, and
  *   based on similar artists from the user's top liked artist.
  *   Recommendations are streamed via OctoFiesta using Deezer IDs as Subsonic IDs.
+ *   Tapped tracks play alone, then autoplay (playback engine, ADR-009 A8).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
@@ -32,7 +33,7 @@ import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding
 import {useIsLandscape} from '../../hooks/useIsLandscape';
 import {getStarred, getRecentAlbums} from '../../api/endpoints/library';
 import {getStreamUrl, getCoverArtUrl} from '../../api/client';
-import {loadAndPlayTracks} from '../../services/playerActions';
+import {playFromList} from '../../services/playback/launchers';
 import type {Track} from '../../store/playerStore';
 import {
   getDeezerArtistId,
@@ -250,7 +251,7 @@ export default function SearchHome() {
   const handleTrackPress = useCallback(
     (track: DeezerTrack) => {
       if (track.isSingle) {
-        loadAndPlayTracks([deezerTrackToTrack(track)], 0);
+        playFromList({type: 'search'}, [deezerTrackToTrack(track)], 0);
       } else {
         navigation.navigate('AlbumDetail', {albumId: `ext-deezer-album-${track.album.id}`});
       }
@@ -261,7 +262,7 @@ export default function SearchHome() {
   // ── Direct play — always plays regardless of isSingle ────────────────────────
   const handleTrackPlay = useCallback(
     (track: DeezerTrack) => {
-      loadAndPlayTracks([deezerTrackToTrack(track)], 0);
+      playFromList({type: 'search'}, [deezerTrackToTrack(track)], 0);
     },
     [],
   );
@@ -422,7 +423,7 @@ export default function SearchHome() {
                         if (item.asAlbum) {
                           navigation.navigate('AlbumDetail', {albumId: `ext-deezer-album-${item.track.album.id}`});
                         } else {
-                          loadAndPlayTracks([deezerTrackToTrack(item.track)], 0);
+                          playFromList({type: 'search'}, [deezerTrackToTrack(item.track)], 0);
                         }
                       }}
                     />

@@ -318,7 +318,7 @@ export const playbackEngine = {
     });
   },
 
-  /** Moves a track to come before `beforeId` (null = end of its zone), by id (D4). */
+  /** Moves a track to come before `beforeId` (null = the very end), by id, across zones (D4). */
   move(id: string, beforeId: string | null): Promise<void> {
     return run('move', async () => {
       state = Q.moveById(state, id, beforeId);
