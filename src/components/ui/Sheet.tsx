@@ -5,9 +5,11 @@
  *   content up to 90 % of the screen and adapts to rotation. Opens with the
  *   no-bounce sheet spring; closes by swiping down (shared DISMISS
  *   thresholds), tapping the dimmed backdrop or pressing Back. Hosts its own
- *   ToastHost so toasts show above it.
+ *   ToastHost so toasts show above it. An optional fixed `header` sits under
+ *   the handle and is part of the swipe-to-close zone; with `headerSide`
+ *   (landscape) it becomes a column on the left of the content.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useRef, useState} from 'react';
@@ -33,8 +35,16 @@ type Props = {
   onClose: () => void;
   title?: string;
   /**
+   * Fixed content under the handle and title. It never scrolls and is part
+   * of the swipe-to-close zone, so a scrollable sheet can also be closed
+   * from there.
+   */
+  header?: React.ReactNode;
+  /** Put `header` in a column left of the content (landscape) instead of above it. */
+  headerSide?: boolean;
+  /**
    * Set when the content scrolls: the swipe-to-close then only starts on the
-   * handle and title, so scrolling the content never drags the sheet.
+   * handle, title and `header`, so scrolling the content never drags the sheet.
    */
   scrollable?: boolean;
   children: React.ReactNode;
@@ -43,7 +53,15 @@ type Props = {
 const MAX_HEIGHT_RATIO = 0.9;
 const CLOSE_MS = 220;
 
-export default function Sheet({visible, onClose, title, scrollable = false, children}: Props) {
+export default function Sheet({
+  visible,
+  onClose,
+  title,
+  header: fixedHeader,
+  headerSide = false,
+  scrollable = false,
+  children,
+}: Props) {
   const t = useT();
   const {height: screenHeight} = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -68,19 +86,21 @@ export default function Sheet({visible, onClose, title, scrollable = false, chil
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, screenHeight, offset]);
 
-  const pan = Gesture.Pan()
-    .activeOffsetY(12)
-    .failOffsetX([-12, 12])
-    .onUpdate(e => {
-      offset.value = e.translationY > 0 ? e.translationY : rubberBand(e.translationY, 0);
-    })
-    .onEnd(e => {
-      if (e.translationY > DISMISS.distance || e.velocityY > DISMISS.velocity) {
-        runOnJS(onClose)();
-      } else {
-        offset.value = withSpring(0, springs.sheet);
-      }
-    });
+  // A factory: one gesture object cannot be attached to two detectors.
+  const makePan = () =>
+    Gesture.Pan()
+      .activeOffsetY(12)
+      .failOffsetX([-12, 12])
+      .onUpdate(e => {
+        offset.value = e.translationY > 0 ? e.translationY : rubberBand(e.translationY, 0);
+      })
+      .onEnd(e => {
+        if (e.translationY > DISMISS.distance || e.velocityY > DISMISS.velocity) {
+          runOnJS(onClose)();
+        } else {
+          offset.value = withSpring(0, springs.sheet);
+        }
+      });
 
   const sheetStyle = useAnimatedStyle(() => ({transform: [{translateY: Math.max(-12, offset.value)}]}));
   const backdropStyle = useAnimatedStyle(() => ({
@@ -99,8 +119,12 @@ export default function Sheet({visible, onClose, title, scrollable = false, chil
           {title}
         </Text>
       ) : null}
+      {headerSide ? null : fixedHeader}
     </View>
   );
+
+  const draggable = (node: React.ReactNode) =>
+    scrollable ? <GestureDetector gesture={makePan()}>{node}</GestureDetector> : node;
 
   const onBodyLayout = () => {
     if (!visible || opening.current) return;
@@ -117,8 +141,15 @@ export default function Sheet({visible, onClose, title, scrollable = false, chil
         {maxHeight: screenHeight * MAX_HEIGHT_RATIO, paddingBottom: insets.bottom + spacing.m},
         sheetStyle,
       ]}>
-      {scrollable ? <GestureDetector gesture={pan}>{header}</GestureDetector> : header}
-      {children}
+      {draggable(header)}
+      {headerSide && fixedHeader ? (
+        <View style={styles.sideRow}>
+          {draggable(<View style={styles.side}>{fixedHeader}</View>)}
+          <View style={styles.sideContent}>{children}</View>
+        </View>
+      ) : (
+        children
+      )}
     </Animated.View>
   );
 
@@ -134,7 +165,7 @@ export default function Sheet({visible, onClose, title, scrollable = false, chil
           />
         </Animated.View>
 
-        {scrollable ? body : <GestureDetector gesture={pan}>{body}</GestureDetector>}
+        {scrollable ? body : <GestureDetector gesture={makePan()}>{body}</GestureDetector>}
 
         <ToastHost bottom={insets.bottom + spacing.l} />
       </GestureHandlerRootView>
@@ -157,4 +188,7 @@ const styles = StyleSheet.create({
   handleZone: {height: 24, alignItems: 'center', justifyContent: 'center'},
   handle: {width: 36, height: 5, borderRadius: 3, backgroundColor: colors.separator},
   title: {textAlign: 'center', paddingHorizontal: spacing.gutter, paddingBottom: spacing.s},
+  sideRow: {flexDirection: 'row', flexShrink: 1, minHeight: 0},
+  side: {width: '36%', justifyContent: 'center'},
+  sideContent: {flex: 1, minHeight: 0},
 });

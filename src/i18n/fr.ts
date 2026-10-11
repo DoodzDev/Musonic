@@ -60,6 +60,7 @@ export const t = {
     usernamePlaceholder: 'admin',
     passwordLabel: 'Mot de passe',
     connectButton: 'Se connecter',
+    savedAccounts: 'Comptes enregistrés',
     successMessage: '✓ Connecté ! Chargement...',
     missingFieldsTitle: 'Champs manquants',
     missingFieldsBody: 'URL, identifiant et mot de passe requis.',

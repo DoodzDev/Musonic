@@ -2,9 +2,10 @@
  * @file index.tsx
  * @description Server Setup screen. First-run onboarding: collects server URL,
  *   username and password, validates credentials against the Subsonic API, and
- *   persists the server configuration via settingsStore.
+ *   persists the server configuration via settingsStore. Accounts already
+ *   saved are listed so the user can switch back without logging in again.
  * @author DoodzProg
- * @version 1.0.1
+ * @version 1.1.0
  * @license MIT
  */
 
@@ -58,6 +59,7 @@ export default function ServerSetupScreen() {
   const [status, setStatus] = useState<'idle' | 'ok' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const servers = useSettingsStore(s => s.servers);
   const addServer = useSettingsStore(s => s.addServer);
   const setActiveServer = useSettingsStore(s => s.setActiveServer);
 
@@ -101,6 +103,24 @@ export default function ServerSetupScreen() {
         keyboardShouldPersistTaps="handled">
         <Text style={styles.logo}>{t.serverSetup.appName}</Text>
         <Text style={styles.subtitle}>{t.serverSetup.subtitle}</Text>
+
+        {servers.length > 0 && (
+          <View style={styles.saved}>
+            <Text style={styles.label}>{t.serverSetup.savedAccounts}</Text>
+            {servers.map(s => (
+              <TouchableOpacity
+                key={s.id}
+                style={styles.savedRow}
+                onPress={() => setActiveServer(s.id)}
+                accessibilityRole="button"
+                activeOpacity={0.7}>
+                <Text style={styles.savedText} numberOfLines={1}>
+                  {s.username} · {s.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         <View style={styles.form}>
           <Text style={styles.label}>{t.serverSetup.serverUrlLabel}</Text>
@@ -182,6 +202,20 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   form: {gap: 4},
+  saved: {gap: 8, marginBottom: 16},
+  savedRow: {
+    backgroundColor: darkTheme.surface,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: darkTheme.border,
+  },
+  savedText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: darkTheme.textPrimary,
+  },
   label: {
     fontSize: 12,
     fontWeight: '600',

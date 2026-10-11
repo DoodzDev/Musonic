@@ -57,6 +57,7 @@ export const en = {
     usernamePlaceholder: 'admin',
     passwordLabel: 'Password',
     connectButton: 'Connect',
+    savedAccounts: 'Saved accounts',
     successMessage: '✓ Connected! Loading...',
     missingFieldsTitle: 'Missing fields',
     missingFieldsBody: 'URL, username and password are required.',

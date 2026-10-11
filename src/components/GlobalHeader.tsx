@@ -1,18 +1,18 @@
 /**
  * @file GlobalHeader.tsx
- * @description Top app bar used across main screens. Shows the Musonic logo,
- *   a hamburger drawer trigger, and optional horizontal filter pills.
+ * @description Top app bar used across main screens. Shows the account
+ *   avatar at the top right (opens the Profile sheet) and optional horizontal
+ *   filter pills.
  *   OfflineBanner is rendered inline at the top (flex flow) to push header
  *   content down instead of overlaying it.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 2.0.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
 import {View, Text, ScrollView, TouchableOpacity, StyleSheet} from 'react-native';
-import {useDrawer} from './DrawerContainer';
 import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
-import LogoIcon from './icons/LogoIcon';
+import ProfileButton from './shell/ProfileButton';
 import OfflineBanner from './OfflineBanner';
 import {darkTheme} from '../theme';
 import {useIsLandscape} from '../hooks/useIsLandscape';
@@ -39,7 +39,6 @@ type Props =
     };
 
 export default function GlobalHeader(props: Props) {
-  const {open: openDrawer} = useDrawer();
   const isLandscape = useIsLandscape();
 
   if (props.variant === 'simple') {
@@ -47,13 +46,13 @@ export default function GlobalHeader(props: Props) {
       <View>
         <OfflineBanner />
         <View style={styles.simpleHeader}>
-          <TouchableOpacity onPress={openDrawer} style={styles.profileCircle} activeOpacity={0.7}>
-            <LogoIcon size={36} />
-          </TouchableOpacity>
           <Text style={styles.simpleTitle}>{props.title}</Text>
           {isLandscape && props.landscapeInlineExtra && (
             <View style={styles.landscapeExtraSlot}>{props.landscapeInlineExtra}</View>
           )}
+          <View style={styles.profileRight}>
+            <ProfileButton />
+          </View>
         </View>
       </View>
     );
@@ -81,25 +80,23 @@ export default function GlobalHeader(props: Props) {
           ))}
         </ScrollView>
 
-        {/* Fade overlay on left edge of filter pills */}
+        {/* Fade overlay on right edge of filter pills, under the avatar */}
         <View style={styles.fadeOverlay} pointerEvents="none">
           <Svg width={80} height={56}>
             <Defs>
               <LinearGradient id="hdrFade" x1="0" y1="0" x2="1" y2="0">
-                <Stop offset="0" stopColor={darkTheme.background} stopOpacity={1} />
-                <Stop offset="0.6" stopColor={darkTheme.background} stopOpacity={1} />
-                <Stop offset="1" stopColor={darkTheme.background} stopOpacity={0} />
+                <Stop offset="0" stopColor={darkTheme.background} stopOpacity={0} />
+                <Stop offset="0.4" stopColor={darkTheme.background} stopOpacity={1} />
+                <Stop offset="1" stopColor={darkTheme.background} stopOpacity={1} />
               </LinearGradient>
             </Defs>
             <Rect x={0} y={0} width={80} height={56} fill="url(#hdrFade)" />
           </Svg>
         </View>
 
-        {/* Profil absolu au-dessus */}
+        {/* Account avatar, above the fade */}
         <View style={styles.profileAbsolute}>
-          <TouchableOpacity onPress={openDrawer} style={styles.profileCircle} activeOpacity={0.7}>
-            <LogoIcon size={36} />
-          </TouchableOpacity>
+          <ProfileButton />
         </View>
       </View>
     </View>
@@ -118,8 +115,7 @@ const styles = StyleSheet.create({
   pillsScroll: {flex: 1},
   pillsContent: {
     gap: 8,
-    paddingLeft: 64,
-    paddingRight: 16,
+    paddingRight: 64,
   },
   pill: {
     paddingHorizontal: 14,
@@ -140,14 +136,14 @@ const styles = StyleSheet.create({
   },
   fadeOverlay: {
     position: 'absolute',
-    left: 0,
+    right: 0,
     top: 0,
     bottom: 0,
     zIndex: 1,
   },
   profileAbsolute: {
     position: 'absolute',
-    left: 16,
+    right: 16,
     top: 0,
     bottom: 0,
     justifyContent: 'center',
@@ -171,14 +167,7 @@ const styles = StyleSheet.create({
   landscapeExtraSlot: {
     flex: 1,
   },
-
-  /* Shared */
-  profileCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+  profileRight: {
+    marginLeft: 'auto',
   },
 });

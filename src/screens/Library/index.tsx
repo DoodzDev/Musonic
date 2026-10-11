@@ -5,7 +5,7 @@
  *   with sort options, pin support, pull-to-refresh, and auto-recovery on
  *   connectivity restore.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license MIT
  */
 
@@ -44,8 +44,7 @@ import PlaylistOptionsSheet from '../../components/PlaylistOptionsSheet';
 import PlaylistInfoModal from '../../components/PlaylistInfoModal';
 import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
 import {showToast} from '../../components/Toast';
-import LogoIcon from '../../components/icons/LogoIcon';
-import {useDrawer} from '../../components/DrawerContainer';
+import ProfileButton from '../../components/shell/ProfileButton';
 import HeartIcon from '../../components/icons/HeartIcon';
 import {useT, getT} from '../../i18n';
 import {useNetworkStore} from '../../store/networkStore';
@@ -555,7 +554,6 @@ export default function LibraryScreen() {
   const t = useT();
   const landscapePadding = useLandscapeSidebarPadding();
   const {width: winW} = useWindowDimensions();
-  const {open: openDrawer} = useDrawer();
 
   const SORT_LABELS: Partial<Record<SortMode, string>> = {
     recent: t.library.sort.recent,
@@ -903,9 +901,6 @@ export default function LibraryScreen() {
       {/* ── Top Header ── */}
       <View style={styles.topHeader}>
         <View style={styles.topHeaderLeft}>
-          <TouchableOpacity onPress={openDrawer} activeOpacity={0.7} style={styles.logoBtn}>
-            <LogoIcon size={36} />
-          </TouchableOpacity>
           <Text style={styles.headerTitle}>{t.library.title}</Text>
         </View>
         <View style={styles.topHeaderRight}>
@@ -915,6 +910,7 @@ export default function LibraryScreen() {
           <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => setShowCreateModal(true)}>
             <PlusIcon size={26} />
           </TouchableOpacity>
+          <ProfileButton />
         </View>
       </View>
 
@@ -1138,12 +1134,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-  },
-  logoBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    overflow: 'hidden',
   },
   headerTitle: {
     fontSize: 22,

@@ -1,14 +1,14 @@
 /**
  * @file RootNavigator.tsx
  * @description Root navigator. Gates between ServerSetup (no credentials) and
- *   the main DrawerContainer. Locks screen orientation based on user settings,
+ *   the main tabs wrapped in ProfileProvider. Locks screen orientation based on user settings,
  *   controls global fullscreen mode (OS status bar visibility), manages the
  *   full-screen player overlay, and clears per-account local caches (playlist
  *   membership, search history) when the active server/account changes.
  *   Debug builds also register the Design v2 reference screen and its
  *   track-list and large-title demos.
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.4.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useRef} from 'react';
@@ -20,7 +20,7 @@ import {configureClient} from '../api/client';
 import {usePlaylistCacheStore, fetchAndCachePlaylistSongs} from '../store/playlistCacheStore';
 import {useSearchHistoryStore} from '../store/searchHistoryStore';
 import TabNavigator from './TabNavigator';
-import DrawerContainer from '../components/DrawerContainer';
+import ProfileProvider from '../components/ProfileProvider';
 import ServerSetupScreen from '../screens/ServerSetup';
 import SettingsScreen from '../screens/Settings';
 import DesignScreen from '../screens/Design';
@@ -29,11 +29,11 @@ import DesignHeaderTest from '../screens/Design/HeaderTest';
 
 const Stack = createNativeStackNavigator();
 
-function MainWithDrawer() {
+function MainWithProfile() {
   return (
-    <DrawerContainer>
+    <ProfileProvider>
       <TabNavigator />
-    </DrawerContainer>
+    </ProfileProvider>
   );
 }
 
@@ -87,7 +87,7 @@ export default function RootNavigator() {
         <Stack.Screen name="ServerSetup" component={ServerSetupScreen} />
       ) : (
         <>
-          <Stack.Screen name="Main" component={MainWithDrawer} />
+          <Stack.Screen name="Main" component={MainWithProfile} />
           <Stack.Screen name="Settings" component={SettingsScreen} options={{ presentation: 'modal' }} />
           {/* Design v2 reference screen: debug builds (Musonic Dev) only. */}
           {__DEV__ && <Stack.Screen name="Design" component={DesignScreen} />}
