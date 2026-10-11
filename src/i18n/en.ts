@@ -3,7 +3,7 @@
  * @description English UI strings. Mirrors the structure of fr.ts exactly.
  *   Swap the active locale in i18n/index.ts to enable English.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 export const en = {
@@ -11,6 +11,16 @@ export const en = {
   // ─── Common ────────────────────────────────────────────────────────────────
   common: {
     retry: 'Retry',
+  },
+
+  // ─── Design v2 components ──────────────────────────────────────────────────
+  ui: {
+    seeAll: 'See all',
+    clearSearch: 'Clear search',
+    badgeOnline: 'Online',
+    badgeMagic: 'Magic',
+    badgeDownloaded: 'Downloaded',
+    badgeLossless: 'Lossless',
   },
 
   // ─── Server Setup ──────────────────────────────────────────────────────────

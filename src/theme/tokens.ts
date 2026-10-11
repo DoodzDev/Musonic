@@ -5,7 +5,7 @@
  *   `darkTheme` in colors.ts stays in place for the current screens until they
  *   are rebuilt on these tokens.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -29,6 +29,14 @@ export const colors = {
   /** Downloaded / success state. */
   success: '#30D158',
   destructive: '#FF6961',
+  /** Selected segment of a segmented control. */
+  segmentThumb: '#636366',
+  /** Light fill behind neutral badges. */
+  badgeFill: 'rgba(255,255,255,0.12)',
+  /** Accent at low opacity, behind accent text (Magic badge, active toggles). */
+  accentFill: 'rgba(255,107,53,0.2)',
+  /** Success at low opacity, behind the Downloaded badge. */
+  successFill: 'rgba(48,209,88,0.18)',
   /** Tint laid over the blur of floating glass (dock, mini player). */
   glassTint: 'rgba(44,44,48,0.68)',
   /** Opaque stand-in for glass where blur is off or unsupported. */
