@@ -6,9 +6,9 @@
  *   full-screen player overlay, and clears per-account local caches (playlist
  *   membership, search history) when the active server/account changes.
  *   Debug builds also register the Design v2 reference screen and its
- *   track-list scroll test.
+ *   track-list and large-title demos.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useRef} from 'react';
@@ -25,6 +25,7 @@ import ServerSetupScreen from '../screens/ServerSetup';
 import SettingsScreen from '../screens/Settings';
 import DesignScreen from '../screens/Design';
 import DesignTrackListTest from '../screens/Design/TrackListTest';
+import DesignHeaderTest from '../screens/Design/HeaderTest';
 
 const Stack = createNativeStackNavigator();
 
@@ -91,6 +92,7 @@ export default function RootNavigator() {
           {/* Design v2 reference screen: debug builds (Musonic Dev) only. */}
           {__DEV__ && <Stack.Screen name="Design" component={DesignScreen} />}
           {__DEV__ && <Stack.Screen name="DesignTrackList" component={DesignTrackListTest} />}
+          {__DEV__ && <Stack.Screen name="DesignHeaderTest" component={DesignHeaderTest} />}
         </>
       )}
       </Stack.Navigator>

@@ -29,6 +29,7 @@ export const en = {
     nowPlaying: 'Now playing',
     unavailableOffline: 'Unavailable offline',
     open: 'Open',
+    close: 'Close',
   },
 
   // ─── Server Setup ──────────────────────────────────────────────────────────

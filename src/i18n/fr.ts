@@ -32,6 +32,7 @@ export const t = {
     nowPlaying: 'En cours de lecture',
     unavailableOffline: 'Indisponible hors ligne',
     open: 'Ouvrir',
+    close: 'Fermer',
   },
 
   // ─── Server Setup ──────────────────────────────────────────────────────────

@@ -29,6 +29,8 @@ export const colors = {
   /** Downloaded / success state. */
   success: '#30D158',
   destructive: '#FF6961',
+  /** Dims the screen behind a sheet. */
+  backdrop: 'rgba(0,0,0,0.5)',
   /** Dark veil over images (equalizer on a cover, text on artwork). */
   scrim: 'rgba(0,0,0,0.45)',
   /** Selected segment of a segmented control. */

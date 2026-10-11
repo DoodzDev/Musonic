@@ -18,10 +18,12 @@ import {colors, radii, sizes, spacing} from '../../theme';
 type GroupProps = {
   caption?: string;
   note?: string;
+  /** One step lighter, for groups placed on a surface (inside a Sheet). */
+  raised?: boolean;
   children: React.ReactNode;
 };
 
-export function ListGroup({caption, note, children}: GroupProps) {
+export function ListGroup({caption, note, raised, children}: GroupProps) {
   const items = React.Children.toArray(children).filter(Boolean);
   return (
     <View style={styles.group}>
@@ -30,7 +32,7 @@ export function ListGroup({caption, note, children}: GroupProps) {
           {caption.toUpperCase()}
         </Text>
       ) : null}
-      <View style={styles.surface}>
+      <View style={[styles.surface, raised && styles.raised]}>
         {items.map((item, i) => (
           <React.Fragment key={i}>
             {i > 0 ? <View style={styles.separator} /> : null}
@@ -108,6 +110,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.tile,
     overflow: 'hidden',
   },
+  raised: {backgroundColor: colors.surface2},
   item: {
     minHeight: sizes.listRowMin,
     paddingHorizontal: spacing.m,

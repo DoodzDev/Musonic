@@ -2,10 +2,10 @@
  * @file index.tsx
  * @description Design screen, debug builds only: the app's internal design
  *   reference. A segmented control switches between the Foundations tab
- *   (tokens, icons, motion, haptics) and the Components tab. Reached from the
- *   drawer in Musonic Dev.
+ *   (tokens, icons, motion, haptics), the Components tab and the Gestures tab
+ *   (swipes, sheets, toasts). Reached from the drawer in Musonic Dev.
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -18,13 +18,18 @@ import Button from '../../components/ui/Button';
 import SegmentedControl from '../../components/ui/SegmentedControl';
 import FoundationsTab from './FoundationsTab';
 import ComponentsTab from './ComponentsTab';
+import GesturesTab from './GesturesTab';
+import {ToastHost} from '../../components/ui/Toast';
 import {colors, spacing} from '../../theme';
 
-type Tab = 'foundations' | 'components';
+type Tab = 'foundations' | 'components' | 'gestures';
+
+const TABS = {foundations: FoundationsTab, components: ComponentsTab, gestures: GesturesTab};
 
 export default function DesignScreen() {
   const navigation = useNavigation();
   const [tab, setTab] = useState<Tab>('foundations');
+  const Content = TABS[tab];
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -49,12 +54,14 @@ export default function DesignScreen() {
           options={[
             {value: 'foundations', label: 'Fondations'},
             {value: 'components', label: 'Composants'},
+            {value: 'gestures', label: 'Gestes'},
           ]}
           value={tab}
           onChange={setTab}
         />
-        {tab === 'foundations' ? <FoundationsTab /> : <ComponentsTab />}
+        <Content />
       </ScrollView>
+      <ToastHost bottom={spacing.xl} />
     </SafeAreaView>
   );
 }
