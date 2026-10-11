@@ -6,14 +6,14 @@
  *   landscape full-player cover/progress column order. Persisted across
  *   restarts; consumed by RootNavigator to gate the server-setup flow.
  * @author DoodzProg
- * @version 1.0.5
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
 import {persist, createJSONStorage} from 'zustand/middleware';
 import {mmkvStorage} from './storage';
+import {migrateSettings, SETTINGS_VERSION} from './settingsMigrations';
 
-export type ColorScheme = 'dark' | 'light' | 'system';
 export type Locale = 'fr' | 'en';
 export type LibrarySortMode = 'recent' | 'added' | 'alpha' | 'custom';
 export type NavBarPosition = 'left' | 'right';
@@ -30,11 +30,7 @@ export type Server = {
 type SettingsState = {
   servers: Server[];
   activeServerId: string | null;
-  colorScheme: ColorScheme;
-  accentColor: string;
   crossfadeDuration: number;
-  setColorScheme: (scheme: ColorScheme) => void;
-  setAccentColor: (color: string) => void;
   setCrossfadeDuration: (duration: number) => void;
   addServer: (server: Server) => void;
   removeServer: (id: string) => void;
@@ -76,11 +72,7 @@ export const useSettingsStore = create<SettingsState>()(
     (set, get) => ({
       servers: [],
       activeServerId: null,
-      colorScheme: 'system',
-      accentColor: '#FF6B35',
       crossfadeDuration: 0,
-      setColorScheme: scheme => set({colorScheme: scheme}),
-      setAccentColor: color => set({accentColor: color}),
       setCrossfadeDuration: duration => set({crossfadeDuration: duration}),
       addServer: server =>
         set(state => ({servers: [...state.servers, server]})),
@@ -127,9 +119,9 @@ export const useSettingsStore = create<SettingsState>()(
       storage: createJSONStorage(() => mmkvStorage),
       // Bump on any change to the persisted shape and handle the old version in `migrate`.
       // Without `migrate`, a version mismatch discards the stored data.
-      version: 1,
-      // v0 (unversioned) -> v1: same shape, versioning only.
-      migrate: persistedState => persistedState as SettingsState,
+      version: SETTINGS_VERSION,
+      migrate: (persistedState, version) =>
+        migrateSettings(persistedState, version) as SettingsState,
     },
   ),
 );

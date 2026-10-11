@@ -1,9 +1,10 @@
 /**
  * @file CustomDrawerContent.tsx
  * @description Content rendered inside the slide-in drawer. Shows navigation
- *   links, offline mode toggle, app version, and credits section.
+ *   links, offline mode toggle, app version, and credits section. Debug builds
+ *   also get a link to the Design v2 reference screen.
  * @author DoodzProg
- * @version 1.0.4
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -18,7 +19,7 @@ import {
   View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import Svg, {Line, Path, Circle} from 'react-native-svg';
+import Svg, {Line, Path, Circle, Rect} from 'react-native-svg';
 import LogoIcon from './icons/LogoIcon';
 import {darkTheme} from '../theme';
 import {useSettingsStore} from '../store/settingsStore';
@@ -75,6 +76,17 @@ function WifiIcon() {
       <Path d="M1.42 9a16 16 0 0 1 21.16 0" stroke="#FF6B35" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
       <Path d="M8.53 16.11a6 6 0 0 1 6.95 0" stroke="#FF6B35" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
       <Path d="M12 20h.01" stroke="#FF6B35" strokeWidth={2} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function DesignIcon() {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Rect x={3} y={3} width={7} height={7} rx={1.5} />
+      <Rect x={14} y={3} width={7} height={7} rx={1.5} />
+      <Rect x={3} y={14} width={7} height={7} rx={1.5} />
+      <Circle cx={17.5} cy={17.5} r={3.5} />
     </Svg>
   );
 }
@@ -160,6 +172,8 @@ export default function CustomDrawerContent({onClose}: Props) {
 
   const MENU_ITEMS = [
     {label: t.drawer.settings, icon: <PrefsIcon />, screen: 'Settings'},
+    // Design v2 reference screen, only registered in debug builds.
+    ...(__DEV__ ? [{label: 'Design', icon: <DesignIcon />, screen: 'Design'}] : []),
   ];
 
   return (

@@ -5,8 +5,9 @@
  *   controls global fullscreen mode (OS status bar visibility), manages the
  *   full-screen player overlay, and clears per-account local caches (playlist
  *   membership, search history) when the active server/account changes.
+ *   Debug builds also register the Design v2 reference screen.
  * @author DoodzProg
- * @version 1.0.5
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useRef} from 'react';
@@ -21,6 +22,7 @@ import TabNavigator from './TabNavigator';
 import DrawerContainer from '../components/DrawerContainer';
 import ServerSetupScreen from '../screens/ServerSetup';
 import SettingsScreen from '../screens/Settings';
+import DesignScreen from '../screens/Design';
 
 const Stack = createNativeStackNavigator();
 
@@ -84,6 +86,8 @@ export default function RootNavigator() {
         <>
           <Stack.Screen name="Main" component={MainWithDrawer} />
           <Stack.Screen name="Settings" component={SettingsScreen} options={{ presentation: 'modal' }} />
+          {/* Design v2 reference screen: debug builds (Musonic Dev) only. */}
+          {__DEV__ && <Stack.Screen name="Design" component={DesignScreen} />}
         </>
       )}
       </Stack.Navigator>

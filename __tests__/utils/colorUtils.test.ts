@@ -5,7 +5,7 @@
  * @version 1.0.0
  * @license CC-BY-NC-4.0
  */
-import {blendWithBlack, colorFromId, formatTime} from '../../src/utils/colorUtils';
+import {blendWithBlack, colorFromId, formatTime, hexToRgba} from '../../src/utils/colorUtils';
 
 describe('formatTime', () => {
   it('formats seconds as m:ss', () => {
@@ -37,5 +37,16 @@ describe('colorFromId', () => {
   it('is deterministic and returns a hex colour', () => {
     expect(colorFromId('album-42')).toBe(colorFromId('album-42'));
     expect(colorFromId('album-42')).toMatch(/^#[0-9a-f]{6}$/);
+  });
+});
+
+describe('hexToRgba', () => {
+  it('converts #RRGGBB with alpha', () => {
+    expect(hexToRgba('#FF6B35', 0.35)).toBe('rgba(255,107,53,0.35)');
+    expect(hexToRgba('000000', 1)).toBe('rgba(0,0,0,1)');
+  });
+
+  it('falls back to black on malformed input', () => {
+    expect(hexToRgba('#FFF', 0.5)).toBe('rgba(0,0,0,0.5)');
   });
 });

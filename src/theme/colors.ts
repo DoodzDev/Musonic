@@ -1,10 +1,12 @@
 /**
  * @file colors.ts
- * @description Design-token colour palette and pre-built dark theme object.
+ * @description Legacy colour palette and dark theme object used by the
+ *   current screens. New components use the Design v2 tokens (tokens.ts);
+ *   this file goes away once every screen is rebuilt on them.
  *   The app accent colour is #FF6B35 (orange) — intentionally distinct from
  *   Spotify green.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 export const palette = {
@@ -43,16 +45,4 @@ export const darkTheme: Theme = {
   textSecondary: palette.grey600,
   tabBar: '#0A0A0A',
   tabBarBorder: palette.grey300,
-};
-
-export const lightTheme: Theme = {
-  background: '#F5F5F5',
-  surface: '#FFFFFF',
-  surfaceAlt: '#EBEBEB',
-  border: '#D0D0D0',
-  accent: palette.orange,
-  textPrimary: '#000000',
-  textSecondary: '#606060',
-  tabBar: '#FFFFFF',
-  tabBarBorder: '#E0E0E0',
 };

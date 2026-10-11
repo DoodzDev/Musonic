@@ -1,9 +1,10 @@
 /**
  * @file colorUtils.ts
  * @description Pure colour utility functions: hex blending and deterministic
- *   ID-to-colour mapping used as fallback backgrounds before artwork loads.
+ *   ID-to-colour mapping used as fallback backgrounds before artwork loads,
+ *   and hex-to-rgba conversion for tinted shadows.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 export function blendWithBlack(hex: string, factor = 0.5): string {
@@ -14,6 +15,16 @@ export function blendWithBlack(hex: string, factor = 0.5): string {
   const b = Math.round(parseInt(clean.slice(4, 6), 16) * (1 - factor));
   const d = (v: number) => v.toString(16).padStart(2, '0');
   return `#${d(r)}${d(g)}${d(b)}`;
+}
+
+/** `#RRGGBB` + alpha (0-1) → `rgba(r,g,b,a)`. Falls back to black. */
+export function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace('#', '');
+  if (clean.length !== 6) return `rgba(0,0,0,${alpha})`;
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 export function formatTime(seconds: number): string {
