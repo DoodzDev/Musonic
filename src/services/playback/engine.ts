@@ -46,6 +46,8 @@ let manualSkip = false;
 /** Native calls made by the current action (debug measurements). */
 let nativeCalls = 0;
 let entrySeq = 0;
+/** Zones emptied by the last "Clear queue", kept for its Undo. */
+let cleared: {currentKey: string; userQueue: Track[]; upcoming: Track[]; autoplay: Track[]} | null = null;
 /** Unique even across restarts (restored entries keep their ids). */
 const entryPrefix = Date.now().toString(36);
 
@@ -484,14 +486,36 @@ export const playbackEngine = {
     });
   },
 
+  /** "Clear queue": everything to come goes, the current track stays (Undo: `undoClearQueue`). */
   clearQueue(): Promise<void> {
     if (!active) return Promise.resolve();
     return run('clearQueue', async () => {
       token++;
+      if (state.current) {
+        cleared = {
+          currentKey: Q.entryKey(state.current),
+          userQueue: state.userQueue,
+          upcoming: state.upcoming,
+          autoplay: state.autoplay,
+        };
+      }
       state = Q.clearQueue(state);
       await replaceUpcomingNative();
       publish();
       afterChange();
+    });
+  },
+
+  /** Puts back what the last "Clear queue" removed, if the same track is still playing. */
+  undoClearQueue(): Promise<void> {
+    return run('undoClearQueue', async () => {
+      const saved = cleared;
+      cleared = null;
+      if (!active || !saved || !state.current || Q.entryKey(state.current) !== saved.currentKey) return;
+      token++;
+      state = {...state, userQueue: saved.userQueue, upcoming: saved.upcoming, autoplay: saved.autoplay};
+      await replaceUpcomingNative();
+      publish();
     });
   },
 };

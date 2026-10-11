@@ -8,8 +8,9 @@
  *   is never followed by a second update mid-animation. The list is a
  *   reorderable list driven on the UI thread: while a row is dragged the
  *   list cannot scroll, and a swipe outside the handle only scrolls.
+ *   "Clear all" (edit mode) empties what comes next; a toast offers Undo.
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
@@ -52,10 +53,14 @@ import TrackMagicIcon from './icons/TrackMagicIcon';
 import {useT} from '../i18n';
 import {useActiveTrack, usePlaybackState, State} from 'react-native-track-player';
 import {usePlayerStore, type Track, type ShuffleMode} from '../store/playerStore';
+import {playbackEngine} from '../services/playback/engine';
+import {toast, ToastHost} from './ui/Toast';
 import {useSettingsStore} from '../store/settingsStore';
 
 const ORANGE = '#FF6B35';
 const SHEET_HEIGHT_RATIO = 0.85;
+/** Toast distance from the bottom: clears the bottom bar. */
+const TOAST_BOTTOM = 110;
 // sheetInner paddingHorizontal=20 both sides (40 total), 2 gaps of 8px between 3 buttons.
 
 // ─── Animated Equalizer ───────────────────────────────────────────────────────
@@ -307,6 +312,15 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
     });
   }, [reorderQueue, syncFromStore]);
 
+  const handleClearAll = useCallback(() => {
+    playbackEngine.clearQueue();
+    exitEditMode();
+    toast.show(t.queue.clearedToast, {
+      kind: 'success',
+      action: {label: t.queue.undo, onPress: () => playbackEngine.undoClearQueue()},
+    });
+  }, [exitEditMode, t]);
+
   const handleRemove = useCallback(() => {
     if (selectedIds.size === 0) return;
     removeFromQueue([...selectedIds]);
@@ -419,6 +433,11 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
                   {t.queue.removeButton}
                 </Text>
               </TouchableOpacity>
+              <TouchableOpacity onPress={handleClearAll} disabled={upcoming.length === 0}>
+                <Text style={[styles.editAction, upcoming.length === 0 && styles.editActionDisabled]}>
+                  {t.queue.clearAll}
+                </Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.bottomBar}>
@@ -457,6 +476,9 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
 
         </SafeAreaView>
       </Animated.View>
+
+      {/* The player is a Modal: toasts need their own host here, above the bottom bar. */}
+      <ToastHost bottom={TOAST_BOTTOM} />
     </View>
   );
 }
