@@ -1,0 +1,13 @@
+{
+  "name": "musonic",
+  "private": true,
+  "description": "Musonic ecosystem monorepo. The mobile app (apps/mobile) keeps its own dependencies and is not an npm workspace.",
+  "workspaces": [
+    "apps/web",
+    "packages/core"
+  ],
+  "scripts": {
+    "web": "npm run dev --workspace apps/web",
+    "test:core": "npm test --workspace packages/core"
+  }
+}
