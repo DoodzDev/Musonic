@@ -53,16 +53,16 @@ yarn-error.log
 
 # Ruby / CocoaPods
 **/Pods/
-/vendor/bundle/
+**/vendor/bundle/
 
 # Temporary files created by Metro to check the health of the file watcher
 .metro-health-check*
 
 # API keys — never commit, copy from apiKeys.example.ts
-src/api/apiKeys.ts
+**/src/api/apiKeys.ts
 
 # testing
-/coverage
+**/coverage/
 
 # Yarn
 .yarn/*
@@ -73,8 +73,8 @@ src/api/apiKeys.ts
 !.yarn/versions
 
 # Android signing — never commit
-android/app/*.keystore
-android/keystore.properties
+**/android/app/*.keystore
+**/android/keystore.properties
 
 # APK binaries and temp files
 *.apk
