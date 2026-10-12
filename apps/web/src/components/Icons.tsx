@@ -1,8 +1,8 @@
 /**
  * @file Icons.tsx
- * @description Stroke icons shared by the web client (2 px stroke, rounded caps).
+ * @description Icons the mobile app does not have (volume, duration, password, logout), drawn in the same 2 px rounded style. Every other icon comes from components/icons/, ported from the mobile app.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -17,42 +17,6 @@ const stroke = {
   strokeLinecap: 'round' as const,
   strokeLinejoin: 'round' as const,
 };
-
-export function HomeIcon({ size = 22 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
-      <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" />
-    </svg>
-  );
-}
-
-export function PlayIcon({ size = 18 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z" fill="currentColor" />
-    </svg>
-  );
-}
-
-export function PauseIcon({ size = 18 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="5.5" y="3.5" width="4.6" height="17" rx="1.4" fill="currentColor" />
-      <rect x="13.9" y="3.5" width="4.6" height="17" rx="1.4" fill="currentColor" />
-    </svg>
-  );
-}
-
-export function NextIcon({ size = 24, flip = false }: IconProps & { flip?: boolean }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" style={flip ? { transform: 'scaleX(-1)' } : undefined} aria-hidden="true">
-      <path
-        d="M3 6.2v11.6a.8.8 0 0 0 1.2.7l8.3-5.8a.8.8 0 0 0 0-1.4L4.2 5.5A.8.8 0 0 0 3 6.2zm9.5 0v11.6a.8.8 0 0 0 1.2.7l8.3-5.8a.8.8 0 0 0 0-1.4l-8.3-5.8a.8.8 0 0 0-1.2.7z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
 
 export function VolumeIcon({ size = 19, muted = false }: IconProps & { muted?: boolean }) {
   return (
@@ -79,16 +43,6 @@ export function ClockIcon({ size = 15 }: IconProps) {
   );
 }
 
-export function EqualizerIcon({ size = 16 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="4" y="9" width="3" height="11" rx="1.2" fill="currentColor" />
-      <rect x="10.5" y="4" width="3" height="16" rx="1.2" fill="currentColor" />
-      <rect x="17" y="12" width="3" height="8" rx="1.2" fill="currentColor" />
-    </svg>
-  );
-}
-
 export function EyeIcon({ size = 20 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
@@ -104,15 +58,6 @@ export function LogoutIcon({ size = 18 }: IconProps) {
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <path d="m16 17 5-5-5-5" />
       <path d="M21 12H9" />
-    </svg>
-  );
-}
-
-export function WarningIcon({ size = 16 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
-      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
-      <path d="M12 9v4M12 17h.01" />
     </svg>
   );
 }

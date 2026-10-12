@@ -1,124 +1,109 @@
 /**
  * @file App.tsx
- * @description Web client shell: login, sidebar, playlist page and player bar.
+ * @description Web client shell: login gate, routes, sidebar and player bar.
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import { SubsonicClient, type Playlist, type PlaylistWithSongs, type Song, type SubsonicSession } from '@musonic/core';
+import { useMemo, useRef, useState } from 'react';
+import { Navigate, Route, Routes } from 'react-router';
+import { MemoryCache, SubsonicClient, type Song, type SubsonicSession } from '@musonic/core';
 import { LoginScreen } from './components/LoginScreen.tsx';
 import { PlayerBar } from './components/PlayerBar.tsx';
-import { PlaylistView } from './components/PlaylistView.tsx';
 import { Sidebar } from './components/Sidebar.tsx';
-import { fr } from './i18n/fr.ts';
+import { AppContext, type AppContextValue } from './context/AppContext.tsx';
+import { useScrollMemory } from './hooks/useScrollMemory.ts';
 import { clearSession, loadSession, saveSession, transportSession } from './lib/session.ts';
+import { AlbumPage } from './pages/AlbumPage.tsx';
+import { ArtistPage } from './pages/ArtistPage.tsx';
+import { HomePage } from './pages/HomePage.tsx';
+import { LikedPage } from './pages/LikedPage.tsx';
+import { PlaylistPage } from './pages/PlaylistPage.tsx';
+import { PlayerContext, type PlayerContextValue } from './player/PlayerContext.tsx';
 
-type PageState =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'error' }
-  | { status: 'ready'; playlist: PlaylistWithSongs };
-
-export default function App() {
-  const [session, setSession] = useState<SubsonicSession | null>(loadSession);
-  const client = useMemo(() => (session ? new SubsonicClient(transportSession(session)) : null), [session]);
-
-  const [playlists, setPlaylists] = useState<Playlist[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [page, setPage] = useState<PageState>({ status: 'idle' });
-
-  // The queue is a snapshot of the playlist that was playing, so browsing
-  // another playlist does not change what plays next.
-  const [queue, setQueue] = useState<Song[]>([]);
-  const [queueSourceId, setQueueSourceId] = useState<string | null>(null);
-  const [index, setIndex] = useState(-1);
-
-  useEffect(() => {
-    if (!client) return;
-    const controller = new AbortController();
-    client
-      .getPlaylists(controller.signal)
-      .then((list) => {
-        setPlaylists(list);
-        if (!list[0]) return;
-        setPage((current) => (current.status === 'idle' ? { status: 'loading' } : current));
-        setSelectedId((current) => current ?? list[0].id);
-      })
-      .catch(() => setPlaylists([]));
-    return () => controller.abort();
-  }, [client]);
-
-  useEffect(() => {
-    if (!client || !selectedId) return;
-    const controller = new AbortController();
-    client
-      .getPlaylist(selectedId, controller.signal)
-      .then((playlist) => setPage({ status: 'ready', playlist }))
-      .catch((e: unknown) => {
-        if (!(e instanceof DOMException && e.name === 'AbortError')) setPage({ status: 'error' });
-      });
-    return () => controller.abort();
-  }, [client, selectedId]);
-
-  function selectPlaylist(id: string) {
-    if (id === selectedId) return;
-    setPage({ status: 'loading' });
-    setSelectedId(id);
-  }
-
-  function login(next: SubsonicSession) {
-    saveSession(next);
-    setSession(next);
-  }
-
-  function logout() {
-    clearSession();
-    setSession(null);
-    setPlaylists([]);
-    setSelectedId(null);
-    setPage({ status: 'idle' });
-    setQueue([]);
-    setIndex(-1);
-  }
-
-  function playFromPage(i: number) {
-    if (page.status !== 'ready') return;
-    setQueue(page.playlist.entry);
-    setQueueSourceId(page.playlist.id);
-    setIndex(i);
-  }
-
-  if (!session || !client) return <LoginScreen onLogin={login} />;
-
-  const currentSongId = index >= 0 ? (queue[index]?.id ?? null) : null;
-  const pageSongId = page.status === 'ready' && page.playlist.id === queueSourceId ? currentSongId : null;
-
+function Shell() {
+  const mainRef = useRef<HTMLElement>(null);
+  useScrollMemory(mainRef);
   return (
     <div className="app">
       <div className="app-body">
         <aside className="side-panel">
-          <Sidebar
-            client={client}
-            username={session.username}
-            playlists={playlists}
-            selectedId={selectedId}
-            playingId={queueSourceId}
-            onSelect={selectPlaylist}
-            onLogout={logout}
-          />
+          <Sidebar />
         </aside>
-        <main className="main-panel">
-          {page.status === 'ready' && (
-            <PlaylistView client={client} playlist={page.playlist} currentSongId={pageSongId} onPlay={playFromPage} />
-          )}
-          {page.status === 'loading' && <p className="page muted">{fr.playlist.loading}</p>}
-          {page.status === 'error' && <p className="page muted">{fr.playlist.error}</p>}
-          {page.status === 'idle' && <p className="page muted">{fr.playlist.pick}</p>}
+        <main className="main-panel" ref={mainRef}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/liked" element={<LikedPage />} />
+            <Route path="/playlist/:id" element={<PlaylistPage />} />
+            <Route path="/album/:id" element={<AlbumPage />} />
+            <Route path="/artist/:id" element={<ArtistPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </main>
       </div>
-      <PlayerBar client={client} queue={queue} index={index} onIndexChange={setIndex} />
+      <PlayerBar />
     </div>
+  );
+}
+
+export default function App() {
+  const [session, setSession] = useState<SubsonicSession | null>(loadSession);
+  const [queue, setQueue] = useState<Song[]>([]);
+  const [index, setIndex] = useState(-1);
+  const [sourceId, setSourceId] = useState<string | null>(null);
+  const [playing, setPlaying] = useState(false);
+
+  const app = useMemo<AppContextValue | null>(() => {
+    if (!session) return null;
+    return {
+      session,
+      client: new SubsonicClient(transportSession(session)),
+      cache: new MemoryCache(),
+      logout: () => {
+        clearSession();
+        setSession(null);
+        setQueue([]);
+        setIndex(-1);
+        setSourceId(null);
+      },
+    };
+  }, [session]);
+
+  const player = useMemo<PlayerContextValue>(
+    () => ({
+      queue,
+      index,
+      sourceId,
+      current: index >= 0 ? queue[index] : undefined,
+      playing,
+      setPlaying,
+      playSongs: (songs, start, source) => {
+        setQueue(songs);
+        setIndex(songs.length ? start : -1);
+        setSourceId(source);
+      },
+      setIndex,
+    }),
+    [queue, index, sourceId, playing],
+  );
+
+  if (!app) {
+    return (
+      <LoginScreen
+        onLogin={(next) => {
+          saveSession(next);
+          setSession(next);
+        }}
+      />
+    );
+  }
+
+  return (
+    <AppContext.Provider value={app}>
+      <PlayerContext.Provider value={player}>
+        <Shell />
+      </PlayerContext.Provider>
+    </AppContext.Provider>
   );
 }

@@ -10,8 +10,9 @@ import { useState, type FormEvent } from 'react';
 import { createSession, SubsonicClient, SubsonicError, type SubsonicSession } from '@musonic/core';
 import { fr } from '../i18n/fr.ts';
 import { loadLastServer, transportSession } from '../lib/session.ts';
-import { EyeIcon, WarningIcon } from './Icons.tsx';
-import { Logo } from './Logo.tsx';
+import { EyeIcon } from './Icons.tsx';
+import { AlertIcon } from './icons/AlertIcon.tsx';
+import { LogoIcon } from './icons/LogoIcon.tsx';
 
 interface Props {
   onLogin: (session: SubsonicSession) => void;
@@ -57,7 +58,7 @@ export function LoginScreen({ onLogin }: Props) {
     <div className="login">
       <div className="login-column">
         <div className="login-brand">
-          <Logo size={64} />
+          <LogoIcon size={64} />
           <h1>Musonic</h1>
           <p>{t.tagline}</p>
         </div>
@@ -108,7 +109,7 @@ export function LoginScreen({ onLogin }: Props) {
           </label>
           {error && (
             <p className="form-error" role="alert">
-              <WarningIcon /> {error}
+              <AlertIcon size={16} triangle /> {error}
             </p>
           )}
           <button type="submit" className="btn-primary" disabled={busy}>

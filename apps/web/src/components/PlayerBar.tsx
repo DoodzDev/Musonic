@@ -2,22 +2,23 @@
  * @file PlayerBar.tsx
  * @description Bottom player bar driving the browser <audio> element.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
 import { useEffect, useRef, useState } from 'react';
-import type { Song, SubsonicClient } from '@musonic/core';
+import { Link } from 'react-router';
+import { useApp } from '../context/AppContext.tsx';
 import { fr } from '../i18n/fr.ts';
 import { formatTime } from '../lib/format.ts';
-import { NextIcon, PauseIcon, PlayIcon, VolumeIcon, WarningIcon } from './Icons.tsx';
-
-interface Props {
-  client: SubsonicClient;
-  queue: Song[];
-  index: number;
-  onIndexChange: (index: number) => void;
-}
+import { usePlayer } from '../player/PlayerContext.tsx';
+import { Cover } from './Cover.tsx';
+import { VolumeIcon } from './Icons.tsx';
+import { AlertIcon } from './icons/AlertIcon.tsx';
+import { NextIcon } from './icons/NextIcon.tsx';
+import { PauseIcon } from './icons/PauseIcon.tsx';
+import { PlayIcon } from './icons/PlayIcon.tsx';
+import { PrevIcon } from './icons/PrevIcon.tsx';
 
 const t = fr.player;
 const VOLUME_KEY = 'musonic.volume';
@@ -37,9 +38,10 @@ function isTyping(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
 }
 
-export function PlayerBar({ client, queue, index, onIndexChange }: Props) {
+export function PlayerBar() {
+  const { client } = useApp();
+  const { queue, index, setIndex: onIndexChange, playing, setPlaying } = usePlayer();
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(readVolume);
@@ -58,7 +60,7 @@ export function PlayerBar({ client, queue, index, onIndexChange }: Props) {
     setDuration(song.duration ?? 0);
     audio.src = client.streamUrl(song.id);
     audio.play().catch(() => setPlaying(false));
-  }, [client, song]);
+  }, [client, song, setPlaying]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -130,14 +132,21 @@ export function PlayerBar({ client, queue, index, onIndexChange }: Props) {
       />
       <div className="player-inner">
         <div className="player-track">
-          <span className="cover cover-60">
-            {song?.coverArt && <img src={client.coverArtUrl(song.coverArt, 120)} alt="" />}
-          </span>
+          <Cover coverArt={song?.coverArt} size={56} className="cover-60" eager />
           <span className="item-text">
-            <span className="item-title">{song ? song.title : t.idle}</span>
-            {song && <span className="item-sub">{song.artist}</span>}
+            {song?.albumId ? (
+              <Link to={`/album/${song.albumId}`} className="item-title link">{song.title}</Link>
+            ) : (
+              <span className="item-title">{song ? song.title : t.idle}</span>
+            )}
+            {song &&
+              (song.artistId ? (
+                <Link to={`/artist/${song.artistId}`} className="item-sub link">{song.artist}</Link>
+              ) : (
+                <span className="item-sub">{song.artist}</span>
+              ))}
             {failed && (
-              <span className="player-error" role="alert"><WarningIcon size={13} /> {t.error}</span>
+              <span className="player-error" role="alert"><AlertIcon size={13} triangle /> {t.error}</span>
             )}
           </span>
         </div>
@@ -145,13 +154,13 @@ export function PlayerBar({ client, queue, index, onIndexChange }: Props) {
         <div className="player-center">
           <div className="player-controls">
             <button type="button" className="ctrl" onClick={previous} disabled={!song} aria-label={t.previous} title={`${t.previous} (Ctrl ←)`}>
-              <NextIcon flip />
+              <PrevIcon size={24} />
             </button>
             <button type="button" className="ctrl ctrl-main" onClick={togglePlay} disabled={!song} aria-label={playing ? t.pause : t.play} title={`${playing ? t.pause : t.play} (Espace)`}>
-              {playing ? <PauseIcon size={20} /> : <PlayIcon size={20} />}
+              {playing ? <PauseIcon size={20} color="currentColor" /> : <PlayIcon size={20} color="currentColor" />}
             </button>
             <button type="button" className="ctrl" onClick={next} disabled={!hasNext} aria-label={t.next} title={`${t.next} (Ctrl →)`}>
-              <NextIcon />
+              <NextIcon size={24} />
             </button>
           </div>
           <div className="progress">
