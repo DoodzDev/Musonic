@@ -2,7 +2,7 @@
  * @file types.ts
  * @description Subsonic / OpenSubsonic response types used by Musonic clients.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -25,21 +25,93 @@ export interface Playlist {
   owner?: string;
   comment?: string;
   coverArt?: string;
+  /** ISO date of the last change. */
+  changed?: string;
 }
 
 export interface Song {
   id: string;
   title: string;
   artist?: string;
+  artistId?: string;
   album?: string;
+  albumId?: string;
   /** Duration in seconds. */
   duration?: number;
   coverArt?: string;
+  track?: number;
+  discNumber?: number;
+  year?: number;
+  genre?: string;
+  playCount?: number;
+  starred?: string;
+}
+
+export interface Album {
+  id: string;
+  name: string;
+  artist?: string;
+  artistId?: string;
+  coverArt?: string;
+  songCount?: number;
+  duration?: number;
+  year?: number;
+  genre?: string;
+  playCount?: number;
+  /** ISO date of the last play (Navidrome). */
+  played?: string;
+  starred?: string;
+  created?: string;
+}
+
+export interface Artist {
+  id: string;
+  name: string;
+  coverArt?: string;
+  albumCount?: number;
+  artistImageUrl?: string;
+  starred?: string;
 }
 
 export interface PlaylistWithSongs extends Playlist {
   entry: Song[];
 }
+
+export interface AlbumWithSongs extends Album {
+  song: Song[];
+}
+
+export interface ArtistWithAlbums extends Artist {
+  album: Album[];
+}
+
+export interface ArtistInfo {
+  biography?: string;
+  similarArtist: Artist[];
+}
+
+export interface Starred {
+  song: Song[];
+  album: Album[];
+  artist: Artist[];
+}
+
+export interface Genre {
+  value: string;
+  songCount?: number;
+  albumCount?: number;
+}
+
+export type AlbumListType =
+  | 'random'
+  | 'newest'
+  | 'highest'
+  | 'frequent'
+  | 'recent'
+  | 'alphabeticalByName'
+  | 'alphabeticalByArtist'
+  | 'starred'
+  | 'byGenre';
 
 /** Error payload of a `failed` Subsonic response. */
 export interface SubsonicErrorPayload {

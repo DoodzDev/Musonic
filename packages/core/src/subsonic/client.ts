@@ -2,11 +2,24 @@
  * @file client.ts
  * @description Minimal Subsonic API client (JSON format, token authentication).
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
-import type { Playlist, PlaylistWithSongs, SubsonicErrorPayload, SubsonicSession } from './types.ts';
+import type {
+  Album,
+  AlbumListType,
+  AlbumWithSongs,
+  ArtistInfo,
+  ArtistWithAlbums,
+  Genre,
+  Playlist,
+  PlaylistWithSongs,
+  Song,
+  Starred,
+  SubsonicErrorPayload,
+  SubsonicSession,
+} from './types.ts';
 
 export const API_VERSION = '1.16.1';
 export const CLIENT_NAME = 'Musonic';
@@ -100,6 +113,59 @@ export class SubsonicClient {
   async getPlaylist(id: string, signal?: AbortSignal): Promise<PlaylistWithSongs> {
     const res = await this.request<{ playlist: PlaylistWithSongs }>('getPlaylist', { id }, signal);
     return { ...res.playlist, entry: res.playlist.entry ?? [] };
+  }
+
+  async getAlbumList(
+    type: AlbumListType,
+    options: { size?: number; offset?: number; genre?: string } = {},
+    signal?: AbortSignal,
+  ): Promise<Album[]> {
+    const res = await this.request<{ albumList2?: { album?: Album[] } }>('getAlbumList2', { type, ...options }, signal);
+    return res.albumList2?.album ?? [];
+  }
+
+  async getAlbum(id: string, signal?: AbortSignal): Promise<AlbumWithSongs> {
+    const res = await this.request<{ album: AlbumWithSongs }>('getAlbum', { id }, signal);
+    return { ...res.album, song: res.album.song ?? [] };
+  }
+
+  async getArtist(id: string, signal?: AbortSignal): Promise<ArtistWithAlbums> {
+    const res = await this.request<{ artist: ArtistWithAlbums }>('getArtist', { id }, signal);
+    return { ...res.artist, album: res.artist.album ?? [] };
+  }
+
+  async getArtistInfo(id: string, count = 10, signal?: AbortSignal): Promise<ArtistInfo> {
+    const res = await this.request<{ artistInfo2?: { biography?: string; similarArtist?: ArtistInfo['similarArtist'] } }>(
+      'getArtistInfo2',
+      { id, count },
+      signal,
+    );
+    return { biography: res.artistInfo2?.biography, similarArtist: res.artistInfo2?.similarArtist ?? [] };
+  }
+
+  async getTopSongs(artist: string, count = 10, signal?: AbortSignal): Promise<Song[]> {
+    const res = await this.request<{ topSongs?: { song?: Song[] } }>('getTopSongs', { artist, count }, signal);
+    return res.topSongs?.song ?? [];
+  }
+
+  async getStarred(signal?: AbortSignal): Promise<Starred> {
+    const res = await this.request<{ starred2?: Partial<Starred> }>('getStarred2', {}, signal);
+    return { song: res.starred2?.song ?? [], album: res.starred2?.album ?? [], artist: res.starred2?.artist ?? [] };
+  }
+
+  async getSimilarSongs(id: string, count = 20, signal?: AbortSignal): Promise<Song[]> {
+    const res = await this.request<{ similarSongs2?: { song?: Song[] } }>('getSimilarSongs2', { id, count }, signal);
+    return res.similarSongs2?.song ?? [];
+  }
+
+  async getRandomSongs(options: { size?: number; genre?: string } = {}, signal?: AbortSignal): Promise<Song[]> {
+    const res = await this.request<{ randomSongs?: { song?: Song[] } }>('getRandomSongs', options, signal);
+    return res.randomSongs?.song ?? [];
+  }
+
+  async getGenres(signal?: AbortSignal): Promise<Genre[]> {
+    const res = await this.request<{ genres?: { genre?: Genre[] } }>('getGenres', {}, signal);
+    return res.genres?.genre ?? [];
   }
 
   /** Audio URL for an `<audio>` element. Contains the token: keep it in memory only. */
