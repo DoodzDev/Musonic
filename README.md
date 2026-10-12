@@ -98,7 +98,7 @@ A Spotify-inspired mobile client for Navidrome and Subsonic-compatible servers, 
 | **Navidrome or Subsonic server** | Any recent version; OctoFiesta is optional — see [Server Setup](#server-setup) |
 | **Android device** | Android 8.0+ (API 26+) |
 | **iOS device** | iOS 15+ — sideload only via AltStore or Sideloadly |
-| **Node.js** | ≥ 22.11.0 (see `.nvmrc`) |
+| **Node.js** | ≥ 22.11.0 (see `apps/mobile/.nvmrc`) |
 | **JDK** | 21 (Temurin recommended) |
 | **Android SDK** | 34 or 36 |
 | **NDK** | 27.1 |
@@ -110,7 +110,7 @@ A Spotify-inspired mobile client for Navidrome and Subsonic-compatible servers, 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/DoodzProg/Musonic.git
-cd Musonic
+cd Musonic/apps/mobile   # the mobile app lives in apps/mobile
 
 # 2. Switch to the correct Node version
 nvm use          # reads .nvmrc (22.11.0)
@@ -196,20 +196,22 @@ Both workflows fire automatically and attach the APK and IPA as assets on the Gi
 ## Building a Signed APK
 
 ```bash
-# Ensure android/keystore.properties references your keystore (git-ignored)
-cd android
+# Ensure apps/mobile/android/keystore.properties references your keystore (git-ignored)
+cd apps/mobile/android
 ./gradlew assembleRelease
-# Output: android/app/build/outputs/apk/release/app-release.apk
+# Output: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
 ```
 
-> `musonic-release.keystore` and `android/keystore.properties` are git-ignored. Keep a secure offline backup of both files — they cannot be recovered if lost.
+> `musonic-release.keystore` and `apps/mobile/android/keystore.properties` are git-ignored. Keep a secure offline backup of both files — they cannot be recovered if lost.
 
 ---
 
 ## Project Structure
 
+The repository is a monorepo. The mobile app lives in `apps/mobile/`:
+
 ```
-src/
+apps/mobile/src/
 ├── api/
 │   ├── client.ts          Subsonic fetch client, URL helpers
 │   ├── types.ts           TypeScript type definitions

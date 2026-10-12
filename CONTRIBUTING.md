@@ -41,12 +41,12 @@ Naming prefixes:
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| Node.js | `22.11.0` | Pinned in `.nvmrc`. A version manager such as `fnm` or `nvm` picks it up automatically. |
+| Node.js | `22.11.0` | Pinned in `apps/mobile/.nvmrc`. A version manager such as `fnm` or `nvm` picks it up automatically. |
 | JDK | 17 **and** 21 | JDK 21 runs Gradle. The React Native Gradle plugin also requires a JDK 17 toolchain; without it, Gradle tries to download one and fails. |
 | Android SDK | Platform 36, Build-Tools 36.0.0 | Install with the command-line tools (`sdkmanager`) or Android Studio. |
 | Android NDK | `27.1.12297006` | Plus CMake `3.22.1`. |
 
-Point Gradle to the SDK with `ANDROID_HOME`, or create `android/local.properties` (gitignored):
+Point Gradle to the SDK with `ANDROID_HOME`, or create `apps/mobile/android/local.properties` (gitignored):
 
 ```
 sdk.dir=/path/to/Android/Sdk
@@ -57,13 +57,14 @@ sdk.dir=/path/to/Android/Sdk
 | Variant | Package | App name | Use |
 |---------|---------|----------|-----|
 | `debug` | `com.musonic.debug` | Musonic Dev | Development with Metro and fast refresh. Installs next to the released app. |
-| `release` | `com.musonic` | Musonic | Production build. Signed with the release key when `android/keystore.properties` is present, otherwise with the debug key. |
+| `release` | `com.musonic` | Musonic | Production build. Signed with the release key when `apps/mobile/android/keystore.properties` is present, otherwise with the debug key. |
 
-The release keystore and `android/keystore.properties` are never committed. Official releases are built and signed by the CI on version tags.
+The release keystore and `apps/mobile/android/keystore.properties` are never committed. Official releases are built and signed by the CI on version tags.
 
 ### Commands
 
 ```bash
+cd apps/mobile                   # the mobile app lives in apps/mobile
 npm install                      # also applies patches/ via patch-package
 
 # Development build on a connected device (USB debugging enabled)
@@ -106,7 +107,7 @@ docs: update installation steps in README
 ## Code Style
 
 - **TypeScript** everywhere — no `any` unless unavoidable and justified.
-- All **user-facing strings** must go through `src/i18n/fr.ts`. No hardcoded French (or any language) outside that file.
+- All **user-facing strings** must go through `apps/mobile/src/i18n/fr.ts`. No hardcoded French (or any language) outside that file.
 - **No comments** unless the *why* is genuinely non-obvious. The code should be self-documenting.
 - Run `npm run lint` before committing.
 
