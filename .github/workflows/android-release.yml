@@ -10,6 +10,9 @@ jobs:
   build-android:
     name: Build Release APK
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
 
     steps:
       - name: Checkout
@@ -18,8 +21,9 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version-file: apps/mobile/.nvmrc
           cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -57,13 +61,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: musonic-release-${{ github.sha }}
-          path: android/app/build/outputs/apk/release/Musonic.apk
+          path: apps/mobile/android/app/build/outputs/apk/release/Musonic.apk
           retention-days: 30
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: android/app/build/outputs/apk/release/Musonic.apk
+          files: apps/mobile/android/app/build/outputs/apk/release/Musonic.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
