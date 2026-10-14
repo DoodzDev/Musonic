@@ -1,40 +1,37 @@
 /**
  * @file QueueSheet.tsx
- * @description Bottom sheet showing the current playback queue. Supports
- *   drag-and-drop reordering, individual removal, and move-to-top actions.
- *   Rows are keyed by queue entry (a track present twice has two entries);
- *   moves go through the playback engine, across zones. The list keeps its
- *   own order and only takes the engine's when it really differs, so a drop
- *   is never followed by a second update mid-animation. The list is a
- *   reorderable list driven on the UI thread: while a row is dragged the
+ * @description Queue sheet of the full player (Design v2, R4.4). Header with
+ *   the current track (tap: back to the player), three mode tiles (Shuffle,
+ *   Repeat, Autoplay), the "Up next" list and, below it, the dimmed autoplay
+ *   suggestions. Rows are reordered at any time by their handle; "Edit" only
+ *   selects rows (no save step: changes apply at once), with a glass bar to
+ *   play the selection next or remove it, or to clear everything (Undo in a
+ *   toast). Rows are keyed by queue entry (a track present twice has two
+ *   entries); moves go through the playback engine, across zones. The list
+ *   keeps its own order and only takes the engine's when it really differs,
+ *   so a drop is never followed by a second update mid-animation. The list is
+ *   a reorderable list driven on the UI thread: while a row is dragged the
  *   list cannot scroll, and a swipe outside the handle only scrolls.
- *   "Clear all" (edit mode) empties what comes next; a toast offers Undo.
+ *   Landscape: two columns, as in the player. The current track and the
+ *   tiles stay on the cover's side, the list takes the full height of the
+ *   other one.
  * @author DoodzProg
- * @version 2.1.0
+ * @version 3.1.0
  * @license CC-BY-NC-4.0
  */
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Animated,
-  useWindowDimensions,
   LayoutAnimation,
+  Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   TouchableWithoutFeedback,
+  useWindowDimensions,
   View,
 } from 'react-native';
-import ReAnimated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  cancelAnimation,
-  runOnJS,
-} from 'react-native-reanimated';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import ReorderableList, {
   reorderItems,
   useIsActive,
@@ -42,116 +39,42 @@ import ReorderableList, {
   type ReorderableListReorderEvent,
 } from 'react-native-reorderable-list';
 import {Gesture, GestureDetector, GestureHandlerRootView} from 'react-native-gesture-handler';
-import Svg, {Circle, Path, Rect} from 'react-native-svg';
+import LinearGradient from 'react-native-linear-gradient';
+import {useActiveTrack} from 'react-native-track-player';
 import CoverArt from './CoverArt';
-import PlayIcon from './icons/PlayIcon';
-import PauseIcon from './icons/PauseIcon';
-import RepeatIcon from './icons/RepeatIcon';
-import CloseIcon from './icons/CloseIcon';
-import ShuffleIcon from './icons/ShuffleIcon';
-import TrackMagicIcon from './icons/TrackMagicIcon';
+import GlassSurface from './ui/GlassSurface';
+import PressableScale from './ui/PressableScale';
+import {
+  ChevronDownIcon,
+  DragHandleIcon,
+  InfinityIcon,
+  RepeatIcon,
+  SelectCircleIcon,
+  ShuffleIcon,
+  SparkleIcon,
+} from './icons';
 import {useT} from '../i18n';
-import {useActiveTrack, usePlaybackState, State} from 'react-native-track-player';
-import {usePlayerStore, type Track, type ShuffleMode} from '../store/playerStore';
+import {usePlayerStore, type Track} from '../store/playerStore';
+import {useSettingsStore} from '../store/settingsStore';
+import {useIsLandscape} from '../hooks/useIsLandscape';
 import {playbackEngine} from '../services/playback/engine';
+import {haptic} from '../services/haptics';
+import {colors, radii} from '../theme/tokens';
 import {toast, ToastHost} from './ui/Toast';
+import {DISMISS} from './ui/gestures';
 
-const ORANGE = '#FF6B35';
-const SHEET_HEIGHT_RATIO = 0.85;
-/** Toast distance from the bottom: clears the bottom bar. */
+const SHEET_HEIGHT_RATIO = 0.92;
+const SHEET_BG = '#121214';
+const HEADER_COVER = 64;
+const ROW_COVER = 44;
+/** Toast distance from the bottom: clears the glass action bar. */
 const TOAST_BOTTOM = 110;
-// sheetInner paddingHorizontal=20 both sides (40 total), 2 gaps of 8px between 3 buttons.
+/** Room kept under the list so the last rows clear the glass action bar. */
+const ACTION_BAR_SPACE = 96;
+const TILE_OFF_BG = 'rgba(255,255,255,0.1)';
+const TILE_OFF_FG = 'rgba(255,255,255,0.85)';
 
-// ─── Animated Equalizer ───────────────────────────────────────────────────────
-
-function Equalizer({playing}: {playing: boolean}) {
-  const b1 = useSharedValue(3);
-  const b2 = useSharedValue(3);
-  const b3 = useSharedValue(3);
-
-  const s1 = useAnimatedStyle(() => ({height: b1.value}));
-  const s2 = useAnimatedStyle(() => ({height: b2.value}));
-  const s3 = useAnimatedStyle(() => ({height: b3.value}));
-
-  useEffect(() => {
-    const bars = [b1, b2, b3];
-    if (playing) {
-      bars.forEach((bar, i) => {
-        bar.value = withRepeat(
-          withSequence(
-            withTiming(14, {duration: 320 + i * 80}),
-            withTiming(3, {duration: 300 + i * 60}),
-          ),
-          -1,
-        );
-      });
-    } else {
-      bars.forEach(bar => {
-        cancelAnimation(bar);
-        bar.value = withTiming(3, {duration: 150});
-      });
-    }
-    return () => bars.forEach(bar => cancelAnimation(bar));
-  }, [playing, b1, b2, b3]);
-
-  return (
-    <View style={styles.eqContainer}>
-      <ReAnimated.View style={[styles.eqBar, s1]} />
-      <ReAnimated.View style={[styles.eqBar, s2]} />
-      <ReAnimated.View style={[styles.eqBar, s3]} />
-    </View>
-  );
-}
-
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
-function DragHandleIcon() {
-  return (
-    <Svg width={18} height={14} viewBox="0 0 18 14">
-      <Rect x={0} y={0} width={18} height={2.5} rx={1.25} fill="#535353" />
-      <Rect x={0} y={5.75} width={18} height={2.5} rx={1.25} fill="#535353" />
-      <Rect x={0} y={11.5} width={18} height={2.5} rx={1.25} fill="#535353" />
-    </Svg>
-  );
-}
-
-function CheckCircle({selected}: {selected: boolean}) {
-  if (!selected) {
-    return <View style={styles.checkEmpty} />;
-  }
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24">
-      <Circle cx={12} cy={12} r={12} fill={ORANGE} />
-      <Path
-        d="M6 12 L10 16 L18 8"
-        stroke="#000"
-        strokeWidth={2.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </Svg>
-  );
-}
-
-function TimerIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24">
-      <Circle cx={12} cy={13} r={9} stroke="#fff" strokeWidth={2} fill="none" />
-      <Path
-        d="M12 8 L12 13 L15 15"
-        stroke="#fff"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <Path d="M9 2 L15 2" stroke="#fff" strokeWidth={2} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-// ─── Queue Row ────────────────────────────────────────────────────────────────
+// ─── Rows ─────────────────────────────────────────────────────────────────────
 
 /** Queue entry key (the engine sets one per entry). */
 function rowKey(t: Track): string {
@@ -164,6 +87,20 @@ function sameRows(a: Track[], b: Track[]): boolean {
     rowKey(t) === rowKey(b[i]) && !!t.isMagic === !!b[i].isMagic && !!t.isAutoplay === !!b[i].isAutoplay);
 }
 
+/** Row cover with the orange Magic disc when the track is a Magic suggestion. */
+function RowCover({item, magicLabel}: {item: Track; magicLabel: string}) {
+  return (
+    <View style={styles.rowCover}>
+      <CoverArt id={item.coverArt} size={ROW_COVER} borderRadius={radii.cover} />
+      {item.isMagic && (
+        <View style={styles.magicDisc} accessible accessibilityLabel={magicLabel}>
+          <SparkleIcon size={10} color={colors.onAccent} />
+        </View>
+      )}
+    </View>
+  );
+}
+
 interface QueueRowProps {
   item: Track;
   isEditMode: boolean;
@@ -172,38 +109,40 @@ interface QueueRowProps {
 }
 
 const QueueRow = React.memo(function QueueRow({item, isEditMode, isSelected, onSelect}: QueueRowProps) {
+  const t = useT().queue;
   const drag = useReorderableDrag();
   const isActive = useIsActive();
 
   return (
-    <TouchableOpacity
-      style={[styles.queueRow, isActive && styles.queueRowDragging]}
-      onPress={() => isEditMode && onSelect(rowKey(item))}
-      activeOpacity={isEditMode ? 0.6 : 1}>
+    <Pressable
+      style={[styles.row, isActive && styles.rowDragging]}
+      onPress={isEditMode ? () => onSelect(rowKey(item)) : undefined}
+      disabled={!isEditMode}
+      // Always explicit values: Android keeps a label or role that merely becomes undefined.
+      accessibilityRole={isEditMode ? 'checkbox' : 'text'}
+      accessibilityState={isEditMode ? {checked: isSelected} : {}}
+      accessibilityLabel={isEditMode
+        ? (isSelected ? t.deselect(item.title) : t.select(item.title))
+        : `${item.title}, ${item.artist}`}>
       {isEditMode && (
-        <View style={styles.checkWrapper}>
-          <CheckCircle selected={isSelected} />
+        <View style={styles.selectCircle}>
+          <SelectCircleIcon selected={isSelected} />
         </View>
       )}
-      <CoverArt id={item.coverArt} size={48} borderRadius={4} />
-      <View style={styles.queueRowInfo}>
-        <Text style={styles.queueRowTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <View style={styles.queueRowArtistRow}>
-          {item.isMagic && <TrackMagicIcon size={10} />}
-          <Text style={styles.queueRowArtist} numberOfLines={1}>
-            {item.artist}
-          </Text>
-        </View>
+      <RowCover item={item} magicLabel={t.magicSuggestion} />
+      <View style={styles.rowInfo}>
+        <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.rowArtist} numberOfLines={1}>{item.artist}</Text>
       </View>
-      <TouchableOpacity
+      <Pressable
         onPressIn={drag}
-        hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}
-        style={styles.dragHandle}>
+        hitSlop={{top: 9, bottom: 9, left: 4, right: 12}}
+        style={styles.handle}
+        accessibilityRole="button"
+        accessibilityLabel={t.reorder(item.title)}>
         <DragHandleIcon />
-      </TouchableOpacity>
-    </TouchableOpacity>
+      </Pressable>
+    </Pressable>
   );
 }, (prev, next) =>
   prev.item === next.item &&
@@ -211,6 +150,49 @@ const QueueRow = React.memo(function QueueRow({item, isEditMode, isSelected, onS
   prev.isSelected === next.isSelected &&
   prev.onSelect === next.onSelect,
 );
+
+/** Autoplay suggestion: not reorderable, dimmed (it plays only after the queue). */
+function AutoplayRow({item, magicLabel}: {item: Track; magicLabel: string}) {
+  return (
+    <View style={[styles.row, styles.autoRow]}>
+      <RowCover item={item} magicLabel={magicLabel} />
+      <View style={styles.rowInfo}>
+        <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.rowArtist} numberOfLines={1}>{item.artist}</Text>
+      </View>
+    </View>
+  );
+}
+
+// ─── Mode tile ────────────────────────────────────────────────────────────────
+
+/** Glyph and label colour of a mode tile. */
+function tileFg(active: boolean): string {
+  return active ? colors.accent : TILE_OFF_FG;
+}
+
+function ModeTile({label, active, busy, onPress, icon}: {
+  label: string;
+  active: boolean;
+  busy?: boolean;
+  onPress: () => void;
+  /** Glyph drawn in `tileFg(active)`. */
+  icon: React.ReactNode;
+}) {
+  const fg = tileFg(active);
+  return (
+    <PressableScale
+      onPress={onPress}
+      disabled={busy}
+      haptic="selection"
+      style={[styles.tile, {backgroundColor: active ? colors.accentFill : TILE_OFF_BG}]}
+      accessibilityLabel={label}
+      accessibilityState={{selected: active, busy}}>
+      {busy ? <ActivityIndicator size="small" color={colors.accent} /> : icon}
+      <Text style={[styles.tileLabel, {color: fg}]} numberOfLines={1} maxFontSizeMultiplier={1.2}>{label}</Text>
+    </PressableScale>
+  );
+}
 
 // ─── QueueSheet ───────────────────────────────────────────────────────────────
 
@@ -222,13 +204,11 @@ interface Props {
 
 export default function QueueSheet({visible, onClose, slideY}: Props) {
   // Measured on every render so the sheet follows rotation.
-  const {width: winW, height: winH} = useWindowDimensions();
+  const {height: winH} = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const sheetHeight = winH * SHEET_HEIGHT_RATIO;
-  const bottomBtnWidth = Math.floor((winW - 40 - 16) / 3);
   const t = useT();
   const currentTrack = useActiveTrack();
-  const {state} = usePlaybackState();
-  const isPlaying = state === State.Playing;
   const storeUpcoming = usePlayerStore(s => s.upcoming);
   // The list's own order: set at once on a drop, then replaced by the
   // engine's only when that one really differs (next track, removal…).
@@ -242,28 +222,35 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
     if (pendingMoves.current === 0) syncFromStore();
   }, [storeUpcoming, syncFromStore]);
   const currentPlaylistName = usePlayerStore(s => s.currentPlaylistName);
-  const isShuffled = usePlayerStore(s => s.isShuffled);
+  const dominantColor = usePlayerStore(s => s.dominantColor);
   const shuffleMode = usePlayerStore(s => s.shuffleMode);
   const repeatMode = usePlayerStore(s => s.repeatMode);
-  const togglePlay = usePlayerStore(s => s.togglePlay);
   const toggleShuffle = usePlayerStore(s => s.toggleShuffle);
   const isFetchingMagic = usePlayerStore(s => s.isFetchingMagic);
   const cycleRepeat = usePlayerStore(s => s.cycleRepeat);
   const reorderQueue = usePlayerStore(s => s.reorderQueue);
   const removeFromQueue = usePlayerStore(s => s.removeFromQueue);
   const moveToTop = usePlayerStore(s => s.moveToTop);
+  const isAutoplayEnabled = useSettingsStore(s => s.isAutoplayEnabled);
+  const isLandscape = useIsLandscape();
+  // Same side as the cover in the landscape player.
+  const infoFirst = useSettingsStore(s => s.fullPlayerCoverSide) !== 'right';
+
+  const upNext = useMemo(() => upcoming.filter(r => !r.isAutoplay), [upcoming]);
+  const autoRows = useMemo(() => upcoming.filter(r => r.isAutoplay), [upcoming]);
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const headerGesture = Gesture.Pan()
+  // Swipe down to close. One gesture per detector (landscape has two: the handle and the info column).
+  const makeCloseGesture = useCallback(() => Gesture.Pan()
+    .runOnJS(true)
     .minDistance(10)
     .onEnd(e => {
-      'worklet';
-      if (e.translationY > 50 || e.velocityY > 500) {
-        runOnJS(onClose)();
-      }
-    });
+      if (e.translationY > DISMISS.distance || e.velocityY > DISMISS.velocity) onClose();
+    }), [onClose]);
+  const headerGesture = useMemo(makeCloseGesture, [makeCloseGesture]);
+  const handleGesture = useMemo(makeCloseGesture, [makeCloseGesture]);
 
   const exitEditMode = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -271,12 +258,19 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
     setSelectedIds(new Set());
   }, []);
 
-  const enterEditMode = useCallback(() => {
+  const toggleEditMode = useCallback(() => {
+    if (isEditMode) {
+      // No save step: the changes are already applied, "Done" just confirms it.
+      haptic('success');
+      exitEditMode();
+      return;
+    }
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsEditMode(true);
-  }, []);
+  }, [isEditMode, exitEditMode]);
 
   const toggleSelect = useCallback((id: string) => {
+    haptic('selection');
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -285,32 +279,23 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
     });
   }, []);
 
-  const handleMoveToTop = useCallback(() => {
+  const handlePlayNext = useCallback(() => {
     if (selectedIds.size === 0) return;
     moveToTop([...selectedIds]);
+    haptic('success');
     exitEditMode();
   }, [selectedIds, moveToTop, exitEditMode]);
 
-  // Moves by entry (the moved one and the one now after it), never by
-  // position: fast successive drags can't target a stale row.
-  const rowsRef = useRef(upcoming);
-  rowsRef.current = upcoming;
-  const handleReorder = useCallback(({from, to}: ReorderableListReorderEvent) => {
-    if (from === to) return;
-    const data = reorderItems(rowsRef.current, from, to);
-    const moved = data[to];
-    if (!moved) return;
-    rowsRef.current = data;
-    setUpcoming(data);
-    pendingMoves.current++;
-    reorderQueue(rowKey(moved), data[to + 1] ? rowKey(data[to + 1]) : null).finally(() => {
-      pendingMoves.current--;
-      if (pendingMoves.current === 0) syncFromStore();
-    });
-  }, [reorderQueue, syncFromStore]);
+  const handleRemove = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    removeFromQueue([...selectedIds]);
+    haptic('warning');
+    exitEditMode();
+  }, [selectedIds, removeFromQueue, exitEditMode]);
 
   const handleClearAll = useCallback(() => {
     playbackEngine.clearQueue();
+    haptic('warning');
     exitEditMode();
     toast.show(t.queue.clearedToast, {
       kind: 'success',
@@ -318,11 +303,27 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
     });
   }, [exitEditMode, t]);
 
-  const handleRemove = useCallback(() => {
-    if (selectedIds.size === 0) return;
-    removeFromQueue([...selectedIds]);
-    exitEditMode();
-  }, [selectedIds, removeFromQueue, exitEditMode]);
+  // Moves by entry (the moved one and the one now after it), never by
+  // position: fast successive drags can't target a stale row. A drop at the
+  // end of "Up next" lands before the autoplay suggestions.
+  const rowsRef = useRef(upNext);
+  rowsRef.current = upNext;
+  const autoRef = useRef(autoRows);
+  autoRef.current = autoRows;
+  const handleReorder = useCallback(({from, to}: ReorderableListReorderEvent) => {
+    if (from === to) return;
+    const data = reorderItems(rowsRef.current, from, to);
+    const moved = data[to];
+    if (!moved) return;
+    const after = data[to + 1] ?? autoRef.current[0];
+    rowsRef.current = data;
+    setUpcoming([...data, ...autoRef.current]);
+    pendingMoves.current++;
+    reorderQueue(rowKey(moved), after ? rowKey(after) : null).finally(() => {
+      pendingMoves.current--;
+      if (pendingMoves.current === 0) syncFromStore();
+    });
+  }, [reorderQueue, syncFromStore]);
 
   useEffect(() => {
     if (!visible) exitEditMode();
@@ -343,7 +344,130 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
   if (!visible || !currentTrack) return null;
 
   const hasSelection = selectedIds.size > 0;
-  const repeatActive = repeatMode !== 'none';
+  const shuffleNote = shuffleMode === 'magic' ? t.queue.shuffleMagic : shuffleMode === 'on' ? t.queue.shuffleOn : null;
+  const subtitle = [t.queue.from(currentPlaylistName || t.queue.fallbackName), shuffleNote].filter(Boolean).join(' · ');
+
+  const listHeader = (
+    <View style={styles.sectionHeader}>
+      <View style={styles.sectionText}>
+        <Text style={styles.sectionTitle} accessibilityRole="header">{t.queue.upNext}</Text>
+        <Text style={styles.sectionSubtitle} numberOfLines={1}>{subtitle}</Text>
+      </View>
+      {upNext.length > 0 && (
+        <Pressable onPress={toggleEditMode} hitSlop={12} accessibilityRole="button">
+          <Text style={styles.editText}>{isEditMode ? t.queue.done : t.queue.modifyButton}</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+
+  const listFooter = (
+    <View style={{paddingBottom: isEditMode ? ACTION_BAR_SPACE : insets.bottom + 16}}>
+      {upNext.length === 0 && <Text style={styles.empty}>{t.queue.empty}</Text>}
+      {/* Repeat all starts the queue over: autoplay never comes, so the section would mislead (C8). */}
+      {isAutoplayEnabled && repeatMode !== 'all' && (
+        <>
+          <View style={styles.autoHeader}>
+            <InfinityIcon size={18} color={colors.accent} />
+            <View style={styles.sectionText}>
+              <Text style={styles.sectionTitle} accessibilityRole="header">{t.queue.autoplayTitle}</Text>
+              <Text style={styles.sectionSubtitle} numberOfLines={1}>{t.queue.autoplaySubtitle}</Text>
+            </View>
+          </View>
+          {autoRows.map(r => <AutoplayRow key={rowKey(r)} item={r} magicLabel={t.queue.magicSuggestion} />)}
+        </>
+      )}
+    </View>
+  );
+
+  const currentNode = (
+    <View style={styles.header}>
+      <Pressable
+        onPress={onClose}
+        style={styles.current}
+        accessibilityRole="button"
+        accessibilityLabel={`${t.queue.backToPlayer} : ${currentTrack.title}`}>
+        <CoverArt id={currentTrack.coverArt} size={HEADER_COVER} borderRadius={radii.tile} />
+        <View style={styles.rowInfo}>
+          <Text style={styles.currentTitle} numberOfLines={1}>{currentTrack.title}</Text>
+          <Text style={styles.currentArtist} numberOfLines={1}>{currentTrack.artist}</Text>
+        </View>
+      </Pressable>
+      <PressableScale onPress={onClose} style={styles.closeBtn} accessibilityLabel={t.queue.close}>
+        <ChevronDownIcon size={16} />
+      </PressableScale>
+    </View>
+  );
+
+  const tilesNode = (
+    <View style={styles.tiles}>
+      <ModeTile
+        label={t.queue.shuffleTile}
+        active={shuffleMode !== 'off'}
+        busy={isFetchingMagic}
+        onPress={toggleShuffle}
+        icon={<ShuffleIcon mode={shuffleMode} color={tileFg(shuffleMode !== 'off')} size={18} indicator={false} />}
+      />
+      <ModeTile
+        label={t.queue.repeatTile}
+        active={repeatMode !== 'none'}
+        onPress={cycleRepeat}
+        icon={<RepeatIcon mode={repeatMode} color={tileFg(repeatMode !== 'none')} size={18} indicator={false} />}
+      />
+      <ModeTile
+        label={t.queue.autoplayTile}
+        active={isAutoplayEnabled}
+        onPress={() => playbackEngine.setAutoplay(!isAutoplayEnabled)}
+        icon={<InfinityIcon size={18} color={tileFg(isAutoplayEnabled)} />}
+      />
+    </View>
+  );
+
+  // Up next (reorderable) + autoplay suggestions, with the selection actions floating over it.
+  const listNode = (
+    <View style={styles.fill}>
+      <GestureHandlerRootView style={styles.fill}>
+        <ReorderableList
+          data={upNext}
+          keyExtractor={rowKey}
+          onReorder={handleReorder}
+          shouldUpdateActiveItem
+          renderItem={renderItem}
+          ListHeaderComponent={listHeader}
+          ListFooterComponent={listFooter}
+          showsVerticalScrollIndicator={false}
+        />
+      </GestureHandlerRootView>
+
+      {isEditMode && (
+        <GlassSurface radius={28} style={[styles.actionBar, {bottom: insets.bottom + 12}]}>
+          {hasSelection ? (
+            <>
+              <PressableScale onPress={handlePlayNext} style={[styles.action, styles.actionNeutral]}>
+                <Text style={styles.actionText}>{t.queue.playNext}</Text>
+              </PressableScale>
+              <PressableScale onPress={handleRemove} style={[styles.action, styles.actionDanger]}>
+                <Text style={[styles.actionText, styles.actionDangerText]}>{t.queue.removeCount(selectedIds.size)}</Text>
+              </PressableScale>
+            </>
+          ) : (
+            <PressableScale onPress={handleClearAll} style={[styles.action, styles.actionDanger]}>
+              <Text style={[styles.actionText, styles.actionDangerText]}>{t.queue.clearAll}</Text>
+            </PressableScale>
+          )}
+        </GlassSurface>
+      )}
+    </View>
+  );
+
+  const infoColumn = (
+    <GestureDetector gesture={headerGesture}>
+      <View style={styles.landscapeInfo}>
+        {currentNode}
+        {tilesNode}
+      </View>
+    </GestureDetector>
+  );
 
   return (
     <View style={[StyleSheet.absoluteFill, styles.backdrop]}>
@@ -352,126 +476,40 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
       </TouchableWithoutFeedback>
 
       <Animated.View style={[styles.sheet, {height: sheetHeight, transform: [{translateY: slideY}]}]}>
-        <SafeAreaView style={styles.sheetInner} edges={['bottom']}>
-
-          {/* ── Top zone with swipe-to-close ── */}
-          <GestureDetector gesture={headerGesture}>
-          <View>
-            <View style={styles.pill} />
-
-            <View style={styles.header}>
-              {isEditMode ? (
-                <>
-                  <Text style={styles.headerTitle} numberOfLines={1}>
-                    {t.queue.editTitle(selectedIds.size)}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={exitEditMode}
-                    hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
-                    <CloseIcon />
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.headerTitle}>{t.queue.title}</Text>
-                  <TouchableOpacity style={styles.editBtn} onPress={enterEditMode}>
-                    <Text style={styles.editBtnText}>{t.queue.modifyButton}</Text>
-                  </TouchableOpacity>
-                </>
-              )}
+        {/* A light wash of the cover colour from the top, as in the player. */}
+        <LinearGradient
+          colors={[`${dominantColor}B3`, `${dominantColor}00`]}
+          locations={[0, 0.45]}
+          style={[StyleSheet.absoluteFill, styles.wash]}
+          pointerEvents="none"
+        />
+        {isLandscape ? (
+          <View style={[styles.fill, {paddingLeft: insets.left, paddingRight: insets.right}]}>
+            <GestureDetector gesture={handleGesture}>
+              <View style={styles.pillZone}><View style={styles.pill} /></View>
+            </GestureDetector>
+            <View style={styles.landscapeBody}>
+              {infoFirst && infoColumn}
+              {listNode}
+              {!infoFirst && infoColumn}
             </View>
-
-            <Text style={styles.subtitle}>
-              {t.queue.nowPlaying(currentPlaylistName || t.queue.fallbackName)}
-            </Text>
-
-            <View style={styles.currentRow}>
-              <Equalizer playing={isPlaying} />
-              <View style={styles.currentInfo}>
-                <Text style={styles.currentTitle} numberOfLines={1}>
-                  {currentTrack.title}
-                </Text>
-                <Text style={styles.currentArtist} numberOfLines={1}>
-                  {currentTrack.artist}
-                </Text>
-              </View>
-              <TouchableOpacity style={styles.playBtn} onPress={togglePlay}>
-                {isPlaying ? <PauseIcon size={13} color="#000" /> : <PlayIcon size={13} />}
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.divider} />
           </View>
-          </GestureDetector>
-
-          {/* ── Draggable list ── */}
-          <GestureHandlerRootView style={styles.fill}>
-            <ReorderableList
-              data={upcoming}
-              keyExtractor={rowKey}
-              onReorder={handleReorder}
-              shouldUpdateActiveItem
-              renderItem={renderItem}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.listContent}
-            />
-          </GestureHandlerRootView>
-
-          {/* ── Bottom bar ── */}
-          {isEditMode ? (
-            <View style={styles.editBar}>
-              <TouchableOpacity onPress={handleMoveToTop} disabled={!hasSelection}>
-                <Text style={[styles.editAction, !hasSelection && styles.editActionDisabled]}>
-                  {t.queue.moveToTop}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleRemove} disabled={!hasSelection}>
-                <Text style={[styles.editAction, !hasSelection && styles.editActionDisabled]}>
-                  {t.queue.removeButton}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleClearAll} disabled={upcoming.length === 0}>
-                <Text style={[styles.editAction, upcoming.length === 0 && styles.editActionDisabled]}>
-                  {t.queue.clearAll}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.bottomBar}>
-              <TouchableOpacity
-                style={[styles.bottomBtn, {width: bottomBtnWidth}, isFetchingMagic && styles.dimmed]}
-                onPress={toggleShuffle}
-                disabled={isFetchingMagic}
-                activeOpacity={0.7}>
-                {isFetchingMagic
-                  ? <ActivityIndicator size="small" color={ORANGE} />
-                  : <ShuffleIcon size={22} mode={shuffleMode as ShuffleMode} color={isShuffled ? ORANGE : '#fff'} />}
-                <Text style={[styles.bottomBtnLabel, isShuffled && styles.bottomBtnLabelActive]}>
-                  {t.queue.shuffle}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.bottomBtn, {width: bottomBtnWidth}]}
-                onPress={cycleRepeat}
-                activeOpacity={0.7}>
-                <RepeatIcon mode={repeatMode} color={repeatActive ? ORANGE : '#fff'} />
-                <Text style={[styles.bottomBtnLabel, repeatActive && styles.bottomBtnLabelActive]}>
-                  {t.queue.repeat}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.bottomBtn, {width: bottomBtnWidth}]} activeOpacity={0.7}>
-                <TimerIcon />
-                <Text style={styles.bottomBtnLabel}>{t.queue.timer}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-        </SafeAreaView>
+        ) : (
+          <View style={styles.fill}>
+            {/* ── Handle, current track and mode tiles: swipe down to close ── */}
+            <GestureDetector gesture={headerGesture}>
+              <View style={styles.top}>
+                <View style={styles.pill} />
+                {currentNode}
+                {tilesNode}
+              </View>
+            </GestureDetector>
+            {listNode}
+          </View>
+        )}
       </Animated.View>
 
-      {/* The player is a Modal: toasts need their own host here, above the bottom bar. */}
+      {/* The player is a Modal: toasts need their own host here, above the action bar. */}
       <ToastHost bottom={TOAST_BOTTOM} />
     </View>
   );
@@ -481,9 +519,8 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
 
 const styles = StyleSheet.create({
   fill: {flex: 1},
-  listContent: {paddingBottom: 8},
   backdrop: {
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: colors.backdrop,
     zIndex: 200,
   },
   sheet: {
@@ -491,183 +528,187 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#121212',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: SHEET_BG,
+    borderTopLeftRadius: radii.card,
+    borderTopRightRadius: radii.card,
+    overflow: 'hidden',
+  },
+  wash: {opacity: 0.6},
+  top: {paddingHorizontal: 20},
+  pillZone: {alignItems: 'center'},
+  landscapeBody: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  /** Landscape: the current track and the tiles, on the cover's side. */
+  landscapeInfo: {
+    width: '40%',
+    paddingHorizontal: 20,
+    // Same top as the "Up next" title of the list (its header's paddingTop).
+    paddingTop: 12,
   },
   pill: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#535353',
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.35)',
     alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  sheetInner: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 0,
+    marginTop: 8,
+    marginBottom: 14,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#fff',
-    flex: 1,
-    marginRight: 12,
-  },
-  editBtn: {
-    backgroundColor: '#282828',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  editBtnText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#A7A7A7',
-    marginBottom: 16,
-  },
-  currentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 64,
     gap: 12,
   },
-  currentInfo: {
+  current: {
     flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   currentTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: ORANGE,
+    color: colors.textPrimary,
+    fontSize: 17,
+    fontWeight: '600',
+    letterSpacing: -0.3,
   },
   currentArtist: {
-    fontSize: 13,
-    color: '#A7A7A7',
+    color: 'rgba(255,255,255,0.65)',
+    fontSize: 15,
     marginTop: 2,
   },
-  playBtn: {
+  closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    marginTop: 8,
-    marginBottom: 8,
-  },
-  queueRow: {
+  tiles: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    gap: 12,
+    gap: 8,
+    marginTop: 18,
+    marginBottom: 6,
   },
-  queueRowDragging: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 8,
-  },
-  checkWrapper: {
-    width: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkEmpty: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#535353',
-  },
-  queueRowInfo: {
+  tile: {
     flex: 1,
-  },
-  queueRowTitle: {
-    fontSize: 16,
-    color: '#fff',
-  },
-  queueRowArtistRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-  },
-  queueRowArtist: {
-    fontSize: 14,
-    color: '#A7A7A7',
-    flex: 1,
-  },
-  dragHandle: {
-    padding: 6,
+    height: 52,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  editBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 18,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
-  },
-  editAction: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  editActionDisabled: {
-    color: '#535353',
-  },
-  bottomBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
-  },
-  bottomBtn: {
-    backgroundColor: '#2A2A2A',
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    gap: 6,
-  },
-  bottomBtnLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  bottomBtnLabelActive: {
-    color: ORANGE,
-  },
-  eqContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    width: 20,
-    height: 16,
     gap: 3,
   },
-  eqBar: {
-    width: 4,
-    backgroundColor: ORANGE,
-    borderRadius: 1,
+  tileLabel: {
+    fontSize: 11,
+    fontWeight: '600',
   },
-  dimmed: {
-    opacity: 0.5,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 4,
   },
+  sectionText: {flex: 1, minWidth: 0},
+  sectionTitle: {
+    color: colors.textPrimary,
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  sectionSubtitle: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
+    marginTop: 1,
+  },
+  editText: {
+    color: colors.accent,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  row: {
+    height: 62,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingLeft: 20,
+    paddingRight: 8,
+    backgroundColor: 'transparent',
+  },
+  rowDragging: {backgroundColor: colors.surface2},
+  autoRow: {opacity: 0.6, paddingRight: 20},
+  selectCircle: {width: 24, height: 24},
+  rowCover: {width: ROW_COVER, height: ROW_COVER},
+  magicDisc: {
+    position: 'absolute',
+    right: -4,
+    bottom: -4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.accent,
+    borderWidth: 2,
+    borderColor: SHEET_BG,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowInfo: {flex: 1, minWidth: 0},
+  rowTitle: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    letterSpacing: -0.3,
+  },
+  rowArtist: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
+    marginTop: 1,
+  },
+  handle: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  empty: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  autoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 4,
+  },
+  actionBar: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    height: 56,
+    flexDirection: 'row',
+    padding: 6,
+    gap: 6,
+  },
+  action: {
+    flex: 1,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionNeutral: {backgroundColor: 'rgba(255,255,255,0.12)'},
+  actionDanger: {backgroundColor: 'rgba(255,105,97,0.14)'},
+  actionText: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  actionDangerText: {color: colors.destructive},
 });

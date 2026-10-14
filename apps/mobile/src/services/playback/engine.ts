@@ -528,6 +528,22 @@ export const playbackEngine = {
     });
   },
 
+  /** Autoplay on / off from the queue sheet: off drops its suggestions at once, on fetches them if needed. */
+  setAutoplay(enabled: boolean): Promise<void> {
+    useSettingsStore.getState().setIsAutoplayEnabled(enabled);
+    if (!active) return Promise.resolve();
+    return run('autoplay', async () => {
+      // Off: a suggestion fetch still in flight must not land afterwards.
+      if (!enabled) token++;
+      if (!enabled && state.autoplay.length > 0) {
+        state = Q.clearAutoplay(state);
+        await replaceUpcomingNative();
+      }
+      publish();
+      afterChange();
+    });
+  },
+
   /** Applies the repeat mode already stored by the player store. */
   applyRepeat(mode: RepeatModeUI): Promise<void> {
     if (!active) return Promise.resolve();

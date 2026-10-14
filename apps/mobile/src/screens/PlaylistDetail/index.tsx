@@ -66,6 +66,7 @@ import {showToast} from '../../components/Toast';
 import {useT, getT} from '../../i18n';
 import {fetchAndCachePlaylistSongs, usePlaylistCacheStore} from '../../store/playlistCacheStore';
 import BackArrowIcon from '../../components/icons/BackArrowIcon';
+import {DragHandleIcon} from '../../components/icons';
 import PlayIcon from '../../components/icons/PlayIcon';
 import HeartIcon from '../../components/icons/HeartIcon';
 import DotsHorizontalIcon from '../../components/icons/DotsHorizontalIcon';
@@ -231,14 +232,6 @@ function MinusCircleIcon({size = 24}: {size?: number}) {
     <Svg width={size} height={size} viewBox="0 0 24 24">
       <Circle cx={12} cy={12} r={11} fill="#555" />
       <Path d="M7 12 H17" stroke="#fff" strokeWidth={2.2} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function DragHandleIcon({size = 24, color = '#777'}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path d="M4 8 H20 M4 12 H20 M4 16 H20" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
     </Svg>
   );
 }

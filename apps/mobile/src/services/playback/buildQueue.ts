@@ -288,6 +288,11 @@ export function setAutoplay<T extends QueueTrack>(state: QueueState<T>, suggesti
   return {...state, autoplay: suggestions.map(t => ({...t, isAutoplay: true}))};
 }
 
+/** Autoplay turned off: its suggestions leave the queue; what you chose stays. */
+export function clearAutoplay<T extends QueueTrack>(state: QueueState<T>): QueueState<T> {
+  return state.autoplay.length === 0 ? state : {...state, autoplay: []};
+}
+
 /** Autoplay should be fetched: nothing left to play after the current track (C7). */
 export function needsAutoplay<T extends QueueTrack>(state: QueueState<T>, modes: Modes): boolean {
   return modes.autoplay && modes.repeat !== 'all' && !!state.current && upcomingOrder(state).length === 0;

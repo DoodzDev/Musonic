@@ -10,6 +10,7 @@
  */
 import {
   addToQueue,
+  clearAutoplay,
   clearQueue,
   emptyQueue,
   interleaveMagic,
@@ -264,6 +265,16 @@ describe('C. Navigation', () => {
     const atEnd = start(modes, '10');
     expect(needsAutoplay(atEnd, modes)).toBe(false);
     expect(setAutoplay(atEnd, list('s1'), modes).autoplay).toEqual([]);
+  });
+
+  it('C9 autoplay turned off: suggestions leave, the rest stays', () => {
+    const atEnd = start(OFF, '10');
+    const withAuto = setAutoplay(atEnd, list('s1', 's2'), OFF);
+    const off = clearAutoplay(withAuto);
+    expect(off.autoplay).toEqual([]);
+    expect(off.current?.id).toBe('10');
+    expect(off.history).toBe(withAuto.history);
+    expect(clearAutoplay(atEnd)).toBe(atEnd);
   });
 });
 
