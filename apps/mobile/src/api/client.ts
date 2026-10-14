@@ -4,11 +4,12 @@
  *   helpers for stream/cover-art URLs. All requests are made against the active
  *   server stored in settingsStore.
  * @author DoodzProg
- * @version 1.0.2
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import type {Server} from '../store/settingsStore';
 import {useNetworkStore} from '../store/networkStore';
+import {getLocalCoverUri} from '../store/localCovers';
 
 const PERMANENT_ERROR_PATTERNS = [
   'ext-deezer',
@@ -46,7 +47,16 @@ export function getStreamUrl(songId: string): string {
   return `${base}/rest/stream.view?${p.toString()}`;
 }
 
+/**
+ * Cover art URI: the file saved with a downloaded track when there is one
+ * (works offline, whatever the size asked), else the server URL.
+ */
 export function getCoverArtUrl(id: string, size = 300): string {
+  return getLocalCoverUri(id) ?? getRemoteCoverArtUrl(id, size);
+}
+
+/** Server cover art URL. Carries the account credentials: never persist or log it. */
+export function getRemoteCoverArtUrl(id: string, size = 300): string {
   if (!_server) throw new Error('No server configured');
   const {url, username, password} = _server;
   const base = url.replace(/\/$/, '');

@@ -5,11 +5,12 @@
  *   and the Home screen auto-recovery logic. `checkNow` runs a check at once
  *   (the playback engine calls it on a stream network error).
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import {getActiveServer, pingServer} from '../api/client';
 import {useNetworkStore} from '../store/networkStore';
+import {useDownloadStore} from '../store/downloadStore';
 import {useSettingsStore} from '../store/settingsStore';
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
@@ -35,6 +36,8 @@ const FAILURES_BEFORE_OFFLINE = 3;
 let timerId: ReturnType<typeof setTimeout> | null = null;
 let active = false;
 let consecutiveFailures = 0;
+/** Result of the previous ping: the first success after a failure (or at start) triggers the cover backfill. */
+let lastPingOk = false;
 
 /** One server check; true when the server answered. */
 async function tick(): Promise<boolean> {
@@ -52,6 +55,11 @@ async function tick(): Promise<boolean> {
     }
     consecutiveFailures = 0;
     useNetworkStore.getState().setServerReachable(true);
+    if (!lastPingOk) {
+      lastPingOk = true;
+      // Covers of tracks downloaded offline or before ISS-034 (runs in the background).
+      useDownloadStore.getState().backfillCovers();
+    }
     const s = useSettingsStore.getState();
     if (s.isOfflineMode && s.autoOnlineMode) {
       console.log('[connectivity] back online');
@@ -61,6 +69,7 @@ async function tick(): Promise<boolean> {
     return true;
   } catch (e) {
     consecutiveFailures++;
+    lastPingOk = false;
     // No URL in the log: it carries the account credentials.
     const reason = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
     console.warn(`[connectivity] ping failed #${consecutiveFailures} after ${Date.now() - startedAt} ms (${reason})`);
@@ -86,6 +95,7 @@ function schedule(ms: number) {
 export function start(): () => void {
   active = true;
   consecutiveFailures = 0;
+  lastPingOk = false;
   tick();
   return stop;
 }

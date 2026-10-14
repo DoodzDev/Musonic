@@ -6,14 +6,21 @@
  *   indexed tracks are downloadable; Deezer-sourced tracks (ext- prefix) are
  *   silently ignored because they cannot be streamed through Navidrome.
  * @author DoodzProg
- * @version 1.0.1
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
 import {persist, createJSONStorage} from 'zustand/middleware';
 import {mmkvStorage} from './storage';
 import RNBlobUtil from 'react-native-blob-util';
-import {getStreamUrl} from '../api/client';
+import {getRemoteCoverArtUrl, getStreamUrl} from '../api/client';
+import {
+  LOCAL_COVER_SIZE,
+  coverKeyOf,
+  deleteCoverFile,
+  saveCover,
+  setLocalCovers,
+} from './localCovers';
 import type {SubsonicSong} from '../api/types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -43,6 +50,11 @@ export type DownloadedTrack = {
   /** Album title — may be empty for tracks without album metadata. */
   album: string;
   coverArt?: string;
+  /**
+   * True once the cover is saved on the device (`localCovers`, key `coverArt || trackId`).
+   * Missing on tracks downloaded before covers were saved: `backfillCovers` fetches them.
+   */
+  coverSaved?: boolean;
   /** Track duration in seconds. */
   duration: number;
   /** File size in bytes — used for on-screen storage usage display. */
@@ -149,7 +161,11 @@ async function _executeDownload(trackId: string, track: SubsonicSong): Promise<v
 
     const stat = await RNBlobUtil.fs.stat(res.path());
 
-    store()._markComplete(trackId, res.path(), track, Number(stat.size));
+    // The cover goes with the track so it shows offline (ISS-034). A failure
+    // here does not fail the track: `backfillCovers` retries later.
+    const coverSaved = await _saveTrackCover(coverKeyOf({coverArt: track.coverArt, trackId}));
+
+    store()._markComplete(trackId, res.path(), track, Number(stat.size), coverSaved);
     _notifyBatch(trackId);
   } catch (err) {
     // Network failure, disk full, or stream error — mark as error, do not crash.
@@ -158,6 +174,18 @@ async function _executeDownload(trackId: string, track: SubsonicSong): Promise<v
     _notifyBatch(trackId);
   }
 }
+
+/** Saves the cover of a downloaded track; false on any failure (offline, no cover…). */
+async function _saveTrackCover(key: string): Promise<boolean> {
+  try {
+    return await saveCover(key, getRemoteCoverArtUrl(key, LOCAL_COVER_SIZE));
+  } catch {
+    return false;
+  }
+}
+
+/** True while `backfillCovers` runs, so two calls never overlap. */
+let _backfillRunning = false;
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
@@ -241,6 +269,12 @@ type DownloadState = {
    */
   deleteDownload: (trackId: string) => Promise<void>;
 
+  /**
+   * Saves the missing covers of downloaded tracks, one at a time. Called when
+   * the server becomes reachable; does nothing if a run is already going on.
+   */
+  backfillCovers: () => Promise<void>;
+
   // ── Internal setters (invoked by _executeDownload) ────────────────────────
 
   /** @internal Update or insert an entry in activeDownloads. */
@@ -248,7 +282,7 @@ type DownloadState = {
   /** @internal Update progress for an existing activeDownload entry. */
   _setProgress: (id: string, progress: number) => void;
   /** @internal Move an entry from activeDownloads to downloads on success. */
-  _markComplete: (id: string, path: string, track: SubsonicSong, fileSize: number) => void;
+  _markComplete: (id: string, path: string, track: SubsonicSong, fileSize: number, coverSaved: boolean) => void;
 };
 
 export const useDownloadStore = create<DownloadState>()(
@@ -343,6 +377,29 @@ export const useDownloadStore = create<DownloadState>()(
           delete next[trackId];
           return {downloads: next};
         });
+
+        // Delete the cover only when no other downloaded track still uses it.
+        const key = coverKeyOf(entry);
+        const stillUsed = Object.values(get().downloads).some(d => coverKeyOf(d) === key);
+        if (!stillUsed) await deleteCoverFile(key);
+      },
+
+      backfillCovers: async () => {
+        if (_backfillRunning) return;
+        _backfillRunning = true;
+        try {
+          const missing = Object.values(get().downloads).filter(d => !d.coverSaved);
+          for (const entry of missing) {
+            if (!(await _saveTrackCover(coverKeyOf(entry)))) continue;
+            set(s => {
+              const current = s.downloads[entry.trackId];
+              if (!current) return s;
+              return {downloads: {...s.downloads, [entry.trackId]: {...current, coverSaved: true}}};
+            });
+          }
+        } finally {
+          _backfillRunning = false;
+        }
       },
 
       // ── Internal setters ─────────────────────────────────────────────────────
@@ -369,7 +426,7 @@ export const useDownloadStore = create<DownloadState>()(
         });
       },
 
-      _markComplete: (id, path, track, fileSize) => {
+      _markComplete: (id, path, track, fileSize, coverSaved) => {
         set(s => {
           const nextActive = {...s.activeDownloads};
           delete nextActive[id];
@@ -383,6 +440,7 @@ export const useDownloadStore = create<DownloadState>()(
                 artist: track.artist,
                 album: track.album ?? '',
                 coverArt: track.coverArt,
+                coverSaved,
                 duration: track.duration ?? 0,
                 fileSize,
                 downloadedAt: Date.now(),
@@ -398,8 +456,10 @@ export const useDownloadStore = create<DownloadState>()(
       storage: createJSONStorage(() => mmkvStorage),
       // Bump on any change to the persisted shape and handle the old version in `migrate`.
       // Without `migrate`, a version mismatch discards the stored data.
-      version: 1,
+      version: 2,
       // v0 (unversioned) -> v1: same shape, versioning only.
+      // v1 -> v2: optional `coverSaved` added; missing means "not saved yet",
+      // `backfillCovers` fetches those covers once the server is reachable.
       migrate: persistedState => persistedState as DownloadState,
       // Only persist completed downloads. In-progress state is ephemeral —
       // partially-downloaded files are safely overwritten on the next attempt.
@@ -407,3 +467,20 @@ export const useDownloadStore = create<DownloadState>()(
     },
   ),
 );
+
+// ─── Local cover registry ─────────────────────────────────────────────────────
+// `getCoverArtUrl` reads the registry synchronously: keep it in step with the
+// downloads (hydrated synchronously from MMKV, so the first sync is complete).
+
+function _syncLocalCovers(downloads: Record<string, DownloadedTrack>): void {
+  const keys = new Set<string>();
+  for (const d of Object.values(downloads)) {
+    if (d.coverSaved) keys.add(coverKeyOf(d));
+  }
+  setLocalCovers(keys);
+}
+
+_syncLocalCovers(useDownloadStore.getState().downloads);
+useDownloadStore.subscribe((state, prev) => {
+  if (state.downloads !== prev.downloads) _syncLocalCovers(state.downloads);
+});
