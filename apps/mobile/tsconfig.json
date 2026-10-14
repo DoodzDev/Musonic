@@ -11,7 +11,8 @@
       "@theme/*": ["src/theme/*"],
       "@hooks/*": ["src/hooks/*"],
       "@utils/*": ["src/utils/*"],
-      "@navigation/*": ["src/navigation/*"]
+      "@navigation/*": ["src/navigation/*"],
+      "@musonic/core/releases": ["../../packages/core/src/releases/releases.ts"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],

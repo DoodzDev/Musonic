@@ -15,6 +15,8 @@ module.exports = {
           '@hooks': './src/hooks',
           '@utils': './src/utils',
           '@navigation': './src/navigation',
+          // Shared core of the monorepo (dependency-free modules only).
+          '@musonic/core/releases': '../../packages/core/src/releases/releases.ts',
         },
       },
     ],
