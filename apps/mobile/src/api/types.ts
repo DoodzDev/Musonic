@@ -40,6 +40,8 @@ export type SubsonicSong = {
   genre?: string;
   size?: number;
   bitRate?: number;
+  /** File extension of the original file (`flac`, `mp3`…). */
+  suffix?: string;
 };
 
 export type SubsonicPlaylist = {

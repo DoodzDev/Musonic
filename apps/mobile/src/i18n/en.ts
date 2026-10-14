@@ -453,6 +453,25 @@ export const en = {
   // ─── Full Screen Player ────────────────────────────────────────────────────
   fullScreenPlayer: {
     lyricsTitle: 'Lyrics',
+    close: 'Minimize player',
+    options: 'Track options',
+    addToPlaylist: 'Add to a playlist',
+    like: 'Add to liked songs',
+    unlike: 'Remove from liked songs',
+    downloaded: 'Downloaded',
+    position: 'Playback position',
+    quality: (q: string) => `Quality: ${q}`,
+    play: 'Play',
+    pause: 'Pause',
+    previous: 'Previous track',
+    next: 'Next track',
+    queue: 'Queue',
+    shuffleOff: 'Shuffle off',
+    shuffleOn: 'Shuffle on',
+    shuffleMagic: 'Magic shuffle',
+    repeatOff: 'Repeat off',
+    repeatAll: 'Repeat queue',
+    repeatOne: 'Repeat track',
   },
 
   // ─── Lyrics Screen ─────────────────────────────────────────────────────────

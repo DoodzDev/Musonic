@@ -3,11 +3,16 @@
  * @description Subsonic library API endpoints: recently/frequently played albums,
  *   starred items, similar songs/artists, and star/unstar actions.
  * @author DoodzProg
- * @version 1.0.2
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {subsonicGet} from '../client';
 import type {SubsonicArtist, SubsonicAlbum, SubsonicSong, SubsonicSimilarArtist} from '../types';
+
+export async function getSong(id: string): Promise<SubsonicSong | null> {
+  const res = await subsonicGet<any>('getSong.view', {id});
+  return res.song ?? null;
+}
 
 export async function getArtists(): Promise<SubsonicArtist[]> {
   const res = await subsonicGet<any>('getArtists.view');
