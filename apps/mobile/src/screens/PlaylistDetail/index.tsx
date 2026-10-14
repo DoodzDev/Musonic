@@ -5,7 +5,7 @@
  *   suggestions, and full CRUD support (add, remove, rename). Play and track
  *   taps go through the playback engine (`playContext`).
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -52,8 +52,12 @@ import type {SubsonicSong} from '../../api/types';
 import type {LibraryStackParams} from '../../navigation/types';
 import {getCoverArtUrl, getStreamUrl, subsonicGet} from '../../api/client';
 import type {Track, ShuffleMode} from '../../store/playerStore';
-import DraggableFlatList, {ScaleDecorator} from 'react-native-draggable-flatlist';
-import type {RenderItemParams} from 'react-native-draggable-flatlist';
+import ReorderableList, {
+  reorderItems,
+  useIsActive,
+  useReorderableDrag,
+  type ReorderableListReorderEvent,
+} from 'react-native-reorderable-list';
 import SongOptionsSheet from '../../components/SongOptionsSheet';
 import PlaylistOptionsSheet from '../../components/PlaylistOptionsSheet';
 import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
@@ -619,43 +623,48 @@ function EditHeader({
   );
 }
 
-function EditSongRow({
-  song,
-  drag,
-  isActive,
+/** A row of the edit list. `key` stays stable while dragging, even when the playlist holds the same song twice. */
+interface EditItem {
+  key: string;
+  song: SubsonicSong;
+}
+
+const EditSongRow = React.memo(function EditSongRow({
+  item,
   onRemove,
 }: {
-  song: SubsonicSong;
-  drag: () => void;
-  isActive: boolean;
-  onRemove: () => void;
+  item: EditItem;
+  onRemove: (key: string) => void;
 }) {
+  const drag = useReorderableDrag();
+  const isActive = useIsActive();
+  const {song} = item;
   return (
-    <ScaleDecorator>
-      <View style={[styles.editRow, isActive && styles.editRowActive]}>
-        <TouchableOpacity
-          onPress={onRemove}
-          style={styles.editMinusBtn}
-          activeOpacity={0.7}
-          hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
-          <MinusCircleIcon />
-        </TouchableOpacity>
-        <CoverArt id={song.coverArt} size={48} borderRadius={4} />
-        <View style={styles.songInfo}>
-          <Text style={styles.editSongTitle} numberOfLines={1}>{song.title}</Text>
-          <Text style={styles.editSongArtist} numberOfLines={1}>{song.artist}</Text>
-        </View>
-        <TouchableOpacity
-          onLongPress={drag}
-          delayLongPress={0}
-          style={styles.dragHandle}
-          activeOpacity={0.6}>
-          <DragHandleIcon />
-        </TouchableOpacity>
+    <View style={[styles.editRow, isActive && styles.editRowActive]}>
+      <TouchableOpacity
+        onPress={() => onRemove(item.key)}
+        style={styles.editMinusBtn}
+        activeOpacity={0.7}
+        hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+        <MinusCircleIcon />
+      </TouchableOpacity>
+      <CoverArt id={song.coverArt} size={48} borderRadius={4} />
+      <View style={styles.songInfo}>
+        <Text style={styles.editSongTitle} numberOfLines={1}>{song.title}</Text>
+        <Text style={styles.editSongArtist} numberOfLines={1}>{song.artist}</Text>
       </View>
-    </ScaleDecorator>
+      <TouchableOpacity
+        onPressIn={drag}
+        hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}
+        style={styles.dragHandle}
+        activeOpacity={0.6}>
+        <DragHandleIcon />
+      </TouchableOpacity>
+    </View>
   );
-}
+});
+
+const editKey = (item: EditItem) => item.key;
 
 // ─── Offline Footer ───────────────────────────────────────────────────────────
 
@@ -725,7 +734,7 @@ export default function PlaylistDetailScreen() {
 
   // Edit mode
   const [isEditing, setIsEditing] = useState(false);
-  const [editSongs, setEditSongs] = useState<SubsonicSong[]>([]);
+  const [editSongs, setEditSongs] = useState<EditItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   const [localCoverUri, setLocalCoverUri] = useState<string | null>(() => getLocalCoverUri(playlistId));
@@ -1016,7 +1025,7 @@ export default function PlaylistDetailScreen() {
   }, [navigation]);
 
   const handleStartEdit = useCallback(() => {
-    setEditSongs([...songs]);
+    setEditSongs(songs.map((song, i) => ({key: `${String(song.id)}-${i}`, song})));
     setIsEditing(true);
   }, [songs]);
 
@@ -1053,14 +1062,22 @@ export default function PlaylistDetailScreen() {
     setEditSongs([]);
   }, []);
 
-  const handleRemoveFromEdit = useCallback((songId: string) => {
-    setEditSongs(prev => prev.filter(s => String(s.id) !== songId));
+  const handleRemoveFromEdit = useCallback((key: string) => {
+    setEditSongs(prev => prev.filter(e => e.key !== key));
   }, []);
+
+  const handleReorderEdit = useCallback(({from, to}: ReorderableListReorderEvent) => {
+    setEditSongs(prev => reorderItems(prev, from, to));
+  }, []);
+
+  const renderEditItem = useCallback(({item}: {item: EditItem}) => (
+    <EditSongRow item={item} onRemove={handleRemoveFromEdit} />
+  ), [handleRemoveFromEdit]);
 
   const handleSaveEdit = useCallback(async () => {
     setIsSaving(true);
     try {
-      await replacePlaylist(playlistId, editSongs.map(s => String(s.id)));
+      await replacePlaylist(playlistId, editSongs.map(e => String(e.song.id)));
       const {playlist: pl, songs: fresh} = await getPlaylist(playlistId);
       setPlaylistName(pl.name);
       setCoverArtId(pl.coverArt);
@@ -1190,18 +1207,12 @@ export default function PlaylistDetailScreen() {
 
       {/* Scrollable content */}
       {isEditing ? (
-        <DraggableFlatList
+        <ReorderableList
           data={editSongs}
-          keyExtractor={(item, index) => `${String(item.id)}-${index}`}
-          renderItem={({item, drag, isActive}: RenderItemParams<SubsonicSong>) => (
-            <EditSongRow
-              song={item}
-              drag={drag}
-              isActive={isActive}
-              onRemove={() => handleRemoveFromEdit(String(item.id))}
-            />
-          )}
-          onDragEnd={({data}) => setEditSongs(data)}
+          keyExtractor={editKey}
+          renderItem={renderEditItem}
+          onReorder={handleReorderEdit}
+          shouldUpdateActiveItem
           contentContainerStyle={[styles.listContent, {paddingTop: topInset + 56 + 16, paddingBottom: dockInset}]}
           showsVerticalScrollIndicator={false}
         />
