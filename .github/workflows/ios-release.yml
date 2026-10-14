@@ -3,7 +3,7 @@ name: iOS Release IPA
 on:
   push:
     tags:
-      - 'v*'
+      - 'mobile-v*'
   workflow_dispatch:
 
 # Builds an unsigned IPA suitable for sideloading (AltStore / SideStore / Sideloadly).
@@ -65,10 +65,17 @@ jobs:
           path: apps/mobile/ios/build/Musonic.ipa
           retention-days: 30
 
+      - name: Read version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: echo "VERSION=${GITHUB_REF_NAME#mobile-v}" >> "$GITHUB_ENV"
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          name: Musonic Mobile ${{ env.VERSION }}
+          # The "Latest" release always stays mobile (download links of the site and README).
+          make_latest: true
           files: apps/mobile/ios/build/Musonic.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

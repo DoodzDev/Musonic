@@ -1,0 +1,51 @@
+name: Web CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/web/**'
+      - 'packages/core/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/ci-web.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/web/**'
+      - 'packages/core/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/ci-web.yml'
+
+jobs:
+  check:
+    name: Core Tests, Web Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Core type check
+        run: npm run typecheck --workspace packages/core
+
+      - name: Core tests
+        run: npm run test:core
+
+      - name: Web lint
+        run: npm run lint --workspace apps/web
+
+      - name: Web build
+        run: npm run build --workspace apps/web

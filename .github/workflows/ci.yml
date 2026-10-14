@@ -1,16 +1,20 @@
-name: CI
+name: Mobile CI
 
 on:
   pull_request:
     branches:
       - main
-      - design-v2
-      - monorepo-web
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/core/**'
+      - '.github/workflows/ci.yml'
   push:
     branches:
       - main
-      - design-v2
-      - monorepo-web
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/core/**'
+      - '.github/workflows/ci.yml'
 
 jobs:
   lint:
