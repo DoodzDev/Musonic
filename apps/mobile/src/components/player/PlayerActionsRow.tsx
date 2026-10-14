@@ -2,9 +2,10 @@
  * @file PlayerActionsRow.tsx
  * @description Bottom row of the full player (Design v2, R4.2): Lyrics ·
  *   Shuffle (off / on / Magic) · Repeat (all / one) · Queue, drawn with the
- *   shared icons. An active mode is drawn in the accent colour on a light fill.
+ *   shared icons. An active mode (lyrics shown, shuffle, repeat) is drawn in
+ *   the accent colour on a light fill.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -20,6 +21,8 @@ const DIM = 'rgba(255,255,255,0.7)';
 
 type Props = {
   lyricsAvailable: boolean;
+  /** Lyrics shown in place of the cover. */
+  lyricsActive: boolean;
   onLyrics: () => void;
   shuffleMode: ShuffleMode;
   isFetchingMagic: boolean;
@@ -30,9 +33,11 @@ type Props = {
 };
 
 export default function PlayerActionsRow({
-  lyricsAvailable, onLyrics, shuffleMode, isFetchingMagic, onShuffle, repeatMode, onRepeat, onQueue,
+  lyricsAvailable, lyricsActive, onLyrics, shuffleMode, isFetchingMagic, onShuffle, repeatMode, onRepeat, onQueue,
 }: Props) {
   const t = useT().fullScreenPlayer;
+  // Always closable, even when the next track has no lyrics.
+  const lyricsEnabled = lyricsAvailable || lyricsActive;
   const shuffleOn = shuffleMode !== 'off';
   const repeatOn = repeatMode !== 'none';
   const shuffleLabel = shuffleMode === 'magic' ? t.shuffleMagic : shuffleMode === 'on' ? t.shuffleOn : t.shuffleOff;
@@ -42,11 +47,12 @@ export default function PlayerActionsRow({
     <View style={styles.row}>
       <PressableScale
         onPress={onLyrics}
-        disabled={!lyricsAvailable}
-        style={[styles.round, !lyricsAvailable && styles.disabled]}
+        disabled={!lyricsEnabled}
+        haptic="selection"
+        style={[styles.round, lyricsActive && styles.on, !lyricsEnabled && styles.disabled]}
         accessibilityLabel={t.lyricsTitle}
-        accessibilityState={{disabled: !lyricsAvailable}}>
-        <LyricsIcon color={DIM} />
+        accessibilityState={{disabled: !lyricsEnabled, selected: lyricsActive}}>
+        <LyricsIcon color={lyricsActive ? colors.accent : DIM} />
       </PressableScale>
 
       <PressableScale

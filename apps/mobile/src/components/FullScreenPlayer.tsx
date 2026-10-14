@@ -1,18 +1,22 @@
 /**
  * @file FullScreenPlayer.tsx
- * @description Full-screen music player (Design v2, R4.1 + R4.2). A sheet that
+ * @description Full-screen music player (Design v2, R4.1 to R4.3). A sheet that
  *   rises from the bottom and closes by dragging it down from its handle,
- *   header or cover. Background tinted by the cover's colour, cover that
+ *   header or cover. Background made of the cover itself, extremely blurred
+ *   and slightly darkened (colours keep their place), cover that
  *   shrinks on pause, title and artist with + and ♥, downloaded indicator,
  *   thin progress bar with the real audio quality, large transport glyphs
  *   without circles, and a bottom row: Lyrics · Shuffle · Repeat · Queue.
+ *   Lyrics show inside the player: the cover and title fold into a compact
+ *   row and the synced lyrics take the freed space (the cover column in
+ *   landscape).
  *   In landscape, a 40/60 split: the cover fills its own column (order set by
  *   fullPlayerCoverSide), the other column carries everything else.
  *   Being a Modal, it hosts its own Design v2 toast.
  *   The heavy player body only mounts while the player is open; a light shell
  *   stays mounted to preload adjacent cover art.
  * @author DoodzProg
- * @version 2.0.1
+ * @version 2.3.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -20,6 +24,7 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
+  LayoutAnimation,
   Modal,
   StyleSheet,
   Text,
@@ -52,7 +57,6 @@ import WaveformScrubber from './WaveformScrubber';
 import QueueSheet from './QueueSheet';
 import AddToPlaylistSheet from './AddToPlaylistSheet';
 import SongOptionsSheet from './SongOptionsSheet';
-import LyricsScreen from './LyricsScreen';
 import Toast from './Toast';
 import {useT, getT} from '../i18n';
 import type {SubsonicSong} from '../api/types';
@@ -63,10 +67,11 @@ import {Gesture, GestureDetector, GestureHandlerRootView} from 'react-native-ges
 import {ToastHost} from './ui/Toast';
 import PressableScale from './ui/PressableScale';
 import {DISMISS, SWIPE} from './ui/gestures';
-import PlayerBackground from './player/PlayerBackground';
+import PlayerBackground, {type Point} from './player/PlayerBackground';
 import PlayerProgress from './player/PlayerProgress';
 import PlayerControls from './player/PlayerControls';
 import PlayerActionsRow from './player/PlayerActionsRow';
+import PlayerLyrics from './player/PlayerLyrics';
 import Badge from './ui/Badge';
 import {colors, radii} from '../theme/tokens';
 import {COVER_PAUSED_SCALE, springs} from '../theme/motion';
@@ -78,6 +83,9 @@ const HIT = {top: 12, bottom: 12, left: 12, right: 12};
 
 /** Fill of the round + and ♥ buttons next to the title. */
 const PILL_FILL = 'rgba(255,255,255,0.14)';
+
+/** Cover thumbnail of the title row in lyrics mode. */
+const COMPACT_COVER = 48;
 
 // ─── Downloaded indicator ─────────────────────────────────────────────────────
 
@@ -217,7 +225,23 @@ function FullScreenPlayerContent() {
   const [playlistSheetOpen, setPlaylistSheetOpen] = useState(false);
   const [songOptionsVisible, setSongOptionsVisible] = useState(false);
   const [lyricsData, setLyricsData] = useState<LyricsData | undefined>(undefined);
-  const [lyricsVisible, setLyricsVisible] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
+  // Centre of the big cover inside the player: the blurred background is centred on it.
+  // Kept while the lyrics hide the cover, so the background does not move.
+  const rootRef = useRef<View>(null);
+  const coverRef = useRef<View>(null);
+  const [coverCenter, setCoverCenter] = useState<Point | undefined>(undefined);
+  const measureCover = useCallback(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    // Layout coordinates (not window ones): the sheet may still be sliding in.
+    coverRef.current?.measureLayout(root, (x, y, w, h) => {
+      setCoverCenter(prev => {
+        const next = {x: x + w / 2, y: y + h / 2};
+        return prev && Math.abs(prev.x - next.x) < 1 && Math.abs(prev.y - next.y) < 1 ? prev : next;
+      });
+    });
+  }, []);
   const inPlaylist = fspTrackId ? savedSet.has(fspTrackId) : false;
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -365,6 +389,11 @@ function FullScreenPlayerContent() {
     }).start(() => setQueueVisible(false));
   }, [queueSlideY, winH]);
 
+  const toggleLyrics = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowLyrics(v => !v);
+  }, []);
+
   if (!currentTrack) return null;
 
   const dur = currentTrack.duration ?? 1;
@@ -394,7 +423,7 @@ function FullScreenPlayerContent() {
 
   const titleNode = (
     <TextTicker
-      style={isLandscape ? styles.trackTitleLandscape : styles.trackTitle}
+      style={showLyrics ? styles.trackTitleCompact : isLandscape ? styles.trackTitleLandscape : styles.trackTitle}
       duration={8000}
       loop
       bounce={false}
@@ -406,7 +435,7 @@ function FullScreenPlayerContent() {
 
   const artistNameNode = (
     <View style={styles.artistRow}>
-      <Text style={[isLandscape ? styles.trackArtistLandscape : styles.trackArtist, styles.artistText]} numberOfLines={1}>
+      <Text style={[showLyrics ? styles.trackArtistCompact : isLandscape ? styles.trackArtistLandscape : styles.trackArtist, styles.artistText]} numberOfLines={1}>
         {(currentTrack.artist ?? '')
           .split(/,\s+|\s+feat\.?\s+|\s+ft\.?\s+/i)
           .map((name, i) => (
@@ -449,7 +478,7 @@ function FullScreenPlayerContent() {
   );
 
   const coverNode = (
-    <View style={{width: COVER_SIZE, height: COVER_SIZE}}>
+    <View ref={coverRef} onLayout={measureCover} style={{width: COVER_SIZE, height: COVER_SIZE}}>
       <Animated.View style={[styles.coverWrapper, {transform: [{scale: coverScale}]}]}>
         <CoverArt id={currentTrack.coverArt} size={COVER_SIZE} borderRadius={radii.tile} />
       </Animated.View>
@@ -483,7 +512,8 @@ function FullScreenPlayerContent() {
   const actionsNode = (
     <PlayerActionsRow
       lyricsAvailable={lyricsAvailable}
-      onLyrics={() => setLyricsVisible(true)}
+      lyricsActive={showLyrics}
+      onLyrics={toggleLyrics}
       shuffleMode={shuffleMode}
       isFetchingMagic={isFetchingMagic}
       onShuffle={toggleShuffle}
@@ -493,8 +523,14 @@ function FullScreenPlayerContent() {
     />
   );
 
+  const lyricsNode = <PlayerLyrics lyrics={lyricsData} onSeek={seekTo} compact={isLandscape} />;
+
+  // In lyrics mode the cover folds into a small thumbnail at the start of the title row.
   const infoNode = (
-    <View style={styles.infoRow}>
+    <View style={[styles.infoRow, showLyrics && styles.infoRowCompact]}>
+      {showLyrics && (
+        <CoverArt id={currentTrack.coverArt} size={COMPACT_COVER} borderRadius={radii.cover} />
+      )}
       <View style={styles.infoText}>
         {magicBadgeNode}
         {titleNode}
@@ -505,7 +541,7 @@ function FullScreenPlayerContent() {
   );
 
   const landscapeContent = (
-    <View style={styles.landscapeContentCol}>
+    <View style={[styles.landscapeContentCol, showLyrics && styles.landscapeContentColLyrics]}>
       {infoNode}
       <View>
         {progressNode}
@@ -525,9 +561,15 @@ function FullScreenPlayerContent() {
       {/* A Modal is a separate native root: gestures inside it (queue sheet swipe-down) need their own root view. */}
       <GestureHandlerRootView style={StyleSheet.absoluteFill}>
       <Animated.View
+        ref={rootRef}
+        collapsable={false}
         style={[StyleSheet.absoluteFill, {transform: [{translateY}]}]}>
 
-        <PlayerBackground tint={dominantColor} />
+        <PlayerBackground
+          coverArtId={currentTrack.coverArt ? String(currentTrack.coverArt) : undefined}
+          tint={dominantColor}
+          center={coverCenter}
+        />
 
         {isLandscape ? (
           <SafeAreaView style={styles.safeAreaLandscape} edges={['top', 'bottom', 'left', 'right']}>
@@ -540,16 +582,21 @@ function FullScreenPlayerContent() {
 
             <View style={styles.bodyLandscape}>
               {fullPlayerCoverSide === 'right' && landscapeContent}
-              <GestureDetector gesture={dragToClose}>
-                <View style={styles.landscapeCoverCol}>{coverNode}</View>
-              </GestureDetector>
+              {showLyrics ? (
+                <View style={styles.landscapeLyricsCol}>{lyricsNode}</View>
+              ) : (
+                <GestureDetector gesture={dragToClose}>
+                  <View style={styles.landscapeCoverCol}>{coverNode}</View>
+                </GestureDetector>
+              )}
               {fullPlayerCoverSide !== 'right' && landscapeContent}
             </View>
           </SafeAreaView>
         ) : (
           <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
 
-            {/* ── Handle, header, cover and title: drag down to close ── */}
+            {/* ── Handle, header, cover and title: drag down to close.
+                Lyrics mode: the cover folds into the title row, the lyrics fill the middle. ── */}
             <GestureDetector gesture={dragToClose}>
               <View>
                 {handleNode}
@@ -564,18 +611,22 @@ function FullScreenPlayerContent() {
                   {dotsBtn}
                 </View>
 
-                <View style={[styles.coverSection, {height: COVER_SIZE}]}>
-                  {coverNode}
-                </View>
+                {!showLyrics && (
+                  <View style={[styles.coverSection, {height: COVER_SIZE}]}>
+                    {coverNode}
+                  </View>
+                )}
 
                 {infoNode}
               </View>
             </GestureDetector>
 
+            {showLyrics && <View style={styles.lyricsSection}>{lyricsNode}</View>}
+
             <View style={styles.progressSection}>{progressNode}</View>
             <View style={styles.controlsSection}>{controlsNode}</View>
 
-            <View style={styles.flex} />
+            {!showLyrics && <View style={styles.flex} />}
 
             {actionsNode}
 
@@ -606,13 +657,6 @@ function FullScreenPlayerContent() {
           onToast={showToast}
           onNavigateAlbum={handleNavigateAlbumFromPlayer}
           onNavigateArtist={(id, name) => { setSongOptionsVisible(false); onArtistPress(name, id); }}
-        />
-
-        <LyricsScreen
-          visible={lyricsVisible}
-          onClose={() => setLyricsVisible(false)}
-          lyrics={lyricsData ?? null}
-          coverArtId={currentTrack?.coverArt ? String(currentTrack.coverArt) : undefined}
         />
 
       </Animated.View>
@@ -691,6 +735,7 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 28,
   },
+  infoRowCompact: {marginTop: 12},
   infoText: {
     flex: 1,
     minWidth: 0,
@@ -734,6 +779,22 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
     color: 'rgba(255,255,255,0.65)',
   },
+  trackTitleCompact: {
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: -0.3,
+  },
+  trackArtistCompact: {
+    fontSize: 15,
+    lineHeight: 20,
+    color: 'rgba(255,255,255,0.65)',
+  },
+  lyricsSection: {
+    flex: 1,
+    marginTop: 8,
+  },
   downloadedBadge: {
     width: 18,
     height: 18,
@@ -776,6 +837,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 16,
   },
+  landscapeLyricsCol: {
+    flex: 0.6,
+    paddingHorizontal: 16,
+  },
+  landscapeContentColLyrics: {flex: 0.4},
   landscapeContentCol: {
     flex: 0.6,
     paddingHorizontal: 24,

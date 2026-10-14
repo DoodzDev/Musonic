@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **New full player (Design v2)** — background tinted by the cover, a handle to drag the player down to close it, larger cover that shrinks on pause, round + and ♥ buttons next to the title, a green badge when the track is downloaded, a thin progress bar (tap or drag anywhere to seek), the real audio quality of the track (FLAC, MP3 320…), large play / skip buttons and a bottom row: Lyrics · Shuffle (with its Magic pill) · Repeat · Queue.
+- **New full player (Design v2)** — background made of the cover itself, extremely blurred, kept square and centred behind the cover, fading into a colour of the cover that fills the rest of the screen, and darkened just enough for the text to stay readable (light covers are darkened more), a handle to drag the player down to close it, larger cover that shrinks on pause, round + and ♥ buttons next to the title, a green badge when the track is downloaded, a thin progress bar (tap or drag anywhere to seek), the real audio quality of the track (FLAC, MP3 320…), large play / skip buttons and a bottom row: Lyrics · Shuffle (off, on, Magic) · Repeat · Queue.
+- **Lyrics inside the player** — the Lyrics button folds the cover into a small thumbnail and shows the lyrics in its place: the current line is white, the list follows the song (and pauses while you scroll), and a tap on a line jumps to it; the lyrics fade out at the top and bottom. In landscape, the lyrics take the place of the cover.
 
 ### Fixed
 - **Cover art offline** — covers are now saved with downloaded tracks and shown everywhere offline: lists, mini player, full player, notification and lock screen. Covers of tracks downloaded earlier are fetched automatically the next time the server is reachable.
