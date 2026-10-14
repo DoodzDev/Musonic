@@ -1,11 +1,21 @@
-# Changelog
+# Changelog — Musonic Mobile
 
-All notable changes to this project will be documented in this file.
+All notable changes to the mobile app (Android, iOS) are documented in this file.
+Releases are tagged `mobile-vX.Y.Z` (older releases were tagged `vX.Y.Z` and renamed on 2026-10-12).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+
+## [Unreleased]
+
+### Fixed
+- **Cover art offline** — covers are now saved with downloaded tracks and shown everywhere offline: lists, mini player, full player, notification and lock screen. Covers of tracks downloaded earlier are fetched automatically the next time the server is reachable.
+
+### Changed
+- **Update prompt only for mobile releases** — the app now only looks at `mobile-v…` releases, so a Musonic Web release never triggers an update prompt on the phone.
+- **Smoother playlist reordering** — the playlist edit mode now uses the same drag-and-drop list as the queue; removing a song that appears twice only removes the tapped one.
 
 ## [1.0.6] - 2026-10-11
 
