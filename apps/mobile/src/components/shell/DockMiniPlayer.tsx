@@ -6,14 +6,19 @@
  *   player; swiping left / right skips to the next / previous track (shared
  *   gesture module). A thin accent line shows progress. The Previous button
  *   follows the 3-second rule (ADR-009 C1); the swipe always changes track.
+ *   Behind the cover and titles, a heavily zoomed, blurred piece of the cover
+ *   fades into the glass.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 import {State, useActiveTrack, usePlaybackState, useProgress} from 'react-native-track-player';
 import GlassSurface from '../ui/GlassSurface';
+import CoverWash from '../ui/CoverWash';
+import {BLURRED_COVER_SOURCE_SIZE} from '../ui/BlurredCover';
+import {getCoverArtUrl} from '../../api/client';
 import Cover from '../ui/Cover';
 import Text from '../ui/Text';
 import {SwipeSurface} from '../ui/gestures';
@@ -48,10 +53,19 @@ export default function DockMiniPlayer() {
 
   if (!visible || !track?.id) return null;
   const playing = state === State.Playing;
+  let washUri: string | undefined;
+  try {
+    washUri = track.coverArt
+      ? getCoverArtUrl(String(track.coverArt), BLURRED_COVER_SOURCE_SIZE)
+      : typeof track.artwork === 'string' ? track.artwork : undefined;
+  } catch {
+    washUri = undefined;
+  }
 
   return (
     <SwipeSurface onSwipeUp={openFullScreen} onSwipeLeft={skipNext} onSwipeRight={skipPrevForce}>
       <GlassSurface style={styles.capsule}>
+        <CoverWash uri={washUri} />
         {/* Only the cover and titles open the player: the buttons just act. */}
         <Pressable
           onPress={openFullScreen}

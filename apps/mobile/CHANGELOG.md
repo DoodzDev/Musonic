@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **New queue (Design v2)** — the current track at the top (tap to go back to the player), three tiles for Shuffle, Repeat and Autoplay (Autoplay now turns on and off at once), an "Up next" list you can reorder at any time with the handle, and the autoplay suggestions below it. "Edit" selects tracks to play next or remove, or clears everything (with Undo); changes apply at once, "Done" just closes the selection. In landscape, the queue uses two columns: the current track and the tiles on the cover's side, the list over the full height of the other. The non-working sleep timer button is gone.
 
+- **Mini player tinted by the cover** — behind the cover and titles of the mini player, a heavily zoomed, blurred piece of the cover fades into the glass, darkened just enough for the text to stay readable.
+
 ### Fixed
 - **Cover art offline** — covers are now saved with downloaded tracks and shown everywhere offline: lists, mini player, full player, notification and lock screen. Covers of tracks downloaded earlier are fetched automatically the next time the server is reachable.
 
