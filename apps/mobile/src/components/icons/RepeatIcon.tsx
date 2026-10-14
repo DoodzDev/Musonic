@@ -5,7 +5,7 @@
  *   provided, it wins and no dot is drawn (bottom sheets); with `mode` too,
  *   the "1" still shows.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -19,14 +19,16 @@ type Props = {
   mode?: RepeatModeUI;
   color?: string;
   size?: number;
+  /** Dot under the icon while active; off where a filled button already shows the state. */
+  indicator?: boolean;
 };
 
-export default function RepeatIcon({mode, color, size = 22}: Props) {
+export default function RepeatIcon({mode, color, size = 22, indicator = true}: Props) {
   const active = mode !== undefined ? mode !== 'none' : false;
   const col = color ?? (active ? darkTheme.accent : 'rgba(255,255,255,0.7)');
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, indicator && styles.withDot]}>
       <Svg width={size} height={size} viewBox="0 0 24 24">
         <Path
           d="m17 2 4 4-4 4M3 11v-1a4 4 0 0 1 4-4h14"
@@ -55,13 +57,15 @@ export default function RepeatIcon({mode, color, size = 22}: Props) {
           />
         )}
       </Svg>
-      {active && color === undefined && <View style={styles.dot} />}
+      {active && indicator && color === undefined && <View style={styles.dot} />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {alignItems: 'center', minHeight: 28},
+  wrap: {alignItems: 'center'},
+  /** Room for the dot under the icon; without it the glyph stays centred. */
+  withDot: {minHeight: 28},
   dot: {
     position: 'absolute',
     bottom: -6,

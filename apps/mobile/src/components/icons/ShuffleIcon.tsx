@@ -3,7 +3,7 @@
  * @description SVG shuffle icon with three states: off (grey, no dot), on (orange,
  *   dot below), magic (ShuffleMagic design with star, orange, dot below).
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -18,9 +18,11 @@ type Props = {
   mode?: ShuffleMode;
   size?: number;
   color?: string;
+  /** Dot under the icon while active; off where a filled button already shows the state. */
+  indicator?: boolean;
 };
 
-export default function ShuffleIcon({active = false, mode, size = 22, color}: Props) {
+export default function ShuffleIcon({active = false, mode, size = 22, color, indicator = true}: Props) {
   const resolvedMode: ShuffleMode = mode ?? (active ? 'on' : 'off');
   const isActive = resolvedMode !== 'off';
   const isMagic = resolvedMode === 'magic';
@@ -99,7 +101,7 @@ export default function ShuffleIcon({active = false, mode, size = 22, color}: Pr
           </Svg>
         )}
       </View>
-      {isActive && <View style={styles.dot} />}
+      {isActive && indicator && <View style={styles.dot} />}
     </View>
   );
 }

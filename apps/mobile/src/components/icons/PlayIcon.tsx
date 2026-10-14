@@ -1,8 +1,9 @@
 /**
  * @file PlayIcon.tsx
- * @description Generic play triangle icon.
+ * @description Play triangle with rounded corners (Design v2), the same glyph
+ *   everywhere.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 2.0.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -13,7 +14,7 @@ type Props = {size?: number; color?: string};
 export default function PlayIcon({size = 22, color = '#000'}: Props) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path d="M7 4 L21 12 L7 20 Z" fill={color} />
+      <Path d="M6 3.8v16.4a1.1 1.1 0 0 0 1.7.94l13.4-8.2a1.1 1.1 0 0 0 0-1.88L7.7 2.86A1.1 1.1 0 0 0 6 3.8z" fill={color} />
     </Svg>
   );
 }
