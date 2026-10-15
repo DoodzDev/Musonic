@@ -7,7 +7,7 @@
  *   the playback engine; queue and mode actions are handed over to it through
  *   the engine bridge (registered by the engine, so no import cycle).
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.1.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -16,6 +16,7 @@ import {star, unstar} from '../api/endpoints/library';
 import {SubsonicError, getStreamUrl, subsonicGet} from '../api/client';
 import {getT} from '../i18n';
 import {useSettingsStore} from './settingsStore';
+import {haptic} from '../services/haptics';
 
 export type Track = {
   id: string;
@@ -151,7 +152,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   setDominantColor: color => set({dominantColor: color}),
 
+  // Haptics live in the actions themselves (R4.6): every screen's button gets the same feedback.
   toggleShuffle: () => {
+    haptic('selection');
     const {shuffleMode} = get();
     const nextMode: ShuffleMode =
       shuffleMode === 'off' ? 'on' :
@@ -163,6 +166,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   cycleRepeat: () => {
+    haptic('selection');
     const next: Record<RepeatModeUI, RepeatModeUI> = {
       none: 'all',
       all: 'one',
@@ -207,6 +211,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }),
 
   toggleLike: async (trackId: string, trackTitle?: string, trackArtist?: string): Promise<boolean> => {
+    haptic('success');
     const t = getT().likes;
 
     if (trackId.startsWith('ext-')) {

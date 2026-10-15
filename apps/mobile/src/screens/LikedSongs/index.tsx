@@ -4,8 +4,10 @@
  *   bar, like/add-to-playlist/download actions per row, and remove-from-liked
  *   actions.
  *   Playback goes through the playback engine (playFromList).
+ *   Offline (or when the server cannot be reached), lists the downloaded liked
+ *   songs, from the copy of the liked list saved on the last online visit.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license MIT
  */
 
@@ -39,6 +41,7 @@ import {useSettingsStore} from '../../store/settingsStore';
 import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
 import {useDownloadStore} from '../../store/downloadStore';
 import type {SubsonicSong} from '../../api/types';
+import {offlineLikedSongs} from '../../utils/offlineSongs';
 import type {Track} from '../../store/playerStore';
 import CoverArt from '../../components/CoverArt';
 import HeartIcon from '../../components/icons/HeartIcon';
@@ -172,16 +175,29 @@ export default function LikedSongsScreen() {
   const [addToPlaylistSong, setAddToPlaylistSong] = useState<SubsonicSong | null>(null);
   const [addToPlaylistVisible, setAddToPlaylistVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
   useFocusEffect(useCallback(() => {
+    // Only downloaded tracks can play offline: list the downloaded liked ones.
+    const offlineList = () => offlineLikedSongs(
+      usePlaylistCacheStore.getState().cachedLikedSongs,
+      usePlayerStore.getState().likedSongIds,
+      useDownloadStore.getState().downloads,
+    );
+    if (isOfflineMode) {
+      setSongs(offlineList());
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     getStarred()
       .then(d => {
         setSongs(d.songs);
         setLikedSongs(d.songs.map(s => String(s.id)));
+        usePlaylistCacheStore.getState().setCachedLikedSongs(d.songs);
       })
-      .catch(() => setSongs([]))
+      .catch(() => setSongs(offlineList()))
       .finally(() => setLoading(false));
-  }, [setLikedSongs]));
+  }, [setLikedSongs, isOfflineMode]));
 
   const displayedSongs = songs.filter(s => localLikeOverrides[String(s.id)] !== false);
 

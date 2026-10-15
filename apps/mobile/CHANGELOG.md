@@ -18,7 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Mini player tinted by the cover** — behind the cover and titles of the mini player, a heavily zoomed, blurred piece of the cover fades into the glass, darkened just enough for the text to stay readable.
 
+### Changed
+- **One icon set for the whole app** — every icon now comes from the shared set (no more slightly different copies of the same icon from screen to screen), and the icons of the option menus are centred on their text.
+
+- **Same haptic feedback everywhere** — liking a track and changing the shuffle or repeat mode now vibrate lightly from every screen, not only from the full player.
+
 ### Fixed
+- **Liked songs and My music offline** — offline, "Liked songs" lists the downloaded liked tracks and "My music" the downloaded tracks, instead of an empty list. The liked count in the library stays right after starting offline.
+- **Playlist covers offline** — the cover of a playlist holding downloaded tracks is kept on the device and shows offline, in the library and on the playlist.
 - **Cover art offline** — covers are now saved with downloaded tracks and shown everywhere offline: lists, mini player, full player, notification and lock screen. Covers of tracks downloaded earlier are fetched automatically the next time the server is reachable.
 
 ### Changed

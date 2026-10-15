@@ -6,8 +6,10 @@
  *   single Subsonic "get everything" endpoint exists), then filtered client-side
  *   by the search bar.
  *   Playback goes through the playback engine (playFromList).
+ *   Offline (or when the server cannot be reached), lists the downloaded tracks:
+ *   the only ones that can play.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license MIT
  */
 
@@ -46,6 +48,7 @@ import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
 import {useDownloadStore} from '../../store/downloadStore';
 import type {SubsonicSong} from '../../api/types';
 import type {Track} from '../../store/playerStore';
+import {downloadedSongs} from '../../utils/offlineSongs';
 import {useT} from '../../i18n';
 import {useDockInset} from '../../navigation/dockLayout';
 
@@ -165,15 +168,22 @@ export default function AllSongsScreen() {
   const [addToPlaylistSong, setAddToPlaylistSong] = useState<SubsonicSong | null>(null);
   const [addToPlaylistVisible, setAddToPlaylistVisible] = useState(false);
 
+  const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
   useEffect(() => {
     let cancelled = false;
+    const offlineList = () => downloadedSongs(useDownloadStore.getState().downloads);
+    if (isOfflineMode) {
+      setSongs(offlineList());
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     fetchAllNativeSongs()
       .then(result => { if (!cancelled) setSongs(result); })
-      .catch(() => { if (!cancelled) setSongs([]); })
+      .catch(() => { if (!cancelled) setSongs(offlineList()); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [isOfflineMode]);
 
   const searchedSongs = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();

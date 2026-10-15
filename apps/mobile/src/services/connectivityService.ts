@@ -5,12 +5,13 @@
  *   and the Home screen auto-recovery logic. `checkNow` runs a check at once
  *   (the playback engine calls it on a stream network error).
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.4.0
  * @license CC-BY-NC-4.0
  */
 import {getActiveServer, pingServer} from '../api/client';
 import {useNetworkStore} from '../store/networkStore';
 import {useDownloadStore} from '../store/downloadStore';
+import {syncPlaylistCovers} from './offlinePlaylistCovers';
 import {useSettingsStore} from '../store/settingsStore';
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
@@ -57,8 +58,9 @@ async function tick(): Promise<boolean> {
     useNetworkStore.getState().setServerReachable(true);
     if (!lastPingOk) {
       lastPingOk = true;
-      // Covers of tracks downloaded offline or before ISS-034 (runs in the background).
-      useDownloadStore.getState().backfillCovers();
+      // Covers of tracks downloaded offline or before ISS-034, then of the playlists
+      // holding downloaded tracks (runs in the background).
+      useDownloadStore.getState().backfillCovers().then(syncPlaylistCovers);
     }
     const s = useSettingsStore.getState();
     if (s.isOfflineMode && s.autoOnlineMode) {

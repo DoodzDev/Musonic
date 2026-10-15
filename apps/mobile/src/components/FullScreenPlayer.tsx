@@ -465,7 +465,6 @@ function FullScreenPlayerContent() {
       </PressableScale>
       <PressableScale
         onPress={handleToggleLike}
-        haptic="success"
         disabled={pendingLikes.has(fspTrackId)}
         style={styles.pillBtn}
         accessibilityLabel={isLiked ? t.fullScreenPlayer.unlike : t.fullScreenPlayer.like}

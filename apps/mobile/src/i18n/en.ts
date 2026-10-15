@@ -166,6 +166,7 @@ export const en = {
     offlineDownloadComplete: (name: string) => `"${name}" available offline`,
     likedTrackCount: (n: number) => `${n} liked song${n !== 1 ? 's' : ''}`,
     createPlaylistTitle: 'New playlist',
+    searchLibrary: 'Search the library',
     createPlaylistPlaceholder: 'Playlist name',
     createPlaylistCancel: 'Cancel',
     createPlaylistConfirm: 'Create',

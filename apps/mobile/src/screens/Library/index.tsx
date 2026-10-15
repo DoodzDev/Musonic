@@ -5,7 +5,7 @@
  *   with sort options, pin support, pull-to-refresh, and auto-recovery on
  *   connectivity restore.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license MIT
  */
 
@@ -31,8 +31,8 @@ import {useHeaderTopInset} from '../../hooks/useHeaderTopInset';
 import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import Svg, {Circle, Path, Rect} from 'react-native-svg';
 import LinearGradient from 'react-native-linear-gradient';
+import {AllSongsCover, EmptyPlaylistCover, LikedCover} from '../../components/ui/SpecialCovers';
 import {darkTheme} from '../../theme';
 import CoverArt from '../../components/CoverArt';
 import {getPlaylists, getPlaylist, createPlaylist} from '../../api/endpoints/playlists';
@@ -45,7 +45,6 @@ import PlaylistInfoModal from '../../components/PlaylistInfoModal';
 import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
 import {showToast} from '../../components/Toast';
 import ProfileButton from '../../components/shell/ProfileButton';
-import HeartIcon from '../../components/icons/HeartIcon';
 import {useT, getT} from '../../i18n';
 import {useNetworkStore} from '../../store/networkStore';
 import {useSettingsStore, type LibrarySortMode} from '../../store/settingsStore';
@@ -53,6 +52,7 @@ import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
 import {useDownloadStore} from '../../store/downloadStore';
 import DownloadIcon from '../../components/icons/DownloadIcon';
 import {useDockInset} from '../../navigation/dockLayout';
+import {CheckIcon, GridIcon, ListIcon, NowPlayingIcon, PinIcon, PlusIcon, SearchIcon, SortIcon} from '../../components/icons';
 
 
 type ViewMode = 'list' | 'grid';
@@ -80,171 +80,6 @@ function formatDuration(seconds: number): string {
   const m = Math.floor((seconds % 3600) / 60);
   if (h > 0) return `${h}h${m}m`;
   return `${m} min`;
-}
-
-// ─── SVG Icons ────────────────────────────────────────────────────────────────
-
-function SearchIcon({size = 22, color = '#fff'}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Circle cx="10.5" cy="10.5" r="6.5" stroke={color} strokeWidth={2} fill="none" />
-      <Path d="M15.5 15.5 L21 21" stroke={color} strokeWidth={2} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function PlusIcon({size = 26, color = '#fff'}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path
-        d="M12 4 V20 M4 12 H20"
-        stroke={color}
-        strokeWidth={2.2}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
-}
-
-function SortIcon({size = 20, color = '#fff'}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path
-        d="M5 4 V18 M2 15 L5 19 L8 15"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <Path
-        d="M16 20 V6 M13 9 L16 5 L19 9"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </Svg>
-  );
-}
-
-function GridIcon({size = 22, color = '#fff'}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Rect x="2" y="2" width="9" height="9" rx="1.5" fill={color} />
-      <Rect x="13" y="2" width="9" height="9" rx="1.5" fill={color} />
-      <Rect x="2" y="13" width="9" height="9" rx="1.5" fill={color} />
-      <Rect x="13" y="13" width="9" height="9" rx="1.5" fill={color} />
-    </Svg>
-  );
-}
-
-function ListIcon({size = 22, color = '#fff'}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Circle cx="3.5" cy="6" r="1.8" fill={color} />
-      <Path d="M7 6 H21" stroke={color} strokeWidth={2} strokeLinecap="round" />
-      <Circle cx="3.5" cy="12" r="1.8" fill={color} />
-      <Path d="M7 12 H21" stroke={color} strokeWidth={2} strokeLinecap="round" />
-      <Circle cx="3.5" cy="18" r="1.8" fill={color} />
-      <Path d="M7 18 H21" stroke={color} strokeWidth={2} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function PinIcon({size = 26, color = '#fff', filled = false}: {size?: number; color?: string; filled?: boolean}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path
-        d="M9 2 L15 2 L15 8 L18 11 L13.5 11 L13.5 21 L12 22 L10.5 21 L10.5 11 L6 11 L9 8 Z"
-        stroke={color}
-        strokeWidth={1.6}
-        strokeLinejoin="round"
-        fill={filled ? color : 'none'}
-        transform="rotate(45, 12, 12)"
-      />
-    </Svg>
-  );
-}
-
-function CheckIcon({size = 20, color = '#fff'}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path
-        d="M4 12 L9 17 L20 6"
-        stroke={color}
-        strokeWidth={2.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </Svg>
-  );
-}
-
-function NowPlayingBars() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24">
-      <Path
-        d="M3 18 V10 M8 18 V4 M13 18 V8 M18 18 V14"
-        stroke={darkTheme.accent}
-        strokeWidth={2.5}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
-}
-
-// ─── Liked Cover ──────────────────────────────────────────────────────────────
-
-function LikedCover({size, borderRadius = 6}: {size: number; borderRadius?: number}) {
-  const coverStyle = {width: size, height: size, borderRadius, alignItems: 'center' as const, justifyContent: 'center' as const};
-  return (
-    <LinearGradient
-      colors={['#6B2FA0', '#1E3A8A']}
-      style={coverStyle}>
-      <HeartIcon size={size * 0.45} color="#fff" filled />
-    </LinearGradient>
-  );
-}
-
-// ─── All Songs Cover ──────────────────────────────────────────────────────────
-
-function AllSongsCover({size, borderRadius = 6}: {size: number; borderRadius?: number}) {
-  const coverStyle = {width: size, height: size, borderRadius, alignItems: 'center' as const, justifyContent: 'center' as const};
-  return (
-    <LinearGradient
-      colors={['#2C3E50', '#12181f']}
-      style={coverStyle}>
-      <Svg width={size * 0.42} height={size * 0.42} viewBox="0 0 24 24">
-        <Path
-          d="M9 18V5l12-2v13"
-          stroke="#fff"
-          strokeWidth={1.8}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-        />
-        <Circle cx="6" cy="18" r="3" stroke="#fff" strokeWidth={1.8} fill="none" />
-        <Circle cx="18" cy="16" r="3" stroke="#fff" strokeWidth={1.8} fill="none" />
-      </Svg>
-    </LinearGradient>
-  );
-}
-
-// ─── Default Cover ────────────────────────────────────────────────────────────
-
-function DefaultCover({size}: {size: number}) {
-  return (
-    <View style={[styles.defaultCover, {width: size, height: size}]}>
-      <Svg width={size * 0.42} height={size * 0.42} viewBox="0 0 24 24">
-        <Path d="M3 6 H21" stroke="#aaa" strokeWidth={1.8} strokeLinecap="round" />
-        <Path d="M3 12 H21" stroke="#aaa" strokeWidth={1.8} strokeLinecap="round" />
-        <Path d="M3 18 H15" stroke="#aaa" strokeWidth={1.8} strokeLinecap="round" />
-      </Svg>
-    </View>
-  );
 }
 
 // ─── Bottom Sheet hook ────────────────────────────────────────────────────────
@@ -381,7 +216,7 @@ function SortSheet({visible, current, onSelect, onClose}: SortSheetProps) {
                 {opt.label}
               </Text>
               {current === opt.key && (
-                <CheckIcon size={20} color={darkTheme.accent} />
+                <CheckIcon size={20} color={darkTheme.accent} strokeWidth={2.5} />
               )}
             </TouchableOpacity>
           ))}
@@ -446,7 +281,7 @@ function PlaylistRow({
       ) : item.coverArt || item.kind === 'playlist' ? (
         <CoverArt id={item.coverArt} size={65} borderRadius={6} playlistId={item.kind === 'playlist' ? item.id : undefined} />
       ) : (
-        <DefaultCover size={65} />
+        <EmptyPlaylistCover size={65} />
       )}
       <View style={styles.rowInfo}>
         <Text
@@ -468,7 +303,7 @@ function PlaylistRow({
       {isLoading ? (
         <ActivityIndicator size="small" color={darkTheme.accent} />
       ) : isActive ? (
-        <NowPlayingBars />
+        <NowPlayingIcon color={darkTheme.accent} />
       ) : allDownloaded ? (
         <TouchableOpacity
           onPress={onDeleteDownloads}
@@ -532,7 +367,7 @@ function PlaylistGridCard({
       ) : item.coverArt || item.kind === 'playlist' ? (
         <CoverArt id={item.coverArt} size={imgSize} borderRadius={8} playlistId={item.kind === 'playlist' ? item.id : undefined} />
       ) : (
-        <DefaultCover size={imgSize} />
+        <EmptyPlaylistCover size={imgSize} />
       )}
       <Text
         style={[styles.gridName, isActive && {color: darkTheme.accent}]}
@@ -597,15 +432,18 @@ export default function LibraryScreen() {
   const likedSongIds = usePlayerStore(s => s.likedSongIds);
   const localLikeOverrides = usePlayerStore(s => s.localLikeOverrides);
 
+  // Liked ids come from the server; started offline, fall back on the copy saved on the last online visit.
+  const cachedLikedSongs = usePlaylistCacheStore(s => s.cachedLikedSongs);
   const likedCount = useMemo(() => {
-    let count = likedSongIds.size;
+    const ids = likedSongIds.size > 0 ? likedSongIds : new Set(cachedLikedSongs.map(s => String(s.id)));
+    let count = ids.size;
     for (const [id, liked] of Object.entries(localLikeOverrides)) {
-      const inSet = likedSongIds.has(id);
+      const inSet = ids.has(id);
       if (liked && !inSet) count++;
       else if (!liked && inSet) count--;
     }
     return count;
-  }, [likedSongIds, localLikeOverrides]);
+  }, [likedSongIds, cachedLikedSongs, localLikeOverrides]);
 
   const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
   const cachedPlaylistSongs = usePlaylistCacheStore(s => s.cachedPlaylistSongs);
@@ -904,11 +742,11 @@ export default function LibraryScreen() {
           <Text style={styles.headerTitle}>{t.library.title}</Text>
         </View>
         <View style={styles.topHeaderRight}>
-          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t.library.searchLibrary}>
             <SearchIcon size={22} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => setShowCreateModal(true)}>
-            <PlusIcon size={26} />
+          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => setShowCreateModal(true)} accessibilityRole="button" accessibilityLabel={t.library.createPlaylistTitle}>
+            <PlusIcon size={26} strokeWidth={2.2} />
           </TouchableOpacity>
           <ProfileButton />
         </View>

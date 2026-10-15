@@ -170,6 +170,7 @@ export const t = {
     likedTrackCount: (n: number) =>
       `${n} titre${n !== 1 ? 's' : ''} aimé${n !== 1 ? 's' : ''}`,
     createPlaylistTitle: 'Nouvelle playlist',
+    searchLibrary: 'Rechercher dans la bibliothèque',
     createPlaylistPlaceholder: 'Nom de la playlist',
     createPlaylistCancel: 'Annuler',
     createPlaylistConfirm: 'Créer',

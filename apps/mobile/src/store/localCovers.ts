@@ -4,10 +4,11 @@
  *   so every downloaded track keeps its cover offline. Keeps an in-memory
  *   registry `cover id → file` that `getCoverArtUrl` reads first: lists, mini
  *   player, full player and the lock screen all get the local file, whatever
- *   size they ask for. Leaf module: it must not import the API client or the
- *   download store (both import it).
+ *   size they ask for. Two sources feed the registry: the covers of downloaded
+ *   tracks and the covers of playlists holding downloaded tracks. Leaf module:
+ *   it must not import the API client or the download store (both import it).
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import RNBlobUtil from 'react-native-blob-util';
@@ -19,6 +20,15 @@ const COVERS_DIR = `${RNBlobUtil.fs.dirs.DocumentDir}/musonic/covers`;
 
 /** `cover id → file:// URI` of the covers saved on the device. */
 let _registry = new Map<string, string>();
+/** Saved covers of downloaded tracks, and of playlists holding downloaded tracks. */
+let _trackKeys: Iterable<string> = [];
+let _playlistKeys: Iterable<string> = [];
+
+function rebuild(): void {
+  const next = new Map<string, string>();
+  for (const key of [..._trackKeys, ..._playlistKeys]) next.set(key, `file://${coverFilePath(key)}`);
+  _registry = next;
+}
 
 /** Cover id of a track, as used by the whole app (`coverArt || id`). */
 export function coverKeyOf(track: {coverArt?: string; trackId: string}): string {
@@ -35,11 +45,16 @@ export function getLocalCoverUri(key: string): string | undefined {
   return _registry.get(key);
 }
 
-/** Replaces the registry with the given saved cover ids (called on every download change). */
+/** Sets the saved covers of downloaded tracks (called on every download change). */
 export function setLocalCovers(keys: Iterable<string>): void {
-  const next = new Map<string, string>();
-  for (const key of keys) next.set(key, `file://${coverFilePath(key)}`);
-  _registry = next;
+  _trackKeys = [...keys];
+  rebuild();
+}
+
+/** Sets the saved covers of playlists holding downloaded tracks. */
+export function setLocalPlaylistCovers(keys: Iterable<string>): void {
+  _playlistKeys = [...keys];
+  rebuild();
 }
 
 /**

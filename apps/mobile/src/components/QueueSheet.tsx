@@ -171,11 +171,13 @@ function tileFg(active: boolean): string {
   return active ? colors.accent : TILE_OFF_FG;
 }
 
-function ModeTile({label, active, busy, onPress, icon}: {
+function ModeTile({label, active, busy, onPress, icon, withHaptic}: {
   label: string;
   active: boolean;
   busy?: boolean;
   onPress: () => void;
+  /** Shuffle and repeat vibrate in their store actions; only autoplay needs it here. */
+  withHaptic?: boolean;
   /** Glyph drawn in `tileFg(active)`. */
   icon: React.ReactNode;
 }) {
@@ -184,7 +186,7 @@ function ModeTile({label, active, busy, onPress, icon}: {
     <PressableScale
       onPress={onPress}
       disabled={busy}
-      haptic="selection"
+      haptic={withHaptic ? 'selection' : undefined}
       style={[styles.tile, {backgroundColor: active ? colors.accentFill : TILE_OFF_BG}]}
       accessibilityLabel={label}
       accessibilityState={{selected: active, busy}}>
@@ -418,6 +420,7 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
         label={t.queue.autoplayTile}
         active={isAutoplayEnabled}
         onPress={() => playbackEngine.setAutoplay(!isAutoplayEnabled)}
+        withHaptic
         icon={<InfinityIcon size={18} color={tileFg(isAutoplayEnabled)} />}
       />
     </View>

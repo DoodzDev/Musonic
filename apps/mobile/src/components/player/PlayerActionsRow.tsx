@@ -58,7 +58,6 @@ export default function PlayerActionsRow({
       <PressableScale
         onPress={onShuffle}
         disabled={isFetchingMagic}
-        haptic="selection"
         style={[styles.round, shuffleOn && styles.on]}
         accessibilityLabel={shuffleLabel}
         accessibilityState={{busy: isFetchingMagic}}>
@@ -69,7 +68,6 @@ export default function PlayerActionsRow({
 
       <PressableScale
         onPress={onRepeat}
-        haptic="selection"
         style={[styles.round, repeatOn && styles.on]}
         accessibilityLabel={repeatLabel}>
         <RepeatIcon mode={repeatMode} indicator={false} />

@@ -5,9 +5,11 @@
  *      for the "in playlist" indicator in SongOptionsSheet / AlbumDetail).
  *   2. `cachedPlaylists` + `cachedPlaylistSongs` — full playlist list and per-playlist
  *      song arrays used for offline mode data resilience.
+ *   3. `cachedLikedSongs` — the liked songs from the last successful fetch, so the
+ *      "Liked songs" screen can list the downloaded ones offline.
  *   All slices are persisted to MMKV and available synchronously after rehydration.
  * @author DoodzProg
- * @version 1.0.1
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -35,6 +37,10 @@ type PlaylistCacheState = {
   setCachedPlaylistSongs: (playlistId: string, songs: SubsonicSong[]) => void;
   /** Returns cached songs for a playlist, or [] if not yet fetched. */
   getOfflineSongs: (playlistId: string) => SubsonicSong[];
+
+  // ── Layer 3 : liked songs, for offline ──────────────────────────────────────
+  cachedLikedSongs: SubsonicSong[];
+  setCachedLikedSongs: (songs: SubsonicSong[]) => void;
 };
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -77,19 +83,26 @@ export const usePlaylistCacheStore = create<PlaylistCacheState>()(
         })),
 
       getOfflineSongs: (playlistId) => get().cachedPlaylistSongs[playlistId] ?? [],
+
+      // ── Layer 3 ──────────────────────────────────────────────────────────────
+
+      cachedLikedSongs: [],
+      setCachedLikedSongs: (songs) => set({cachedLikedSongs: songs}),
     }),
     {
       name: 'musonic-playlist-cache',
       storage: createJSONStorage(() => mmkvStorage),
       // Bump on any change to the persisted shape and handle the old version in `migrate`.
       // Without `migrate`, a version mismatch discards the stored data.
-      version: 1,
+      version: 2,
       // v0 (unversioned) -> v1: same shape, versioning only.
+      // v1 -> v2: `cachedLikedSongs` added (defaults to [] on rehydration).
       migrate: persistedState => persistedState as PlaylistCacheState,
       partialize: (s) => ({
         savedTrackIds: s.savedTrackIds,
         cachedPlaylists: s.cachedPlaylists,
         cachedPlaylistSongs: s.cachedPlaylistSongs,
+        cachedLikedSongs: s.cachedLikedSongs,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
@@ -97,6 +110,7 @@ export const usePlaylistCacheStore = create<PlaylistCacheState>()(
           // Ensure objects default correctly if MMKV had no prior data.
           if (!state.cachedPlaylists) state.cachedPlaylists = [];
           if (!state.cachedPlaylistSongs) state.cachedPlaylistSongs = {};
+          if (!state.cachedLikedSongs) state.cachedLikedSongs = [];
         }
       },
     },
