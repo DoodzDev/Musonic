@@ -4,7 +4,7 @@
  *   Uses the cross-platform `boxShadow` style (New Architecture), so iOS and
  *   Android render the same shadow. Never put a shadow on list rows.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import type {ViewStyle} from 'react-native';
@@ -21,6 +21,20 @@ export const shadows = {
   glassEdge: {
     boxShadow:
       'inset 0px 0.5px 0px rgba(255,255,255,0.18), inset 0px 0px 0px 0.5px rgba(255,255,255,0.08)',
+  },
+  /**
+   * "Raised" relief (Design v2, P5): the soft drop shadow of covers and cards
+   * on the Home, slightly lighter than `card`. Pairs with `raisedEdge`.
+   */
+  raised: {boxShadow: '0px 8px 24px rgba(0,0,0,0.35)'},
+  /**
+   * Fine light edge of a raised surface: a brighter top line and a faint
+   * outline, like the glass of the mini player, so the surface reads as a
+   * slightly 3D "button". Goes on an overlay above the content (see `Raised`).
+   */
+  raisedEdge: {
+    boxShadow:
+      'inset 0px 0.5px 0px rgba(255,255,255,0.14), inset 0px 0px 0px 0.5px rgba(255,255,255,0.08)',
   },
 } as const satisfies Record<string, ViewStyle>;
 

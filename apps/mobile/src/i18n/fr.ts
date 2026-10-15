@@ -14,6 +14,7 @@ export const t = {
   // ─── Common ────────────────────────────────────────────────────────────────
   common: {
     retry: 'Réessayer',
+    back: 'Retour',
   },
 
   // ─── Design v2 components ──────────────────────────────────────────────────
@@ -102,26 +103,49 @@ export const t = {
 
   // ─── Home ──────────────────────────────────────────────────────────────────
   home: {
+    title: 'Accueil',
     likedSongs: 'Titres likés',
+    myMusic: 'Ma Musique',
     unknownTitle: 'Titre inconnu',
     unknownArtist: 'Artiste inconnu',
-    loadError: 'Impossible de charger la page d\'accueil',
+    loadError: "Impossible de charger la page d'accueil",
     offlineEmptyState: 'Contenu non disponible hors-ligne',
+    offlineSaved: 'Hors ligne : dernier accueil chargé',
     typeSingle: 'Titre',
     typeAlbum: 'Album',
+    typePlaylist: 'Playlist',
+    typeArtist: 'Artiste',
+    /** Card subtitle: the kind, then the artist when known. */
+    kindLine: (kind: string, artist?: string) => (artist ? `${kind} · ${artist}` : kind),
+    mixSubtitle: (count: number) => `Mix Magique · ${count} titre${count > 1 ? 's' : ''}`,
+    playAlbum: (title: string) => `Lire l'album ${title}`,
+    date: (d: Date) => {
+      const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+      const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+      return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
+    },
     filters: {
       all: 'Tout',
-      recent: 'Récent',
-      frequent: 'Fréquent',
-      reco: 'Recommandations',
-      discover: 'À découvrir',
+      playlists: 'Playlists',
+      albums: 'Albums',
+      artists: 'Artistes',
     },
     sections: {
-      recentlyPlayed: 'Récemment joués',
-      frequentlyPlayed: 'Joués fréquemment',
-      recommendations: 'Recommandations',
-      discover: 'À découvrir',
+      recent: 'Écoutés récemment',
+      forYou: 'Pour vous',
+      forYouFrom: (names: string) => `D'après ${names}`,
+      discover: 'Artistes à découvrir',
+      favoriteArtists: 'Tes artistes préférés',
+      moreLike: (name: string) => `Plus dans le style de ${name}`,
+      likedAlbums: 'Albums de tes titres likés',
+      becauseLiked: (title: string) => `Parce que tu as aimé « ${title} »`,
+      magicMixes: 'Mix Magiques',
+      magicMixesSubtitle: 'Tes titres et des découvertes, par ambiance',
+      rediscover: 'À redécouvrir',
+      newest: 'Nouveautés dans ta bibliothèque',
+      random: 'Au hasard',
     },
+    playMix: (genre: string) => `Écouter le Mix Magique ${genre}`,
   },
 
   // ─── Search ────────────────────────────────────────────────────────────────

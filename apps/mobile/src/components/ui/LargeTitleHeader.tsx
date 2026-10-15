@@ -6,9 +6,11 @@
  *   title in small type and the screen's actions; its frosting fades out
  *   below the bar instead of ending on a hard line. Pulling down past the top
  *   gently enlarges the large title. Both read the scroll position from
- *   `useLargeTitleScroll`, entirely on the UI thread.
+ *   `useLargeTitleScroll`, entirely on the UI thread. The compact title is
+ *   centred (iOS style) or, with `align="left"`, sits right after the left
+ *   item in a larger size (tabs: account avatar, then the title, as on Android).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -65,10 +67,12 @@ export function LargeTitle({title, scrollY}: TitleProps) {
 type HeaderProps = TitleProps & {
   left?: React.ReactNode;
   right?: React.ReactNode;
+  /** Where the compact title goes: centred (default) or right after `left`, larger. */
+  align?: 'center' | 'left';
 };
 
 /** The compact bar pinned over the top of the screen. Keeps actions visible. */
-export function LargeTitleHeader({title, scrollY, left, right}: HeaderProps) {
+export function LargeTitleHeader({title, scrollY, left, right, align = 'center'}: HeaderProps) {
   const insets = useSafeAreaInsets();
   const barStyle = useAnimatedStyle(() => ({
     opacity: interpolate(scrollY.value, [SWITCH_AT - FADE, SWITCH_AT], [0, 1], Extrapolation.CLAMP),
@@ -83,15 +87,27 @@ export function LargeTitleHeader({title, scrollY, left, right}: HeaderProps) {
           style={StyleSheet.absoluteFill}
         />
       </Animated.View>
-      <View style={styles.bar}>
-        <View style={styles.side}>{left}</View>
-        <Animated.View style={[styles.center, barStyle]} importantForAccessibility="no-hide-descendants">
-          <Text variant="headline" numberOfLines={1}>
-            {title}
-          </Text>
-        </Animated.View>
-        <View style={[styles.side, styles.right]}>{right}</View>
-      </View>
+      {align === 'left' ? (
+        <View style={[styles.bar, styles.barLeft]}>
+          {left}
+          <Animated.View style={[styles.leftTitle, barStyle]} importantForAccessibility="no-hide-descendants">
+            <Text variant="title3" numberOfLines={1} style={styles.leftTitleText}>
+              {title}
+            </Text>
+          </Animated.View>
+          <View style={styles.right}>{right}</View>
+        </View>
+      ) : (
+        <View style={styles.bar}>
+          <View style={styles.side}>{left}</View>
+          <Animated.View style={[styles.center, barStyle]} importantForAccessibility="no-hide-descendants">
+            <Text variant="headline" numberOfLines={1}>
+              {title}
+            </Text>
+          </Animated.View>
+          <View style={[styles.side, styles.right]}>{right}</View>
+        </View>
+      )}
     </View>
   );
 }
@@ -114,4 +130,7 @@ const styles = StyleSheet.create({
   side: {width: sizes.touchTarget * 2, flexDirection: 'row', alignItems: 'center'},
   right: {justifyContent: 'flex-end', gap: spacing.xs},
   center: {flex: 1, alignItems: 'center'},
+  barLeft: {paddingHorizontal: spacing.gutter, gap: 12},
+  leftTitle: {flex: 1},
+  leftTitleText: {fontWeight: '700'},
 });

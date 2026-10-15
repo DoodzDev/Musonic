@@ -34,6 +34,8 @@ export type SourceType =
   | 'library'
   | 'search'
   | 'recommendations'
+  /** A Magic Mix of the Home (id: the genre). */
+  | 'mix'
   | 'other';
 
 /** Where the context comes from ("Playing from…"). */

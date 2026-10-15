@@ -4,7 +4,7 @@
  *   LikedRecommendations, PlaylistDetail, AlbumDetail, and ArtistDetail so detail
  *   screens are reachable from the home feed without leaving the tab.
  * @author DoodzProg
- * @version 1.0.3
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -15,6 +15,7 @@ import LikedRecommendationsScreen from '../screens/LikedRecommendations';
 import PlaylistDetailScreen from '../screens/PlaylistDetail';
 import AlbumDetailScreen from '../screens/AlbumDetail';
 import ArtistDetailScreen from '../screens/ArtistDetail';
+import MixDetailScreen from '../screens/MixDetail';
 
 const Stack = createNativeStackNavigator();
 
@@ -27,6 +28,7 @@ export default function HomeStack() {
       <Stack.Screen name="PlaylistDetail" component={PlaylistDetailScreen} />
       <Stack.Screen name="AlbumDetail" component={AlbumDetailScreen} />
       <Stack.Screen name="ArtistDetail" component={ArtistDetailScreen} />
+      <Stack.Screen name="MixDetail" component={MixDetailScreen} />
     </Stack.Navigator>
   );
 }

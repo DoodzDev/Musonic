@@ -29,6 +29,7 @@ import TrackPlayer, {RepeatMode as NativeRepeat} from 'react-native-track-player
 import {setEngineBridge, usePlayerStore, type RepeatModeUI, type ShuffleMode, type Track} from '../../store/playerStore';
 import {useSettingsStore} from '../../store/settingsStore';
 import {useDownloadStore} from '../../store/downloadStore';
+import {describePlay, useRecentPlaysStore} from '../../store/recentPlaysStore';
 import {AppState} from 'react-native';
 import {configureClient, getActiveServer, getCoverArtUrl, getStreamUrl} from '../../api/client';
 import {getT} from '../../i18n';
@@ -368,6 +369,8 @@ export const playbackEngine = {
       token++;
       state = Q.startContext(state, {...context, tracks: context.tracks.map(entry)}, modes(), Math.random, isPlayable);
       rememberPlaylist(context.source);
+      // Home "Recently played" (ADR-010 C1): the album / playlist launched, or the track alone.
+      useRecentPlaysStore.getState().record(describePlay(context.source, context.tracks, context.startTrackId, Date.now()));
       publish();
       await loadNative();
       await native(TrackPlayer.setRepeatMode(nativeRepeat(modes().repeat)));

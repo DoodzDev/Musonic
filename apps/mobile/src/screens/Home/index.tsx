@@ -1,520 +1,375 @@
 /**
  * @file index.tsx
- * @description Home screen. Displays personalised quick-access cards, recently
- *   played albums, frequently played albums, AI-recommended songs, and a discover
- *   section of similar artists. Supports filter pills, pull-to-refresh, and
- *   auto-recovery when connectivity is restored.
- *   Singles play through the playback engine (playAlbumById).
+ * @description Home screen (Design v2, R5.1 + R5.11). Date and large title,
+ *   filter chips (All, Playlists, Albums, Artists), a 2 × 3 quick access grid
+ *   (3 × 2 in landscape), then the shelves of the shared home engine
+ *   (`@musonic/core/home`, the same as the web, varying day to day), with the
+ *   online "For you" cards and "Artists to discover" after "Recently played",
+ *   and the Magic Mixes (opened like playlists). "Recently played" lists
+ *   what you really played (recentPlaysStore: the track alone, else the album,
+ *   playlist, mix… launched), completed by the server's recent albums. Every
+ *   card says what it is (album, track, playlist). Covers and cards use the
+ *   shared raised relief. The last feed is kept on the device, so the Home
+ *   also shows offline. Playback goes through the playback engine.
  * @author DoodzProg
- * @version 1.3.0
+ * @version 2.1.0
  * @license MIT
  */
 
-import React, {useEffect, useState, useCallback, useRef} from 'react';
-import {
-  View,
-  ScrollView,
-  FlatList,
-  StyleSheet,
-  RefreshControl,
-  StatusBar,
-  Text,
-  TouchableOpacity,
-} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import React, {useCallback, useMemo, useState} from 'react';
+import {ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, View} from 'react-native';
+import Animated from 'react-native-reanimated';
 import {useNavigation} from '@react-navigation/native';
-import {darkTheme} from '../../theme';
+import type {CardItem, Shelf} from '@musonic/core/home';
+import {useHomeFeed} from '../../hooks/useHomeFeed';
+import {useRecentPlaysStore, type RecentPlay} from '../../store/recentPlaysStore';
+import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
+import {largeDeezerCover, useOnlineRecommendations} from '../../hooks/useOnlineRecommendations';
+import {playAlbumById, playFromList} from '../../services/playback/launchers';
+import {songToTrack} from '../../utils/songToTrack';
+import {LargeTitle, LargeTitleHeader, useLargeTitleInset, useLargeTitleScroll} from '../../components/ui/LargeTitleHeader';
+import Chip from '../../components/ui/Chip';
+import Text from '../../components/ui/Text';
+import Button from '../../components/ui/Button';
+import ProfileButton from '../../components/shell/ProfileButton';
 import {
-  getRecentAlbums,
-  getFrequentAlbums,
-  getStarred,
-  getSimilarArtists,
-} from '../../api/endpoints/library';
-import {getPlaylists} from '../../api/endpoints/playlists';
-import {
-  getArtistImage,
-  getDeezerArtistId,
-  getDeezerArtistTopTracks,
-  enrichTracksWithAlbumType,
-  type DeezerTrack,
-} from '../../api/deezer';
-import {playAlbumById} from '../../services/playback/launchers';
-import {usePlayerStore} from '../../store/playerStore';
-import type {SubsonicAlbum, SubsonicSimilarArtist, SubsonicPlaylist} from '../../api/types';
-import AlbumCard from '../../components/AlbumCard';
-import ArtistCard from '../../components/ArtistCard';
-import QuickAccessCard from '../../components/QuickAccessCard';
-import SectionHeader from '../../components/SectionHeader';
-import HeartIcon from '../../components/icons/HeartIcon';
-import GlobalHeader from '../../components/GlobalHeader';
+  AlbumCard,
+  ArtistBubble,
+  ForYouCard,
+  HOME_GUTTER,
+  HomeShelf,
+  MixCard,
+  QuickTile,
+} from '../../components/home/HomeCards';
+import {colors} from '../../theme';
 import {useT} from '../../i18n';
-import {useNetworkStore} from '../../store/networkStore';
 import {useSettingsStore} from '../../store/settingsStore';
 import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
 import {useIsLandscape} from '../../hooks/useIsLandscape';
 import {useDockInset} from '../../navigation/dockLayout';
 
-type FilterKey = 'all' | 'recent' | 'frequent' | 'reco' | 'discover';
+type Filter = 'all' | 'playlists' | 'albums' | 'artists';
+const FILTERS: Filter[] = ['all', 'playlists', 'albums', 'artists'];
+const QUICK_COUNT = 6;
 
-function homeDedupeById(tracks: DeezerTrack[]): DeezerTrack[] {
-  const seen = new Set<number>();
-  return tracks.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
+/** Which filter shows a shelf of this kind. */
+function shownBy(kind: Shelf['kind']): Filter {
+  if (kind === 'artists') return 'artists';
+  if (kind === 'mixes') return 'playlists';
+  return 'albums';
 }
-
-function homeDedupeAlbums(tracks: DeezerTrack[]): DeezerTrack[] {
-  const seen = new Set<number>();
-  return tracks.filter(t => {
-    if (t.isSingle) return true;
-    if (seen.has(t.album.id)) return false;
-    seen.add(t.album.id);
-    return true;
-  });
-}
-
-type HomeData = {
-  recentAlbums: SubsonicAlbum[];
-  frequentAlbums: SubsonicAlbum[];
-  deezerRecoAlbums: DeezerTrack[];
-  discoverArtists: SubsonicSimilarArtist[];
-  playlists: SubsonicPlaylist[];
-  likedCount: number;
-};
 
 export default function HomeScreen() {
-  const dockInset = useDockInset();
   const t = useT();
-  const filters: {key: FilterKey; label: string}[] = [
-    {key: 'all', label: t.home.filters.all},
-    {key: 'recent', label: t.home.filters.recent},
-    {key: 'frequent', label: t.home.filters.frequent},
-    {key: 'reco', label: t.home.filters.reco},
-    {key: 'discover', label: t.home.filters.discover},
-  ];
-
-  const [data, setData] = useState<HomeData>({
-    recentAlbums: [],
-    frequentAlbums: [],
-    deezerRecoAlbums: [],
-    discoverArtists: [],
-    playlists: [],
-    likedCount: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
-
-  const scrollRef = useRef<ScrollView>(null);
-  const sectionYs = useRef<Partial<Record<FilterKey, number>>>({});
-
-  const playlistVersion = usePlayerStore(s => s.playlistVersion);
-  const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
-  const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
+  const navigation = useNavigation<any>();
+  const dockInset = useDockInset();
   const landscapePadding = useLandscapeSidebarPadding();
   const isLandscape = useIsLandscape();
+  const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
+  const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
+  const {scrollY, onScroll} = useLargeTitleScroll();
+  const top = useLargeTitleInset();
+  const {feed, loading, stale, refresh} = useHomeFeed();
+  const [filter, setFilter] = useState<Filter>('all');
+  const [refreshing, setRefreshing] = useState(false);
 
-  const navigation = useNavigation<any>();
+  // Seeds of the online parts: the artists you played lately and your favourite ones.
+  const recentShelf = feed?.shelves.find(s => s.id === 'recent');
+  const recentArtists = useMemo(() => {
+    const names = (recentShelf?.items ?? []).flatMap(i => (i.type === 'album' && i.album.artist ? [i.album.artist] : []));
+    return [...new Set(names)].slice(0, 4);
+  }, [recentShelf]);
+  const favoriteArtistIds = useMemo(() => {
+    const shelf = feed?.shelves.find(s => s.id === 'favoriteArtists');
+    return (shelf?.items ?? []).flatMap(i => (i.type === 'artist' ? [i.artist.id] : [])).slice(0, 3);
+  }, [feed]);
+  const online = useOnlineRecommendations(recentArtists, favoriteArtistIds);
 
-  const load = useCallback(async () => {
-    if (isOfflineMode) { setLoading(false); return; }
-    try {
-      const [recent, frequent, starred, playlists] = await Promise.all([
-        getRecentAlbums(8),
-        getFrequentAlbums(8),
-        getStarred(),
-        getPlaylists().catch(() => [] as SubsonicPlaylist[]),
-      ]);
-
-      const seedArtistIds = frequent.slice(0, 3).map(a => a.artistId).filter(Boolean);
-      const recentArtistNames = [...new Set(recent.map(a => a.artist).filter(Boolean))].slice(0, 4);
-
-      // Discover artists (Subsonic) + Deezer reco albums — run in parallel
-      const [artistArrays, deezerRawArrays] = await Promise.all([
-        Promise.all(seedArtistIds.map(id => getSimilarArtists(id, 8).catch(() => []))),
-        Promise.all(recentArtistNames.map(async name => {
-          const id = await getDeezerArtistId(name).catch(() => null);
-          if (!id) return [] as DeezerTrack[];
-          return getDeezerArtistTopTracks(id, 8).catch(() => [] as DeezerTrack[]);
-        })),
-      ]);
-
-      const seenArtists = new Set<string>();
-      const rawDiscover = artistArrays
-        .flat()
-        .filter(a => {
-          if (a.present || seenArtists.has(a.id)) return false;
-          seenArtists.add(a.id);
-          return true;
-        })
-        .slice(0, 12);
-
-      const deezerFlat = homeDedupeById(deezerRawArrays.flat()).slice(0, 25);
-
-      // Fetch discover images + enrich Deezer tracks — in parallel
-      const [discoverArtists, deezerEnriched] = await Promise.all([
-        Promise.all(rawDiscover.map(async a => ({
-          ...a,
-          artistImageUrl: (await getArtistImage(a.name)) ?? undefined,
-        }))),
-        enrichTracksWithAlbumType(deezerFlat),
-      ]);
-
-      const deezerRecoAlbums = homeDedupeAlbums(
-        deezerEnriched.filter(tr => !tr.isSingle),
-      ).slice(0, 10);
-
-      const recentIdSet = new Set(recent.map(a => a.id));
-      const filteredFrequent = frequent.filter(a => !recentIdSet.has(a.id));
-
-      setData({
-        recentAlbums: recent,
-        frequentAlbums: filteredFrequent,
-        deezerRecoAlbums,
-        discoverArtists,
-        playlists,
-        likedCount: starred.songs.length,
-      });
-      setError(false);
-    } catch (e) {
-      console.warn('Home load error', e);
-      setError(true);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+  // "Recently played": what was really played on this device, then the server's recent albums.
+  const plays = useRecentPlaysStore(s => s.plays);
+  const cachedPlaylists = usePlaylistCacheStore(s => s.cachedPlaylists);
+  type RecentItem = {key: string; play?: RecentPlay; album?: {id: string; name: string; artist?: string; coverArt?: string; songCount?: number}};
+  const recentItems = useMemo<RecentItem[]>(() => {
+    const items: RecentItem[] = plays.map(p => ({key: `${p.kind}-${p.id}`, play: p}));
+    const playedAlbums = new Set(plays.filter(p => p.kind === 'album').map(p => p.id));
+    for (const i of recentShelf?.items ?? []) {
+      if (items.length >= 12) break;
+      if (i.type === 'album' && !playedAlbums.has(i.album.id)) items.push({key: `srv-${i.album.id}`, album: i.album});
     }
-  }, [isOfflineMode]);
+    return items.slice(0, 12);
+  }, [plays, recentShelf]);
 
-  useEffect(() => {
-    load();
-  }, [load, playlistVersion, isOfflineMode]);
-
-  // ─── Auto-recovery when connectivity is restored ──────────────────────────
-  const isOffline = useNetworkStore(s => s.isOffline);
-  const prevOfflineRef = useRef(isOffline);
-  const errorRef = useRef(error);
-  errorRef.current = error;
-
-  useEffect(() => {
-    const wasOffline = prevOfflineRef.current;
-    prevOfflineRef.current = isOffline;
-    if (wasOffline && !isOffline && errorRef.current) {
-      setError(false);
-      setLoading(true);
-      load();
-    }
-  }, [isOffline, load]);
-
-  const onRefresh = () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    load();
-  };
+    await refresh();
+    setRefreshing(false);
+  }, [refresh]);
 
-  const handleFilter = (key: string) => {
-    setActiveFilter(key as FilterKey);
-    if (key === 'all') {
-      scrollRef.current?.scrollTo({y: 0, animated: true});
-    } else if (sectionYs.current[key as FilterKey] !== undefined) {
-      scrollRef.current?.scrollTo({y: sectionYs.current[key as FilterKey]!, animated: true});
-    }
-  };
+  const openAlbum = useCallback((album: {id: string; songCount?: number}) => {
+    if (album.songCount === 1) playAlbumById(album.id);
+    else navigation.navigate('AlbumDetail', {albumId: album.id});
+  }, [navigation]);
 
-  type QuickItem = {
-    id: string;
-    name: string;
-    coverArt?: string;
-    accent?: string;
-    isLiked: boolean;
-    kind: 'liked' | 'playlist' | 'album';
-  };
+  const show = (f: Filter) => filter === 'all' || filter === f;
 
-  const likedItem: QuickItem = {
-    id: 'liked',
-    name: t.home.likedSongs,
-    coverArt: undefined,
-    accent: '#5038A0',
-    isLiked: true,
-    kind: 'liked',
-  };
-  const playlistItems: QuickItem[] = data.playlists.slice(0, 5).map(p => ({
-    id: p.id,
-    name: p.name,
-    coverArt: p.coverArt,
-    accent: undefined,
-    isLiked: false,
-    kind: 'playlist',
-  }));
-  const albumFill: QuickItem[] = data.recentAlbums
-    .slice(0, Math.max(0, 5 - playlistItems.length))
-    .map(a => ({
-      id: a.id,
-      name: a.name,
-      coverArt: a.coverArt,
-      accent: undefined,
-      isLiked: false,
-      kind: 'album' as const,
-    }));
-  const quickItems = [likedItem, ...playlistItems, ...albumFill].slice(0, 6);
-
-  const handleQuickPress = useCallback(
-    (item: QuickItem) => {
-      if (item.kind === 'playlist') {
-        navigation.navigate('PlaylistDetail', {playlistId: item.id});
-      } else if (item.kind === 'album') {
-        navigation.navigate('AlbumDetail', {albumId: item.id});
-      } else if (item.kind === 'liked') {
-        navigation.navigate('LikedSongs');
+  const renderCard = useCallback((shelf: Shelf, item: CardItem, index: number): React.ReactElement => {
+    switch (item.type) {
+      case 'album':
+        return <AlbumCard name={item.album.name} subtitle={albumLine(item.album)} coverId={item.album.coverArt} onPress={() => openAlbum(item.album)} />;
+      case 'artist':
+        return (
+          <ArtistBubble
+            name={item.artist.name}
+            coverId={item.artist.coverArt ?? item.fallbackCoverArt}
+            imageUrl={item.artist.artistImageUrl}
+            onPress={() => navigation.navigate('ArtistDetail', {artistId: item.artist.id})}
+          />
+        );
+      case 'song': {
+        const songs = shelf.items.flatMap(i => (i.type === 'song' ? [i.song] : []));
+        return (
+          <AlbumCard
+            name={item.song.title}
+            subtitle={t.home.kindLine(t.home.typeSingle, item.song.artist)}
+            coverId={item.song.coverArt}
+            onPress={() => playFromList({type: 'recommendations', name: shelfTitle(shelf)}, songs.map(songToTrack), index)}
+          />
+        );
       }
-    },
-    [navigation],
-  );
+      case 'mix': {
+        const artists = [...new Set(item.songs.map(s => s.artist).filter((a): a is string => !!a))].slice(0, 2);
+        return (
+          <MixCard
+            name={item.genre}
+            subtitle={t.home.kindLine(t.home.typePlaylist, artists.length ? `${artists.join(', ')}…` : undefined)}
+            covers={item.covers}
+            accessibilityLabel={`${item.genre}, ${t.home.mixSubtitle(item.songs.length)}`}
+            onPress={() => navigation.navigate('MixDetail', {genre: item.genre, songs: item.songs, covers: item.covers})}
+          />
+        );
+      }
+      default:
+        return <View />;
+    }
+    // shelfTitle is stable for a given language.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation, openAlbum, t]);
 
-
-  // Portrait: 3 rows of 2 tiles. Landscape: 2 rows of 3, leaving height for the carousels.
-  const quickCols = isLandscape ? 3 : 2;
-  const quickRows: typeof quickItems[] = [];
-  for (let i = 0; i < Math.min(quickItems.length, 8); i += quickCols) {
-    quickRows.push(quickItems.slice(i, i + quickCols));
+  function albumLine(album: {songCount?: number; artist?: string}): string {
+    return t.home.kindLine(album.songCount === 1 ? t.home.typeSingle : t.home.typeAlbum, album.artist);
   }
 
-  return (
-    <SafeAreaView style={[styles.root, landscapePadding]} edges={isFullscreenMode ? [] : ['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={darkTheme.background} />
+  function renderRecent(item: RecentItem): React.ReactElement {
+    if (item.album) {
+      const album = item.album;
+      return <AlbumCard name={album.name} subtitle={albumLine(album)} coverId={album.coverArt} onPress={() => openAlbum(album)} />;
+    }
+    const p = item.play!;
+    switch (p.kind) {
+      case 'album':
+        return <AlbumCard name={p.name} subtitle={t.home.kindLine(t.home.typeAlbum, p.artist)} coverId={p.coverArt} onPress={() => openAlbum({id: p.id})} />;
+      case 'playlist': {
+        const pl = cachedPlaylists.find(x => x.id === p.id);
+        return (
+          <AlbumCard name={pl?.name ?? p.name} subtitle={t.home.typePlaylist} coverId={pl?.coverArt ?? p.coverArt} playlistId={p.id}
+            onPress={() => navigation.navigate('PlaylistDetail', {playlistId: p.id})} />
+        );
+      }
+      case 'liked':
+        return <AlbumCard name={t.home.likedSongs} subtitle={t.home.typePlaylist} special="liked" onPress={() => navigation.navigate('LikedSongs')} />;
+      case 'library':
+        return <AlbumCard name={t.home.myMusic} subtitle={t.home.typePlaylist} special="library" onPress={() => navigation.navigate('Library', {screen: 'AllSongs'})} />;
+      case 'mix':
+        return (
+          <MixCard name={p.name} subtitle={t.home.typePlaylist} covers={p.coverArt ? [p.coverArt] : []}
+            accessibilityLabel={`${p.name}, ${t.home.typePlaylist}`} onPress={() => navigation.navigate('MixDetail', {genre: p.id})} />
+        );
+      case 'artist':
+        return <ArtistBubble name={p.name} coverId={p.coverArt} onPress={() => navigation.navigate('ArtistDetail', {artistId: p.id})} />;
+      default:
+        return (
+          <AlbumCard name={p.name} subtitle={t.home.kindLine(t.home.typeSingle, p.artist)} coverId={p.coverArt}
+            onPress={() => playFromList({type: 'other'}, [songToTrack({id: p.id, title: p.name, artist: p.artist, coverArt: p.coverArt})])} />
+        );
+    }
+  }
 
-      <GlobalHeader
-        variant="home"
-        filters={filters}
-        activeFilter={activeFilter}
-        onFilterPress={handleFilter}
+  function shelfTitle(shelf: Shelf): string {
+    const s = t.home.sections;
+    switch (shelf.id) {
+      case 'recent': return s.recent;
+      case 'favoriteArtists': return s.favoriteArtists;
+      case 'moreLike': return s.moreLike(shelf.context ?? '');
+      case 'likedAlbums': return s.likedAlbums;
+      case 'becauseLiked': return s.becauseLiked(shelf.context ?? '');
+      case 'magicMixes': return s.magicMixes;
+      case 'rediscover': return s.rediscover;
+      case 'newest': return s.newest;
+      default: return s.random;
+    }
+  }
+
+  const renderShelf = (shelf: Shelf) =>
+    show(shownBy(shelf.kind)) ? (
+      <HomeShelf
+        key={shelf.id}
+        title={shelfTitle(shelf)}
+        subtitle={shelf.id === 'magicMixes' ? t.home.sections.magicMixesSubtitle : undefined}
+        data={shelf.items}
+        keyOf={(item, i) => `${shelf.id}-${i}`}
+        renderItem={(item, i) => renderCard(shelf, item, i)}
+        gap={shelf.kind === 'artists' ? 16 : 14}
       />
+    ) : null;
 
-      {/* Scrollable content */}
-      <ScrollView
-        ref={scrollRef}
-        style={styles.scroll}
+  // Quick access: liked songs, recent playlists and albums (2 × 3; 3 × 2 in landscape).
+  const quickCols = isLandscape ? 3 : 2;
+  const quick = (feed?.quickAccess ?? []).slice(0, QUICK_COUNT);
+  const quickRows: CardItem[][] = [];
+  for (let i = 0; i < quick.length; i += quickCols) quickRows.push(quick.slice(i, i + quickCols));
+
+  const quickTile = (item: CardItem) => {
+    if (item.type === 'liked') {
+      return <QuickTile key="liked" kind="liked" name={t.home.likedSongs} kindLabel={t.home.typePlaylist} onPress={() => navigation.navigate('LikedSongs')} />;
+    }
+    if (item.type === 'playlist') {
+      const p = item.playlist;
+      return (
+        <QuickTile key={`p-${p.id}`} kind="playlist" name={p.name} kindLabel={t.home.typePlaylist} coverId={p.coverArt} playlistId={p.id}
+          onPress={() => navigation.navigate('PlaylistDetail', {playlistId: p.id})} />
+      );
+    }
+    if (item.type === 'album') {
+      return (
+        <QuickTile key={`a-${item.album.id}`} kind="album" name={item.album.name} coverId={item.album.coverArt}
+          kindLabel={item.album.songCount === 1 ? t.home.typeSingle : t.home.typeAlbum} onPress={() => openAlbum(item.album)} />
+      );
+    }
+    return null;
+  };
+
+  const otherShelves = (feed?.shelves ?? []).filter(s => s.id !== 'recent' && s.id !== 'magicMixes');
+  const mixesShelf = feed?.shelves.find(s => s.id === 'magicMixes');
+
+  return (
+    <View style={[styles.root, landscapePadding]}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.background} hidden={isFullscreenMode} />
+
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={darkTheme.accent}
-          />
-        }>
+        contentContainerStyle={{paddingTop: top, paddingBottom: dockInset + 16}}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} progressViewOffset={top} />}>
 
-        {/* Offline state */}
-        {isOfflineMode && (
-          <View style={styles.errorState}>
-            <Text style={styles.errorText}>{t.home.offlineEmptyState}</Text>
+        <Text variant="footnote" color="textSecondary" style={styles.date}>
+          {t.home.date(new Date()).toUpperCase()}
+        </Text>
+        <LargeTitle title={t.home.title} scrollY={scrollY} />
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chips}>
+          {FILTERS.map(f => (
+            <Chip key={f} label={t.home.filters[f]} selected={filter === f} onPress={() => setFilter(f)} />
+          ))}
+        </ScrollView>
+
+        {stale && feed ? (
+          <Text variant="footnote" color="textSecondary" style={styles.offlineNote}>
+            {isOfflineMode ? t.home.offlineSaved : t.home.loadError}
+          </Text>
+        ) : null}
+
+        {!feed && loading ? <ActivityIndicator color={colors.accent} style={styles.loading} /> : null}
+
+        {!feed && !loading ? (
+          <View style={styles.empty}>
+            <Text variant="subhead" color="textSecondary" style={styles.emptyText}>
+              {isOfflineMode ? t.home.offlineEmptyState : t.home.loadError}
+            </Text>
+            {!isOfflineMode ? <Button variant="plain" label={t.common.retry} onPress={refresh} /> : null}
           </View>
-        )}
+        ) : null}
 
-        {/* Error state */}
-        {!loading && !isOfflineMode && error && data.recentAlbums.length === 0 && (
-          <View style={styles.errorState}>
-            <Text style={styles.errorText}>{t.home.loadError}</Text>
-            <TouchableOpacity
-              style={styles.retryBtn}
-              onPress={() => { setError(false); setLoading(true); load(); }}
-              activeOpacity={0.7}>
-              <Text style={styles.retryText}>{t.common.retry}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Quick access grid */}
-        {!loading && !error && quickRows.length > 0 && (
+        {show('playlists') && quickRows.length > 0 ? (
           <View style={styles.quickGrid}>
             {quickRows.map((row, i) => (
               <View key={i} style={styles.quickRow}>
-                {row.map(item => (
-                  <QuickAccessCard
-                    key={item.id}
-                    name={item.name}
-                    coverArt={item.coverArt}
-                    accent={item.accent}
-                    icon={
-                      item.isLiked ? (
-                        <HeartIcon size={26} color="#fff" filled />
-                      ) : undefined
-                    }
-                    onPress={() => handleQuickPress(item)}
-                  />
-                ))}
-                {row.length === 1 && <View style={styles.spacer} />}
+                {row.map(quickTile)}
+                {Array.from({length: quickCols - row.length}, (_, k) => <View key={`gap-${k}`} style={styles.quickGap} />)}
               </View>
             ))}
           </View>
-        )}
+        ) : null}
 
-        {/* Recently played */}
-        {!error && data.recentAlbums.length > 0 && (
-          <View
-            onLayout={e => {
-              sectionYs.current.recent = e.nativeEvent.layout.y;
-            }}>
-            <SectionHeader title={t.home.sections.recentlyPlayed} />
-            <FlatList
-              horizontal
-              data={data.recentAlbums}
-              keyExtractor={a => a.id}
-              renderItem={({item}) => (
-                <AlbumCard
-                  id={item.id}
-                  name={item.name}
-                  artist={item.artist}
-                  coverArt={item.coverArt}
-                  label={item.songCount === 1 ? t.home.typeSingle : t.home.typeAlbum}
-                  onPress={() =>
-                    item.songCount === 1
-                      ? playAlbumById(item.id)
-                      : navigation.navigate('AlbumDetail', {albumId: item.id})
-                  }
-                />
-              )}
-              contentContainerStyle={styles.hList}
-              showsHorizontalScrollIndicator={false}
-            />
-          </View>
-        )}
+        {show('albums') ? (
+          <HomeShelf
+            title={t.home.sections.recent}
+            data={recentItems}
+            keyOf={item => item.key}
+            renderItem={item => renderRecent(item)}
+          />
+        ) : null}
 
-        {/* Frequently played */}
-        {!error && data.frequentAlbums.length > 0 && (
-          <View
-            onLayout={e => {
-              sectionYs.current.frequent = e.nativeEvent.layout.y;
-            }}>
-            <SectionHeader title={t.home.sections.frequentlyPlayed} />
-            <FlatList
-              horizontal
-              data={data.frequentAlbums}
-              keyExtractor={a => a.id}
-              renderItem={({item}) => (
-                <AlbumCard
-                  id={item.id}
-                  name={item.name}
-                  artist={item.artist}
-                  coverArt={item.coverArt}
-                  label={item.songCount === 1 ? t.home.typeSingle : t.home.typeAlbum}
-                  onPress={() =>
-                    item.songCount === 1
-                      ? playAlbumById(item.id)
-                      : navigation.navigate('AlbumDetail', {albumId: item.id})
-                  }
-                />
-              )}
-              contentContainerStyle={styles.hList}
-              showsHorizontalScrollIndicator={false}
-            />
-          </View>
-        )}
+        {show('albums') ? (
+          <HomeShelf
+            title={t.home.sections.forYou}
+            subtitle={online.basedOn.length ? t.home.sections.forYouFrom(online.basedOn.join(', ')) : undefined}
+            data={online.forYou}
+            keyOf={item => `fy-${item.album.id}`}
+            renderItem={item => (
+              <ForYouCard
+                title={item.album.title}
+                subtitle={t.home.kindLine(t.home.typeAlbum, item.artist.name)}
+                imageUrl={largeDeezerCover(item.album.cover_medium)}
+                onPress={() => navigation.navigate('AlbumDetail', {albumId: `ext-deezer-album-${item.album.id}`})}
+                onPlay={() => playAlbumById(`ext-deezer-album-${item.album.id}`)}
+                playLabel={t.home.playAlbum(item.album.title)}
+              />
+            )}
+          />
+        ) : null}
 
-        {/* Recommendations — Deezer album recs based on recent listens */}
-        {!error && data.deezerRecoAlbums.length > 0 && (
-          <View
-            onLayout={e => {
-              sectionYs.current.reco = e.nativeEvent.layout.y;
-            }}>
-            <SectionHeader title={t.home.sections.recommendations} />
-            <FlatList
-              horizontal
-              data={data.deezerRecoAlbums}
-              keyExtractor={item => `reco-${item.id}`}
-              renderItem={({item}) => (
-                <AlbumCard
-                  id={String(item.id)}
-                  name={item.album.title}
-                  artist={item.artist.name}
-                  imageUrl={item.album.cover_medium}
-                  label={t.home.typeAlbum}
-                  onPress={() =>
-                    navigation.navigate('AlbumDetail', {albumId: `ext-deezer-album-${item.album.id}`})
-                  }
-                />
-              )}
-              contentContainerStyle={styles.hList}
-              showsHorizontalScrollIndicator={false}
-            />
-          </View>
-        )}
+        {show('artists') ? (
+          <HomeShelf
+            title={t.home.sections.discover}
+            data={online.discover}
+            keyOf={a => `d-${a.id}`}
+            gap={16}
+            renderItem={a => (
+              <ArtistBubble
+                name={a.name}
+                coverId={a.coverArt}
+                imageUrl={a.artistImageUrl}
+                onPress={() => navigation.navigate('ArtistDetail', {artistId: a.id})}
+              />
+            )}
+          />
+        ) : null}
 
-        {/* Discover */}
-        {!error && data.discoverArtists.length > 0 && (
-          <View
-            onLayout={e => {
-              sectionYs.current.discover = e.nativeEvent.layout.y;
-            }}>
-            <SectionHeader title={t.home.sections.discover} />
-            <FlatList
-              horizontal
-              data={data.discoverArtists}
-              keyExtractor={a => a.id}
-              renderItem={({item}) => (
-                <ArtistCard
-                  id={item.id}
-                  name={item.name}
-                  coverArt={item.coverArt}
-                  imageUrl={item.artistImageUrl}
-                  onPress={() => navigation.navigate('ArtistDetail', {artistId: item.id})}
-                />
-              )}
-              contentContainerStyle={styles.hList}
-              showsHorizontalScrollIndicator={false}
-            />
-          </View>
-        )}
+        {mixesShelf ? renderShelf(mixesShelf) : null}
+        {otherShelves.map(renderShelf)}
+      </Animated.ScrollView>
 
-        <View style={{height: dockInset}} />
-      </ScrollView>
-    </SafeAreaView>
+      <LargeTitleHeader title={t.home.title} scrollY={scrollY} align="left" left={<ProfileButton />} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  spacer: {flex: 1},
-  root: {
-    flex: 1,
-    backgroundColor: darkTheme.background,
-  },
-  scroll: {
-    flex: 1,
-    backgroundColor: darkTheme.background,
-  },
-  quickGrid: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 8,
-  },
-  quickRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  hList: {
-    paddingHorizontal: 16,
-    paddingBottom: 4,
-  },
-  errorState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 80,
-    paddingHorizontal: 32,
-  },
-  errorText: {
-    color: '#E84040',
-    fontSize: 15,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  retryBtn: {
-    marginTop: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#282828',
-    borderWidth: 1,
-    borderColor: '#444',
-  },
-  retryText: {
-    color: '#fff',
-    fontSize: 14,
+  root: {flex: 1, backgroundColor: colors.background},
+  date: {
+    paddingHorizontal: HOME_GUTTER,
     fontWeight: '600',
+    letterSpacing: 0.4,
   },
+  // A horizontal ScrollView may shrink to nothing in a long page: keep its own height.
+  chipsScroll: {flexGrow: 0, flexShrink: 0},
+  chips: {paddingHorizontal: HOME_GUTTER, gap: 8, paddingTop: 4, paddingBottom: 22},
+  offlineNote: {paddingHorizontal: HOME_GUTTER, paddingBottom: 12},
+  loading: {marginTop: 48},
+  empty: {alignItems: 'center', gap: 8, paddingTop: 48, paddingHorizontal: HOME_GUTTER},
+  emptyText: {textAlign: 'center'},
+  quickGrid: {paddingHorizontal: HOME_GUTTER, gap: 8, marginBottom: 30},
+  quickRow: {flexDirection: 'row', gap: 8},
+  quickGap: {flex: 1},
 });

@@ -11,6 +11,7 @@ export const en = {
   // ─── Common ────────────────────────────────────────────────────────────────
   common: {
     retry: 'Retry',
+    back: 'Back',
   },
 
   // ─── Design v2 components ──────────────────────────────────────────────────
@@ -99,26 +100,49 @@ export const en = {
 
   // ─── Home ──────────────────────────────────────────────────────────────────
   home: {
+    title: 'Home',
     likedSongs: 'Liked Songs',
+    myMusic: 'My Music',
     unknownTitle: 'Unknown title',
     unknownArtist: 'Unknown artist',
     loadError: 'Could not load home',
     offlineEmptyState: 'Content not available offline',
+    offlineSaved: 'Offline: last loaded home',
     typeSingle: 'Single',
     typeAlbum: 'Album',
+    typePlaylist: 'Playlist',
+    typeArtist: 'Artist',
+    /** Card subtitle: the kind, then the artist when known. */
+    kindLine: (kind: string, artist?: string) => (artist ? `${kind} · ${artist}` : kind),
+    mixSubtitle: (count: number) => `Magic Mix · ${count} track${count > 1 ? 's' : ''}`,
+    playAlbum: (title: string) => `Play the album ${title}`,
+    date: (d: Date) => {
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
+    },
     filters: {
       all: 'All',
-      recent: 'Recent',
-      frequent: 'Frequent',
-      reco: 'Picks',
-      discover: 'Discover',
+      playlists: 'Playlists',
+      albums: 'Albums',
+      artists: 'Artists',
     },
     sections: {
-      recentlyPlayed: 'Recently played',
-      frequentlyPlayed: 'Played often',
-      recommendations: 'Recommendations',
-      discover: 'Discover',
+      recent: 'Recently played',
+      forYou: 'For you',
+      forYouFrom: (names: string) => `Based on ${names}`,
+      discover: 'Artists to discover',
+      favoriteArtists: 'Your favourite artists',
+      moreLike: (name: string) => `More like ${name}`,
+      likedAlbums: 'Albums of your liked songs',
+      becauseLiked: (title: string) => `Because you liked "${title}"`,
+      magicMixes: 'Magic Mixes',
+      magicMixesSubtitle: 'Your songs and discoveries, by mood',
+      rediscover: 'Rediscover',
+      newest: 'New in your library',
+      random: 'At random',
     },
+    playMix: (genre: string) => `Play the ${genre} Magic Mix`,
   },
 
   // ─── Search ────────────────────────────────────────────────────────────────
