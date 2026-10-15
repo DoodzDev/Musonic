@@ -1,13 +1,14 @@
 /**
  * @file home.ts
  * @description Personalized home feed: shelves built from the user's own library and history.
+ *   `loadHome` only needs the few server calls of `HomeSource`, so any client
+ *   can feed it (the web's `SubsonicClient`, the mobile app's own API layer).
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
-import type { SubsonicClient } from '../subsonic/client.ts';
-import type { Album, Artist, Playlist, Song, Starred } from '../subsonic/types.ts';
+import type { Album, AlbumListType, Artist, ArtistInfo, ArtistWithAlbums, Playlist, Song, Starred } from '../subsonic/types.ts';
 import { dailySeed, pick, seededRng, shuffled, type Rng } from './random.ts';
 
 export type CardItem =
@@ -73,6 +74,21 @@ export interface ArtistScore {
   artist: Artist;
   score: number;
   fallbackCoverArt?: string;
+}
+
+/**
+ * The server calls the home feed needs; `SubsonicClient` provides them all.
+ * Spelled out (not picked from the client) so that this module never pulls
+ * the client and its dependencies into an app that brings its own API layer.
+ */
+export interface HomeSource {
+  getAlbumList(type: AlbumListType, options?: { size?: number; offset?: number; genre?: string }, signal?: AbortSignal): Promise<Album[]>;
+  getStarred(signal?: AbortSignal): Promise<Starred>;
+  getPlaylists(signal?: AbortSignal): Promise<Playlist[]>;
+  getArtistInfo(id: string, count?: number, signal?: AbortSignal): Promise<ArtistInfo>;
+  getArtist(id: string, signal?: AbortSignal): Promise<ArtistWithAlbums>;
+  getSimilarSongs(id: string, count?: number, signal?: AbortSignal): Promise<Song[]>;
+  getRandomSongs(options?: { size?: number; genre?: string }, signal?: AbortSignal): Promise<Song[]>;
 }
 
 const SHELF_SIZE = 12;
@@ -259,7 +275,7 @@ const settled = async <T>(promise: Promise<T>, fallback: T): Promise<T> => {
 
 /** Fetches everything in two parallel waves and builds the feed. A failing source only hides its shelf. */
 export async function loadHome(
-  client: SubsonicClient,
+  client: HomeSource,
   options: { username: string; now?: Date; signal?: AbortSignal },
 ): Promise<HomeFeed> {
   const now = options.now ?? new Date();

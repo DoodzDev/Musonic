@@ -12,7 +12,8 @@
       "@hooks/*": ["src/hooks/*"],
       "@utils/*": ["src/utils/*"],
       "@navigation/*": ["src/navigation/*"],
-      "@musonic/core/releases": ["../../packages/core/src/releases/releases.ts"]
+      "@musonic/core/releases": ["../../packages/core/src/releases/releases.ts"],
+      "@musonic/core/home": ["../../packages/core/src/home/home.ts"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
