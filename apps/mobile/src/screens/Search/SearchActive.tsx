@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
-import Svg, {Path, Circle} from 'react-native-svg';
 import BackArrowIcon from '../../components/icons/BackArrowIcon';
 import DotsVerticalIcon from '../../components/icons/DotsVerticalIcon';
 import {darkTheme} from '../../theme';
@@ -32,6 +31,7 @@ import {useSearchHistoryStore, type HistoryItem} from '../../store/searchHistory
 import {useSettingsStore} from '../../store/settingsStore';
 import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
 import {useDockInset} from '../../navigation/dockLayout';
+import {ClockIcon} from '../../components/icons';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -71,15 +71,6 @@ function songToTrack(s: SubsonicSong): Track {
 }
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
-
-function ClockIcon({size = 18, color = '#707070'}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.8} />
-      <Path d="M12 7v5l3 2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
 
 // ─── Row Components ───────────────────────────────────────────────────────────
 
@@ -155,7 +146,7 @@ function HistoryItemThumb({item}: {item: HistoryItem}) {
   if (item.type === 'text') {
     return (
       <View style={styles.historyThumbWrap}>
-        <ClockIcon size={18} />
+        <ClockIcon size={18} color="#707070" />
       </View>
     );
   }

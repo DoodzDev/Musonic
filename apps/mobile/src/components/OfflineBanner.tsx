@@ -12,55 +12,14 @@
  */
 import React, {useEffect, useRef} from 'react';
 import {Animated, StyleSheet, Text, TouchableOpacity} from 'react-native';
-import Svg, {Path} from 'react-native-svg';
 import {useNetworkStore} from '../store/networkStore';
 import {useSettingsStore} from '../store/settingsStore';
 import {useT} from '../i18n';
+import {ServerOffIcon, WifiOffIcon} from './icons';
 
 const BANNER_H = 32;
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
-
-function WifiOffIcon() {
-  return (
-    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"
-        stroke="#fff"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  );
-}
-
-function ServerOffIcon() {
-  return (
-    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M2 3h20v6H2zM2 15h20v6H2z"
-        stroke="#fff"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M6 7h.01M6 19h.01"
-        stroke="#fff"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M2 2l20 20"
-        stroke="#fff"
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
-}
 
 // ─── Banner ───────────────────────────────────────────────────────────────────
 
@@ -92,7 +51,7 @@ export default function OfflineBanner() {
         <Text style={styles.text}>{t.offline.offlineModeActive}</Text>
       ) : (
         <>
-          {isOffline ? <WifiOffIcon /> : <ServerOffIcon />}
+          {isOffline ? <WifiOffIcon size={13} /> : <ServerOffIcon size={13} />}
           <Text style={styles.text}>
             {isOffline ? t.offline.noInternet : t.offline.serverUnreachable}
           </Text>

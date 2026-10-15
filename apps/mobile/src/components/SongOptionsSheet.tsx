@@ -19,7 +19,6 @@ import {
 } from 'react-native';
 import Animated, {useSharedValue, useAnimatedStyle, withTiming, withSpring, Easing, runOnJS} from 'react-native-reanimated';
 import {Gesture, GestureDetector, GestureHandlerRootView, ScrollView} from 'react-native-gesture-handler';
-import Svg, {Circle, Path} from 'react-native-svg';
 import CheckCircleGreenIcon from './icons/CheckCircleGreenIcon';
 import PlusCircleIcon from './icons/PlusCircleIcon';
 import PersonIcon from './icons/PersonIcon';
@@ -37,6 +36,7 @@ import {usePlayerStore, type Track} from '../store/playerStore';
 import {usePlaylistCacheStore, fetchAndCachePlaylistSongs} from '../store/playlistCacheStore';
 import {useT, getT} from '../i18n';
 import type {SubsonicSong} from '../api/types';
+import {DiscIcon, MinusCircleIcon} from './icons';
 
 const SHEET_MAX_WIDTH = 560;
 const SHEET_MAX_HEIGHT_RATIO = 0.9;
@@ -44,25 +44,6 @@ const SHEET_MAX_HEIGHT_RATIO = 0.9;
 const ICON_COLOR = '#B3B3B3';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
-
-function MinusCircleIcon() {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24">
-      <Circle cx={12} cy={12} r={10} stroke={ICON_COLOR} strokeWidth={1.7} fill="none" />
-      <Path d="M7 12 H17" stroke={ICON_COLOR} strokeWidth={1.7} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function DiscIcon() {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24">
-      <Circle cx={12} cy={12} r={10} stroke={ICON_COLOR} strokeWidth={1.7} fill="none" />
-      <Circle cx={12} cy={12} r={3} stroke={ICON_COLOR} strokeWidth={1.7} fill="none" />
-      <Circle cx={12} cy={12} r={1} fill={ICON_COLOR} />
-    </Svg>
-  );
-}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -271,7 +252,7 @@ export default function SongOptionsSheet({
               />
               {playlistId != null && (
                 <ActionRow
-                  icon={<MinusCircleIcon />}
+                  icon={<MinusCircleIcon color={ICON_COLOR} />}
                   label={t.songOptions.removeFromPlaylist}
                   onPress={handleRemoveFromPlaylist}
                 />
@@ -290,7 +271,7 @@ export default function SongOptionsSheet({
               )}
               {tr?.albumId && onNavigateAlbum && (
                 <ActionRow
-                  icon={<DiscIcon />}
+                  icon={<DiscIcon color={ICON_COLOR} />}
                   label={t.songOptions.goToAlbum}
                   onPress={handleGoToAlbum}
                 />

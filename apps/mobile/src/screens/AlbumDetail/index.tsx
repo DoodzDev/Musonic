@@ -29,7 +29,6 @@ import {useHeaderTopInset} from '../../hooks/useHeaderTopInset';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import type {RouteProp} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import Svg, {Circle, Path} from 'react-native-svg';
 import LinearGradient from 'react-native-linear-gradient';
 import {darkTheme} from '../../theme';
 import CoverArt from '../../components/CoverArt';
@@ -63,6 +62,7 @@ import DownloadStatusIcon from '../../components/icons/DownloadStatusIcon';
 import PlusCircleIconComponent from '../../components/icons/PlusCircleIcon';
 import {useDownloadStore} from '../../store/downloadStore';
 import {useDockInset} from '../../navigation/dockLayout';
+import {CheckCircleGreenIcon} from '../../components/icons';
 
 // Based on the screen's shortest side so the cover keeps the same size in both orientations.
 const {width: _W, height: _H} = Dimensions.get('window');
@@ -108,10 +108,6 @@ function useAlbumColor(coverArtId?: string): string {
 }
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
-function CheckCircleGreen({size = 24}: {size?: number}) {
-  return (<Svg width={size} height={size} viewBox="0 0 24 24"><Circle cx={12} cy={12} r={9.5} stroke="#1ED760" strokeWidth={1.6} fill="rgba(30,215,96,0.12)" /><Path d="M7.5 12 L10.5 15 L16.5 9" stroke="#1ED760" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" /></Svg>);
-}
-
 // ─── Song Row ─────────────────────────────────────────────────────────────────
 type SongRowProps = {
   song: SubsonicSong;
@@ -180,7 +176,7 @@ function SongRow({song, isActive, index, onPress, onMore, onAddToPlaylist, onDow
           hitSlop={{top: 10, bottom: 10, left: 6, right: 6}}
           onPress={onAddToPlaylist}>
           {isInPlaylist
-            ? <CheckCircleGreen size={20} />
+            ? <CheckCircleGreenIcon size={20} />
             : <PlusCircleIconComponent size={20} color="#444" />}
         </TouchableOpacity>
         <TouchableOpacity
@@ -230,7 +226,7 @@ function AlbumHeader({
         {isStarPending ? (
           <ActivityIndicator size="small" color={darkTheme.accent} />
         ) : isStarred ? (
-          <CheckCircleGreen size={26} />
+          <CheckCircleGreenIcon size={26} />
         ) : (
           <PlusCircleIconComponent size={26} />
         )}

@@ -22,7 +22,6 @@ import {
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
-import Svg, {Circle, Path} from 'react-native-svg';
 import {darkTheme} from '../../theme';
 import GlobalHeader from '../../components/GlobalHeader';
 import AlbumCard from '../../components/AlbumCard';
@@ -42,17 +41,9 @@ import {
   type DeezerTrack,
 } from '../../api/deezer';
 import {useDockInset} from '../../navigation/dockLayout';
+import {SearchIcon} from '../../components/icons';
 
 // ─── Search icon ──────────────────────────────────────────────────────────────
-
-function SearchIconDark({size = 24, color = '#121212'}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Circle cx="10.5" cy="10.5" r="6.5" stroke={color} strokeWidth={2.5} fill="none" />
-      <Path d="M15.5 15.5 L21 21" stroke={color} strokeWidth={2.5} strokeLinecap="round" />
-    </Svg>
-  );
-}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -278,7 +269,7 @@ export default function SearchHome() {
       style={styles.fakeSearchBar}
       activeOpacity={0.9}
       onPress={() => navigation.navigate('SearchActive')}>
-      <SearchIconDark size={24} />
+      <SearchIcon size={24} color="#121212" />
       <Text style={styles.fakeInputText}>{t.search.placeholder}</Text>
     </TouchableOpacity>
   );

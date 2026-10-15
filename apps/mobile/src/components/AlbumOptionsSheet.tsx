@@ -17,7 +17,6 @@ import {
 } from 'react-native';
 import Animated, {useSharedValue, useAnimatedStyle, withTiming, withSpring, Easing, runOnJS} from 'react-native-reanimated';
 import {Gesture, GestureDetector, GestureHandlerRootView, ScrollView} from 'react-native-gesture-handler';
-import Svg, {Path} from 'react-native-svg';
 import CheckCircleGreenIcon from './icons/CheckCircleGreenIcon';
 import PlusCircleIcon from './icons/PlusCircleIcon';
 import DownloadIcon from './icons/DownloadIcon';
@@ -26,20 +25,12 @@ import QueueAddIcon from './icons/QueueAddIcon';
 import CoverArt from './CoverArt';
 import AddToPlaylistSheet from './AddToPlaylistSheet';
 import {useT, getT} from '../i18n';
+import {PlaylistAddIcon} from './icons';
 
 const SHEET_MAX_WIDTH = 560;
 const SHEET_MAX_HEIGHT_RATIO = 0.9;
 
 const ICON_COLOR = '#B3B3B3';
-
-function PlaylistAddIcon() {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24">
-      <Path d="M3 6 H15 M3 12 H12 M3 18 H9" stroke={ICON_COLOR} strokeWidth={1.8} strokeLinecap="round" />
-      <Path d="M16 14 V20 M13 17 H19" stroke={ICON_COLOR} strokeWidth={1.8} strokeLinecap="round" />
-    </Svg>
-  );
-}
 
 type Props = {
   visible: boolean;
@@ -157,7 +148,7 @@ export default function AlbumOptionsSheet({
                 onPress={() => { onClose(); onAddToQueue(); }}
               />
               <ActionRow
-                icon={<PlaylistAddIcon />}
+                icon={<PlaylistAddIcon color={ICON_COLOR} />}
                 label={t.playlistOptions.addAllToPlaylist}
                 onPress={() => setAddPlaylistVisible(true)}
               />

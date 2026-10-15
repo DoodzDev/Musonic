@@ -19,7 +19,6 @@ import {
 } from 'react-native';
 import Animated, {useSharedValue, useAnimatedStyle, withTiming, withSpring, Easing, runOnJS} from 'react-native-reanimated';
 import {Gesture, GestureDetector, GestureHandlerRootView, ScrollView} from 'react-native-gesture-handler';
-import Svg, {Circle, Path} from 'react-native-svg';
 import CoverArt from './CoverArt';
 import {darkTheme} from '../theme';
 import {getPlaylist, deletePlaylist} from '../api/endpoints/playlists';
@@ -27,6 +26,7 @@ import {getStreamUrl, getCoverArtUrl} from '../api/client';
 import {playbackEngine} from '../services/playback/engine';
 import type {Track} from '../store/playerStore';
 import {useT, getT} from '../i18n';
+import {DownloadIcon, DragHandleIcon, ImageIcon, PencilIcon, PinIcon, PlaylistAddIcon, QueueAddIcon, TrashIcon} from './icons';
 
 const SHEET_MAX_WIDTH = 560;
 const SHEET_MAX_HEIGHT_RATIO = 0.9;
@@ -34,109 +34,6 @@ const SHEET_MAX_HEIGHT_RATIO = 0.9;
 const ICON_COLOR = '#B3B3B3';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
-
-function QueuePlusIcon({color = ICON_COLOR}: {color?: string}) {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24">
-      <Path d="M3 6 H17" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-      <Path d="M3 12 H13" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-      <Path d="M3 18 H10" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-      <Path d="M18 13 V21 M14 17 H22" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function DownloadCircleIcon({color = ICON_COLOR}: {color?: string}) {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24">
-      <Circle cx={12} cy={12} r={10} stroke={color} strokeWidth={1.7} fill="none" />
-      <Path
-        d="M12 7 V14 M9 12 L12 15 L15 12"
-        stroke={color}
-        strokeWidth={1.7}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </Svg>
-  );
-}
-
-function PinIcon({color = ICON_COLOR, filled = false}: {color?: string; filled?: boolean}) {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24">
-      <Path
-        d="M9 2 L15 2 L15 8 L18 11 L13.5 11 L13.5 21 L12 22 L10.5 21 L10.5 11 L6 11 L9 8 Z"
-        stroke={color}
-        strokeWidth={1.6}
-        strokeLinejoin="round"
-        fill={filled ? color : 'none'}
-        transform="rotate(45, 12, 12)"
-      />
-    </Svg>
-  );
-}
-
-function PencilIcon({color = ICON_COLOR}: {color?: string}) {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24">
-      <Path
-        d="M11 5 H5 C4.4 5 4 5.4 4 6 V19 C4 19.6 4.4 20 5 20 H18 C18.6 20 19 19.6 19 19 V13 M17.5 2.5 C18.3 1.7 19.7 1.7 20.5 2.5 C21.3 3.3 21.3 4.7 20.5 5.5 L12 14 L8 15 L9 11 Z"
-        stroke={color}
-        strokeWidth={1.7}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </Svg>
-  );
-}
-
-function TrashIcon({color = ICON_COLOR}: {color?: string}) {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24">
-      <Path
-        d="M3 6 H21 M8 6 V4 C8 3.4 8.4 3 9 3 H15 C15.6 3 16 3.4 16 4 V6 M19 6 L18 20 C18 20.6 17.6 21 17 21 H7 C6.4 21 6 20.6 6 20 L5 6"
-        stroke={color}
-        strokeWidth={1.7}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <Path d="M10 11 V17 M14 11 V17" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function HamburgerIcon({color = ICON_COLOR}: {color?: string}) {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24">
-      <Path d="M3 6 H21 M3 12 H21 M3 18 H21" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function ImageIcon({color = ICON_COLOR}: {color?: string}) {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24">
-      <Path
-        d="M3 5 C3 3.9 3.9 3 5 3 H19 C20.1 3 21 3.9 21 5 V19 C21 20.1 20.1 21 19 21 H5 C3.9 21 3 20.1 3 19 Z"
-        stroke={color} strokeWidth={1.7} fill="none" />
-      <Circle cx={8.5} cy={8.5} r={1.5} fill={color} />
-      <Path d="M3 15 L8 10 L12 14 L15 11 L21 17"
-        stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    </Svg>
-  );
-}
-
-function ListAddIcon({color = ICON_COLOR}: {color?: string}) {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24">
-      <Path d="M3 6 H15 M3 12 H13 M3 18 H10" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-      <Path d="M17 12 V20 M13 16 H21" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-    </Svg>
-  );
-}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -327,18 +224,18 @@ export default function PlaylistOptionsSheet({
               <View style={styles.divider} />
 
               {onStartEdit && (
-                <ActionRow icon={<HamburgerIcon />} label={t.playlistOptions.editPlaylist} onPress={() => { onClose(); onStartEdit(); }} />
+                <ActionRow icon={<DragHandleIcon size={24} color={ICON_COLOR} />} label={t.playlistOptions.editPlaylist} onPress={() => { onClose(); onStartEdit(); }} />
               )}
               {onOpenInfo && (
-                <ActionRow icon={<PencilIcon />} label={t.playlistOptions.nameAndInfo} onPress={() => { onClose(); onOpenInfo(); }} />
+                <ActionRow icon={<PencilIcon color={ICON_COLOR} strokeWidth={1.7} />} label={t.playlistOptions.nameAndInfo} onPress={() => { onClose(); onOpenInfo(); }} />
               )}
               {onOpenCover && (
-                <ActionRow icon={<ImageIcon />} label={t.playlistOptions.editCover} onPress={() => { onClose(); onOpenCover(); }} />
+                <ActionRow icon={<ImageIcon color={ICON_COLOR} />} label={t.playlistOptions.editCover} onPress={() => { onClose(); onOpenCover(); }} />
               )}
-              <ActionRow icon={<QueuePlusIcon />} label={t.playlistOptions.addToQueue} onPress={handleAddToQueue} />
-              <ActionRow icon={<DownloadCircleIcon />} label={t.playlistOptions.download} onPress={() => { onClose(); onDownload ? onDownload() : onToast(t.playlistOptions.comingSoon); }} />
+              <ActionRow icon={<QueueAddIcon color={ICON_COLOR} />} label={t.playlistOptions.addToQueue} onPress={handleAddToQueue} />
+              <ActionRow icon={<DownloadIcon size={24} color={ICON_COLOR} />} label={t.playlistOptions.download} onPress={() => { onClose(); onDownload ? onDownload() : onToast(t.playlistOptions.comingSoon); }} />
               {onAddAll && (
-                <ActionRow icon={<ListAddIcon />} label={t.playlistOptions.addAllToPlaylist} onPress={() => { onClose(); onAddAll(); }} />
+                <ActionRow icon={<PlaylistAddIcon color={ICON_COLOR} />} label={t.playlistOptions.addAllToPlaylist} onPress={() => { onClose(); onAddAll(); }} />
               )}
               <ActionRow
                 icon={<PinIcon color={isPinned ? darkTheme.accent : ICON_COLOR} />}

@@ -21,13 +21,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Svg, {Path} from 'react-native-svg';
 import {launchImageLibrary} from 'react-native-image-picker';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import CoverArt from './CoverArt';
 import {updatePlaylist, deletePlaylist} from '../api/endpoints/playlists';
 import {storage} from '../store/storage';
 import {getT} from '../i18n';
+import {PencilIcon, TrashIcon} from './icons';
 
 const ACCENT = '#FF6B35';
 
@@ -45,37 +45,6 @@ function setLocalCoverUri(playlistId: string, uri: string | null) {
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
-
-function TrashIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24">
-      <Path
-        d="M3 6 H21 M8 6 V4 C8 3.4 8.4 3 9 3 H15 C15.6 3 16 3.4 16 4 V6 M19 6 L18 20 C18 20.6 17.6 21 17 21 H7 C6.4 21 6 20.6 6 20 L5 6"
-        stroke="#888"
-        strokeWidth={1.7}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <Path d="M10 11 V17 M14 11 V17" stroke="#888" strokeWidth={1.7} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function PencilBadgeIcon() {
-  return (
-    <Svg width={13} height={13} viewBox="0 0 24 24">
-      <Path
-        d="M11 5 H5 C4.4 5 4 5.4 4 6 V19 C4 19.6 4.4 20 5 20 H18 C18.6 20 19 19.6 19 19 V13 M17.5 2.5 C18.3 1.7 19.7 1.7 20.5 2.5 C21.3 3.3 21.3 4.7 20.5 5.5 L12 14 L8 15 L9 11 Z"
-        stroke="#fff"
-        strokeWidth={2.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </Svg>
-  );
-}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -257,7 +226,7 @@ export default function PlaylistInfoModal({
                   <CoverArt id={coverArtId} size={90} borderRadius={6} />
                 )}
                 <View style={styles.coverEditBadge}>
-                  <PencilBadgeIcon />
+                  <PencilIcon size={13} strokeWidth={2.2} />
                 </View>
               </TouchableOpacity>
 
@@ -289,7 +258,7 @@ export default function PlaylistInfoModal({
 
             {/* Delete */}
             <TouchableOpacity style={styles.deleteRow} onPress={handleDelete} activeOpacity={0.7}>
-              <TrashIcon />
+              <TrashIcon size={20} color="#888" />
               <Text style={styles.deleteText}>{t.playlistInfo.deletePlaylist}</Text>
             </TouchableOpacity>
           </ScrollView>

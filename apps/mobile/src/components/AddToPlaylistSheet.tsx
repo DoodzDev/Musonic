@@ -20,7 +20,6 @@ import {
 } from 'react-native';
 import Animated, {useSharedValue, useAnimatedStyle, withTiming, withSpring, Easing, runOnJS} from 'react-native-reanimated';
 import {Gesture, GestureDetector, GestureHandlerRootView} from 'react-native-gesture-handler';
-import Svg, {Circle, Path} from 'react-native-svg';
 import CoverArt from './CoverArt';
 import Toast from './Toast';
 import {usePlayerStore} from '../store/playerStore';
@@ -35,6 +34,7 @@ import {
 import {getStreamUrl, subsonicGet} from '../api/client';
 import CreatePlaylistModal from './CreatePlaylistModal';
 import type {SubsonicPlaylist} from '../api/types';
+import {CheckCircleGreenIcon, PlusCircleIcon, PlusIcon, SearchIcon} from './icons';
 
 const SHEET_HEIGHT_RATIO = 0.91;
 
@@ -53,46 +53,6 @@ type Props = {
 };
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
-
-function CheckCircle({size = 26}: {size?: number}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 26 26">
-      <Circle cx={13} cy={13} r={12} fill="#1ED760" />
-      <Path
-        d="M7.5 13.5 L11 17 L18.5 9.5"
-        stroke="#000"
-        strokeWidth={2.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </Svg>
-  );
-}
-
-function PlusCircle({size = 26}: {size?: number}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 26 26">
-      <Circle cx={13} cy={13} r={12} stroke="#535353" strokeWidth={1.5} fill="none" />
-      <Path
-        d="M13 8 L13 18 M8 13 L18 13"
-        stroke="#B3B3B3"
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        fill="none"
-      />
-    </Svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24">
-      <Circle cx={10} cy={10} r={6.5} fill="none" stroke="#888" strokeWidth={2} />
-      <Path d="M14.8 14.8 L20 20" stroke="#888" strokeWidth={2} strokeLinecap="round" />
-    </Svg>
-  );
-}
 
 // ─── Row ──────────────────────────────────────────────────────────────────────
 
@@ -118,7 +78,7 @@ function PlaylistRow({
           {t.addToPlaylist.trackCount(item.songCount)}
         </Text>
       </View>
-      {item.containsTrack ? <CheckCircle /> : <PlusCircle />}
+      {item.containsTrack ? <CheckCircleGreenIcon size={26} /> : <PlusCircleIcon size={26} color="#B3B3B3" />}
     </TouchableOpacity>
   );
 }
@@ -465,7 +425,7 @@ export default function AddToPlaylistSheet({
               {/* Search + Sort */}
               <View style={styles.searchRow}>
                 <View style={styles.searchPill}>
-                  <SearchIcon />
+                  <SearchIcon size={16} color="#888" />
                   <TextInput
                     style={styles.searchInput}
                     placeholder={t.addToPlaylist.searchPlaceholder}
@@ -490,15 +450,7 @@ export default function AddToPlaylistSheet({
                 activeOpacity={0.7}
                 onPress={() => setCreateModalVisible(true)}>
                 <View style={styles.footerIcon}>
-                  <Svg width={22} height={22} viewBox="0 0 24 24">
-                    <Path
-                      d="M12 5 L12 19 M5 12 L19 12"
-                      stroke="#fff"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      fill="none"
-                    />
-                  </Svg>
+                  <PlusIcon size={22} />
                 </View>
                 <Text style={styles.footerText}>{t.addToPlaylist.newPlaylist}</Text>
               </TouchableOpacity>

@@ -30,8 +30,8 @@ import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding
 import {useNavigation, useRoute} from '@react-navigation/native';
 import type {RouteProp} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import Svg, {Circle, Path} from 'react-native-svg';
 import LinearGradient from 'react-native-linear-gradient';
+import {LikedCover} from '../../components/ui/SpecialCovers';
 import ImageColors from 'react-native-image-colors';
 import {darkTheme} from '../../theme';
 import CoverArt from '../../components/CoverArt';
@@ -66,7 +66,7 @@ import {showToast} from '../../components/Toast';
 import {useT, getT} from '../../i18n';
 import {fetchAndCachePlaylistSongs, usePlaylistCacheStore} from '../../store/playlistCacheStore';
 import BackArrowIcon from '../../components/icons/BackArrowIcon';
-import {DragHandleIcon} from '../../components/icons';
+import {DragHandleIcon, FadersIcon, MinusCircleIcon, PauseIcon, PencilIcon, SearchIcon} from '../../components/icons';
 import PlayIcon from '../../components/icons/PlayIcon';
 import HeartIcon from '../../components/icons/HeartIcon';
 import DotsHorizontalIcon from '../../components/icons/DotsHorizontalIcon';
@@ -174,85 +174,6 @@ function formatDuration(s: number): string {
 }
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
-
-function SearchSmIcon({size = 18, color = '#888'}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Circle cx="10.5" cy="10.5" r="6.5" stroke={color} strokeWidth={2} fill="none" />
-      <Path d="M15.5 15.5 L21 21" stroke={color} strokeWidth={2} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function PauseIcon({size = 22, color = '#000'}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path d="M6 4 L6 20" stroke={color} strokeWidth={3.5} strokeLinecap="round" />
-      <Path d="M18 4 L18 20" stroke={color} strokeWidth={3.5} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function FadersIcon({size = 15, color = '#fff'}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path
-        d="M4 6 L10 6 M14 6 L20 6 M11 3 L11 9"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-      <Path
-        d="M4 18 L8 18 M12 18 L20 18 M9 15 L9 21"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
-}
-
-function PencilIcon({size = 15, color = '#fff'}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path
-        d="M11 5 H5 C4.4 5 4 5.4 4 6 V19 C4 19.6 4.4 20 5 20 H18 C18.6 20 19 19.6 19 19 V13 M17.5 2.5 C18.3 1.7 19.7 1.7 20.5 2.5 C21.3 3.3 21.3 4.7 20.5 5.5 L12 14 L8 15 L9 11 Z"
-        stroke={color}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </Svg>
-  );
-}
-
-function MinusCircleIcon({size = 24}: {size?: number}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Circle cx={12} cy={12} r={11} fill="#555" />
-      <Path d="M7 12 H17" stroke="#fff" strokeWidth={2.2} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-// ─── Liked Cover ──────────────────────────────────────────────────────────────
-
-function LikedCover({size, radius = 8}: {size: number; radius?: number}) {
-  const coverStyle = {width: size, height: size, borderRadius: radius, alignItems: 'center' as const, justifyContent: 'center' as const};
-  return (
-    <LinearGradient
-      colors={['#6B2FA0', '#1E3A8A']}
-      style={coverStyle}>
-      <Svg width={size * 0.4} height={size * 0.4} viewBox="0 0 24 24">
-        <Path
-          d="M12 21 C12 21 3 14.5 3 8.5 C3 5.4 5.4 3 8.5 3 C10.1 3 11.5 3.8 12 5 C12.5 3.8 13.9 3 15.5 3 C18.6 3 21 5.4 21 8.5 C21 14.5 12 21 12 21 Z"
-          fill="white"
-        />
-      </Svg>
-    </LinearGradient>
-  );
-}
 
 // ─── Deezer recommendation helpers ────────────────────────────────────────────
 
@@ -429,7 +350,7 @@ function PlaylistHeader({
 
       {/* Search bar (scrolls with content) */}
       <View style={styles.searchInHeader}>
-        <SearchSmIcon size={16} color="#888" />
+        <SearchIcon size={16} color="#888" />
         <TextInput
           style={styles.searchInput}
           placeholder={t.playlistDetail.searchPlaceholder}
@@ -452,7 +373,7 @@ function PlaylistHeader({
           ) : coverArtId ? (
             <CoverArt id={coverArtId} size={COVER_SIZE} borderRadius={8} />
           ) : (
-            <LikedCover size={COVER_SIZE} />
+            <LikedCover size={COVER_SIZE} borderRadius={8} />
           )}
         </Animated.View>
       </View>
@@ -639,7 +560,7 @@ const EditSongRow = React.memo(function EditSongRow({
         style={styles.editMinusBtn}
         activeOpacity={0.7}
         hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
-        <MinusCircleIcon />
+        <MinusCircleIcon filled />
       </TouchableOpacity>
       <CoverArt id={song.coverArt} size={48} borderRadius={4} />
       <View style={styles.songInfo}>
