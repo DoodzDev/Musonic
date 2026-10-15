@@ -167,6 +167,8 @@ export const en = {
     likedTrackCount: (n: number) => `${n} liked song${n !== 1 ? 's' : ''}`,
     createPlaylistTitle: 'New playlist',
     searchLibrary: 'Search the library',
+    searchCancel: 'Cancel',
+    searchNoResult: 'No playlist found',
     createPlaylistPlaceholder: 'Playlist name',
     createPlaylistCancel: 'Cancel',
     createPlaylistConfirm: 'Create',

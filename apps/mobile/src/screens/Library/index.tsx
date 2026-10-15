@@ -5,7 +5,7 @@
  *   with sort options, pin support, pull-to-refresh, and auto-recovery on
  *   connectivity restore.
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.4.0
  * @license MIT
  */
 
@@ -705,6 +705,11 @@ export default function LibraryScreen() {
     }
   }, [newPlaylistName, isCreating, bumpPlaylistVersion]);
 
+  // Search (magnifier in the header): filters the list by name, accents and case ignored.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const closeSearch = useCallback(() => { setSearchOpen(false); setSearchQuery(''); }, []);
+
   const sortedItems = useMemo<LibraryItem[]>(() => {
     // Liked Songs + All Songs are always absolute first (in that order) —
     // excluded from sort and pin logic, same as Liked Songs.
@@ -730,6 +735,12 @@ export default function LibraryScreen() {
     return [...fixed, ...pinned, ...rest];
   }, [allItems, sortMode, pinnedIds, lastPlayedPlaylists]);
 
+  const visibleItems = useMemo(() => {
+    const fold = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const q = fold(searchQuery.trim());
+    return q ? sortedItems.filter(item => fold(item.name).includes(q)) : sortedItems;
+  }, [sortedItems, searchQuery]);
+
   const colWidth = Math.floor((winW - landscapePadding.paddingLeft - landscapePadding.paddingRight - 32) / 3);
 
   return (
@@ -742,7 +753,7 @@ export default function LibraryScreen() {
           <Text style={styles.headerTitle}>{t.library.title}</Text>
         </View>
         <View style={styles.topHeaderRight}>
-          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t.library.searchLibrary}>
+          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => (searchOpen ? closeSearch() : setSearchOpen(true))} accessibilityRole="button" accessibilityLabel={t.library.searchLibrary}>
             <SearchIcon size={22} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => setShowCreateModal(true)} accessibilityRole="button" accessibilityLabel={t.library.createPlaylistTitle}>
@@ -751,6 +762,26 @@ export default function LibraryScreen() {
           <ProfileButton />
         </View>
       </View>
+
+      {searchOpen && (
+        <View style={styles.searchRow}>
+          <View style={styles.searchPill}>
+            <SearchIcon size={16} color="#888" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t.library.searchLibrary}
+              placeholderTextColor="#666"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoFocus
+              returnKeyType="search"
+            />
+          </View>
+          <TouchableOpacity onPress={closeSearch} hitSlop={8} accessibilityRole="button">
+            <Text style={styles.searchCancel}>{t.library.searchCancel}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* ── Content ── */}
       <View style={styles.content}>
@@ -780,7 +811,7 @@ export default function LibraryScreen() {
         {!loading && !error && (
           <FlashList
             key={viewMode}
-            data={sortedItems}
+            data={visibleItems}
             keyExtractor={item => item.id}
             numColumns={viewMode === 'grid' ? 3 : 1}
             showsVerticalScrollIndicator={false}
@@ -823,7 +854,7 @@ export default function LibraryScreen() {
             ListEmptyComponent={
               <View style={styles.center}>
                 <Text style={styles.emptyText}>
-                  {isOfflineMode ? t.library.offlineEmptyState : t.library.emptyState}
+                  {searchQuery.trim() ? t.library.searchNoResult : isOfflineMode ? t.library.offlineEmptyState : t.library.emptyState}
                 </Text>
               </View>
             }
@@ -978,6 +1009,34 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: darkTheme.textPrimary,
     letterSpacing: -0.3,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  searchPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#282828',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 14,
+    padding: 0,
+  },
+  searchCancel: {
+    color: darkTheme.accent,
+    fontSize: 15,
+    fontWeight: '600',
   },
   topHeaderRight: {
     flexDirection: 'row',

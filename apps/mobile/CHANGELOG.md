@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Same haptic feedback everywhere** — liking a track and changing the shuffle or repeat mode now vibrate lightly from every screen, not only from the full player.
 
+- **Search in the library** — the magnifier of the library opens a field that filters your playlists by name as you type (accents and case ignored).
+
 ### Fixed
 - **Liked songs and My music offline** — offline, "Liked songs" lists the downloaded liked tracks and "My music" the downloaded tracks, instead of an empty list. The liked count in the library stays right after starting offline.
 - **Playlist covers offline** — the cover of a playlist holding downloaded tracks is kept on the device and shows offline, in the library and on the playlist.
