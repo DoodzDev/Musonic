@@ -8,7 +8,7 @@
  *   photo and actions in a fixed column, the rest scrolls on the right.
  *   Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.1.1
+ * @version 2.1.2
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -33,7 +33,7 @@ import SongOptionsSheet from '../../components/SongOptionsSheet';
 import {showToast} from '../../components/Toast';
 import {subsonicGet, getStreamUrl, getCoverArtUrl} from '../../api/client';
 import {getDeezerArtistId, getDeezerArtistTopTracks, getDeezerRelatedArtists, getArtistImage, type DeezerArtist, type DeezerTrack} from '../../api/deezer';
-import {playFromList} from '../../services/playback/launchers';
+import {playFromList, addSongToQueue} from '../../services/playback/launchers';
 import {usePlayerStore, type Track} from '../../store/playerStore';
 import {useDownloadStore} from '../../store/downloadStore';
 import {useSettingsStore} from '../../store/settingsStore';
@@ -208,6 +208,7 @@ export default function ArtistDetailScreen() {
         onToggleLike={() => toggleLike(id, item.song.title, item.song.artist)}
         onAddToPlaylist={() => setAddTo(item.song)}
         onDownload={() => useDownloadStore.getState().enqueueTrack(item.song)}
+        onAddToQueue={() => addSongToQueue(item.song)}
       />
     );
   }, [active?.id, state, overrides, likedSongIds, downloads, activeDownloads, source, tracks, toggleLike]);

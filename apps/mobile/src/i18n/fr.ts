@@ -32,6 +32,8 @@ export const t = {
     like: 'Ajouter aux titres likés',
     unlike: 'Retirer des titres likés',
     addToPlaylist: 'Ajouter à une playlist',
+    addToQueue: 'À la file',
+    addedToQueue: (title: string) => `« ${title} » ajouté à la file d'attente`,
     download: 'Télécharger',
     downloading: 'Téléchargement en cours',
     nowPlaying: 'En cours de lecture',

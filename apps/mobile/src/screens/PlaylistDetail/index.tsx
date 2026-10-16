@@ -8,7 +8,7 @@
  *   Edit mode: drag handles to reorder, red circles to remove, then Save.
  *   Play and track taps go through the playback engine (`playContext`).
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.0.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -45,7 +45,7 @@ import {getPlaylist, replacePlaylist, updatePlaylist} from '../../api/endpoints/
 import {getDeezerArtistId, getDeezerArtistTopTracks, enrichTracksWithAlbumType, type DeezerTrack} from '../../api/deezer';
 import {getCoverArtUrl, getStreamUrl, subsonicGet} from '../../api/client';
 import {playbackEngine} from '../../services/playback/engine';
-import {playFromList} from '../../services/playback/launchers';
+import {playFromList, addSongToQueue} from '../../services/playback/launchers';
 import {usePlayerStore, type Track} from '../../store/playerStore';
 import {fetchAndCachePlaylistSongs, usePlaylistCacheStore} from '../../store/playlistCacheStore';
 import {useDownloadStore, type DownloadedTrack} from '../../store/downloadStore';
@@ -335,6 +335,7 @@ export default function PlaylistDetailScreen() {
         onToggleLike={() => toggleLike(id, item.s.title, item.s.artist)}
         onAddToPlaylist={() => setAddTo(item.s)}
         onDownload={() => useDownloadStore.getState().enqueueTrack(item.s)}
+        onAddToQueue={() => addSongToQueue(item.s)}
       />
     );
   }, [isThisPlaylist, shuffleMode, activeId, queueIndex, isPlaying, overrides, likedSongIds, downloads, activeDownloads, playTrack, toggleLike]);

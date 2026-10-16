@@ -14,7 +14,7 @@
  *   engine (playFromList). Offline (or when the server cannot be reached),
  *   lists the downloaded tracks: the only ones that can play.
  * @author DoodzProg
- * @version 2.2.1
+ * @version 2.2.2
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -39,7 +39,7 @@ import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
 import {showToast} from '../../components/Toast';
 import {CheckIcon, SortIcon} from '../../components/icons';
 import {subsonicGet} from '../../api/client';
-import {playFromList} from '../../services/playback/launchers';
+import {playFromList, addSongToQueue} from '../../services/playback/launchers';
 import {usePlayerStore} from '../../store/playerStore';
 import {useSettingsStore, type AllSongsSortMode} from '../../store/settingsStore';
 import {useDownloadStore} from '../../store/downloadStore';
@@ -224,6 +224,7 @@ export default function AllSongsScreen() {
         onToggleLike={() => toggleLike(id, song.title, song.artist)}
         onAddToPlaylist={() => setAddTo(song)}
         onDownload={() => useDownloadStore.getState().enqueueTrack(song)}
+        onAddToQueue={() => addSongToQueue(song)}
       />
     );
   }, [t, active?.id, state, overrides, likedSongIds, downloads, activeDownloads, tracks, toggleLike]);

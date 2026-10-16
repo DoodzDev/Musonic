@@ -5,7 +5,7 @@
  *   rename, edit cover, and delete.
  *   "Add to queue" goes through the playback engine when it drives the player.
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.3.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef} from 'react';
@@ -157,7 +157,7 @@ export default function PlaylistOptionsSheet({
         album: s.album,
         duration: s.duration,
       }));
-      await playbackEngine.playNext(tracks as Track[]);
+      await playbackEngine.addToQueue(tracks as Track[]);
       onToast(getT().playlistOptions.queuedToast(tracks.length));
     } catch {
       onToast(getT().playlistOptions.queueError);

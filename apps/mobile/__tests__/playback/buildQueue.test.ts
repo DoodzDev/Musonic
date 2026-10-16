@@ -292,6 +292,12 @@ describe('D. Manual queue', () => {
     expect(next(s, OFF, seeded()).state.current?.id).toBe('a');
   });
 
+  it('D2 adding A, B, C, D to the queue plays them as A, B, C, D', () => {
+    let s = start(OFF);
+    for (const id of ['A', 'B', 'C', 'D']) s = addToQueue(s, track(id));
+    expect(ids(upcomingOrder(s)).slice(0, 4)).toEqual(['A', 'B', 'C', 'D']);
+  });
+
   it('D3 shuffle on or off never reorders the "added by you" zone', () => {
     let s = addToQueue(addToQueue(start(OFF), track('a')), track('b'));
     s = setShuffle(s, 'on', seeded());

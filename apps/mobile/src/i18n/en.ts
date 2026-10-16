@@ -29,6 +29,8 @@ export const en = {
     like: 'Add to Liked Songs',
     unlike: 'Remove from Liked Songs',
     addToPlaylist: 'Add to a playlist',
+    addToQueue: 'Queue',
+    addedToQueue: (title: string) => `"${title}" added to the queue`,
     download: 'Download',
     downloading: 'Downloading',
     nowPlaying: 'Now playing',

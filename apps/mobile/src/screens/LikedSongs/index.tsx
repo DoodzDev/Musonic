@@ -8,7 +8,7 @@
  *   Offline (or when the server cannot be reached), lists the downloaded liked
  *   songs, from the copy of the liked list saved on the last online visit.
  * @author DoodzProg
- * @version 2.1.1
+ * @version 2.1.2
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useMemo, useState} from 'react';
@@ -29,7 +29,7 @@ import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
 import {showToast} from '../../components/Toast';
 import {BackArrowIcon, DownloadIcon, SparkleIcon} from '../../components/icons';
 import {getStarred} from '../../api/endpoints/library';
-import {playFromList} from '../../services/playback/launchers';
+import {playFromList, addSongToQueue} from '../../services/playback/launchers';
 import {usePlayerStore} from '../../store/playerStore';
 import {useSettingsStore} from '../../store/settingsStore';
 import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
@@ -155,6 +155,7 @@ export default function LikedSongsScreen() {
         onToggleLike={() => toggleLike(id, item.title, item.artist)}
         onAddToPlaylist={() => setAddTo(item)}
         onDownload={() => useDownloadStore.getState().enqueueTrack(item)}
+        onAddToQueue={() => addSongToQueue(item)}
       />
     );
   }, [active?.id, state, overrides, likedSongIds, downloads, activeDownloads, tracks, toggleLike]);

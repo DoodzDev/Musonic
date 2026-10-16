@@ -8,7 +8,7 @@
  *   (`ext-deezer-album-…`) are imported to the server when added to the
  *   library. Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.0.1
+ * @version 2.0.3
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -31,7 +31,7 @@ import AlbumOptionsSheet from '../../components/AlbumOptionsSheet';
 import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
 import {showToast} from '../../components/Toast';
 import {CheckIcon, DotsHorizontalIcon, DownloadIcon, PlusIcon} from '../../components/icons';
-import {playFromList} from '../../services/playback/launchers';
+import {playFromList, addSongToQueue} from '../../services/playback/launchers';
 import {playbackEngine} from '../../services/playback/engine';
 import {usePlayerStore, type Track} from '../../store/playerStore';
 import {useDownloadStore} from '../../store/downloadStore';
@@ -224,7 +224,7 @@ export default function AlbumDetailScreen() {
   const addToQueue = useCallback(async () => {
     if (!tracks.length) return;
     try {
-      await playbackEngine.playNext(tracks);
+      await playbackEngine.addToQueue(tracks);
       showToast(getT().playlistOptions.queuedToast(tracks.length));
     } catch {
       showToast(getT().playlistOptions.queueError);
@@ -276,6 +276,7 @@ export default function AlbumDetailScreen() {
         onToggleLike={() => toggleLike(id, item.title, item.artist)}
         onAddToPlaylist={() => setAddTo(item)}
         onDownload={() => useDownloadStore.getState().enqueueTrack(item)}
+        onAddToQueue={() => addSongToQueue(item)}
       />
     );
   }, [active?.id, state, artistName, overrides, likedSongIds, downloads, activeDownloads, source, tracks, toggleLike]);

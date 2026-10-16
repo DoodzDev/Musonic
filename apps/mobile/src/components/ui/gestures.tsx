@@ -4,10 +4,12 @@
  *   curve and one haptic rule for every swipe in the app (ADR-010 B4: the old
  *   gestures were rebuilt from scratch).
  *   - `SwipeSurface`: up / left / right swipes on a surface (mini player).
- *   - `SwipeableRow`: swipe a row left to reveal one action.
+ *   - `SwipeableRow`: swipe a row left or right past a threshold to run one
+ *     action (Spotify-style "swipe to add to queue"); the action shows behind
+ *     the row only as far as it has moved.
  *   The Sheet's swipe-to-close uses the same thresholds.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -126,8 +128,10 @@ type RowProps = {
   actionIcon?: React.ReactNode;
   destructive?: boolean;
   onAction: () => void;
-  /** Colour behind the row content, matching the list it sits in. */
+  /** Colour behind the row content, matching the list it sits in (transparent over a backdrop). */
   background?: string;
+  /** Direction that runs the action: left (default) or right. */
+  direction?: 'left' | 'right';
   children: React.ReactNode;
 };
 
@@ -139,24 +143,28 @@ export function SwipeableRow({
   destructive,
   onAction,
   background = colors.background,
+  direction = 'left',
   children,
 }: RowProps) {
   const x = useSharedValue(0);
   const armed = useSharedValue(false);
+  const sign = direction === 'left' ? -1 : 1;
 
   const pan = Gesture.Pan()
-    .activeOffsetX([-SWIPE.activation, SWIPE.activation])
+    // Only a clear horizontal move in the action's direction claims the touch: lists still scroll.
+    .activeOffsetX(direction === 'left' ? -SWIPE.activation * 1.5 : SWIPE.activation * 1.5)
     .failOffsetY([-SWIPE.activation, SWIPE.activation])
     .onUpdate(e => {
-      x.value = rubberBand(Math.min(0, e.translationX), ACTION_WIDTH);
-      const past = -e.translationX > ACTION_WIDTH;
+      const moved = Math.max(0, sign * e.translationX);
+      x.value = sign * rubberBand(moved, ACTION_WIDTH);
+      const past = moved > ACTION_WIDTH;
       if (past !== armed.value) {
         armed.value = past;
         if (past) runOnJS(selectionHaptic)();
       }
     })
     .onEnd(e => {
-      const fired = -e.translationX > ACTION_WIDTH || e.velocityX < -SWIPE.velocity * 1.5;
+      const fired = sign * e.translationX > ACTION_WIDTH || sign * e.velocityX > SWIPE.velocity * 1.5;
       armed.value = false;
       if (fired) {
         x.value = withTiming(0, timings.press);
@@ -168,7 +176,8 @@ export function SwipeableRow({
 
   const rowStyle = useAnimatedStyle(() => ({transform: [{translateX: x.value}]}));
   const actionStyle = useAnimatedStyle(() => ({
-    opacity: Math.min(1, -x.value / (ACTION_WIDTH * 0.6)),
+    width: Math.abs(x.value),
+    opacity: Math.min(1, Math.abs(x.value) / (ACTION_WIDTH * 0.6)),
   }));
 
   return (
@@ -178,6 +187,7 @@ export function SwipeableRow({
       <Animated.View
         style={[
           styles.action,
+          direction === 'left' ? styles.actionRight : styles.actionLeft,
           {backgroundColor: destructive ? colors.destructive : colors.accent},
           actionStyle,
         ]}
@@ -196,13 +206,15 @@ export function SwipeableRow({
 
 const styles = StyleSheet.create({
   action: {
-    ...StyleSheet.absoluteFill,
-    left: undefined,
-    width: '100%',
-    alignItems: 'flex-end',
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
     justifyContent: 'center',
-    paddingRight: spacing.l,
+    alignItems: 'center',
     gap: spacing.xs,
+    overflow: 'hidden',
   },
+  actionRight: {right: 0},
+  actionLeft: {left: 0},
   actionLabel: {color: colors.onAccent},
 });

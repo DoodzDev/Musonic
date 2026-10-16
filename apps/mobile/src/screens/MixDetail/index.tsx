@@ -11,7 +11,7 @@
  *   genre instead: all its songs, without the Magic pill. Built on the
  *   shared detail layout (`DetailScaffold`), like albums and playlists.
  * @author DoodzProg
- * @version 1.5.1
+ * @version 1.5.2
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -21,7 +21,7 @@ import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player
 import {mixCovers} from '@musonic/core/home';
 import {homeSource} from '../../services/home/homeSource';
 import {getSongsByGenre} from '../../api/endpoints/library';
-import {playFromList} from '../../services/playback/launchers';
+import {playFromList, addSongToQueue} from '../../services/playback/launchers';
 import {songToTrack, type SongLike} from '../../utils/songToTrack';
 import {fetchMagicSuggestions} from '../../services/playback/magic';
 import {blendDiscoveries, discoveryCount} from './mixModel';
@@ -130,6 +130,7 @@ export default function MixDetailScreen() {
         onToggleLike={() => toggleLike(id, item.title, item.artist)}
         onAddToPlaylist={() => setAddTo(item)}
         onDownload={() => useDownloadStore.getState().enqueueTrack(item as SubsonicSong)}
+        onAddToQueue={() => addSongToQueue(item)}
       />
     );
   }, [active?.id, state, overrides, likedSongIds, downloads, active_downloads, tracks, toggleLike]); // eslint-disable-line react-hooks/exhaustive-deps

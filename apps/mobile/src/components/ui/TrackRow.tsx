@@ -4,10 +4,11 @@
  *   Leads with the track number or a cover; shows title, subtitle and small
  *   badges; marks the current track (accent title, equalizer); keeps the like,
  *   add-to-playlist and download actions visible (ADR-010 F1) and also exposes
- *   them to TalkBack as custom actions. Dims when unavailable offline.
+ *   them to TalkBack as custom actions. Dims when unavailable offline. With
+ *   `onAddToQueue`, swiping the row right adds the track to the queue.
  *   Memoised: pass stable callbacks so long lists stay at 60 fps.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -22,6 +23,8 @@ import Text from './Text';
 import Badge, {type BadgeKind} from './Badge';
 import Cover from './Cover';
 import Equalizer from './Equalizer';
+import {SwipeableRow} from './gestures';
+import {QueueAddIcon} from '../icons';
 import HeartIcon from '../icons/HeartIcon';
 import PlusCircleIcon from '../icons/PlusCircleIcon';
 import DownloadIcon from '../icons/DownloadIcon';
@@ -55,6 +58,8 @@ type Props = {
   onToggleLike?: () => void;
   onAddToPlaylist?: () => void;
   onDownload?: () => void;
+  /** Swipe right adds the track to the end of the queue. */
+  onAddToQueue?: () => void;
 };
 
 const ACTION = 36;
@@ -76,6 +81,7 @@ function TrackRow({
   onToggleLike,
   onAddToPlaylist,
   onDownload,
+  onAddToQueue,
 }: Props) {
   const t = useT();
   const current = playback !== 'idle';
@@ -107,7 +113,7 @@ function TrackRow({
     else if (e.nativeEvent.actionName === 'download') onDownload?.();
   };
 
-  return (
+  const row = (
     <View style={[styles.row, number !== undefined ? styles.compact : null, unavailable && styles.dimmed]}>
       <Pressable
         onPress={onPress}
@@ -191,6 +197,18 @@ function TrackRow({
         </View>
       )}
     </View>
+  );
+
+  if (!onAddToQueue || unavailable) return row;
+  return (
+    <SwipeableRow
+      direction="right"
+      background="transparent"
+      actionLabel={t.ui.addToQueue}
+      actionIcon={<QueueAddIcon size={20} color={colors.onAccent} />}
+      onAction={onAddToQueue}>
+      {row}
+    </SwipeableRow>
   );
 }
 

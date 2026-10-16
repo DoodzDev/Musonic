@@ -2,9 +2,10 @@
  * @file launchers.ts
  * @description Screen-side helpers on top of the playback engine: start a
  *   list from its Play button or from a tapped track (tapping the track
- *   already playing opens the player instead, A9), and play an album by id.
+ *   already playing opens the player instead, A9), play an album by id, and
+ *   add one song to the end of the queue (swipe right on a row).
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer from 'react-native-track-player';
@@ -12,6 +13,9 @@ import {getCoverArtUrl, getStreamUrl, subsonicGet} from '../../api/client';
 import {usePlayerStore, type Track} from '../../store/playerStore';
 import {playbackEngine} from './engine';
 import type {PlaySource} from './buildQueue';
+import {songToTrack, type SongLike} from '../../utils/songToTrack';
+import {toast} from '../../components/ui/Toast';
+import {getT} from '../../i18n';
 
 /**
  * Plays `tracks` from `source`. With `index`, starts on that track (a tap);
@@ -51,4 +55,10 @@ export async function playAlbumById(albumId: string): Promise<void> {
   } catch (error) {
     console.warn('Album playback error:', error);
   }
+}
+
+/** Adds one song after everything already added by the user (D2: A, B, C play in that order). */
+export async function addSongToQueue(song: SongLike): Promise<void> {
+  await playbackEngine.addToQueue([songToTrack(song)]);
+  toast.success(getT().ui.addedToQueue(song.title));
 }

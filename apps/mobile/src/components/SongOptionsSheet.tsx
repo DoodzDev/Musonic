@@ -5,7 +5,7 @@
  *   artist. Preserves last non-null track during the close animation. "Add to
  *   queue" goes through the playback engine when it drives the player.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.2.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
@@ -160,7 +160,7 @@ export default function SongOptionsSheet({
       duration: tr.duration,
     };
     try {
-      await playbackEngine.playNext([rnTrack as Track]);
+      await playbackEngine.addToQueue([rnTrack as Track]);
       onToast(getT().songOptions.addedToQueue);
     } catch {
       onToast(getT().songOptions.addError);

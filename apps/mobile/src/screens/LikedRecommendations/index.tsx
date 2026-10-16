@@ -8,7 +8,7 @@
  *   similar songs of liked tracks, without what is already liked. Each refresh
  *   draws new seeds. Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.1.1
+ * @version 2.1.2
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -27,7 +27,7 @@ import {showToast} from '../../components/Toast';
 import {RefreshIcon, SparkleIcon} from '../../components/icons';
 import {getStarred, getSimilarSongs} from '../../api/endpoints/library';
 import {getDeezerArtistId, getDeezerArtistTopTracks} from '../../api/deezer';
-import {playFromList} from '../../services/playback/launchers';
+import {playFromList, addSongToQueue} from '../../services/playback/launchers';
 import {shuffle} from '../../services/playback/buildQueue';
 import {usePlayerStore} from '../../store/playerStore';
 import {useDownloadStore} from '../../store/downloadStore';
@@ -129,6 +129,7 @@ export default function LikedRecommendationsScreen() {
         onToggleLike={() => toggleLike(id, item.title, item.artist)}
         onAddToPlaylist={() => setAddTo(item)}
         onDownload={() => useDownloadStore.getState().enqueueTrack(item)}
+        onAddToQueue={() => addSongToQueue(item)}
       />
     );
   }, [active?.id, state, overrides, likedSongIds, downloads, activeDownloads, tracks, toggleLike]);

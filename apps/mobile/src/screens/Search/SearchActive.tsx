@@ -9,7 +9,7 @@
  *   counter to prevent race conditions. Tapped results play alone, then
  *   autoplay (playback engine, ADR-009 A8).
  * @author DoodzProg
- * @version 2.1.0
+ * @version 2.1.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -35,7 +35,7 @@ import {showToast} from '../../components/Toast';
 import {ClockIcon} from '../../components/icons';
 import {search, getDeezerArtistImageCached} from '../../api/endpoints/search';
 import {getStreamUrl, getCoverArtUrl} from '../../api/client';
-import {playFromList} from '../../services/playback/launchers';
+import {playFromList, addSongToQueue} from '../../services/playback/launchers';
 import {usePlayerStore} from '../../store/playerStore';
 import {useDownloadStore} from '../../store/downloadStore';
 import {useSettingsStore} from '../../store/settingsStore';
@@ -205,6 +205,7 @@ export default function SearchActive() {
         onToggleLike={() => toggleLike(id, item.title, item.artist)}
         onAddToPlaylist={() => setAddTo(item)}
         onDownload={() => useDownloadStore.getState().enqueueTrack(item)}
+        onAddToQueue={() => addSongToQueue(item)}
       />
     );
   }, [active?.id, state, overrides, likedSongIds, downloads, activeDownloads, tracks, toggleLike, rememberSong]);
