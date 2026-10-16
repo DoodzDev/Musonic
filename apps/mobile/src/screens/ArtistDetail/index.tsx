@@ -8,7 +8,7 @@
  *   photo and actions in a fixed column, the rest scrolls on the right.
  *   Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.1.0
+ * @version 2.1.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -20,6 +20,7 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
 import DetailScaffold from '../../components/detail/DetailScaffold';
 import {PlayShuffleRow} from '../../components/detail/DetailParts';
+import {usePlayButton} from '../../hooks/usePlayButton';
 import {AlbumCard, ArtistBubble, HomeShelf} from '../../components/home/HomeCards';
 import TrackRow from '../../components/ui/TrackRow';
 import Text from '../../components/ui/Text';
@@ -181,6 +182,7 @@ export default function ArtistDetailScreen() {
   const tracks = useMemo(() => popular.map(p => toTrack(p.song)), [popular]);
   const source = useMemo(() => ({type: 'artist' as const, id: serverId ?? name, name}), [serverId, name]);
   const playAll = useCallback(() => { if (tracks.length) playFromList(source, tracks); }, [source, tracks]);
+  const playButton = usePlayButton(tracks, playAll);
 
   // The server also lists online albums (ext-…) of the artist: only its own count as "in your library".
   const ownAlbums = albums.filter(a => !String(a.id).startsWith('ext-'));
@@ -211,7 +213,7 @@ export default function ArtistDetailScreen() {
   }, [active?.id, state, overrides, likedSongIds, downloads, activeDownloads, source, tracks, toggleLike]);
 
   const playRow = (
-    <PlayShuffleRow onPlay={playAll} onShuffle={toggleShuffle} shuffleMode={shuffleMode} disabled={!tracks.length} />
+    <PlayShuffleRow onPlay={playButton.onPlay} playing={playButton.playing} onShuffle={toggleShuffle} shuffleMode={shuffleMode} disabled={!tracks.length} />
   );
 
   const popularTitle = shown.length ? (

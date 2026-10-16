@@ -8,7 +8,7 @@
  *   Offline (or when the server cannot be reached), lists the downloaded liked
  *   songs, from the copy of the liked list saved on the last online visit.
  * @author DoodzProg
- * @version 2.1.0
+ * @version 2.1.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useMemo, useState} from 'react';
@@ -17,6 +17,7 @@ import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
 import DetailScaffold from '../../components/detail/DetailScaffold';
 import {PlayShuffleRow, SquareButton} from '../../components/detail/DetailParts';
+import {usePlayButton} from '../../hooks/usePlayButton';
 import TrackRow from '../../components/ui/TrackRow';
 import Text from '../../components/ui/Text';
 import Raised from '../../components/ui/Raised';
@@ -135,6 +136,7 @@ export default function LikedSongsScreen() {
   }, [allDownloaded, toDownload]);
 
   const playAll = useCallback(() => { if (tracks.length) playFromList({type: 'liked'}, tracks); }, [tracks]);
+  const playButton = usePlayButton(tracks, playAll);
 
   const renderItem = useCallback(({item, index}: {item: SubsonicSong; index: number}) => {
     const id = String(item.id);
@@ -159,7 +161,8 @@ export default function LikedSongsScreen() {
 
   const playRow = (
     <PlayShuffleRow
-      onPlay={playAll}
+      onPlay={playButton.onPlay}
+      playing={playButton.playing}
       onShuffle={toggleShuffle}
       shuffleMode={shuffleMode}
       disabled={!tracks.length}

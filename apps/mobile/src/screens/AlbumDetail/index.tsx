@@ -8,7 +8,7 @@
  *   (`ext-deezer-album-…`) are imported to the server when added to the
  *   library. Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.0.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -18,6 +18,7 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
 import DetailScaffold from '../../components/detail/DetailScaffold';
 import {GlassButton, PlayShuffleRow, RoundAction} from '../../components/detail/DetailParts';
+import {usePlayButton} from '../../hooks/usePlayButton';
 import TrackRow from '../../components/ui/TrackRow';
 import Text from '../../components/ui/Text';
 import Raised from '../../components/ui/Raised';
@@ -218,6 +219,8 @@ export default function AlbumDetailScreen() {
     }
   }, [source, tracks]);
 
+  const playButton = usePlayButton(tracks, playAll);
+
   const addToQueue = useCallback(async () => {
     if (!tracks.length) return;
     try {
@@ -313,7 +316,7 @@ export default function AlbumDetailScreen() {
   );
 
   const playRow = (
-    <PlayShuffleRow onPlay={playAll} onShuffle={toggleShuffle} shuffleMode={shuffleMode} loading={starting} disabled={!tracks.length} />
+    <PlayShuffleRow onPlay={playButton.onPlay} playing={playButton.playing} onShuffle={toggleShuffle} shuffleMode={shuffleMode} loading={starting} disabled={!tracks.length} />
   );
 
   const hero = album ? (

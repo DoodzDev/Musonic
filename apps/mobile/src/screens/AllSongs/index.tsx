@@ -14,7 +14,7 @@
  *   engine (playFromList). Offline (or when the server cannot be reached),
  *   lists the downloaded tracks: the only ones that can play.
  * @author DoodzProg
- * @version 2.2.0
+ * @version 2.2.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -24,6 +24,7 @@ import {useNavigation} from '@react-navigation/native';
 import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
 import DetailScaffold from '../../components/detail/DetailScaffold';
 import {DETAIL_BAR_HEIGHT, PlayShuffleRow} from '../../components/detail/DetailParts';
+import {usePlayButton} from '../../hooks/usePlayButton';
 import TrackRow from '../../components/ui/TrackRow';
 import Text from '../../components/ui/Text';
 import Raised from '../../components/ui/Raised';
@@ -192,6 +193,7 @@ export default function AllSongsScreen() {
   }, [rows, insets.top, isLandscape]);
 
   const playAll = useCallback(() => { if (tracks.length) playFromList({type: 'library'}, tracks); }, [tracks]);
+  const playButton = usePlayButton(tracks, playAll);
 
   const renderItem = useCallback(({item}: {item: Row}) => {
     if (item.kind === 'header') {
@@ -229,7 +231,7 @@ export default function AllSongsScreen() {
   const meta = loading ? '…' : [t.allSongs.trackCount(songs.length), totalSeconds > 0 ? lengthLabel(totalSeconds) : ''].filter(Boolean).join(' · ');
 
   const playRow = (
-    <PlayShuffleRow onPlay={playAll} onShuffle={toggleShuffle} shuffleMode={shuffleMode} disabled={!tracks.length} />
+    <PlayShuffleRow onPlay={playButton.onPlay} playing={playButton.playing} onShuffle={toggleShuffle} shuffleMode={shuffleMode} disabled={!tracks.length} />
   );
 
   const sortRow = songs.length > 0 ? (

@@ -8,7 +8,7 @@
  *   similar songs of liked tracks, without what is already liked. Each refresh
  *   draws new seeds. Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.1.0
+ * @version 2.1.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -17,6 +17,7 @@ import {useNavigation} from '@react-navigation/native';
 import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
 import DetailScaffold from '../../components/detail/DetailScaffold';
 import {PlayShuffleRow, SquareButton} from '../../components/detail/DetailParts';
+import {usePlayButton} from '../../hooks/usePlayButton';
 import TrackRow from '../../components/ui/TrackRow';
 import Text from '../../components/ui/Text';
 import EmptyState from '../../components/ui/EmptyState';
@@ -108,6 +109,7 @@ export default function LikedRecommendationsScreen() {
 
   const tracks = useMemo(() => recos.songs.map(songToTrack), [recos.songs]);
   const playAll = useCallback(() => { if (tracks.length) playFromList({type: 'recommendations'}, tracks); }, [tracks]);
+  const playButton = usePlayButton(tracks, playAll);
 
   const renderItem = useCallback(({item, index}: {item: SubsonicSong; index: number}) => {
     const id = String(item.id);
@@ -133,7 +135,8 @@ export default function LikedRecommendationsScreen() {
 
   const playRow = (
     <PlayShuffleRow
-      onPlay={playAll}
+      onPlay={playButton.onPlay}
+      playing={playButton.playing}
       playLabel={t.likedRecommendations.playAll}
       disabled={!tracks.length || loading}
       extra={<SquareButton icon={<RefreshIcon size={18} color={colors.textPrimary} />} onPress={() => setRound(r => r + 1)} accessibilityLabel={t.likedRecommendations.refresh} />}

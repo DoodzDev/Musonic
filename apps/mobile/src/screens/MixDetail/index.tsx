@@ -11,7 +11,7 @@
  *   genre instead: all its songs, without the Magic pill. Built on the
  *   shared detail layout (`DetailScaffold`), like albums and playlists.
  * @author DoodzProg
- * @version 1.5.0
+ * @version 1.5.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -38,6 +38,7 @@ import {showToast} from '../../components/Toast';
 import {SparkleIcon} from '../../components/icons';
 import DetailScaffold from '../../components/detail/DetailScaffold';
 import {PlayShuffleRow} from '../../components/detail/DetailParts';
+import {usePlayButton} from '../../hooks/usePlayButton';
 import {colors, radii} from '../../theme';
 import {useT} from '../../i18n';
 import type {SubsonicSong} from '../../api/types';
@@ -104,18 +105,13 @@ export default function MixDetailScreen() {
   const overrides = usePlayerStore(s => s.localLikeOverrides);
   const toggleLike = usePlayerStore(s => s.toggleLike);
   const toggleShuffle = usePlayerStore(s => s.toggleShuffle);
-  const togglePlay = usePlayerStore(s => s.togglePlay);
   const shuffleMode = usePlayerStore(s => s.shuffleMode);
   const downloads = useDownloadStore(s => s.downloads);
   const active_downloads = useDownloadStore(s => s.activeDownloads);
 
-  // This mix is playing when the current track is one of its tracks: Play then pauses.
-  const ids = useMemo(() => new Set(list.map(s => String(s.id))), [list]);
-  const isThisMix = active?.id != null && ids.has(String(active.id));
-  const playAll = useCallback(() => {
-    if (isThisMix) { togglePlay(); return; }
-    playFromList(source, tracks);
-  }, [tracks, isThisMix, togglePlay]); // eslint-disable-line react-hooks/exhaustive-deps
+  const playAll = useCallback(() => { playFromList(source, tracks); }, [tracks]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Pauses / resumes when the current track belongs to this mix.
+  const playButton = usePlayButton(tracks, playAll);
 
   const renderItem = useCallback(({item, index}: {item: SongLike; index: number}) => {
     const id = String(item.id);
@@ -155,7 +151,7 @@ export default function MixDetailScreen() {
     </Raised>
   );
   const playRow = (
-    <PlayShuffleRow onPlay={playAll} onShuffle={toggleShuffle} shuffleMode={shuffleMode} disabled={tracks.length === 0} playing={isThisMix && state === State.Playing} />
+    <PlayShuffleRow onPlay={playButton.onPlay} playing={playButton.playing} onShuffle={toggleShuffle} shuffleMode={shuffleMode} disabled={tracks.length === 0} />
   );
   const hero = (
     <View>
