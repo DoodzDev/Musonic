@@ -1,13 +1,13 @@
 /**
  * @file OfflineBanner.tsx
- * @description Inline banner (not absolute) rendered at the top of GlobalHeader.
- *   Animates its height (0 → 40) to push header content down instead of overlaying it.
+ * @description App-wide offline banner, mounted once in App.tsx.
+ *   Animates its height (0 → 40) instead of overlaying the content.
  *   3 states:
  *   1. isOfflineMode=true → orange "Mode hors-ligne" strip (no interaction)
  *   2. network error without offline mode → red/orange + "Go offline" button
  *   3. all OK → hidden (height: 0)
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.2.1
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useRef} from 'react';
