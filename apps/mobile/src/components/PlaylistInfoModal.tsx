@@ -154,7 +154,7 @@ export default function PlaylistInfoModal({
     return (
       <Modal visible={visible} animationType="slide" statusBarTranslucent onRequestClose={() => setView('info')}>
         <View style={styles.coverScreen}>
-          <TouchableOpacity style={styles.coverClose} onPress={() => setView('info')}>
+          <TouchableOpacity accessibilityRole="button" style={styles.coverClose} onPress={() => setView('info')}>
             <Text style={styles.coverCloseText}>✕</Text>
           </TouchableOpacity>
 
@@ -166,11 +166,11 @@ export default function PlaylistInfoModal({
             )}
           </View>
 
-          <TouchableOpacity style={styles.resetBtn} onPress={handleResetCover} activeOpacity={0.85}>
+          <TouchableOpacity accessibilityRole="button" style={styles.resetBtn} onPress={handleResetCover} activeOpacity={0.85}>
             <Text style={styles.resetBtnText}>{t.playlistInfo.resetCover}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={handlePickImage} activeOpacity={0.7}>
+          <TouchableOpacity accessibilityRole="button" onPress={handlePickImage} activeOpacity={0.7}>
             <Text style={styles.editCoverText}>{t.playlistInfo.editCover}</Text>
           </TouchableOpacity>
         </View>
@@ -182,7 +182,7 @@ export default function PlaylistInfoModal({
   return (
     <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
       {/* Dim overlay — tap to close */}
-      <TouchableOpacity
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel={t.ui.close}
         style={[StyleSheet.absoluteFill, styles.dimOverlay]}
         onPress={onClose}
         activeOpacity={1}
@@ -199,11 +199,11 @@ export default function PlaylistInfoModal({
 
           {/* Top bar */}
           <View style={styles.topBar}>
-            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+            <TouchableOpacity accessibilityRole="button" onPress={onClose} activeOpacity={0.7}>
               <Text style={styles.cancelText}>{t.playlistInfo.cancel}</Text>
             </TouchableOpacity>
             <Text style={styles.topBarTitle}>{t.playlistInfo.title}</Text>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               onPress={handleSave}
               disabled={saving || !name.trim()}
               activeOpacity={0.7}>
@@ -219,7 +219,7 @@ export default function PlaylistInfoModal({
             contentContainerStyle={styles.body}>
             {/* Cover + name row */}
             <View style={styles.infoRow}>
-              <TouchableOpacity onPress={() => setView('cover')} activeOpacity={0.8} style={styles.coverWrap}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={t.playlistInfo.editCover} onPress={() => setView('cover')} activeOpacity={0.8} style={styles.coverWrap}>
                 {localCoverUri ? (
                   <Image source={{uri: localCoverUri}} style={styles.thumbImage} />
                 ) : (
@@ -257,7 +257,7 @@ export default function PlaylistInfoModal({
             />
 
             {/* Delete */}
-            <TouchableOpacity style={styles.deleteRow} onPress={handleDelete} activeOpacity={0.7}>
+            <TouchableOpacity accessibilityRole="button" style={styles.deleteRow} onPress={handleDelete} activeOpacity={0.7}>
               <TrashIcon size={20} color="#888" />
               <Text style={styles.deleteText}>{t.playlistInfo.deletePlaylist}</Text>
             </TouchableOpacity>

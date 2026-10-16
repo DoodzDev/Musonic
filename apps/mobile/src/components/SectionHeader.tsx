@@ -20,7 +20,7 @@ export default function SectionHeader({title, onSeeAll}: Props) {
     <View style={styles.row}>
       <Text style={styles.title}>{title}</Text>
       {onSeeAll && (
-        <TouchableOpacity onPress={onSeeAll}>
+        <TouchableOpacity accessibilityRole="button" onPress={onSeeAll}>
           <Text style={styles.seeAll}>Voir tout</Text>
         </TouchableOpacity>
       )}

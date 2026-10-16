@@ -65,7 +65,7 @@ function PlaylistRow({
 }) {
   const t = useT();
   return (
-    <TouchableOpacity
+    <TouchableOpacity accessibilityRole="button"
       style={styles.row}
       activeOpacity={0.7}
       onPress={() => onToggle(item)}>
@@ -394,7 +394,7 @@ export default function AddToPlaylistSheet({
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>{t.addToPlaylist.savedIn}</Text>
-            <TouchableOpacity onPress={() => setCreateModalVisible(true)}>
+            <TouchableOpacity accessibilityRole="button" onPress={() => setCreateModalVisible(true)}>
               <Text style={styles.newPlaylistBtn}>{t.addToPlaylist.newPlaylist}</Text>
             </TouchableOpacity>
           </View>
@@ -434,7 +434,7 @@ export default function AddToPlaylistSheet({
                     onChangeText={setSearch}
                   />
                 </View>
-                <TouchableOpacity style={styles.sortBtn}>
+                <TouchableOpacity accessibilityRole="button" style={styles.sortBtn}>
                   <Text style={styles.sortText}>{t.addToPlaylist.sortButton}</Text>
                 </TouchableOpacity>
               </View>
@@ -445,7 +445,7 @@ export default function AddToPlaylistSheet({
               ))}
 
               {/* Footer: create new playlist */}
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={styles.footerRow}
                 activeOpacity={0.7}
                 onPress={() => setCreateModalVisible(true)}>

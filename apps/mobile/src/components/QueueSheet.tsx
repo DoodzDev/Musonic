@@ -446,15 +446,15 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
         <GlassSurface radius={28} style={[styles.actionBar, {bottom: insets.bottom + 12}]}>
           {hasSelection ? (
             <>
-              <PressableScale onPress={handlePlayNext} style={[styles.action, styles.actionNeutral]}>
+              <PressableScale accessibilityRole="button" onPress={handlePlayNext} style={[styles.action, styles.actionNeutral]}>
                 <Text style={styles.actionText}>{t.queue.playNext}</Text>
               </PressableScale>
-              <PressableScale onPress={handleRemove} style={[styles.action, styles.actionDanger]}>
+              <PressableScale accessibilityRole="button" onPress={handleRemove} style={[styles.action, styles.actionDanger]}>
                 <Text style={[styles.actionText, styles.actionDangerText]}>{t.queue.removeCount(selectedIds.size)}</Text>
               </PressableScale>
             </>
           ) : (
-            <PressableScale onPress={handleClearAll} style={[styles.action, styles.actionDanger]}>
+            <PressableScale accessibilityRole="button" onPress={handleClearAll} style={[styles.action, styles.actionDanger]}>
               <Text style={[styles.actionText, styles.actionDangerText]}>{t.queue.clearAll}</Text>
             </PressableScale>
           )}
@@ -474,7 +474,7 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
 
   return (
     <View style={[StyleSheet.absoluteFill, styles.backdrop]}>
-      <TouchableWithoutFeedback onPress={onClose}>
+      <TouchableWithoutFeedback accessibilityRole="button" accessibilityLabel={t.ui.close} onPress={onClose}>
         <View style={StyleSheet.absoluteFill} />
       </TouchableWithoutFeedback>
 

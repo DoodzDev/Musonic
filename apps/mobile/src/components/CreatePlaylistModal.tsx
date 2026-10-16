@@ -66,10 +66,10 @@ export default function CreatePlaylistModal({visible, onCancel, onCreate}: Props
             returnKeyType="done"
           />
           <View style={styles.buttons}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel} activeOpacity={0.8}>
+            <TouchableOpacity accessibilityRole="button" style={styles.cancelBtn} onPress={handleCancel} activeOpacity={0.8}>
               <Text style={styles.cancelText}>{t.createPlaylist.cancelButton}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={[styles.createBtn, !name.trim() && styles.createBtnDisabled]}
               onPress={handleCreate}
               activeOpacity={0.8}

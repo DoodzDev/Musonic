@@ -73,7 +73,7 @@ function ActionRow({
   accent?: boolean;
 }) {
   return (
-    <TouchableOpacity style={styles.row} activeOpacity={0.6} onPress={onPress}>
+    <TouchableOpacity accessibilityRole="button" style={styles.row} activeOpacity={0.6} onPress={onPress}>
       <View style={styles.rowIcon}>{icon}</View>
       <Text style={[styles.rowLabel, accent && {color: darkTheme.accent}]}>{label}</Text>
     </TouchableOpacity>
@@ -213,7 +213,7 @@ export default function SongOptionsSheet({
             style={[StyleSheet.absoluteFill, styles.overlay, overlayStyle]}
             pointerEvents="none"
           />
-          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={t.ui.close} style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
 
           <Animated.View style={[styles.sheet, sheetLayout, sheetStyle]}>
             <GestureDetector gesture={handleGesture}>

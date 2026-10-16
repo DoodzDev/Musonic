@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt
-index b2409a0..50347e9 100644
+index b2409a0..913cf2c 100644
 --- a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt
 +++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt
 @@ -251,7 +251,8 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
@@ -64,7 +64,7 @@ index b2409a0..50347e9 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
          val inputIndexes = Arguments.toList(data)
          if (inputIndexes != null) {
-@@ -328,6 +337,7 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -328,10 +337,11 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
              musicService.remove(indexes)
          }
          callback.resolve(null)
@@ -72,12 +72,14 @@ index b2409a0..50347e9 100644
      }
  
      @ReactMethod
-@@ -333,3 +343,3 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
-     @ReactMethod
 -    fun updateMetadataForTrack(index: Int, map: ReadableMap?, callback: Promise) =
 +    fun updateMetadataForTrack(index: Int, map: ReadableMap?, callback: Promise) {
          scope.launch {
-@@ -348,7 +358,9 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+             if (verifyServiceBoundOrReject(callback)) return@launch
+ 
+@@ -346,9 +356,11 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+                 callback.resolve(null)
+             }
          }
 +    }
  
@@ -88,7 +90,7 @@ index b2409a0..50347e9 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          if (musicService.tracks.isEmpty())
-@@ -361,10 +372,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -361,10 +373,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          }
  
          callback.resolve(null)
@@ -102,7 +104,7 @@ index b2409a0..50347e9 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          if (musicService.tracks.isEmpty())
-@@ -372,18 +385,22 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -372,18 +386,22 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
  
          musicService.clearNotificationMetadata()
          callback.resolve(null)
@@ -127,7 +129,7 @@ index b2409a0..50347e9 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          musicService.skip(index)
-@@ -393,10 +410,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -393,10 +411,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          }
  
          callback.resolve(null)
@@ -141,7 +143,7 @@ index b2409a0..50347e9 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          musicService.skipToNext()
-@@ -406,10 +425,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -406,10 +426,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          }
  
          callback.resolve(null)
@@ -155,7 +157,7 @@ index b2409a0..50347e9 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          musicService.skipToPrevious()
-@@ -419,10 +440,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -419,10 +441,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          }
  
          callback.resolve(null)
@@ -169,7 +171,7 @@ index b2409a0..50347e9 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          musicService.stop()
-@@ -430,136 +453,170 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -430,136 +454,170 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          musicService.clear()
  
          callback.resolve(null)
@@ -358,7 +360,7 @@ index b2409a0..50347e9 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          try {
-@@ -569,61 +626,76 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -569,61 +627,76 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          } catch (exception: Exception) {
              rejectWithException(callback, exception)
          }
@@ -444,10 +446,37 @@ index b2409a0..50347e9 100644
      }
  }
 diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
-index 0000000..0000000 100644
+index afa6b0f..1dd4107 100644
 --- a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
 +++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
-@@ -742,16 +742,16 @@ class MusicService : HeadlessJsTaskService() {
+@@ -120,9 +120,22 @@ class MusicService : HeadlessJsTaskService() {
+             notificationBuilder.foregroundServiceBehavior = NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE
+         }
+         val notification = notificationBuilder.build()
+-        startForeground(EMPTY_NOTIFICATION_ID, notification)
+-        @Suppress("DEPRECATION")
+-        stopForeground(true)
++        // Musonic: Android 12+ refuses a foreground start while the app is in the background
++        // (e.g. the activity recreated by a system font size change with playback paused).
++        // Without this guard the exception kills the app; the service simply stays in the background.
++        try {
++            startForeground(EMPTY_NOTIFICATION_ID, notification)
++            @Suppress("DEPRECATION")
++            stopForeground(true)
++        } catch (error: Exception) {
++            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
++                error is ForegroundServiceStartNotAllowedException
++            ) {
++                Timber.w(error, "Empty foreground notification not allowed now: skipped")
++            } else {
++                throw error
++            }
++        }
+     }
+ 
+     @MainThread
+@@ -741,7 +754,7 @@ class MusicService : HeadlessJsTaskService() {
+ 
      @MainThread
      private fun emit(event: String, data: Bundle? = null) {
 -        reactNativeHost.reactInstanceManager.currentReactContext
@@ -455,12 +484,10 @@ index 0000000..0000000 100644
              ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
              ?.emit(event, data?.let { Arguments.fromBundle(it) })
      }
-
-     @MainThread
-     private fun emitList(event: String, data: List<Bundle> = emptyList()) {
+@@ -751,7 +764,7 @@ class MusicService : HeadlessJsTaskService() {
          val payload = Arguments.createArray()
          data.forEach { payload.pushMap(Arguments.fromBundle(it)) }
-
+ 
 -        reactNativeHost.reactInstanceManager.currentReactContext
 +        reactContext
              ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)

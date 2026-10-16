@@ -529,8 +529,8 @@ export default function LibraryScreen() {
 
       {/* ── New playlist ── */}
       <Modal visible={createVisible} transparent animationType="fade" statusBarTranslucent onRequestClose={closeCreate}>
-        <Pressable style={styles.dialogBackdrop} onPress={closeCreate}>
-          <Pressable style={styles.dialog} onPress={() => {}}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t.ui.close} style={styles.dialogBackdrop} onPress={closeCreate}>
+          <Pressable accessible={false} style={styles.dialog} onPress={() => {}}>
             <Text variant="headline" style={styles.dialogTitle}>{t.library.createPlaylistTitle}</Text>
             <TextInput
               style={styles.dialogInput}

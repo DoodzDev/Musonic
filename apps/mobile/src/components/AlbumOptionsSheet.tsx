@@ -47,7 +47,7 @@ type Props = {
 
 function ActionRow({icon, label, onPress}: {icon: React.ReactNode; label: string; onPress: () => void}) {
   return (
-    <TouchableOpacity style={styles.row} activeOpacity={0.6} onPress={onPress}>
+    <TouchableOpacity accessibilityRole="button" style={styles.row} activeOpacity={0.6} onPress={onPress}>
       <View style={styles.rowIcon}>{icon}</View>
       <Text style={styles.rowLabel}>{label}</Text>
     </TouchableOpacity>
@@ -107,7 +107,7 @@ export default function AlbumOptionsSheet({
       <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={onClose}>
         <GestureHandlerRootView style={StyleSheet.absoluteFill}>
           <Animated.View style={[StyleSheet.absoluteFill, styles.overlay, overlayStyle]} pointerEvents="none" />
-          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={t.ui.close} style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
 
           <GestureDetector gesture={handleGesture}>
             <Animated.View style={[styles.sheet, sheetLayout, sheetStyle]}>

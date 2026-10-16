@@ -55,7 +55,7 @@ export default function OfflineBanner() {
           <Text style={styles.text}>
             {isOffline ? t.offline.noInternet : t.offline.serverUnreachable}
           </Text>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={styles.goOfflineBtn}
             onPress={() => setOfflineMode(true)}
             activeOpacity={0.8}>
