@@ -10,8 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-16
+
+**Musonic 2.0 — the new design.** Every screen has been rebuilt on one calm, consistent design: a floating Dock, large titles, grouped lists, softly raised covers and an orange accent kept for what matters. Playback runs on a new engine, Settings gain a Basic and an Advanced mode, and every screen works in landscape.
+
 ### Added
-- **New Home (Design v2)** — date and large title, filters (All, Playlists, Albums, Artists), a 2 × 3 quick access grid, then shelves that change every day: recently played, "For you" (large online cards), artists to discover, **Magic Mixes by genre**, your favourite artists, "More like…", "Because you liked…", rediscover, new in your library, at random. Same engine as Musonic Web. The last Home is kept on the device, so it also shows offline. Covers and cards get a light raised relief (soft shadow and fine light edge). Every card says what it is (Album, Track, Playlist). "Recently played" shows what you really played on the phone (a track played alone, else the album, playlist or mix you launched). The play button of a "For you" card plays the album at once. Magic Mixes open like playlists (shuffle, play, like, add, download).
+- **Dock and landscape Rail** — the bottom tab bar is replaced by a floating glass Dock (Home, Library, Search, mini player); in landscape it becomes a Rail on the side of the screen. The side drawer is gone: your account avatar opens a Profile sheet with accounts, offline mode and settings.
+- **New playback engine** — one set of rules for every screen: what you add yourself always plays first and in the order you added it, shuffle and Shuffle Magic never mix it up, the queue and position come back when you reopen the app, "Clear all" can be undone, unplayable tracks are skipped, and offline only downloaded tracks are played. New option: Previous always goes back to the previous track.
+- **Swipe to queue** — swipe any track to the right (album, playlist, artist, mix, Liked songs, My music, recommendations, search) to add it to the queue, like on Spotify.
+- **Magic Mixes with discoveries** — each genre mix now blends about 3 online discoveries in 10 into your own songs, marked Online.
+- **Basic and Advanced settings** — a switch at the top of Settings; the fine-grained options (crossfade, landscape layouts, storage limit) only show in Advanced. New options: date on Home, start tab, haptic feedback and the phone's language.
+- **Wi-Fi only downloads** — on by default; on mobile data Musonic asks before downloading, and automatic downloads wait for Wi-Fi.
+- **Streaming quality per network** — Original, 320, 192 or 128 kbit/s, set separately for Wi-Fi and mobile data. Downloads always keep the original file.
+- **Storage limit** — an Advanced setting caps the space downloads may use (2, 5 or 10 GB).
+- **Error states with Retry** — search, artist, Liked songs, My music and recommendations say when the server cannot be reached, with a Retry button, instead of showing an empty list.
+- **Landscape everywhere** — every screen has its own landscape layout: two-column detail pages, wide grids, side-by-side player and lyrics.
+- **New Home (Design v2)** — date and large title, filters (All, Playlists, Albums, Artists), a 2 × 3 quick access grid, then shelves that change every day: recently played, "For you" (large online cards), artists to discover, **Magic Mixes by genre**, your favorite artists, "More like…", "Because you liked…", rediscover, new in your library, at random. Same engine as Musonic Web. The last Home is kept on the device, so it also shows offline. Covers and cards get a light raised relief (soft shadow and fine light edge). Every card says what it is (Album, Track, Playlist). "Recently played" shows what you really played on the phone (a track played alone, else the album, playlist or mix you launched). The play button of a "For you" card plays the album at once. Magic Mixes open like playlists (shuffle, play, like, add, download).
 - **Account avatar at the top left** — on the Home, the avatar moves to the top left and loses its orange glow (same neutral relief as the covers); when scrolling, the title stays on the left next to it, a little larger.
 - **New full player (Design v2)** — background made of the cover itself, extremely blurred, kept square and centred behind the cover, fading into a colour of the cover that fills the rest of the screen, and darkened just enough for the text to stay readable (light covers are darkened more), a handle to drag the player down to close it, larger cover that shrinks on pause, round + and ♥ buttons next to the title, a green badge when the track is downloaded, a thin progress bar (tap or drag anywhere to seek), the real audio quality of the track (FLAC, MP3 320…), large play / skip buttons and a bottom row: Lyrics · Shuffle (off, on, Magic) · Repeat · Queue.
 - **Lyrics inside the player** — the Lyrics button folds the cover into a small thumbnail and shows the lyrics in its place: the current line is white, the list follows the song (and pauses while you scroll), and a tap on a line jumps to it; the lyrics fade out at the top and bottom. In landscape, the lyrics take the place of the cover.
@@ -30,6 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Loading placeholders** — album, playlist, artist and mix pages, Liked songs, My music, the Library, the Home and the Search show grey rows and cards shaped like the content while it loads, instead of a spinner.
 
 ### Changed
+- **Update prompt only for mobile releases** — the app now only looks at `mobile-v…` releases, so a Musonic Web release never triggers an update prompt on the phone.
+- **Smoother playlist reordering** — the playlist edit mode now uses the same drag-and-drop list as the queue; removing a song that appears twice only removes the tapped one.
+- **French texts use « vous »** everywhere, and English and French texts were reviewed.
+- **Calmer now-playing marker** — the bars next to the current track no longer animate: the endless animation tripled the battery use of a list at rest.
 - **One icon set for the whole app** — every icon now comes from the shared set (no more slightly different copies of the same icon from screen to screen), and the icons of the option menus are centred on their text.
 
 - **Same haptic feedback everywhere** — liking a track and changing the shuffle or repeat mode now vibrate lightly from every screen, not only from the full player.
@@ -37,6 +55,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Search in the library** — the magnifier of the library opens a field that filters your playlists by name as you type (accents and case ignored).
 
 ### Fixed
+- **Add to queue order** — adding A, B, C then D to the queue now plays them as A, B, C, D (they used to play in reverse order).
+- **Play / Pause button of a page** — the main button of an album, playlist, mix or Liked songs now pauses when that list is playing, and only that one.
+- **No crash when changing the system font size** — changing Android's text size while a track was paused could close the app.
+- **Home after being offline** — the Home reloads by itself when the app is back online.
+- **Accessibility** — buttons in menus and dialogs are announced as buttons, and sheet backgrounds read "Close" with TalkBack.
 - **Clear connection errors** — a failed connection now says what to fix (wrong username or password, no Subsonic server at this address, server unreachable or too slow, server error) instead of a raw "HTTP 404" or an English server message.
 - **Artists credited together** — a track by several artists ("Lil Nas X • Billy Ray Cyrus") no longer creates one unknown artist in the Library and the Home favourite artists: each artist is listed on their own. Names joined with "&" stay whole ("Bigflo & Oli").
 - **Wrong artist photo and tracks** — when several Deezer artists share a name, Musonic now picks the best-known one (it used to take the first result, e.g. an unknown namesake instead of the rapper Vald).
@@ -44,10 +67,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Liked songs and My music offline** — offline, "Liked songs" lists the downloaded liked tracks and "My music" the downloaded tracks, instead of an empty list. The liked count in the library stays right after starting offline.
 - **Playlist covers offline** — the cover of a playlist holding downloaded tracks is kept on the device and shows offline, in the library and on the playlist.
 - **Cover art offline** — covers are now saved with downloaded tracks and shown everywhere offline: lists, mini player, full player, notification and lock screen. Covers of tracks downloaded earlier are fetched automatically the next time the server is reachable.
-
-### Changed
-- **Update prompt only for mobile releases** — the app now only looks at `mobile-v…` releases, so a Musonic Web release never triggers an update prompt on the phone.
-- **Smoother playlist reordering** — the playlist edit mode now uses the same drag-and-drop list as the queue; removing a song that appears twice only removes the tapped one.
 
 ## [1.0.6] - 2026-10-11
 
