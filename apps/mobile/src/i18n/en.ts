@@ -12,6 +12,10 @@ export const en = {
   common: {
     retry: 'Retry',
     back: 'Back',
+    loadError: 'Couldn’t load',
+    loadErrorMessage: 'Check your connection, then try again.',
+    offlineUnavailable: 'Unavailable offline',
+    offlineUnavailableMessage: 'This page comes back as soon as you’re online.',
   },
 
   // ─── Design v2 components ──────────────────────────────────────────────────
@@ -138,7 +142,7 @@ export const en = {
       likedAlbums: 'Albums of your liked songs',
       becauseLiked: (title: string) => `Because you liked "${title}"`,
       magicMixes: 'Magic Mixes',
-      magicMixesSubtitle: 'Your songs and discoveries, by mood',
+      magicMixesSubtitle: 'Your songs and discoveries, by genre',
       rediscover: 'Rediscover',
       newest: 'New in your library',
       random: 'At random',
@@ -467,9 +471,18 @@ export const en = {
     title: 'Settings',
     language: {
       sectionTitle: 'Language',
+      system: 'Phone',
+    },
+    mode: {
+      label: 'Advanced settings',
+      desc: 'Also shows the fine-grained settings: crossfade, landscape layout.',
+    },
+    account: {
+      sectionTitle: 'Account',
+      note: 'Accounts and servers are managed from your profile.',
     },
     sections: {
-      player: 'Player',
+      player: 'Playback',
       transitions: 'Track transitions',
       playback: 'Playback controls',
       downloads: 'Downloads',
@@ -512,6 +525,12 @@ export const en = {
       fullPlayerLayoutDesc: 'Choose which side shows the cover art when the full player is in landscape.',
       fullPlayerCoverLeft: 'Cover left',
       fullPlayerCoverRight: 'Cover right',
+      homeDateLabel: 'Date on Home',
+      homeDateDesc: 'Shows the date above the Home title.',
+      startTabLabel: 'Start tab',
+      startTabDesc: 'Applies the next time the app starts.',
+      hapticsLabel: 'Haptic feedback',
+      hapticsDesc: 'Light vibrations when you tap buttons.',
     },
     offline: {
       autoOnlineLabel: 'Automatic reconnection',

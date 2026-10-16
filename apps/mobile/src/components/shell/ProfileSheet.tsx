@@ -29,6 +29,7 @@ import {pingServer} from '../../api/client';
 import {withTimeout} from '../../services/connectivityService';
 import {colors, spacing} from '../../theme';
 import {useT} from '../../i18n';
+import {hostOf} from '../../utils/hostOf';
 import {version as APP_VERSION} from '../../../package.json';
 
 function formatBytes(bytes: number): string {
@@ -40,11 +41,6 @@ function formatBytes(bytes: number): string {
     if (bytes >= size) return `${(bytes / size).toFixed(1).replace('.', ',')} ${unit}`;
   }
   return `${Math.round(bytes / 1024)} Ko`;
-}
-
-/** `https://music.example.com/` → `music.example.com`. */
-function hostOf(url: string): string {
-  return url.replace(/^https?:\/\//, '').replace(/\/+$/, '');
 }
 
 const PAGE_MS = 220;

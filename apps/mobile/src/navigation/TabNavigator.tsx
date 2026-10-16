@@ -7,12 +7,13 @@
  *   capsule and search circle), the Design v2 Rail in landscape (glass tab
  *   capsule, search circle and mini player tile, left or right per settings)
  *   — same navigator state/behavior, only the visual arrangement differs.
- *   Also hosts the app-wide Design v2 toast, just above the Dock.
+ *   Also hosts the app-wide Design v2 toast, just above the Dock. Opens on
+ *   the start tab chosen in Settings.
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.4.0
  * @license CC-BY-NC-4.0
  */
-import React, {useCallback} from 'react';
+import React, {useCallback, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
@@ -33,6 +34,7 @@ import {GlobalToast} from '../components/Toast';
 import {ToastHost} from '../components/ui/Toast';
 import {DOCK_GAP, useDockInset} from './dockLayout';
 import {useImageColor} from '../hooks/useImageColor';
+import {useSettingsStore} from '../store/settingsStore';
 
 const Tab = createBottomTabNavigator();
 
@@ -64,12 +66,15 @@ function AppTabBar(props: BottomTabBarProps) {
 export default function TabNavigator() {
   const t = useT();
   useImageColor();
+  // Read once: changing the setting applies at the next start, not under the user's feet.
+  const [startTab] = useState(() => useSettingsStore.getState().startTab);
 
   const renderTabBar = useCallback((props: BottomTabBarProps) => <AppTabBar {...props} />, []);
 
   return (
     <View style={styles.fill}>
       <Tab.Navigator
+        initialRouteName={startTab}
         screenOptions={{headerShown: false}}
         tabBar={renderTabBar}>
         <Tab.Screen

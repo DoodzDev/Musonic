@@ -6,7 +6,7 @@
  *   choices (progress bar style, landscape navigation bar side, landscape
  *   player layout) show a small preview of each option.
  * @author DoodzProg
- * @version 2.1.0
+ * @version 2.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -29,6 +29,7 @@ import {useSettingsStore} from '../../store/settingsStore';
 import {useDockInset} from '../../navigation/dockLayout';
 import {colors, radii, spacing} from '../../theme';
 import {useT} from '../../i18n';
+import {hostOf} from '../../utils/hostOf';
 import {version as APP_VERSION} from '../../../package.json';
 
 // ─── Previews ─────────────────────────────────────────────────────────────────
@@ -135,6 +136,7 @@ export default function SettingsScreen() {
   // Settings opens over the tabs: no Rail beside it, only the side insets.
   const insets = useSafeAreaInsets();
   const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const server = useSettingsStore(st => st.servers.find(x => x.id === st.activeServerId) ?? null);
   const s = useSettingsStore(
     useShallow(st => ({
       useWaveformScrubber: st.useWaveformScrubber,
@@ -159,8 +161,18 @@ export default function SettingsScreen() {
       setAutoOnlineMode: st.setAutoOnlineMode,
       locale: st.locale,
       setLocale: st.setLocale,
+      settingsMode: st.settingsMode,
+      setSettingsMode: st.setSettingsMode,
+      startTab: st.startTab,
+      setStartTab: st.setStartTab,
+      showHomeDate: st.showHomeDate,
+      setShowHomeDate: st.setShowHomeDate,
+      hapticsEnabled: st.hapticsEnabled,
+      setHapticsEnabled: st.setHapticsEnabled,
     })),
   );
+
+  const advanced = s.settingsMode === 'advanced';
 
   const setAutoDownload = (on: boolean) => {
     if (!on) {
@@ -188,15 +200,18 @@ export default function SettingsScreen() {
         contentContainerStyle={[styles.column, {paddingTop: top, paddingBottom: dockInset + spacing.l}]}>
         <LargeTitle title={t.settings.title} scrollY={scrollY} />
         <View style={styles.groups}>
-          <ListGroup caption={t.settings.language.sectionTitle}>
-            <View style={styles.padded}>
-              <SegmentedControl
-                options={[{value: 'fr', label: 'Français'}, {value: 'en', label: 'English'}]}
-                value={s.locale}
-                onChange={s.setLocale}
-              />
-            </View>
+          <ListGroup note={t.settings.mode.desc}>
+            <ListItem
+              label={t.settings.mode.label}
+              toggle={{value: advanced, onValueChange: v => s.setSettingsMode(v ? 'advanced' : 'basic')}}
+            />
           </ListGroup>
+
+          {server ? (
+            <ListGroup caption={t.settings.account.sectionTitle} note={t.settings.account.note}>
+              <ListItem label={server.username} value={hostOf(server.url)} />
+            </ListGroup>
+          ) : null}
 
           <ListGroup caption={t.settings.sections.player}>
             <Block label={t.settings.player.progressLabel} description={t.settings.player.progressDesc}>
@@ -210,23 +225,25 @@ export default function SettingsScreen() {
                 onChange={v => s.setUseWaveformScrubber(v === 'waveform')}
               />
             </Block>
-            <Block label={t.settings.transitions.crossfadeLabel} description={t.settings.transitions.crossfadeDesc}>
-              <View style={styles.sliderRow}>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={0}
-                  maximumValue={12}
-                  step={1}
-                  value={s.crossfadeDuration}
-                  onValueChange={s.setCrossfadeDuration}
-                  minimumTrackTintColor={colors.accent}
-                  maximumTrackTintColor={colors.fill}
-                  thumbTintColor={colors.textPrimary}
-                  accessibilityLabel={t.settings.transitions.crossfadeLabel}
-                />
-                <Text variant="subhead" color="textSecondary" style={styles.sliderValue}>{s.crossfadeDuration} s</Text>
-              </View>
-            </Block>
+            {advanced ? (
+              <Block label={t.settings.transitions.crossfadeLabel} description={t.settings.transitions.crossfadeDesc}>
+                <View style={styles.sliderRow}>
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={0}
+                    maximumValue={12}
+                    step={1}
+                    value={s.crossfadeDuration}
+                    onValueChange={s.setCrossfadeDuration}
+                    minimumTrackTintColor={colors.accent}
+                    maximumTrackTintColor={colors.fill}
+                    thumbTintColor={colors.textPrimary}
+                    accessibilityLabel={t.settings.transitions.crossfadeLabel}
+                  />
+                  <Text variant="subhead" color="textSecondary" style={styles.sliderValue}>{s.crossfadeDuration} s</Text>
+                </View>
+              </Block>
+            ) : null}
             <ListItem
               label={t.settings.playback.autoplayLabel}
               description={t.settings.playback.autoplayDesc}
@@ -257,11 +274,32 @@ export default function SettingsScreen() {
 
           <ListGroup caption={t.settings.sections.display}>
             <ListItem
+              label={t.settings.display.homeDateLabel}
+              description={t.settings.display.homeDateDesc}
+              toggle={{value: s.showHomeDate, onValueChange: s.setShowHomeDate}}
+            />
+            <Block label={t.settings.display.startTabLabel} description={t.settings.display.startTabDesc}>
+              <SegmentedControl
+                options={[
+                  {value: 'Home', label: t.tabs.home},
+                  {value: 'Search', label: t.tabs.search},
+                  {value: 'Library', label: t.tabs.library},
+                ]}
+                value={s.startTab}
+                onChange={s.setStartTab}
+              />
+            </Block>
+            <ListItem
+              label={t.settings.display.hapticsLabel}
+              description={t.settings.display.hapticsDesc}
+              toggle={{value: s.hapticsEnabled, onValueChange: s.setHapticsEnabled}}
+            />
+            <ListItem
               label={t.settings.display.lockRotationLabel}
               description={t.settings.display.lockRotationDesc}
               toggle={{value: s.rotationLocked, onValueChange: s.setRotationLocked}}
             />
-            {s.rotationLocked ? null : (
+            {!advanced || s.rotationLocked ? null : (
               <Block label={t.settings.display.navBarPositionLabel}>
                 <Choices
                   options={[
@@ -279,17 +317,33 @@ export default function SettingsScreen() {
               description={t.settings.display.fullscreenDesc}
               toggle={{value: s.isFullscreenMode, onValueChange: s.setIsFullscreenMode}}
             />
-            <Block label={t.settings.display.fullPlayerLayoutLabel} description={t.settings.display.fullPlayerLayoutDesc}>
-              <Choices
+            {advanced ? (
+              <Block label={t.settings.display.fullPlayerLayoutLabel} description={t.settings.display.fullPlayerLayoutDesc}>
+                <Choices
+                  options={[
+                    {value: 'left', label: t.settings.display.fullPlayerCoverLeft},
+                    {value: 'right', label: t.settings.display.fullPlayerCoverRight},
+                  ]}
+                  renderPreview={playerPreview}
+                  value={s.fullPlayerCoverSide}
+                  onChange={s.setFullPlayerCoverSide}
+                />
+              </Block>
+            ) : null}
+          </ListGroup>
+
+          <ListGroup caption={t.settings.language.sectionTitle}>
+            <View style={styles.padded}>
+              <SegmentedControl
                 options={[
-                  {value: 'left', label: t.settings.display.fullPlayerCoverLeft},
-                  {value: 'right', label: t.settings.display.fullPlayerCoverRight},
+                  {value: 'system', label: t.settings.language.system},
+                  {value: 'fr', label: 'Français'},
+                  {value: 'en', label: 'English'},
                 ]}
-                renderPreview={playerPreview}
-                value={s.fullPlayerCoverSide}
-                onChange={s.setFullPlayerCoverSide}
+                value={s.locale}
+                onChange={s.setLocale}
               />
-            </Block>
+            </View>
           </ListGroup>
 
           <ListGroup caption={t.settings.updates.sectionTitle}>

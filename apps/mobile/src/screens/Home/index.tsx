@@ -12,7 +12,7 @@
  *   shared raised relief. The last feed is kept on the device, so the Home
  *   also shows offline. Playback goes through the playback engine.
  * @author DoodzProg
- * @version 2.1.0
+ * @version 2.2.0
  * @license MIT
  */
 
@@ -67,6 +67,7 @@ export default function HomeScreen() {
   const landscapePadding = useLandscapeSidebarPadding();
   const isLandscape = useIsLandscape();
   const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
+  const showDate = useSettingsStore(s => s.showHomeDate);
   const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
   const {scrollY, onScroll} = useLargeTitleScroll();
   const top = useLargeTitleInset();
@@ -263,9 +264,11 @@ export default function HomeScreen() {
         contentContainerStyle={{paddingTop: top, paddingBottom: dockInset + 16}}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} progressViewOffset={top} />}>
 
-        <Text variant="footnote" color="textSecondary" style={styles.date}>
-          {t.home.date(new Date()).toUpperCase()}
-        </Text>
+        {showDate ? (
+          <Text variant="footnote" color="textSecondary" style={styles.date}>
+            {t.home.date(new Date()).toUpperCase()}
+          </Text>
+        ) : null}
         <LargeTitle title={t.home.title} scrollY={scrollY} />
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chips}>

@@ -5,11 +5,13 @@
  *   Shuffle and Play, then the tracks (shared `TrackRow`: like, add to a
  *   playlist, download; tap = play from that track). Opened from the Home
  *   with its songs; opened from "Recently played" (genre only), it draws a
- *   fresh mix of that genre. With `browse` (Search > Browse), the page of a
+ *   fresh mix of that genre. About 3 tracks in 10 are discoveries (Magic
+ *   suggestions: online tracks and similar songs), spread through the list
+ *   with the "Online" badge. With `browse` (Search > Browse), the page of a
  *   genre instead: all its songs, without the Magic pill. Built on the
  *   shared detail layout (`DetailScaffold`), like albums and playlists.
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.4.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -21,6 +23,9 @@ import {homeSource} from '../../services/home/homeSource';
 import {getSongsByGenre} from '../../api/endpoints/library';
 import {playFromList} from '../../services/playback/launchers';
 import {songToTrack, type SongLike} from '../../utils/songToTrack';
+import {fetchMagicSuggestions} from '../../services/playback/magic';
+import {blendDiscoveries, discoveryCount} from './mixModel';
+import {useSettingsStore} from '../../store/settingsStore';
 import {usePlayerStore} from '../../store/playerStore';
 import {useDownloadStore} from '../../store/downloadStore';
 import TrackRow from '../../components/ui/TrackRow';
@@ -51,6 +56,8 @@ export default function MixDetailScreen() {
   const [loading, setLoading] = useState(!params.songs);
   const [addTo, setAddTo] = useState<SongLike | null>(null);
   const [failed, setFailed] = useState(false);
+  const [discoveries, setDiscoveries] = useState<SongLike[]>([]);
+  const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
 
   const load = useCallback(() => {
     if (params.songs) return;
@@ -67,13 +74,29 @@ export default function MixDetailScreen() {
 
   useEffect(load, [load]);
 
+  // Discoveries for a Magic Mix (not a genre page), once its own songs are known.
+  useEffect(() => {
+    if (params.browse || isOfflineMode || songs.length === 0) {
+      setDiscoveries([]);
+      return;
+    }
+    let cancelled = false;
+    fetchMagicSuggestions(songs.map(songToTrack), discoveryCount(songs.length)).then(found => {
+      if (cancelled) return;
+      setDiscoveries(found.map(d => ({id: d.id, title: d.title, artist: d.artist, artistId: d.artistId, album: d.album, coverArt: d.coverArt, duration: d.duration})));
+    });
+    return () => { cancelled = true; };
+  }, [songs, params.browse, isOfflineMode]);
+
+  const list = useMemo(() => blendDiscoveries(songs, discoveries), [songs, discoveries]);
+
   const covers = useMemo(() => {
     if (params.covers?.length) return params.covers;
     return mixCovers(songs);
   }, [params.covers, songs]);
-  const tracks = useMemo(() => songs.map(songToTrack), [songs]);
+  const tracks = useMemo(() => list.map(songToTrack), [list]);
   const source = {type: 'mix' as const, id: params.genre, name: params.genre};
-  const subtitle = params.browse ? t.allSongs.trackCount(songs.length) : t.home.mixSubtitle(songs.length);
+  const subtitle = params.browse ? t.allSongs.trackCount(songs.length) : t.home.mixSubtitle(list.length);
 
   const active = useActiveTrack();
   const {state} = usePlaybackState();
@@ -96,6 +119,7 @@ export default function MixDetailScreen() {
         title={item.title}
         subtitle={item.artist}
         coverId={item.coverArt}
+        badges={id.startsWith('ext-') ? ['online'] : undefined}
         playback={isCurrent ? (state === State.Playing ? 'playing' : 'current') : 'idle'}
         liked={overrides[id] ?? likedSongIds.has(id)}
         download={id in downloads ? 'done' : dl && (dl.status === 'queued' || dl.status === 'downloading') ? 'downloading' : 'none'}
@@ -152,7 +176,7 @@ export default function MixDetailScreen() {
         hero={hero}
         side={side}
         showTitleAt={COVER + 36}
-        data={songs}
+        data={list}
         renderItem={renderItem}
         keyExtractor={(s, i) => `${s.id}-${i}`}
         loading={loading}

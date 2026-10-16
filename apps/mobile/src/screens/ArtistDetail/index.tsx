@@ -8,7 +8,7 @@
  *   photo and actions in a fixed column, the rest scrolls on the right.
  *   Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -35,6 +35,7 @@ import {getDeezerArtistId, getDeezerArtistTopTracks, getDeezerRelatedArtists, ge
 import {playFromList} from '../../services/playback/launchers';
 import {usePlayerStore, type Track} from '../../store/playerStore';
 import {useDownloadStore} from '../../store/downloadStore';
+import {useSettingsStore} from '../../store/settingsStore';
 import {colors, spacing} from '../../theme';
 import {useT, getT} from '../../i18n';
 import type {SubsonicAlbum, SubsonicSong} from '../../api/types';
@@ -97,6 +98,11 @@ export default function ArtistDetailScreen() {
   const [popular, setPopular] = useState<Popular[]>([]);
   const [similar, setSimilar] = useState<DeezerArtist[]>([]);
   const [loading, setLoading] = useState(true);
+  // The artist itself could not be loaded; `attempt` reloads.
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const retry = () => { setLoading(true); setAttempt(a => a + 1); };
+  const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
   const [menuSong, setMenuSong] = useState<SubsonicSong | null>(null);
   const [addTo, setAddTo] = useState<SubsonicSong | null>(null);
 
@@ -112,6 +118,7 @@ export default function ArtistDetailScreen() {
 
   useEffect(() => {
     let cancelled = false;
+    setFailed(false);
     (async () => {
       try {
         let id = routeId;
@@ -160,13 +167,16 @@ export default function ArtistDetailScreen() {
           if (!cancelled) setPopular(mergePopular(ranking, serverSongs).slice(0, 10));
         }
       } catch {
-        if (!cancelled) setName(n => n || getT().artistDetail.unknownArtist);
+        if (!cancelled) {
+          setName(n => n || getT().artistDetail.unknownArtist);
+          setFailed(true);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [routeId, routeName]);
+  }, [routeId, routeName, attempt]);
 
   const tracks = useMemo(() => popular.map(p => toTrack(p.song)), [popular]);
   const source = useMemo(() => ({type: 'artist' as const, id: serverId ?? name, name}), [serverId, name]);
@@ -272,7 +282,11 @@ export default function ArtistDetailScreen() {
         keyExtractor={p => String(p.song.id)}
         footer={footer}
         loading={loading}
-        empty={!albums.length ? <EmptyState title={t.artistDetail.empty} /> : null}
+        empty={failed
+          ? isOfflineMode
+            ? <EmptyState title={t.common.offlineUnavailable} message={t.common.offlineUnavailableMessage} />
+            : <EmptyState title={t.common.loadError} message={t.common.loadErrorMessage} action={{label: t.common.retry, onPress: retry}} />
+          : !albums.length ? <EmptyState title={t.artistDetail.empty} /> : null}
       />
       <SongOptionsSheet
         visible={!!menuSong}

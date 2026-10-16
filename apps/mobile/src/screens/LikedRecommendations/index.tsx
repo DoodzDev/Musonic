@@ -8,7 +8,7 @@
  *   similar songs of liked tracks, without what is already liked. Each refresh
  *   draws new seeds. Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.0.1
+ * @version 2.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -89,16 +89,19 @@ export default function LikedRecommendationsScreen() {
   const [recos, setRecos] = useState<Recommendations>({songs: [], seeds: []});
   const [loading, setLoading] = useState(true);
   const [round, setRound] = useState(0);
+  const [failed, setFailed] = useState(false);
+  const retry = () => setRound(r => r + 1);
   const [addTo, setAddTo] = useState<SubsonicSong | null>(null);
   const [menuSong, setMenuSong] = useState<SubsonicSong | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setFailed(false);
     getStarred()
       .then(d => buildRecommendations(d.songs))
       .then(r => { if (!cancelled) setRecos(r); })
-      .catch(() => { if (!cancelled) setRecos({songs: [], seeds: []}); })
+      .catch(() => { if (!cancelled) { setRecos({songs: [], seeds: []}); setFailed(true); } })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [round]);
@@ -176,7 +179,7 @@ export default function LikedRecommendationsScreen() {
         renderItem={renderItem}
         keyExtractor={s => String(s.id)}
         loading={loading}
-        empty={<EmptyState title={t.likedRecommendations.emptyState} />}
+        empty={failed ? <EmptyState title={t.common.loadError} message={t.common.loadErrorMessage} action={{label: t.common.retry, onPress: retry}} /> : <EmptyState title={t.likedRecommendations.emptyState} />}
       />
       <AddToPlaylistSheet
         visible={!!addTo}

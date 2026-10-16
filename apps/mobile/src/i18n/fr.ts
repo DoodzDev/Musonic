@@ -15,6 +15,10 @@ export const t = {
   common: {
     retry: 'Réessayer',
     back: 'Retour',
+    loadError: 'Chargement impossible',
+    loadErrorMessage: 'Vérifiez votre connexion, puis réessayez.',
+    offlineUnavailable: 'Indisponible hors ligne',
+    offlineUnavailableMessage: 'Cette page revient dès que vous êtes en ligne.',
   },
 
   // ─── Design v2 components ──────────────────────────────────────────────────
@@ -141,7 +145,7 @@ export const t = {
       likedAlbums: 'Albums de tes titres likés',
       becauseLiked: (title: string) => `Parce que tu as aimé « ${title} »`,
       magicMixes: 'Mix Magiques',
-      magicMixesSubtitle: 'Tes titres et des découvertes, par ambiance',
+      magicMixesSubtitle: 'Vos titres et des découvertes, par genre',
       rediscover: 'À redécouvrir',
       newest: 'Nouveautés dans ta bibliothèque',
       random: 'Au hasard',
@@ -472,9 +476,18 @@ export const t = {
     title: 'Réglages',
     language: {
       sectionTitle: 'Langue',
+      system: 'Téléphone',
+    },
+    mode: {
+      label: 'Réglages avancés',
+      desc: 'Affiche aussi les réglages précis : fondu entre les titres, disposition en mode paysage.',
+    },
+    account: {
+      sectionTitle: 'Compte',
+      note: 'Comptes et serveurs se gèrent depuis votre profil.',
     },
     sections: {
-      player: 'Lecteur',
+      player: 'Lecture',
       transitions: 'Transitions entre les titres',
       playback: "Contrôles d'écoute",
       downloads: 'Téléchargements',
@@ -519,13 +532,19 @@ export const t = {
       fullPlayerLayoutDesc: "Choisir de quel côté afficher la pochette quand le lecteur plein écran est en mode paysage.",
       fullPlayerCoverLeft: 'Pochette à gauche',
       fullPlayerCoverRight: 'Pochette à droite',
+      homeDateLabel: "Date sur l'Accueil",
+      homeDateDesc: "Affiche la date au-dessus du titre de l'Accueil.",
+      startTabLabel: 'Onglet au démarrage',
+      startTabDesc: 'Pris en compte au prochain lancement.',
+      hapticsLabel: 'Retours haptiques',
+      hapticsDesc: 'Petites vibrations quand vous touchez les boutons.',
     },
     offline: {
       autoOnlineLabel: 'Reconnexion automatique',
       autoOnlineDesc: "Repasse en ligne automatiquement quand le serveur est de nouveau accessible.",
     },
     updates: {
-      sectionTitle: 'Informations',
+      sectionTitle: 'À propos',
       checkButton: 'Vérifier les mises à jour',
       upToDateTitle: 'Vous êtes à jour',
       upToDateMessage: (local: string, remote: string) =>

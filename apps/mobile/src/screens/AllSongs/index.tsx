@@ -14,7 +14,7 @@
  *   engine (playFromList). Offline (or when the server cannot be reached),
  *   lists the downloaded tracks: the only ones that can play.
  * @author DoodzProg
- * @version 2.1.0
+ * @version 2.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -128,6 +128,10 @@ export default function AllSongsScreen() {
   const [songs, setSongs] = useState<SubsonicSong[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
+  // Server unreachable, no saved list and nothing downloaded; `attempt` reloads.
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const retry = () => setAttempt(a => a + 1);
   const [menuSong, setMenuSong] = useState<SubsonicSong | null>(null);
   const [addTo, setAddTo] = useState<SubsonicSong | null>(null);
   const [sortVisible, setSortVisible] = useState(false);
@@ -139,6 +143,7 @@ export default function AllSongsScreen() {
     let cancelled = false;
     // Only downloaded tracks can play offline: list them.
     const offlineList = () => downloadedSongs(useDownloadStore.getState().downloads);
+    setFailed(false);
     if (isOfflineMode) {
       setSongs(offlineList());
       setLoading(false);
@@ -154,10 +159,16 @@ export default function AllSongsScreen() {
         setSongs(result);
         writeCache(result);
       })
-      .catch(() => { if (!cancelled) setSongs(offlineList()); })
+      .catch(() => {
+        if (cancelled) return;
+        // Keep the saved list when there is one: it is more complete than the downloads.
+        const list = cached.length ? cached : offlineList();
+        setSongs(list);
+        setFailed(list.length === 0);
+      })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [isOfflineMode]);
+  }, [isOfflineMode, attempt]);
 
   const searching = query.trim().length > 0;
   const sorted = useMemo(() => sortSongs(songs, sort), [songs, sort]);
@@ -281,7 +292,7 @@ export default function AllSongsScreen() {
         renderItem={renderItem}
         keyExtractor={r => r.key}
         loading={loading}
-        empty={<EmptyState title={searching ? t.allSongs.searchEmpty : t.library.emptyState} />}
+        empty={failed ? <EmptyState title={t.common.loadError} message={t.common.loadErrorMessage} action={{label: t.common.retry, onPress: retry}} /> : <EmptyState title={searching ? t.allSongs.searchEmpty : t.library.emptyState} />}
         listRef={listRef}
         itemHeight={rowHeight}
       />

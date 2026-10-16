@@ -31,6 +31,7 @@ import {pingServer, PingError} from '../../api/client';
 import {useSettingsStore, type Server} from '../../store/settingsStore';
 import {colors, radii, spacing, typography} from '../../theme';
 import {useT, getT} from '../../i18n';
+import {hostOf} from '../../utils/hostOf';
 
 /** What to tell the user about a failed check. */
 function friendlyError(e: unknown): string {
@@ -44,11 +45,6 @@ function friendlyError(e: unknown): string {
     case 'http': return e.status && e.status >= 500 ? d.serverError(e.status) : d.clientError(e.status ?? 0);
     default: return `${d.generic} (${e.message})`;
   }
-}
-
-/** Host of a server URL, for the saved accounts. */
-function hostOf(url: string): string {
-  return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 }
 
 const Field = forwardRef<TextInput, TextInputProps & {label: string}>(function Field({label, ...input}, ref) {

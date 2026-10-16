@@ -9,7 +9,7 @@
  *   counter to prevent race conditions. Tapped results play alone, then
  *   autoplay (playback engine, ADR-009 A8).
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -76,6 +76,10 @@ export default function SearchActive() {
   const [menuSong, setMenuSong] = useState<SubsonicSong | null>(null);
   const [addTo, setAddTo] = useState<SubsonicSong | null>(null);
   const genRef = useRef(0);
+  // Search request failed (not the same as no results); `attempt` re-runs it.
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const retry = () => setAttempt(a => a + 1);
 
   const history = useSearchHistoryStore(s => s.history);
   const addItem = useSearchHistoryStore(s => s.addItem);
@@ -96,6 +100,7 @@ export default function SearchActive() {
       return;
     }
     setLoading(true);
+    setFailed(false);
     const debounce = setTimeout(async () => {
       try {
         const data = await search(query);
@@ -112,11 +117,12 @@ export default function SearchActive() {
       } catch {
         if (genRef.current !== myGen) return;
         setResults(EMPTY);
+        setFailed(true);
         setLoading(false);
       }
     }, 400);
     return () => clearTimeout(debounce);
-  }, [query]);
+  }, [query, attempt]);
 
   const scoped = useMemo(() => filterScope(results, scope), [results, scope]);
   const best = useMemo(() => bestResult(scoped, query), [scoped, query]);
@@ -315,6 +321,8 @@ export default function SearchActive() {
         />
       ) : loading ? (
         <SkeletonList />
+      ) : failed ? (
+        <EmptyState title={t.common.loadError} message={t.common.loadErrorMessage} action={{label: t.common.retry, onPress: retry}} />
       ) : nothing ? (
         <EmptyState title={t.search.noResults(query.trim())} />
       ) : (

@@ -8,7 +8,7 @@
  *   Offline (or when the server cannot be reached), lists the downloaded liked
  *   songs, from the copy of the liked list saved on the last online visit.
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useMemo, useState} from 'react';
@@ -66,16 +66,19 @@ export default function LikedSongsScreen() {
   const [songs, setSongs] = useState<SubsonicSong[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
+  // Server unreachable and nothing downloaded to show instead.
+  const [failed, setFailed] = useState(false);
   const [menuSong, setMenuSong] = useState<SubsonicSong | null>(null);
   const [addTo, setAddTo] = useState<SubsonicSong | null>(null);
 
-  useFocusEffect(useCallback(() => {
+  const load = useCallback(() => {
     // Only downloaded tracks can play offline: list the downloaded liked ones.
     const offlineList = () => offlineLikedSongs(
       usePlaylistCacheStore.getState().cachedLikedSongs,
       usePlayerStore.getState().likedSongIds,
       useDownloadStore.getState().downloads,
     );
+    setFailed(false);
     if (isOfflineMode) {
       setSongs(offlineList());
       setLoading(false);
@@ -87,9 +90,15 @@ export default function LikedSongsScreen() {
         setLikedSongs(d.songs.map(s => String(s.id)));
         usePlaylistCacheStore.getState().setCachedLikedSongs(d.songs);
       })
-      .catch(() => setSongs(offlineList()))
+      .catch(() => {
+        const list = offlineList();
+        setSongs(list);
+        setFailed(list.length === 0);
+      })
       .finally(() => setLoading(false));
-  }, [setLikedSongs, isOfflineMode]));
+  }, [setLikedSongs, isOfflineMode]);
+  useFocusEffect(load);
+  const retry = () => { setLoading(true); load(); };
 
   // Unliked here: hidden at once, before the server list is fetched again.
   const liked = useMemo(() => songs.filter(s => overrides[String(s.id)] !== false), [songs, overrides]);
@@ -221,7 +230,7 @@ export default function LikedSongsScreen() {
         renderItem={renderItem}
         keyExtractor={s => String(s.id)}
         loading={loading}
-        empty={<EmptyState title={query.trim() ? t.allSongs.searchEmpty : t.likedSongs.emptyState} />}
+        empty={failed ? <EmptyState title={t.common.loadError} message={t.common.loadErrorMessage} action={{label: t.common.retry, onPress: retry}} /> : <EmptyState title={query.trim() ? t.allSongs.searchEmpty : t.likedSongs.emptyState} />}
       />
       <AddToPlaylistSheet
         visible={!!addTo}

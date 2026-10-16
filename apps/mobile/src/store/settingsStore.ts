@@ -5,10 +5,11 @@
  *   nav bar position, fullscreen mode (hides the OS status bar), the
  *   landscape full-player cover/progress column order, haptic feedback and
  *   the "Previous always goes back" playback rule, and the Library view
- *   (list or grid, pinned items) and the sort of My Music.
+ *   (list or grid, pinned items) and the sort of My Music, the Basic /
+ *   Advanced settings mode, the start tab and the date on the Home.
  *   Persisted across restarts; consumed by RootNavigator to gate the server-setup flow.
  * @author DoodzProg
- * @version 1.5.0
+ * @version 1.6.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -17,6 +18,10 @@ import {mmkvStorage} from './storage';
 import {migrateSettings, SETTINGS_VERSION} from './settingsMigrations';
 
 export type Locale = 'fr' | 'en';
+/** Chosen language: a fixed one, or the phone's. */
+export type LocalePref = Locale | 'system';
+export type SettingsMode = 'basic' | 'advanced';
+export type StartTab = 'Home' | 'Search' | 'Library';
 export type LibrarySortMode = 'recent' | 'added' | 'alpha' | 'custom';
 export type AllSongsSortMode = 'az' | 'artist' | 'recent';
 export type NavBarPosition = 'left' | 'right';
@@ -41,8 +46,17 @@ type SettingsState = {
   setActiveServer: (id: string) => void;
   disconnectServer: () => void;
   getActiveServer: () => Server | null;
-  locale: Locale;
-  setLocale: (locale: Locale) => void;
+  locale: LocalePref;
+  setLocale: (locale: LocalePref) => void;
+  /** Advanced shows the fine-grained settings too. */
+  settingsMode: SettingsMode;
+  setSettingsMode: (mode: SettingsMode) => void;
+  /** Tab shown when the app starts. */
+  startTab: StartTab;
+  setStartTab: (tab: StartTab) => void;
+  /** Date above the Home title. */
+  showHomeDate: boolean;
+  setShowHomeDate: (show: boolean) => void;
   useWaveformScrubber: boolean;
   setUseWaveformScrubber: (use: boolean) => void;
   rotationLocked: boolean;
@@ -97,8 +111,14 @@ export const useSettingsStore = create<SettingsState>()(
         set(state => ({servers: state.servers.filter(s => s.id !== id)})),
       setActiveServer: id => set({activeServerId: id}),
       disconnectServer: () => set({activeServerId: null}),
-      locale: 'en',
+      locale: 'system',
       setLocale: locale => set({locale}),
+      settingsMode: 'basic',
+      setSettingsMode: mode => set({settingsMode: mode}),
+      startTab: 'Home',
+      setStartTab: tab => set({startTab: tab}),
+      showHomeDate: true,
+      setShowHomeDate: show => set({showHomeDate: show}),
       useWaveformScrubber: false,
       setUseWaveformScrubber: use => set({useWaveformScrubber: use}),
       rotationLocked: false,
