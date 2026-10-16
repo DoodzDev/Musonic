@@ -4,9 +4,10 @@
  *   access, shelves and Magic Mixes, the same as the web client, varying from
  *   one day to the next. The last feed is kept on the device (names and ids
  *   only, never a URL: URLs carry the credentials) so the home shows at once
- *   on launch and offline; it is refreshed from the server when online.
+ *   on launch and offline; it is refreshed from the server when online, and
+ *   again as soon as the app is back online after a failed or offline load.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {useCallback, useEffect, useRef, useState} from 'react';
@@ -15,6 +16,7 @@ import {getActiveServer} from '../api/client';
 import {homeSource} from '../services/home/homeSource';
 import {storage} from '../store/storage';
 import {useSettingsStore} from '../store/settingsStore';
+import {useNetworkStore} from '../store/networkStore';
 
 const STORAGE_KEY = 'musonic-home-feed';
 
@@ -59,11 +61,15 @@ export type HomeFeedState = {
 
 export function useHomeFeed(): HomeFeedState {
   const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
+  const serverReachable = useNetworkStore(s => s.serverReachable);
   const account = accountKey();
   const [feed, setFeed] = useState<HomeFeed | null>(() => (account ? readSaved(account)?.feed ?? null : null));
   const [loading, setLoading] = useState(false);
   const [stale, setStale] = useState(false);
   const running = useRef(false);
+  // Read by the effect without re-running it on every change of `stale`.
+  const staleRef = useRef(false);
+  staleRef.current = stale;
 
   const refresh = useCallback(async () => {
     const key = accountKey();
@@ -89,8 +95,10 @@ export function useHomeFeed(): HomeFeedState {
     setFeed(readSaved(account)?.feed ?? null);
     // Online: one fresh feed per session (pull-to-refresh asks for more). Offline: the saved one.
     if (isOfflineMode) { setStale(true); return; }
-    if (sessionFeed?.account !== account) refresh();
-  }, [account, isOfflineMode, refresh]);
+    // Back online (offline mode left, or the server answers again) after a stale feed: reload it.
+    if (!serverReachable) return;
+    if (sessionFeed?.account !== account || staleRef.current) refresh();
+  }, [account, isOfflineMode, serverReachable, refresh]);
 
   return {feed, loading, stale, refresh};
 }

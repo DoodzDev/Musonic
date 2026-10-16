@@ -480,7 +480,7 @@ export const t = {
     },
     mode: {
       label: 'Réglages avancés',
-      desc: 'Affiche aussi les réglages précis : fondu entre les titres, disposition en mode paysage.',
+      desc: 'Affiche aussi les réglages précis : fondu entre les titres, disposition en mode paysage, limite de stockage.',
     },
     account: {
       sectionTitle: 'Compte',
@@ -524,6 +524,10 @@ export const t = {
       qualityMobileLabel: 'Qualité en données mobiles',
       qualityDesc: 'En kbit/s. Les téléchargements restent en qualité originale.',
       qualityOriginal: 'Originale',
+      storageLimitLabel: 'Limite de stockage',
+      storageLimitDesc: (used: string) => `Utilisé : ${used}. Au-delà, les nouveaux téléchargements sont refusés.`,
+      storageLimitNone: 'Aucune',
+      storageLimitGB: (n: number) => `${n} Go`,
     },
     display: {
       lockRotationLabel: "Verrouiller la rotation de l'écran",
@@ -575,6 +579,7 @@ export const t = {
     mobileDataMessage: (n: number) =>
       `Les téléchargements se font en Wi-Fi uniquement. Télécharger ${n > 1 ? `ces ${n} titres` : 'ce titre'} quand même avec vos données mobiles ?`,
     mobileDataConfirm: 'Télécharger',
+    storageFull: 'Limite de stockage atteinte : téléchargement refusé.',
   },
 
   // ─── Full Screen Player ────────────────────────────────────────────────────

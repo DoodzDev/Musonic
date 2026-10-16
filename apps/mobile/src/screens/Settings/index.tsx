@@ -6,7 +6,7 @@
  *   choices (progress bar style, landscape navigation bar side, landscape
  *   player layout) show a small preview of each option.
  * @author DoodzProg
- * @version 2.3.0
+ * @version 2.4.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -25,7 +25,9 @@ import Button from '../../components/ui/Button';
 import Text from '../../components/ui/Text';
 import {BackArrowIcon} from '../../components/icons';
 import {checkForUpdate} from '../../services/updateChecker';
-import {useSettingsStore, type StreamQuality} from '../../store/settingsStore';
+import {useSettingsStore, type StorageLimitMB, type StreamQuality} from '../../store/settingsStore';
+import {useDownloadStore} from '../../store/downloadStore';
+import {formatBytes} from '../../utils/formatBytes';
 import {useDockInset} from '../../navigation/dockLayout';
 import {colors, radii, spacing} from '../../theme';
 import {useT} from '../../i18n';
@@ -137,6 +139,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const server = useSettingsStore(st => st.servers.find(x => x.id === st.activeServerId) ?? null);
+  const usedBytes = useDownloadStore(st => st.getTotalSizeBytes());
   const s = useSettingsStore(
     useShallow(st => ({
       useWaveformScrubber: st.useWaveformScrubber,
@@ -173,6 +176,8 @@ export default function SettingsScreen() {
       setStreamQualityWifi: st.setStreamQualityWifi,
       streamQualityMobile: st.streamQualityMobile,
       setStreamQualityMobile: st.setStreamQualityMobile,
+      storageLimitMB: st.storageLimitMB,
+      setStorageLimitMB: st.setStorageLimitMB,
       hapticsEnabled: st.hapticsEnabled,
       setHapticsEnabled: st.setHapticsEnabled,
     })),
@@ -184,6 +189,12 @@ export default function SettingsScreen() {
     {value: 320, label: '320'},
     {value: 192, label: '192'},
     {value: 128, label: '128'},
+  ];
+  const storageOptions: {value: StorageLimitMB; label: string}[] = [
+    {value: 0, label: t.settings.playback.storageLimitNone},
+    {value: 2048, label: t.settings.playback.storageLimitGB(2)},
+    {value: 5120, label: t.settings.playback.storageLimitGB(5)},
+    {value: 10240, label: t.settings.playback.storageLimitGB(10)},
   ];
 
   const setAutoDownload = (on: boolean) => {
@@ -285,6 +296,11 @@ export default function SettingsScreen() {
               description={t.settings.playback.autoDownloadDesc}
               toggle={{value: s.isAutoDownloadEnabled, onValueChange: setAutoDownload}}
             />
+            {advanced ? (
+              <Block label={t.settings.playback.storageLimitLabel} description={t.settings.playback.storageLimitDesc(formatBytes(usedBytes))}>
+                <SegmentedControl options={storageOptions} value={s.storageLimitMB} onChange={s.setStorageLimitMB} />
+              </Block>
+            ) : null}
           </ListGroup>
 
           <ListGroup caption={t.settings.sections.offline}>

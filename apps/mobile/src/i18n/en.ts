@@ -475,7 +475,7 @@ export const en = {
     },
     mode: {
       label: 'Advanced settings',
-      desc: 'Also shows the fine-grained settings: crossfade, landscape layout.',
+      desc: 'Also shows the fine-grained settings: crossfade, landscape layout, storage limit.',
     },
     account: {
       sectionTitle: 'Account',
@@ -518,6 +518,10 @@ export const en = {
       qualityMobileLabel: 'Quality on mobile data',
       qualityDesc: 'In kbit/s. Downloads always keep the original quality.',
       qualityOriginal: 'Original',
+      storageLimitLabel: 'Storage limit',
+      storageLimitDesc: (used: string) => `Used: ${used}. Beyond it, new downloads are refused.`,
+      storageLimitNone: 'None',
+      storageLimitGB: (n: number) => `${n} GB`,
     },
     display: {
       lockRotationLabel: 'Lock screen rotation',
@@ -568,6 +572,7 @@ export const en = {
     mobileDataMessage: (n: number) =>
       `Downloads use Wi-Fi only. Download ${n > 1 ? `these ${n} tracks` : 'this track'} with your mobile data anyway?`,
     mobileDataConfirm: 'Download',
+    storageFull: 'Storage limit reached: download refused.',
   },
 
   // ─── Full Screen Player ────────────────────────────────────────────────────

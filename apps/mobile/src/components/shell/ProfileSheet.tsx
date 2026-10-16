@@ -30,18 +30,9 @@ import {withTimeout} from '../../services/connectivityService';
 import {colors, spacing} from '../../theme';
 import {useT} from '../../i18n';
 import {hostOf} from '../../utils/hostOf';
+import {formatBytes} from '../../utils/formatBytes';
 import {version as APP_VERSION} from '../../../package.json';
 
-function formatBytes(bytes: number): string {
-  const units = [
-    [1024 * 1024 * 1024, 'Go'],
-    [1024 * 1024, 'Mo'],
-  ] as const;
-  for (const [size, unit] of units) {
-    if (bytes >= size) return `${(bytes / size).toFixed(1).replace('.', ',')} ${unit}`;
-  }
-  return `${Math.round(bytes / 1024)} Ko`;
-}
 
 const PAGE_MS = 220;
 

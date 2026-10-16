@@ -7,10 +7,11 @@
  *   the "Previous always goes back" playback rule, and the Library view
  *   (list or grid, pinned items) and the sort of My Music, the Basic /
  *   Advanced settings mode, the start tab and the date on the Home, and the
- *   network rules: downloads on Wi-Fi only, streaming quality per network.
+ *   network rules: downloads on Wi-Fi only, streaming quality per network,
+ *   and the storage limit for downloads.
  *   Persisted across restarts; consumed by RootNavigator to gate the server-setup flow.
  * @author DoodzProg
- * @version 1.7.0
+ * @version 1.8.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -25,6 +26,8 @@ export type SettingsMode = 'basic' | 'advanced';
 export type StartTab = 'Home' | 'Search' | 'Library';
 /** Max streaming bitrate in kbit/s; 0 = original file. */
 export type StreamQuality = 0 | 320 | 192 | 128;
+/** Download storage cap in MB; 0 = none. */
+export type StorageLimitMB = 0 | 2048 | 5120 | 10240;
 export type LibrarySortMode = 'recent' | 'added' | 'alpha' | 'custom';
 export type AllSongsSortMode = 'az' | 'artist' | 'recent';
 export type NavBarPosition = 'left' | 'right';
@@ -67,6 +70,9 @@ type SettingsState = {
   setStreamQualityWifi: (q: StreamQuality) => void;
   streamQualityMobile: StreamQuality;
   setStreamQualityMobile: (q: StreamQuality) => void;
+  /** Most space downloads may use, in MB; 0 = no limit. */
+  storageLimitMB: StorageLimitMB;
+  setStorageLimitMB: (mb: StorageLimitMB) => void;
   useWaveformScrubber: boolean;
   setUseWaveformScrubber: (use: boolean) => void;
   rotationLocked: boolean;
@@ -135,6 +141,8 @@ export const useSettingsStore = create<SettingsState>()(
       setStreamQualityWifi: q => set({streamQualityWifi: q}),
       streamQualityMobile: 192,
       setStreamQualityMobile: q => set({streamQualityMobile: q}),
+      storageLimitMB: 0,
+      setStorageLimitMB: mb => set({storageLimitMB: mb}),
       useWaveformScrubber: false,
       setUseWaveformScrubber: use => set({useWaveformScrubber: use}),
       rotationLocked: false,

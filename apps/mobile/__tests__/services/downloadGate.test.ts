@@ -1,17 +1,19 @@
 /**
  * @file downloadGate.test.ts
  * @description "Download on Wi-Fi only": free on Wi-Fi, a confirmation on
- *   mobile data, automatic downloads skipped on mobile data.
+ *   mobile data, automatic downloads skipped on mobile data; storage limit.
  * @author DoodzProg
  * @version 1.0.0
  * @license CC-BY-NC-4.0
  */
+// The toast pulls in Reanimated, which needs its native part.
+jest.mock('../../src/components/ui/Toast', () => ({toast: {error: jest.fn()}}));
 jest.mock('../../src/store/storage', () => ({storage: {getString: () => undefined, set: () => {}, delete: () => {}}, mmkvStorage: {getItem: () => null, setItem: () => {}, removeItem: () => {}}}));
 let mockMobileData = false;
 jest.mock('../../src/services/network', () => ({isOnMobileData: () => mockMobileData}));
 
 import {Alert} from 'react-native';
-import {canDownloadAutomatically, confirmDownload} from '../../src/services/downloadGate';
+import {canDownloadAutomatically, confirmDownload, isStorageFull} from '../../src/services/downloadGate';
 import {useSettingsStore} from '../../src/store/settingsStore';
 
 /** Presses the alert button at `index` (0 = cancel, 1 = download). */
@@ -54,4 +56,19 @@ it('never asks when Wi-Fi only is off', async () => {
   await expect(confirmDownload(1)).resolves.toBe(true);
   expect(alert).not.toHaveBeenCalled();
   expect(canDownloadAutomatically()).toBe(true);
+});
+
+describe('storage limit', () => {
+  const GB = 1024 * 1024 * 1024;
+
+  it('is never full without a limit', () => {
+    useSettingsStore.setState({storageLimitMB: 0});
+    expect(isStorageFull(100 * GB)).toBe(false);
+  });
+
+  it('is full once the space allowed is used', () => {
+    useSettingsStore.setState({storageLimitMB: 2048});
+    expect(isStorageFull(1.9 * GB)).toBe(false);
+    expect(isStorageFull(2 * GB)).toBe(true);
+  });
 });

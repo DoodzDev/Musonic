@@ -10,6 +10,8 @@
 const mockFiles = new Set<string>();
 const mockFetch = jest.fn();
 
+// The toast pulls in Reanimated, which needs its native part.
+jest.mock('../../src/components/ui/Toast', () => ({toast: {error: jest.fn()}}));
 jest.mock('react-native-blob-util', () => ({
   fs: {
     dirs: {DocumentDir: '/docs'},

@@ -6,7 +6,8 @@
  *   indexed tracks are downloadable; Deezer-sourced tracks (ext- prefix) are
  *   silently ignored because they cannot be streamed through Navidrome.
  *   "Wi-Fi only" (downloadGate): on mobile data the user confirms each
- *   request; automatic downloads (`auto`) are skipped.
+ *   request; automatic downloads (`auto`) are skipped. Past the storage
+ *   limit, tracks are refused (checked when queued and again before each one).
  * @author DoodzProg
  * @version 1.2.0
  * @license CC-BY-NC-4.0
@@ -16,7 +17,7 @@ import {persist, createJSONStorage} from 'zustand/middleware';
 import {mmkvStorage} from './storage';
 import RNBlobUtil from 'react-native-blob-util';
 import {getRemoteCoverArtUrl, getStreamUrl} from '../api/client';
-import {canDownloadAutomatically, confirmDownload} from '../services/downloadGate';
+import {canDownloadAutomatically, confirmDownload, isStorageFull, notifyStorageFull} from '../services/downloadGate';
 import {
   LOCAL_COVER_SIZE,
   coverKeyOf,
@@ -139,6 +140,18 @@ function _drain(): void {
  */
 async function _executeDownload(trackId: string, track: SubsonicSong): Promise<void> {
   const store = useDownloadStore.getState;
+
+  // The limit may have been reached by the tracks before this one in the queue.
+  if (isStorageFull(store().getTotalSizeBytes())) {
+    useDownloadStore.setState(s => {
+      const rest = {...s.activeDownloads};
+      delete rest[trackId];
+      return {activeDownloads: rest};
+    });
+    notifyStorageFull();
+    _notifyBatch(trackId);
+    return;
+  }
 
   try {
     // Ensure the musonic downloads directory exists.
@@ -475,6 +488,10 @@ function isEligible(trackId: string): boolean {
 function queueOne(track: SubsonicSong): void {
   const trackId = String(track.id);
   if (!isEligible(trackId)) return;
+  if (isStorageFull(useDownloadStore.getState().getTotalSizeBytes())) {
+    notifyStorageFull();
+    return;
+  }
   useDownloadStore.setState(s => ({
     activeDownloads: {
       ...s.activeDownloads,
