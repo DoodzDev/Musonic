@@ -2,7 +2,7 @@
  * @file fr.ts
  * @description French strings of the web client (source of truth for translations).
  * @author DoodzProg
- * @version 0.4.0
+ * @version 0.4.1
  * @license CC-BY-NC-4.0
  */
 
@@ -10,21 +10,21 @@ const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : 
 
 export const fr = {
   login: {
-    tagline: 'Connecte ton serveur de musique',
+    tagline: 'Connectez votre serveur de musique',
     server: 'Adresse du serveur',
     serverPlaceholder: 'https://music.exemple.com',
     username: 'Identifiant',
-    usernamePlaceholder: 'Ton identifiant',
+    usernamePlaceholder: 'Votre identifiant',
     password: 'Mot de passe',
-    passwordPlaceholder: 'Ton mot de passe',
+    passwordPlaceholder: 'Votre mot de passe',
     showPassword: 'Afficher le mot de passe',
     hidePassword: 'Masquer le mot de passe',
     submit: 'Se connecter',
     submitting: 'Connexion…',
-    footnote: 'Fonctionne avec Navidrome et les serveurs compatibles Subsonic. Ton mot de passe n’est jamais envoyé en clair.',
+    footnote: 'Fonctionne avec Navidrome et les serveurs compatibles Subsonic. Votre mot de passe n’est jamais envoyé en clair.',
     errors: {
       auth: 'Identifiant ou mot de passe incorrect.',
-      unreachable: 'Serveur injoignable. Vérifie l’adresse et ta connexion.',
+      unreachable: 'Serveur injoignable. Vérifiez l’adresse et votre connexion.',
       invalidUrl: 'Adresse invalide. Exemple : https://music.exemple.com',
       generic: 'La connexion a échoué.',
     },
@@ -50,15 +50,15 @@ export const fr = {
       becauseLiked: (title?: string) => `Parce que vous avez aimé « ${title ?? ''} »`,
       magicMixes: () => 'Mix Magiques',
       rediscover: () => 'À redécouvrir',
-      newest: () => 'Nouveautés dans ta bibliothèque',
+      newest: () => 'Nouveautés dans votre bibliothèque',
       random: () => 'Au hasard',
     },
     subtitles: {
-      magicMixes: 'Tes titres et des découvertes, par ambiance',
-      rediscover: 'Des albums que tu as beaucoup écoutés',
+      magicMixes: 'Vos titres, par genre',
+      rediscover: 'Des albums que vous avez beaucoup écoutés',
     } as Partial<Record<string, string>>,
     error: 'Impossible de charger l’accueil.',
-    empty: 'Ta bibliothèque est encore vide : écoute quelques titres et l’accueil se remplira.',
+    empty: 'Votre bibliothèque est encore vide : écoutez quelques titres et l’accueil se remplira.',
   },
   card: {
     play: (name: string) => `Lire ${name}`,
