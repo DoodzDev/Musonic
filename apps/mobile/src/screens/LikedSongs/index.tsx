@@ -136,7 +136,7 @@ export default function LikedSongsScreen() {
   }, [allDownloaded, toDownload]);
 
   const playAll = useCallback(() => { if (tracks.length) playFromList({type: 'liked'}, tracks); }, [tracks]);
-  const playButton = usePlayButton(tracks, playAll);
+  const playButton = usePlayButton({type: 'liked'}, playAll);
 
   const renderItem = useCallback(({item, index}: {item: SubsonicSong; index: number}) => {
     const id = String(item.id);

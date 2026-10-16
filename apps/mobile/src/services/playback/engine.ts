@@ -22,7 +22,7 @@
  *   - Offline, the native player only holds downloaded tracks; the others
  *     stay in the model and come back online. No Magic nor autoplay (E1).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer, {RepeatMode as NativeRepeat} from 'react-native-track-player';
@@ -301,6 +301,12 @@ function rememberPlaylist(source: Q.PlaySource): void {
   const store = usePlayerStore.getState();
   if (source.type === 'playlist' && source.id) store.setCurrentPlaylist(source.id, source.name ?? null);
   else store.setCurrentPlaylist(null, null);
+  store.setCurrentSourceKey(sourceKey(source));
+}
+
+/** Identifies a list ("album:42", "liked") to compare the playing one with a page's. */
+export function sourceKey(source: {type: string; id?: string}): string {
+  return source.id ? `${source.type}:${source.id}` : source.type;
 }
 
 export const playbackEngine = {

@@ -219,7 +219,7 @@ export default function AlbumDetailScreen() {
     }
   }, [source, tracks]);
 
-  const playButton = usePlayButton(tracks, playAll);
+  const playButton = usePlayButton(source, playAll);
 
   const addToQueue = useCallback(async () => {
     if (!tracks.length) return;

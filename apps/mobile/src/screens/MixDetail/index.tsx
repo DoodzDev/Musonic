@@ -111,7 +111,7 @@ export default function MixDetailScreen() {
 
   const playAll = useCallback(() => { playFromList(source, tracks); }, [tracks]); // eslint-disable-line react-hooks/exhaustive-deps
   // Pauses / resumes when the current track belongs to this mix.
-  const playButton = usePlayButton(tracks, playAll);
+  const playButton = usePlayButton(source, playAll);
 
   const renderItem = useCallback(({item, index}: {item: SongLike; index: number}) => {
     const id = String(item.id);

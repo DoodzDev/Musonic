@@ -193,7 +193,7 @@ export default function AllSongsScreen() {
   }, [rows, insets.top, isLandscape]);
 
   const playAll = useCallback(() => { if (tracks.length) playFromList({type: 'library'}, tracks); }, [tracks]);
-  const playButton = usePlayButton(tracks, playAll);
+  const playButton = usePlayButton({type: 'library'}, playAll);
 
   const renderItem = useCallback(({item}: {item: Row}) => {
     if (item.kind === 'header') {

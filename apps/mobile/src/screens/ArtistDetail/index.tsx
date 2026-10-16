@@ -182,7 +182,7 @@ export default function ArtistDetailScreen() {
   const tracks = useMemo(() => popular.map(p => toTrack(p.song)), [popular]);
   const source = useMemo(() => ({type: 'artist' as const, id: serverId ?? name, name}), [serverId, name]);
   const playAll = useCallback(() => { if (tracks.length) playFromList(source, tracks); }, [source, tracks]);
-  const playButton = usePlayButton(tracks, playAll);
+  const playButton = usePlayButton(source, playAll);
 
   // The server also lists online albums (ext-…) of the artist: only its own count as "in your library".
   const ownAlbums = albums.filter(a => !String(a.id).startsWith('ext-'));

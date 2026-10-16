@@ -109,7 +109,7 @@ export default function LikedRecommendationsScreen() {
 
   const tracks = useMemo(() => recos.songs.map(songToTrack), [recos.songs]);
   const playAll = useCallback(() => { if (tracks.length) playFromList({type: 'recommendations'}, tracks); }, [tracks]);
-  const playButton = usePlayButton(tracks, playAll);
+  const playButton = usePlayButton({type: 'recommendations'}, playAll);
 
   const renderItem = useCallback(({item, index}: {item: SubsonicSong; index: number}) => {
     const id = String(item.id);

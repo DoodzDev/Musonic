@@ -7,7 +7,7 @@
  *   the playback engine; queue and mode actions are handed over to it through
  *   the engine bridge (registered by the engine, so no import cycle).
  * @author DoodzProg
- * @version 2.1.0
+ * @version 2.2.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -57,6 +57,8 @@ type PlayerState = {
   playlistSongIds: Set<string>;
   currentPlaylistId: string | null;
   currentPlaylistName: string | null;
+  /** List the playback was started from (`type:id`), for the pages' Play / Pause button. */
+  currentSourceKey: string | null;
   lastPlayedPlaylists: Record<string, number>;
   playlistVersion: number;
   isFetchingMagic: boolean;
@@ -83,6 +85,7 @@ type PlayerState = {
   setLikedSongs: (ids: string[]) => void;
   setPlaylistSong: (id: string, inPlaylist: boolean) => void;
   setCurrentPlaylist: (id: string | null, name: string | null) => void;
+  setCurrentSourceKey: (key: string | null) => void;
   /** Moves a track before `beforeId` (null = the very end); resolves once applied. */
   reorderQueue: (id: string, beforeId: string | null) => Promise<void>;
   removeFromQueue: (ids: string[]) => void;
@@ -133,6 +136,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   playlistSongIds: new Set<string>(),
   currentPlaylistId: null,
   currentPlaylistName: null,
+  currentSourceKey: null,
   lastPlayedPlaylists: {},
   playlistVersion: 0,
   isFetchingMagic: false,
@@ -369,6 +373,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       else next.delete(id);
       return {playlistSongIds: next};
     }),
+
+  setCurrentSourceKey: key => set({currentSourceKey: key}),
 
   setCurrentPlaylist: (id, name) => {
     if (id != null) {
