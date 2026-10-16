@@ -1,363 +1,259 @@
 /**
  * @file main.js
- * @description Musonic product showcase — progressive enhancement scripts.
- *   Handles i18n (EN/FR), scroll-reveal, sticky nav, screenshot tabs, and
- *   ambient hero parallax. No external runtime dependencies.
+ * @description Presentation website: English / French texts, the latest
+ *   mobile version read from GitHub releases (tags `mobile-v…`), and the
+ *   portrait / landscape screenshot switch.
  * @author DoodzProg
- * @version 1.0.1
+ * @version 2.0.0
  * @license CC-BY-NC-4.0
  */
 
-'use strict';
-
-/* ─── i18n ───────────────────────────────────────────────────────────────────── */
-
-const TRANSLATIONS = {
+const TEXTS = {
   en: {
-    'nav.features':    'Features',
-    'nav.screenshots': 'Screenshots',
-    'nav.setup':       'Setup',
-    'nav.stack':       'Stack',
-
-    'hero.badge':          'v1.0.6 · Now available',
-    'hero.headline':       'Self-hosted music,',
-    'hero.headline.accent':'beautifully played.',
-    'hero.subline':        'Open-source music player for Navidrome and Subsonic. Synced lyrics, ambient art, and no compromises.',
-    'hero.dl.android':     'Download for Android',
-    'hero.dl.ios':         'iOS Sideload',
-
-    'features.label':    'Features',
-    'features.title':    'Everything your music deserves.',
-    'features.subtitle': 'For people who host their own music and want a player that actually feels good.',
-    'features.f1.title': 'Navidrome &amp; Subsonic',
-    'features.f1.desc':  'Works with any Navidrome or Subsonic server. Your library, your hardware.',
-    'features.f2.title': 'Synced Lyrics',
-    'features.f2.desc':  'Lyrics scroll line by line as the song plays. Uses your server\'s data, falls back to LRCLIB if needed.',
-    'features.f3.title': 'Ambient UI',
-    'features.f3.desc':  'Backgrounds shift with each album\'s colors. Every song has its own feel.',
-    'features.f4.title': 'Offline Mode',
-    'features.f4.desc':  'No signal? Downloaded tracks and cached data keep everything accessible. Toggle offline mode manually too.',
-    'features.f5.title': 'MMKV Storage',
-    'features.f5.desc':  'State is backed by MMKV, much faster than AsyncStorage. The app picks up exactly where you left it.',
-    'features.f6.title': 'Multilingual',
-    'features.f6.desc':  'Ships in English and French. The translation system is open and easy to extend.',
-
-    'scr.label':    'Screenshots',
-    'scr.title':    'See it in action.',
-    'scr.subtitle': 'Captured on Samsung Galaxy S21 Ultra.',
-    'scr.tab.player':    'Player',
-    'scr.tab.browse':    'Browse',
-    'scr.tab.library':   'Library',
-    'scr.tab.playlists': 'Playlists',
-    'scr.tab.more':      'More',
-    'scr.cap.player_waves':    'Player · Waves',
-    'scr.cap.player_classic':  'Player · Classic',
-    'scr.cap.lyrics':          'Synced Lyrics',
-    'scr.cap.queue':           'Queue',
-    'scr.cap.home':            'Home',
-    'scr.cap.search':          'Search',
-    'scr.cap.album_detail':    'Album Detail',
-    'scr.cap.artist_detail':   'Artist Detail',
-    'scr.cap.library':         'Library',
-    'scr.cap.sidebar':         'Sidebar',
-    'scr.cap.playlist_options':'Playlist Options',
-    'scr.cap.playlist_edit':   'Playlist Edit',
-    'scr.cap.settings':        'Settings',
-
-    'setup.label':       'Setup',
-    'setup.title':       'Running in three steps.',
-    'setup.subtitle':    'No account required. No cloud sync. Just your server and your music.',
-    'setup.step1.title': 'Install Navidrome',
-    'setup.step1.desc':  'Set up Navidrome or any Subsonic-compatible server.',
-    'setup.step2.title': 'Download Musonic',
-    'setup.step2.desc':  'Download the APK from GitHub Releases and install it.',
-    'setup.step3.title': 'Connect &amp; Play',
-    'setup.step3.desc':  'Add your server URL and login. Your library loads immediately.',
-
-    'stack.label': 'Built with',
-    'stack.title': 'Open, modern, and fast.',
-
-    'cta.title':             'Ready to take back your music?',
-    'cta.sub':               'Open source. Self-hosted. Yours.',
-    'cta.download.android':  'Download for Android',
-    'cta.download.ios':      'iOS Sideload',
-    'cta.github':            'View on GitHub',
+    'nav.skip': 'Skip to content',
+    'nav.ecosystem': 'Ecosystem',
+    'nav.use': 'Use Musonic',
+    'nav.screens': 'Screenshots',
+    'nav.start': 'Get started',
+    'hero.title': 'Your music server, everywhere you listen.',
+    'hero.lead': 'Musonic plays the music you host on Navidrome or any Subsonic server. A calm app on your phone today, a web client and server tools next. No account, no ads, nothing but your library.',
+    'hero.version': 'Latest version',
+    'hero.versionOf': (v) => `Version ${v}`,
+    'hero.req': 'Android 7 or later, free and open source',
+    'cta.android': 'Download for Android',
+    'cta.ios': 'iOS sideload',
+    'cta.other': 'Other platforms',
+    'eco.title': 'More than an app',
+    'eco.lead': 'Musonic is growing into a whole music environment built around your own server. Every piece speaks the same language and looks the same, on every screen.',
+    'eco.root.title': 'Your music server',
+    'eco.root.desc': 'Navidrome or any Subsonic-compatible server, at home or on a VPS. Your files never leave it.',
+    'eco.mobile.title': 'Mobile app',
+    'eco.mobile.desc': 'Android and iOS. Library, synced lyrics, Magic Mixes, offline downloads.',
+    'eco.web.title': 'Web client',
+    'eco.web.desc': 'The same Musonic in your browser, made for desktop.',
+    'eco.server.title': 'Server and API',
+    'eco.server.desc': 'Server-side features: imports, recommendations, sharing between accounts.',
+    'eco.tools.title': 'Local tools',
+    'eco.tools.desc': 'Command line and desktop helpers for local files and your library.',
+    'status.available': 'Available',
+    'status.dev': 'In development',
+    'status.planned': 'Planned',
+    'status.idea': 'Exploring',
+    'use.title': 'Use Musonic',
+    'use.lead': 'Pick the way you listen. The mobile app is ready now; the rest arrives step by step.',
+    'use.mobile.title': 'Mobile',
+    'use.mobile.desc': 'Install the APK on Android, or sideload the IPA on iPhone with AltStore or Sideloadly. The app tells you when an update is out.',
+    'use.notes': 'Release notes',
+    'use.web.title': 'Web',
+    'use.web.desc': 'Musonic in a browser tab, with your library, playback and the same home as on your phone. Not released yet.',
+    'use.soon': 'Not available yet',
+    'use.server.title': 'Server',
+    'use.server.desc': 'For now Musonic works with Navidrome directly. A Musonic server layer will come later.',
+    'use.navidrome': 'Install Navidrome',
+    'scr.title': 'Screenshots',
+    'scr.lead': 'The mobile app, as it looks today.',
+    'scr.portrait': 'Portrait',
+    'scr.landscape': 'Landscape',
+    'cap.home': 'Home',
+    'cap.player': 'Player',
+    'cap.lyrics': 'Synced lyrics',
+    'cap.mix': 'Magic Mix',
+    'cap.foryou': 'For you',
+    'cap.search': 'Search',
+    'cap.artist': 'Artist',
+    'cap.album': 'Album',
+    'cap.library': 'Library',
+    'cap.grid': 'Library, grid',
+    'cap.liked': 'Liked Songs',
+    'cap.queue': 'Queue',
+    'cap.settings': 'Settings',
+    'hl.title': 'What you get',
+    'hl.play': 'Playback',
+    'hl.lyrics.t': 'Synced lyrics',
+    'hl.lyrics.d': 'Line by line in the player. Tap a line to jump to it.',
+    'hl.queue.t': 'A queue you control',
+    'hl.queue.d': 'Shuffle, repeat, autoplay, reorder, and restored where you left it.',
+    'hl.magic.t': 'Shuffle Magic',
+    'hl.magic.d': 'Your songs, with related tracks found online in between.',
+    'hl.discover': 'Discovery',
+    'hl.home.t': 'A home that knows you',
+    'hl.home.d': 'Recently played, picks for you and artists to discover.',
+    'hl.mixes.t': 'Magic Mixes',
+    'hl.mixes.d': 'One mix per genre, with about 3 discoveries in 10.',
+    'hl.search.t': 'One search',
+    'hl.search.d': 'Your library and the online catalogue, with a top result.',
+    'hl.offline': 'Offline and data',
+    'hl.dl.t': 'Downloads',
+    'hl.dl.d': 'Playlists, albums or single tracks, ready with no signal.',
+    'hl.wifi.t': 'Wi-Fi first',
+    'hl.wifi.d': 'Downloads wait for Wi-Fi; streaming quality is set per network.',
+    'hl.private.t': 'Private by design',
+    'hl.private.d': 'No account, no analytics. Only artist and track names leave your phone, for photos and lyrics.',
+    'start.title': 'Get started',
+    'start.1.t': 'Run a music server',
+    'start.1.d': 'Install Navidrome, or use any Subsonic-compatible server you already have.',
+    'start.2.t': 'Install Musonic',
+    'start.2.d': 'Download the APK on Android, or sideload the IPA on iPhone.',
+    'start.3.t': 'Sign in to your server',
+    'start.3.d': 'Enter its address, your username and password. Your library is there.',
+    'foot.releases': 'Releases',
+    'foot.issue': 'Report an issue',
+    'foot.made': 'Made by',
   },
-
   fr: {
-    'nav.features':    'Fonctionnalités',
-    'nav.screenshots': 'Captures',
-    'nav.setup':       'Installation',
-    'nav.stack':       'Stack',
-
-    'hero.badge':          'v1.0.6 · Disponible maintenant',
-    'hero.headline':       'Votre musique,',
-    'hero.headline.accent':'magnifiquement jouée.',
-    'hero.subline':        'Lecteur de musique open-source pour Navidrome et Subsonic. Paroles synchronisées, visuels ambiants, sans compromis.',
-    'hero.dl.android':     'Télécharger pour Android',
-    'hero.dl.ios':         'Sideload iOS',
-
-    'features.label':    'Fonctionnalités',
-    'features.title':    'Tout ce que votre musique mérite.',
-    'features.subtitle': 'Pour ceux qui hébergent leur musique et veulent un lecteur qui en vaut la peine.',
-    'features.f1.title': 'Navidrome &amp; Subsonic',
-    'features.f1.desc':  'Fonctionne avec n\'importe quel serveur Navidrome ou Subsonic. Votre musique, votre matériel.',
-    'features.f2.title': 'Paroles synchronisées',
-    'features.f2.desc':  'Paroles qui défilent avec la musique, ligne par ligne. Depuis votre serveur ou LRCLIB en secours.',
-    'features.f3.title': 'Interface ambiante',
-    'features.f3.desc':  "L'arrière-plan change avec chaque album. Chaque morceau a sa propre ambiance.",
-    'features.f4.title': 'Mode hors-ligne',
-    'features.f4.desc':  "Pas de connexion ? Les titres téléchargés et le cache prennent le relais. Le mode hors-ligne s'active aussi manuellement.",
-    'features.f5.title': 'Stockage MMKV',
-    'features.f5.desc':  "État sauvegardé par MMKV, bien plus rapide qu'AsyncStorage. L'app reprend exactement où vous l'avez laissée.",
-    'features.f6.title': 'Multilingue',
-    'features.f6.desc':  'Disponible en anglais et en français. Le système de traduction est ouvert et facile à étendre.',
-
-    'scr.label':    "Captures d'écran",
-    'scr.title':    "Découvrez l'application.",
-    'scr.subtitle': 'Capturé sur Samsung Galaxy S21 Ultra.',
-    'scr.tab.player':    'Lecteur',
-    'scr.tab.browse':    'Explorer',
-    'scr.tab.library':   'Bibliothèque',
-    'scr.tab.playlists': 'Playlists',
-    'scr.tab.more':      'Plus',
-    'scr.cap.player_waves':    'Lecteur · Waves',
-    'scr.cap.player_classic':  'Lecteur · Classique',
-    'scr.cap.lyrics':          'Paroles synchronisées',
-    'scr.cap.queue':           "File d'attente",
-    'scr.cap.home':            'Accueil',
-    'scr.cap.search':          'Recherche',
-    'scr.cap.album_detail':    'Détail Album',
-    'scr.cap.artist_detail':   'Détail Artiste',
-    'scr.cap.library':         'Bibliothèque',
-    'scr.cap.sidebar':         'Menu latéral',
-    'scr.cap.playlist_options':'Options Playlist',
-    'scr.cap.playlist_edit':   'Modifier Playlist',
-    'scr.cap.settings':        'Paramètres',
-
-    'setup.label':       'Installation',
-    'setup.title':       'Lancé en trois étapes.',
-    'setup.subtitle':    'Aucun compte requis. Aucune synchronisation cloud. Juste votre serveur et votre musique.',
-    'setup.step1.title': 'Installer Navidrome',
-    'setup.step1.desc':  'Installez Navidrome ou n\'importe quel serveur compatible Subsonic.',
-    'setup.step2.title': 'Télécharger Musonic',
-    'setup.step2.desc':  "Téléchargez l'APK depuis GitHub Releases et installez-le.",
-    'setup.step3.title': 'Connecter et lire',
-    'setup.step3.desc':  "Entrez l'URL de votre serveur et vos identifiants. La bibliothèque se charge immédiatement.",
-
-    'stack.label': 'Construit avec',
-    'stack.title': 'Ouvert, moderne et rapide.',
-
-    'cta.title':             'Prêt à reprendre votre musique ?',
-    'cta.sub':               'Open source. Auto-hébergé. À vous.',
-    'cta.download.android':  'Télécharger pour Android',
-    'cta.download.ios':      'Sideload iOS',
-    'cta.github':            'Voir sur GitHub',
+    'nav.skip': 'Aller au contenu',
+    'nav.ecosystem': 'Écosystème',
+    'nav.use': 'Utiliser Musonic',
+    'nav.screens': 'Captures',
+    'nav.start': 'Commencer',
+    'hero.title': 'Votre serveur de musique, partout où vous écoutez.',
+    'hero.lead': "Musonic lit la musique que vous hébergez sur Navidrome ou tout serveur Subsonic. Une app sobre sur votre téléphone aujourd'hui, un client web et des outils serveur ensuite. Sans compte, sans pub, juste votre bibliothèque.",
+    'hero.version': 'Dernière version',
+    'hero.versionOf': (v) => `Version ${v}`,
+    'hero.req': 'Android 7 ou plus récent, gratuit et open source',
+    'cta.android': 'Télécharger pour Android',
+    'cta.ios': 'iOS (sideload)',
+    'cta.other': 'Autres plateformes',
+    'eco.title': "Plus qu'une app",
+    'eco.lead': "Musonic devient tout un environnement musical construit autour de votre propre serveur. Chaque brique parle le même langage et a le même visage, sur chaque écran.",
+    'eco.root.title': 'Votre serveur de musique',
+    'eco.root.desc': "Navidrome ou tout serveur compatible Subsonic, chez vous ou sur un VPS. Vos fichiers n'en sortent jamais.",
+    'eco.mobile.title': 'App mobile',
+    'eco.mobile.desc': 'Android et iOS. Bibliothèque, paroles synchronisées, Mix Magiques, téléchargements hors ligne.',
+    'eco.web.title': 'Client web',
+    'eco.web.desc': 'Le même Musonic dans votre navigateur, pensé pour l’ordinateur.',
+    'eco.server.title': 'Serveur et API',
+    'eco.server.desc': 'Des fonctions côté serveur : imports, recommandations, partage entre comptes.',
+    'eco.tools.title': 'Outils locaux',
+    'eco.tools.desc': 'Ligne de commande et utilitaires de bureau pour vos fichiers locaux et votre bibliothèque.',
+    'status.available': 'Disponible',
+    'status.dev': 'En développement',
+    'status.planned': 'Prévu',
+    'status.idea': 'À l’étude',
+    'use.title': 'Utiliser Musonic',
+    'use.lead': "Choisissez comment vous écoutez. L'app mobile est prête ; le reste arrive étape par étape.",
+    'use.mobile.title': 'Mobile',
+    'use.mobile.desc': "Installez l'APK sur Android, ou l'IPA sur iPhone avec AltStore ou Sideloadly. L'app vous prévient quand une mise à jour sort.",
+    'use.notes': 'Notes de version',
+    'use.web.title': 'Web',
+    'use.web.desc': 'Musonic dans un onglet, avec votre bibliothèque, la lecture et le même accueil que sur le téléphone. Pas encore publié.',
+    'use.soon': 'Pas encore disponible',
+    'use.server.title': 'Serveur',
+    'use.server.desc': "Pour l'instant, Musonic fonctionne directement avec Navidrome. Une couche serveur Musonic viendra plus tard.",
+    'use.navidrome': 'Installer Navidrome',
+    'scr.title': 'Captures',
+    'scr.lead': "L'app mobile, telle qu'elle est aujourd'hui.",
+    'scr.portrait': 'Portrait',
+    'scr.landscape': 'Paysage',
+    'cap.home': 'Accueil',
+    'cap.player': 'Lecteur',
+    'cap.lyrics': 'Paroles synchronisées',
+    'cap.mix': 'Mix Magique',
+    'cap.foryou': 'Pour vous',
+    'cap.search': 'Recherche',
+    'cap.artist': 'Artiste',
+    'cap.album': 'Album',
+    'cap.library': 'Bibliothèque',
+    'cap.grid': 'Bibliothèque, grille',
+    'cap.liked': 'Titres likés',
+    'cap.queue': "File d'attente",
+    'cap.settings': 'Réglages',
+    'hl.title': 'Ce que vous obtenez',
+    'hl.play': 'Lecture',
+    'hl.lyrics.t': 'Paroles synchronisées',
+    'hl.lyrics.d': 'Ligne par ligne dans le lecteur. Touchez une ligne pour y aller.',
+    'hl.queue.t': "Une file d'attente à vous",
+    'hl.queue.d': 'Aléatoire, répétition, lecture auto, réorganisation, reprise là où vous en étiez.',
+    'hl.magic.t': 'Aléatoire Magique',
+    'hl.magic.d': 'Vos titres, avec des morceaux proches trouvés en ligne entre eux.',
+    'hl.discover': 'Découverte',
+    'hl.home.t': 'Un accueil qui vous connaît',
+    'hl.home.d': 'Écoutés récemment, sélections pour vous et artistes à découvrir.',
+    'hl.mixes.t': 'Mix Magiques',
+    'hl.mixes.d': 'Un mix par genre, avec environ 3 découvertes sur 10.',
+    'hl.search.t': 'Une seule recherche',
+    'hl.search.d': 'Votre bibliothèque et le catalogue en ligne, avec un meilleur résultat.',
+    'hl.offline': 'Hors ligne et données',
+    'hl.dl.t': 'Téléchargements',
+    'hl.dl.d': 'Playlists, albums ou titres seuls, prêts sans réseau.',
+    'hl.wifi.t': "Le Wi-Fi d'abord",
+    'hl.wifi.d': 'Les téléchargements attendent le Wi-Fi ; la qualité se règle par réseau.',
+    'hl.private.t': 'Privé par conception',
+    'hl.private.d': "Sans compte ni statistiques. Seuls les noms d'artistes et de titres quittent votre téléphone, pour les photos et les paroles.",
+    'start.title': 'Commencer',
+    'start.1.t': 'Avoir un serveur de musique',
+    'start.1.d': 'Installez Navidrome, ou utilisez un serveur compatible Subsonic que vous avez déjà.',
+    'start.2.t': 'Installer Musonic',
+    'start.2.d': "Téléchargez l'APK sur Android, ou installez l'IPA sur iPhone.",
+    'start.3.t': 'Se connecter au serveur',
+    'start.3.d': 'Entrez son adresse, votre identifiant et votre mot de passe. Votre bibliothèque est là.',
+    'foot.releases': 'Versions',
+    'foot.issue': 'Signaler un problème',
+    'foot.made': 'Fait par',
   },
 };
 
-let currentLang = localStorage.getItem('musonic-lang') || 'en';
+let lang = 'en';
+let mobileVersion = null;
 
-function applyLanguage(lang) {
-  const t = TRANSLATIONS[lang];
+function readStored(key) {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+function store(key, value) {
+  try { localStorage.setItem(key, value); } catch { /* private mode */ }
+}
+
+function applyLanguage(next) {
+  const t = TEXTS[next];
   if (!t) return;
-
-  document.documentElement.lang = lang;
-  currentLang = lang;
-  localStorage.setItem('musonic-lang', lang);
-
+  lang = next;
+  document.documentElement.lang = next;
   document.querySelectorAll('[data-i18n]').forEach((el) => {
-    const key = el.dataset.i18n;
-    if (t[key] !== undefined) el.innerHTML = t[key];
+    const value = t[el.dataset.i18n];
+    if (typeof value === 'string') el.textContent = value;
   });
+  document.querySelectorAll('[data-lang]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === next)));
+  showVersion();
+}
 
-  // Update lang switcher active state
-  document.querySelectorAll('.lang-opt').forEach((opt) => {
-    opt.classList.toggle('active', opt.dataset.lang === lang);
+function showVersion() {
+  if (!mobileVersion) return;
+  document.querySelectorAll('.js-version').forEach((el) => { el.textContent = TEXTS[lang]['hero.versionOf'](mobileVersion); });
+}
+
+/** Latest published mobile release: tags `mobile-vX.Y.Z` (one repository, several apps). */
+async function loadVersion() {
+  try {
+    const res = await fetch('https://api.github.com/repos/DoodzProg/Musonic/releases?per_page=30');
+    if (!res.ok) return;
+    const releases = await res.json();
+    const mobile = releases.find((r) => !r.draft && !r.prerelease && /^mobile-v\d/.test(r.tag_name));
+    if (mobile) {
+      mobileVersion = mobile.tag_name.replace('mobile-v', '');
+      showVersion();
+    }
+  } catch { /* offline or rate-limited: keep "Latest version" */ }
+}
+
+function initLanguage() {
+  const saved = readStored('musonic-lang');
+  const guess = (navigator.language || '').toLowerCase().startsWith('fr') ? 'fr' : 'en';
+  applyLanguage(saved === 'fr' || saved === 'en' ? saved : guess);
+  document.querySelectorAll('[data-lang]').forEach((b) => {
+    b.addEventListener('click', () => { applyLanguage(b.dataset.lang); store('musonic-lang', b.dataset.lang); });
   });
 }
 
-(function initI18n() {
-  applyLanguage(currentLang);
-
-  const btn = document.getElementById('lang-btn');
-  if (!btn) return;
-
-  btn.addEventListener('click', () => {
-    applyLanguage(currentLang === 'en' ? 'fr' : 'en');
-  });
-})();
-
-/* ─── Screenshot tab switching ───────────────────────────────────────────────── */
-
-(function initScreenshotTabs() {
-  const tabs = document.querySelectorAll('.scr-tab');
-  if (!tabs.length) return;
-
-  tabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const target = tab.dataset.tab;
-      tabs.forEach((t) => {
-        t.classList.toggle('active', t === tab);
-        t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
-      });
-      document.querySelectorAll('.scr-panel').forEach((panel) => {
-        const isTarget = panel.id === `panel-${target}`;
-        panel.classList.toggle('active', isTarget);
-        isTarget ? panel.removeAttribute('hidden') : panel.setAttribute('hidden', '');
-      });
+function initShots() {
+  const buttons = document.querySelectorAll('[data-shots]');
+  buttons.forEach((b) => {
+    b.addEventListener('click', () => {
+      buttons.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      document.querySelectorAll('.shots').forEach((set) => { set.hidden = set.dataset.set !== b.dataset.shots; });
     });
   });
-})();
+}
 
-/* ─── Scroll-reveal via IntersectionObserver ─────────────────────────────────── */
-
-(function initReveal() {
-  const elements = document.querySelectorAll('.reveal');
-  if (!elements.length) return;
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
-  );
-
-  elements.forEach((el) => observer.observe(el));
-})();
-
-/* ─── Sticky Navigation ──────────────────────────────────────────────────────── */
-
-(function initNav() {
-  const nav = document.querySelector('.nav');
-  if (!nav) return;
-
-  function onScroll() {
-    nav.classList.toggle('scrolled', window.scrollY > 60);
-  }
-
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
-})();
-
-/* ─── Smooth anchor scroll (Safari fallback) ─────────────────────────────────── */
-
-(function initSmoothScroll() {
-  document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-    anchor.addEventListener('click', (event) => {
-      const targetId = anchor.getAttribute('href').slice(1);
-      const target = document.getElementById(targetId);
-      if (!target) return;
-      event.preventDefault();
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  });
-})();
-
-/* ─── Ambient glow — mouse parallax on hero (desktop only) ──────────────────── */
-
-(function initHeroParallax() {
-  const hero = document.querySelector('.hero');
-  if (!hero || window.matchMedia('(pointer: coarse)').matches) return;
-
-  hero.addEventListener('mousemove', (event) => {
-    const rect = hero.getBoundingClientRect();
-    const x = Math.min(Math.max(((event.clientX - rect.left) / rect.width) * 100, 20), 80);
-    const y = Math.min(Math.max(((event.clientY - rect.top) / rect.height) * 100, 5), 60);
-    hero.style.setProperty('--hero-glow-pos', `${x}% ${y}%`);
-  });
-
-  hero.addEventListener('mouseleave', () => {
-    hero.style.setProperty('--hero-glow-pos', '50% 0%');
-  });
-})();
-
-/* ─── Scroll Progress Bar ────────────────────────────────────────────────────── */
-
-(function initScrollProgress() {
-  const bar = document.querySelector('.scroll-progress');
-  if (!bar) return;
-
-  function update() {
-    const total = document.documentElement.scrollHeight - window.innerHeight;
-    bar.style.width = total > 0 ? `${(window.scrollY / total) * 100}%` : '0%';
-  }
-
-  window.addEventListener('scroll', update, { passive: true });
-  update();
-})();
-
-/* ─── Lightbox ───────────────────────────────────────────────────────────────── */
-
-(function initLightbox() {
-  const lb      = document.getElementById('lightbox');
-  const lbImg   = document.getElementById('lb-img');
-  const lbCap   = document.getElementById('lb-caption');
-  const lbClose = document.getElementById('lb-close');
-  const lbPrev  = document.getElementById('lb-prev');
-  const lbNext  = document.getElementById('lb-next');
-  if (!lb) return;
-
-  let frames = [];
-  let idx = 0;
-
-  function show() {
-    const frame = frames[idx];
-    const img = frame.querySelector('img');
-    const cap = frame.querySelector('figcaption');
-    lbImg.src = img.src;
-    lbImg.alt = img.alt;
-    lbCap.textContent = cap ? cap.textContent : '';
-    lbPrev.disabled = idx === 0;
-    lbNext.disabled = idx === frames.length - 1;
-  }
-
-  function open(frame, panelFrames) {
-    frames = panelFrames;
-    idx = frames.indexOf(frame);
-    show();
-    lb.removeAttribute('hidden');
-    requestAnimationFrame(() => lb.classList.add('lb-visible'));
-    document.body.style.overflow = 'hidden';
-  }
-
-  function close() {
-    lb.classList.remove('lb-visible');
-    setTimeout(() => {
-      lb.setAttribute('hidden', '');
-      document.body.style.overflow = '';
-    }, 250);
-  }
-
-  document.querySelectorAll('.scr-strip').forEach((strip) => {
-    const panelFrames = Array.from(strip.querySelectorAll('.scr-frame'));
-    panelFrames.forEach((frame) => {
-      frame.addEventListener('click', () => open(frame, panelFrames));
-    });
-  });
-
-  lbClose.addEventListener('click', close);
-  lb.addEventListener('click', (e) => { if (e.target === lb) close(); });
-
-  lbPrev.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (idx > 0) { idx--; show(); }
-  });
-
-  lbNext.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (idx < frames.length - 1) { idx++; show(); }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (lb.hasAttribute('hidden')) return;
-    if (e.key === 'Escape')     close();
-    if (e.key === 'ArrowLeft'  && idx > 0)                  { idx--; show(); }
-    if (e.key === 'ArrowRight' && idx < frames.length - 1)  { idx++; show(); }
-  });
-})();
+initLanguage();
+initShots();
+loadVersion();

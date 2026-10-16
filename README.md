@@ -1,286 +1,304 @@
+<div align="center">
+
+<img src="docs/assets/img/logo.svg" alt="Musonic logo" width="96" />
+
 # Musonic
 
-[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
-[![React Native](https://img.shields.io/badge/React%20Native-0.85-61DAFB?logo=react)](https://reactnative.dev)
-[![Version](https://img.shields.io/badge/version-1.0.1-orange)](https://github.com/DoodzProg/Musonic/releases)
+**Self-hosted music, beautifully played.**
 
-A Spotify-inspired mobile client for Navidrome and Subsonic-compatible servers, built with React Native (New Architecture). Own your music. Own your experience.
+A music app for Navidrome and any Subsonic-compatible server, on Android and iOS (a web client is on the way).
+Your library, on your hardware, with an app that feels like it belongs on your phone.
+
+<a href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.apk"><img src="docs/assets/img/badges/download-android.png" alt="Download Musonic for Android" height="64" /></a>
+&nbsp;
+<a href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.ipa"><img src="docs/assets/img/badges/install-ios.png" alt="Install Musonic on iOS (sideload)" height="64" /></a>
+
+[![Latest release](https://img.shields.io/github/v/release/DoodzProg/Musonic?filter=mobile-v*&label=mobile&color=FF6B35)](https://github.com/DoodzProg/Musonic/releases/latest)
+[![Mobile CI](https://github.com/DoodzProg/Musonic/actions/workflows/ci.yml/badge.svg)](https://github.com/DoodzProg/Musonic/actions/workflows/ci.yml)
+[![Web CI](https://github.com/DoodzProg/Musonic/actions/workflows/ci-web.yml/badge.svg)](https://github.com/DoodzProg/Musonic/actions/workflows/ci-web.yml)
+[![React Native](https://img.shields.io/badge/React%20Native-0.85-61DAFB?logo=react)](https://reactnative.dev)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+
+[Presentation website](https://doodzprog.github.io/Musonic/) · [All releases](https://github.com/DoodzProg/Musonic/releases) · [Changelog](apps/mobile/CHANGELOG.md)
+
+<img src="docs/assets/img/screenshots/home.jpg" alt="Home" width="200" />
+<img src="docs/assets/img/screenshots/player.jpg" alt="Player" width="200" />
+<img src="docs/assets/img/screenshots/album_detail.jpg" alt="Album" width="200" />
+
+</div>
 
 ---
 
-## Table of Contents
+## Contents
 
-- [Features](#features)
+- [Why Musonic](#why-musonic)
+- [Highlights](#highlights)
 - [Screenshots](#screenshots)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation — Android](#installation--android)
-  - [Installation — iOS](#installation--ios-macos-only)
-- [Server Setup](#server-setup)
-  - [Navidrome (standard)](#navidrome-standard)
-  - [OctoFiesta (optional)](#octofiesta-optional)
-- [CI/CD](#cicd)
-- [Building a Signed APK](#building-a-signed-apk)
-- [Project Structure](#project-structure)
-- [Architecture Notes](#architecture-notes)
-- [Known Limitations](#known-limitations)
+- [Install](#install)
+- [Connect your server](#connect-your-server)
+- [Privacy](#privacy)
+- [Repository layout](#repository-layout)
+- [Development](#development)
+- [Releases and CI](#releases-and-ci)
+- [Architecture notes](#architecture-notes)
+- [Known limitations](#known-limitations)
+- [Contributing](#contributing)
 - [License](#license)
 
 ---
 
-## Features
+## Why Musonic
+
+- **Free and open source**, no account, no ads, no tracking.
+- **Your server only**: Musonic plays what Navidrome serves; nothing is uploaded anywhere.
+- **More than your library**: recommendations and, with OctoFiesta, the online catalogue, side by side with your own music.
+- **One ecosystem**: the mobile app today, a web client and more tools to come, all in this repository.
+
+---
+
+## Highlights
+
+### A new design
+- Calm, dark interface with large titles, a floating Dock in portrait and a side Rail in landscape.
+- Full-screen player with a softly blurred cover background, a quality badge (FLAC, MP3 320…) and drag-to-close.
+- Every screen has a landscape layout: two-column detail pages, wide grids, side-by-side player.
 
 ### Playback
-- **Full-screen player** — ambient halo background extracted from album art, animated cover, waveform / classic scrubber toggle
-- **Mini player** — persistent bottom bar with swipe-to-skip gesture
-- **Queue management** — drag-and-drop reordering, remove, move-to-top
-- **Crossfade** — configurable fade between tracks
-- **Repeat** — off / all / one
-- **Shuffle** — standard shuffle + Shuffle Magic (genre-aware third state, powered by Deezer recommendations)
-- **Autoplay** — automatic queue extension with Deezer + Navidrome similar tracks when queue ends
-- **Synced lyrics** — real-time line-by-line highlight; Navidrome embedded lyrics with LRCLIB as fallback
-- **Lock screen & media notification** — full playback controls from Android lock screen and notification shade
+- **Synced lyrics** inside the player, line by line, tap a line to jump to it (Navidrome lyrics, LRCLIB as a fallback).
+- **Queue** with shuffle, repeat, autoplay, multi-select and drag to reorder.
+- **Shuffle Magic** mixes your songs with related tracks found online.
+- **Smart Previous** (restart after 3 s, or always go back), crossfade, playback restored where you left it.
+- Lock screen and notification controls.
 
-### Library & Discovery
-- **Library** — albums, playlists, and Liked Songs with sort options, pin support, pull-to-refresh
-- **Home screen** — quick-access grid, filter pills: All, Recent, Frequent, Recommendations, Discover
-- **Artist detail** — artist photo via Deezer public API (no key required), top songs, full discography, "Similar artists" album cards
-- **Album detail** — dominant-color gradient header, full track listing, star/unstar
-- **Liked Songs** — star/unstar from anywhere with optimistic UI and offline retry queue
-- **Search** — full-text songs, artists, and albums; Discover tab with Deezer-powered recommendations across 6 sections
+### Discovery
+- **Home** built from what you play: quick access, recently played, *For you*, artists to discover.
+- **Magic Mixes** by genre: your songs plus about 3 discoveries in 10, marked *Online*.
+- **Search** across your library and the online catalogue, with a top result, artists, albums and songs, plus genres to browse.
+- **Artist pages** with photo, popular tracks, albums and similar artists.
 
-### Playlists
-- Create, rename, edit cover, delete
-- Drag-and-drop track reordering with inline search
-- Recommendation footer — Deezer tracks based on the playlist's top artists
-- Add/remove tracks from any playlist via contextual option sheet
+### Library
+- Playlists, albums, artists and downloads, as a list or a grid, with sorting and pinning.
+- **Liked Songs** and **My Music** (your whole library, jump to any letter).
+- Create, rename, reorder and give playlists a custom cover.
 
-### Offline Mode & Downloads
-- **Offline mode (Beta)** — manual toggle or auto-detected via server ping; Library and Playlist Detail load from local cache when offline
-- **Track downloads** — download individual tracks or entire playlists to device storage for offline playback (Navidrome-indexed tracks only)
-- **Download management** — delete individual downloads or full playlist batches; total storage usage displayed in the side drawer
-- **Shuffle intercept** — Shuffle Magic automatically falls back to standard shuffle when offline
+### Offline and data
+- Download playlists, albums or single tracks; play them with no connection.
+- Downloads wait for **Wi-Fi** by default; on mobile data Musonic asks first.
+- **Streaming quality** set separately for Wi-Fi and mobile data (Original, 320, 192, 128 kbit/s); downloads always keep the original file.
+- Optional storage limit, automatic offline mode and reconnection.
 
-### Infrastructure
-- **MMKV persistence** — credentials, preferences, download index, and playlist cache survive app restarts at native speed
-- **Connectivity monitor** — periodic background ping with automatic online/offline state propagation
-- **i18n** — French and English UI, switchable from Settings
-- **React Native New Architecture** — Fabric + JSI; no legacy bridge
+### Made for everyone
+- English and French, or follow the phone's language.
+- Basic and Advanced settings, accessibility labels for TalkBack, readable at large text sizes.
 
 ---
 
 ## Screenshots
 
-| Player (Waves) | Player (Classic) | Synced Lyrics |
+| Home | For you | Magic Mix |
 |---|---|---|
-| ![Player Waves](docs/assets/img/screenshots/player_waveform_downloaded.jpg) | ![Player Classic](docs/assets/img/screenshots/player_classic.jpg) | ![Lyrics](docs/assets/img/screenshots/lyrics.jpg) |
+| ![Home](docs/assets/img/screenshots/home.jpg) | ![For you](docs/assets/img/screenshots/home_for_you.jpg) | ![Magic Mix](docs/assets/img/screenshots/magic_mix.jpg) |
 
-| Home | Search · Discover | Queue · Shuffle Magic |
+| Player | Synced lyrics | Queue |
 |---|---|---|
-| ![Home](docs/assets/img/screenshots/home.jpg) | ![Search Discover](docs/assets/img/screenshots/search_discover.jpg) | ![Queue Shuffle Magic](docs/assets/img/screenshots/queue_shuffle_magic.jpg) |
+| ![Player](docs/assets/img/screenshots/player.jpg) | ![Lyrics](docs/assets/img/screenshots/lyrics.jpg) | ![Queue](docs/assets/img/screenshots/queue.jpg) |
 
-| Library | Artist Detail | Album Detail |
+| Search | Search results | Artist |
 |---|---|---|
-| ![Library](docs/assets/img/screenshots/library.jpg) | ![Artist Detail](docs/assets/img/screenshots/artist_detail.jpg) | ![Album Detail](docs/assets/img/screenshots/album_detail.jpg) |
+| ![Search](docs/assets/img/screenshots/search.jpg) | ![Search results](docs/assets/img/screenshots/search_results.jpg) | ![Artist](docs/assets/img/screenshots/artist_detail.jpg) |
 
-| Playlist (Downloaded) | Offline Sidebar | Lock Screen |
+| Library | Library · Grid | Liked Songs |
 |---|---|---|
-| ![Playlist Downloaded](docs/assets/img/screenshots/playlist_detail_downloaded.jpg) | ![Offline Mode](docs/assets/img/screenshots/drawer_offline.jpg) | ![Lock Screen](docs/assets/img/screenshots/lock_screen_player.jpg) |
+| ![Library](docs/assets/img/screenshots/library.jpg) | ![Library grid](docs/assets/img/screenshots/library_grid.jpg) | ![Liked Songs](docs/assets/img/screenshots/liked_songs.jpg) |
+
+| Album | Playlist | Settings |
+|---|---|---|
+| ![Album](docs/assets/img/screenshots/album_detail.jpg) | ![Playlist](docs/assets/img/screenshots/playlist_detail.jpg) | ![Settings](docs/assets/img/screenshots/settings.jpg) |
+
+<details>
+<summary><b>Landscape screenshots</b></summary>
+
+| Home | Player | Liked Songs |
+|---|---|---|
+| ![Home landscape](docs/assets/img/screenshots/landscape_home.jpg) | ![Player landscape](docs/assets/img/screenshots/landscape_player.jpg) | ![Liked Songs landscape](docs/assets/img/screenshots/landscape_liked.jpg) |
+
+</details>
+
+More screenshots on the [presentation website](https://doodzprog.github.io/Musonic/).
 
 ---
 
-## Getting Started
+## Install
 
-### Prerequisites
-
-| Requirement | Details |
+| App | How |
 |---|---|
-| **Navidrome or Subsonic server** | Any recent version; OctoFiesta is optional — see [Server Setup](#server-setup) |
-| **Android device** | Android 8.0+ (API 26+) |
-| **iOS device** | iOS 15+ — sideload only via AltStore or Sideloadly |
-| **Node.js** | ≥ 22.11.0 (see `apps/mobile/.nvmrc`) |
-| **JDK** | 21 (Temurin recommended) |
-| **Android SDK** | 34 or 36 |
-| **NDK** | 27.1 |
+| **Android** 7.0+ | Download [`Musonic.apk`](https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.apk) from the latest release and open it. The app tells you when a new version is out. |
+| **iOS** 15.1+ | Unsigned IPA, [`Musonic.ipa`](https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.ipa), to install with AltStore or Sideloadly. No App Store release is planned. |
+| **Web client** | The Musonic app in a browser, for desktop. In development, not released yet: see [`apps/web`](apps/web/README.md). |
 
-> You do **not** need a cloud account, API key, or internet access beyond your own server. Musonic uses the Deezer public API for artist images and recommendations — no registration required.
+No account, no cloud and no API key: Musonic only talks to your own server, plus the public Deezer API for artist photos and recommendations.
 
-### Installation — Android
+---
+
+## Connect your server
+
+On first launch, enter:
+
+| Field | Value |
+|---|---|
+| Server URL | `https://music.example.com` |
+| Username | your Navidrome username |
+| Password | your Navidrome password |
+
+Musonic tells you clearly what went wrong (wrong password, server not found, not a Subsonic server…). More accounts can be added later from your profile.
+
+### Online catalogue (optional)
+
+With [OctoFiesta](https://github.com/V1ck3s/octo-fiesta), a Subsonic-compatible layer in front of Navidrome, tracks, albums and artists from the online catalogue can be played and liked like your own. Setup is the same as above, with the OctoFiesta address. Online items are marked *Online* and handled transparently (`ext-` ids).
+
+---
+
+## Privacy
+
+- Your server address and password stay on your phone and are only sent to your own server. Use an `https://` address so they are encrypted on the way.
+- To find artist photos, recommendations and lyrics, Musonic sends **artist and track names only** to the public [Deezer API](https://developers.deezer.com/api) and [LRCLIB](https://lrclib.net). No account, no identifier, no listening history.
+- No analytics, no crash reporting, no ads. The only other request is a check of this repository's releases for updates.
+
+---
+
+## Repository layout
+
+A single repository for every Musonic app ([monorepo](https://github.com/DoodzProg/Musonic/tree/main)):
+
+```
+apps/
+├── mobile/      React Native app (Android, iOS)
+└── web/         Web client (Vite + React)
+packages/
+└── core/        Shared TypeScript: Subsonic client, home feed engine, release tags
+docs/            Presentation website (GitHub Pages), not the web client
+```
+
+Inside the mobile app (`apps/mobile/src`):
+
+```
+api/           Subsonic client, Deezer, endpoints
+components/    ui/ (design system), player/, detail/, shell/ (Dock, profile), icons/
+hooks/         Player setup, home feed, library, play button…
+i18n/          fr.ts and en.ts (same keys, checked by a test)
+navigation/    Root navigator, tabs with Dock and Rail, stacks
+screens/       Home, Search, Library, Album, Artist, Playlist, Mix, Liked Songs,
+               My Music, Recommendations, Settings, Server setup
+services/      Playback engine, background service, downloads gate, network
+store/         Zustand stores persisted with MMKV
+theme/         Design tokens: colours, type, shadows, motion
+```
+
+---
+
+## Development
+
+### Mobile
+
+| Requirement | Version |
+|---|---|
+| Node.js | 22.13 or later (`apps/mobile/.nvmrc`) |
+| JDK | 17 and 21 |
+| Android SDK / NDK | 36 / 27.1 |
+| Xcode (iOS) | 16+, macOS only |
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/DoodzProg/Musonic.git
-cd Musonic/apps/mobile   # the mobile app lives in apps/mobile
+cd Musonic/apps/mobile
+npm ci                        # also applies the patches in patches/
 
-# 2. Switch to the correct Node version
-nvm use          # reads .nvmrc (22.11.0)
-
-# 3. Install JS dependencies
-npm install
-
-# 4. Connect your device and launch
+npm start                     # terminal 1: Metro
 adb reverse tcp:8081 tcp:8081
-npm start -- --reset-cache   # Terminal 1 — Metro bundler
-npm run android               # Terminal 2
+npm run android               # terminal 2
 ```
 
-### Installation — iOS (macOS only)
+iOS: `bundle install && cd ios && bundle exec pod install && cd .. && npm run ios`.
+
+Checks, from `apps/mobile`:
 
 ```bash
-bundle install
-cd ios && bundle exec pod install && cd ..
-npm run ios
+npx tsc --noEmit
+npx eslint . --max-warnings 0
+npm test
+```
+
+### Web and shared core
+
+From the repository root (Node 24, `.nvmrc`):
+
+```bash
+npm ci
+npm run web          # http://localhost:5173
+npm run test:core    # tests of packages/core
 ```
 
 ---
 
-## Server Setup
+## Releases and CI
 
-### Navidrome (standard)
+Each app is released on its own, from `main`, with its own tag prefix:
 
-Open Musonic, tap **Settings → Server**, and enter:
-
-| Field | Value |
-|---|---|
-| Server URL | `https://your-navidrome-domain.tld` |
-| Username | your Navidrome username |
-| Password | your Navidrome password |
-
-No additional configuration required. Musonic uses standard Subsonic API endpoints.
-
-### OctoFiesta (optional)
-
-[OctoFiesta](https://github.com/DoodzProg/octo-fiesta) is a Subsonic-compatible middleware layer that extends Navidrome with external catalog streaming. When Musonic is connected to an OctoFiesta instance, the Deezer-powered recommendation engine goes beyond surfacing discovery results — tracks, albums, and artists from the external catalog can be played directly alongside your personal library, with seamless ID routing handled transparently on both ends.
-
-Configuration is identical to a standard Navidrome setup:
-
-| Field | Value |
-|---|---|
-| Server URL | `https://your-octofiesta-domain.tld` |
-| Username | your Navidrome username |
-| Password | your Navidrome password |
-
-Musonic handles `ext-deezer:` prefixed IDs automatically. Cover art, artist images, and stream URLs all resolve without any client-side configuration.
-
----
-
-## CI/CD
-
-Musonic uses GitHub Actions for automated builds and releases:
-
-| Workflow | Trigger | Output |
+| Tag | Release | Built by |
 |---|---|---|
-| `android-release.yml` | Push tag `v*` or manual dispatch | Signed release APK |
-| `ios-release.yml` | Push tag `v*` or manual dispatch | Unsigned IPA (AltStore / Sideloadly) |
-| `ci.yml` | PR to `main` | TypeScript type check |
+| `mobile-vX.Y.Z` | *Musonic Mobile X.Y.Z*: signed APK and unsigned IPA | `android-release.yml`, `ios-release.yml` |
+| `web-vX.Y.Z` | *Musonic Web X.Y.Z* | (coming) |
 
-**Required GitHub Secrets** (Settings → Secrets → Actions):
+The in-app update prompt only looks at its own app's tags. Every push and pull request runs the checks of the parts it touches: `ci.yml` (mobile and core) and `ci-web.yml` (web and core).
 
-| Secret | Value |
-|---|---|
-| `KEYSTORE_BASE64` | Base64-encoded `musonic-release.keystore` |
-| `KEYSTORE_PASSWORD` | Keystore password |
-| `KEY_ALIAS` | `musonic` |
-| `KEY_PASSWORD` | Same as `KEYSTORE_PASSWORD` (PKCS12) |
+Signing secrets for the Android workflow (Settings → Secrets → Actions): `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
 
-To trigger a release:
+To build a signed APK locally, put `keystore.properties` and the keystore in `apps/mobile/android/` (both git-ignored, keep an offline backup), then:
 
 ```bash
-git tag v1.0.0 && git push origin v1.0.0
-```
-
-Both workflows fire automatically and attach the APK and IPA as assets on the GitHub Release.
-
----
-
-## Building a Signed APK
-
-```bash
-# Ensure apps/mobile/android/keystore.properties references your keystore (git-ignored)
 cd apps/mobile/android
 ./gradlew assembleRelease
-# Output: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
-```
-
-> `musonic-release.keystore` and `apps/mobile/android/keystore.properties` are git-ignored. Keep a secure offline backup of both files — they cannot be recovered if lost.
-
----
-
-## Project Structure
-
-The repository is a monorepo. The mobile app lives in `apps/mobile/`:
-
-```
-apps/mobile/src/
-├── api/
-│   ├── client.ts          Subsonic fetch client, URL helpers
-│   ├── types.ts           TypeScript type definitions
-│   ├── deezer.ts          Deezer public API — recommendations, artist images (no key)
-│   ├── apiKeys.example.ts API key template (no keys currently required)
-│   └── endpoints/
-│       ├── library.ts     getRecentAlbums, getStarred, star/unstar, similar songs
-│       ├── playlists.ts   CRUD playlist operations
-│       └── search.ts      search() + Deezer async image enrichment
-├── components/            Shared UI — player, sheets, icons, cards
-├── hooks/                 useSetupPlayer, useImageColor
-├── i18n/                  fr.ts (source of truth) + en.ts + index.ts hook
-├── navigation/            RootNavigator, TabNavigator, stacks, type definitions
-├── screens/               Home, Search, Library, AlbumDetail, ArtistDetail,
-│                          PlaylistDetail, LikedSongs, Settings, ServerSetup
-├── services/              PlaybackService (headless), playerActions, connectivityService
-├── store/                 Zustand stores: player, settings, search history,
-│                          playlist cache, download store, playlist membership cache
-├── theme/                 Design tokens, dark theme object
-└── utils/                 colorUtils (hex blending, ID-to-colour mapping)
+# apps/mobile/android/app/build/outputs/apk/release/app-release.apk
 ```
 
 ---
 
-## Architecture Notes
+## Architecture notes
 
-### Audio Engine
-React Native Track Player 4.1.2, patched for New Architecture (37 `scope.launch` fixes). `playerStore` is the UI source of truth; RNTP is the audio source of truth. `AudioPlayer.tsx` bridges RNTP events → store. The `isMagic` flag is preserved across queue operations via RNTP track metadata to ensure Shuffle Magic tracks render correctly after queue mutations.
-
-### HTTP Client
-All API calls use native `fetch` with `AbortController` for cancellation and `URLSearchParams` for query string construction. No third-party HTTP client.
-
-### Offline & Downloads
-`connectivityService` pings the server periodically and sets `isOfflineMode` in `settingsStore`. `playlistCacheStore` holds playlist metadata and song lists for offline access. `downloadStore` manages per-track file downloads with a semaphore (max 3 concurrent), MMKV persistence, and `getTotalSizeBytes()` for storage reporting. Only Navidrome-indexed tracks are downloadable; Deezer-sourced tracks (`ext-` prefix) are silently skipped.
-
-### Drawer Navigation
-`@react-navigation/drawer` is not used — it caused a `WorkletsError` with react-native-reanimated v4. A custom `DrawerContainer` (React context + `Animated`) replaces it. `react-native-reanimated/plugin` must remain **last** in `babel.config.js`.
-
-### Playlist Track Indicator
-Tracks highlight only when playing from the current playlist context (checked via `currentPlaylistId`). Playing from album, search, or Liked Songs correctly clears the context. Duplicate songs in a playlist are disambiguated by RNTP queue index, not by song ID.
-
-### New Architecture
-`newArchEnabled=true` in `gradle.properties` is required. `UIManager.setLayoutAnimationEnabledExperimental` must not be called — it is incompatible with Fabric.
+- **Playback engine** (`services/playback/`): one entry point, `playContext`, builds the queue from pure, unit-tested rules (zones for *added by you* and the context, shuffle, Shuffle Magic, repeat, previous). React Native Track Player 4.1.2 plays the audio; the engine is the only one to change its queue. The queue is saved and restored on reopen.
+- **New Architecture** (Fabric + TurboModules) everywhere. React Native Track Player is patched for it (`patches/`), including a guard so Android 12+ cannot crash the app by refusing a foreground start.
+- **Design system** in `components/ui`: tokens, `Text`, `Button`, `ListGroup`, `Sheet`, `TrackRow`, glass surfaces, skeleton loaders. Animations run on the UI thread with Reanimated; nothing animates in a loop while idle.
+- **Shared core** (`packages/core`): the Subsonic client with token authentication, the home feed engine and the release tag reader, used by the mobile app and the web client.
+- **Offline**: MMKV persistence for settings, library, playlists and downloads; a connectivity monitor switches to offline mode after repeated failures and back when the server answers.
+- **Credentials**: stream and cover URLs carry the credentials, so they are built in memory only, never stored or logged.
 
 ---
 
-## Known Limitations
+## Known limitations
 
-| Issue | Status |
+| Topic | Status |
 |---|---|
-| iOS background audio cuts | `UIBackgroundModes: audio` missing from `Info.plist` — planned post-v1.0.0 |
-| iOS Dynamic Island header | `GlobalHeader` lacks safe-area insets; header partially hidden on notched devices |
-| iOS distribution | Unsigned IPA only — install via AltStore or Sideloadly; no App Store planned |
-| FSP swipe gesture | Removed in v1.0.0 — Android `<Modal>` + RNGH incompatibility |
-| Nav mode switch crash | Switching 3-button ↔ gesture navigation while app is running causes an OS-level process kill on some Samsung devices. Not reproducible in normal usage. |
+| iOS | Unsigned IPA only (AltStore, Sideloadly); tested far less than Android. |
+| Android Auto | Not supported yet. |
+| Memory | Image caches can grow to about 900 MB on long sessions with large libraries; being worked on. |
+| Web client | Early stage, not released yet. |
+| Online catalogue | Needs OctoFiesta in front of Navidrome. |
+
+---
+
+## Contributing
+
+Bug reports and ideas are welcome: open an [issue](https://github.com/DoodzProg/Musonic/issues/new/choose) (templates for bugs and features). For code, read [CONTRIBUTING.md](CONTRIBUTING.md) first: branches, commit style and checks.
 
 ---
 
 ## License
 
-This project is licensed under the [CC BY-NC 4.0](LICENSE) license.
-Free to use and adapt for personal, non-commercial purposes. Commercial use is prohibited.
+[CC BY-NC 4.0](LICENSE): free to use and adapt for personal, non-commercial purposes. Commercial use is prohibited.
 
 ---
 
 ## Made by
 
 **[DoodzProg](https://github.com/DoodzProg)**: designed, built, and shipped from scratch.
-
-Tooling used along the way: [Claude Code](https://claude.ai/code) as an AI coding assistant, and a carefully curated playlist running in the background the whole time.
 
 *Built with passion. Debugged with patience. Shipped with pride.*
