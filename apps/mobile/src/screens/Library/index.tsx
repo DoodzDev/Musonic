@@ -35,6 +35,7 @@ import Button from '../../components/ui/Button';
 import Sheet from '../../components/ui/Sheet';
 import SearchField from '../../components/ui/SearchField';
 import EmptyState from '../../components/ui/EmptyState';
+import {SkeletonList} from '../../components/ui/Skeleton';
 import CollectionRow from '../../components/ui/CollectionRow';
 import {ListGroup, ListItem} from '../../components/ui/ListGroup';
 import PressableScale from '../../components/ui/PressableScale';
@@ -342,7 +343,7 @@ export default function LibraryScreen() {
   ), [grid, cardW, subtitleOf, pinned, currentPlaylistId, open, onLongPress]);
 
   const empty = (() => {
-    if (lib.status === 'loading') return <ActivityIndicator color={colors.accent} style={styles.loading} />;
+    if (lib.status === 'loading') return <SkeletonList />;
     if (lib.status === 'error') {
       return <EmptyState title={t.library.loadError} action={{label: t.common.retry, onPress: lib.retry}} />;
     }
@@ -575,7 +576,6 @@ const styles = StyleSheet.create({
   sortBtn: {flexDirection: 'row', alignItems: 'center', gap: 6},
   sortLabel: {fontWeight: '600'},
   gridRow: {gap: GRID_GAP, paddingHorizontal: GUTTER, paddingTop: 6, paddingBottom: 12},
-  loading: {marginTop: 48},
   sheetBody: {paddingHorizontal: spacing.m, paddingBottom: spacing.m},
   dialogBackdrop: {flex: 1, backgroundColor: colors.backdrop, justifyContent: 'center', alignItems: 'center', padding: 40},
   dialog: {width: '100%', maxWidth: 340, backgroundColor: colors.surface1, borderRadius: radii.card, overflow: 'hidden'},

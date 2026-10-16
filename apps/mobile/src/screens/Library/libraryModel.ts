@@ -5,7 +5,7 @@
  *   list built from starred artists, starred albums and liked songs, and
  *   the sort with pinned entries on top. No React, for the tests.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import type {SubsonicAlbum, SubsonicArtist, SubsonicSong} from '../../api/types';
@@ -32,8 +32,24 @@ export function artistCoverId(artistId: string): string | undefined {
 }
 
 /**
+ * Artists credited on a song or album, one by one. The server joins several
+ * artists in `artist` ("Lil Nas X • Billy Ray Cyrus") with the id of the
+ * first one: use its `artists` list when it gives one, else the first name
+ * with `artistId`. Names joined with "&" are kept whole: they are often one
+ * act ("Bigflo & Oli").
+ */
+export function creditedArtists(item: {artist?: string; artistId?: string; artists?: readonly {id: string; name: string}[]}): {id: string; name: string}[] {
+  const listed = (item.artists ?? []).filter(a => a.id && a.name);
+  if (listed.length > 0) return listed;
+  if (!item.artistId || !item.artist) return [];
+  const first = item.artist.split('•')[0].trim();
+  return first ? [{id: item.artistId, name: first}] : [];
+}
+
+/**
  * Artists of the Library: the starred ones first, then the artists of
- * starred albums and liked songs, most present first. One entry per artist.
+ * starred albums and liked songs, most present first. One entry per artist,
+ * a song with several artists counting for each of them.
  */
 export function collectArtists(
   starred: readonly SubsonicArtist[],
@@ -54,8 +70,9 @@ export function collectArtists(
     if (hit) hit.n += 1;
     else counts.set(id, {artist: {id, name, coverArt: artistCoverId(id)}, n: 1, first: counts.size});
   };
-  for (const a of albums) add(a.artistId, a.artist);
-  for (const s of songs) add(s.artistId, s.artist);
+  for (const item of [...albums, ...songs]) {
+    for (const a of creditedArtists(item)) add(a.id, a.name);
+  }
   const rest = [...counts.values()].sort((a, b) => b.n - a.n || a.first - b.first);
   return [...out, ...rest.map(r => r.artist)];
 }

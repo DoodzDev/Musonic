@@ -1,10 +1,11 @@
 /**
  * @file Skeleton.tsx
  * @description Design v2 loading placeholders: a softly pulsing block, plus
- *   ready-made shapes for a track row and a collection card. Static when the
- *   OS "Remove animations" setting is on.
+ *   ready-made shapes for a track row and a collection card, and the lists
+ *   screens show while loading (rows, a shelf of cards). Static when the OS
+ *   "Remove animations" setting is on.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect} from 'react';
@@ -66,6 +67,27 @@ export function SkeletonCard() {
   );
 }
 
+/** A list of track rows, shown instead of a spinner while a list loads (R5.10). */
+export function SkeletonList({rows = 8}: {rows?: number}) {
+  return (
+    <View accessibilityRole="progressbar" accessibilityLabel="…">
+      {Array.from({length: rows}, (_, i) => <SkeletonTrackRow key={i} />)}
+    </View>
+  );
+}
+
+/** A shelf title and a row of cards, shown while a page of shelves loads (R5.10). */
+export function SkeletonShelf({cards = 3}: {cards?: number}) {
+  return (
+    <View style={styles.shelf} importantForAccessibility="no-hide-descendants">
+      <Skeleton width={160} height={20} radius={radii.full} />
+      <View style={styles.shelfCards}>
+        {Array.from({length: cards}, (_, i) => <SkeletonCard key={i} />)}
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   block: {backgroundColor: colors.surface2},
   row: {
@@ -77,4 +99,6 @@ const styles = StyleSheet.create({
   },
   lines: {flex: 1, gap: spacing.s},
   card: {width: COLLECTION_CARD_WIDTH, gap: spacing.s},
+  shelf: {paddingHorizontal: spacing.gutter, paddingBottom: spacing.xl, gap: spacing.m},
+  shelfCards: {flexDirection: 'row', gap: 14, overflow: 'hidden'},
 });

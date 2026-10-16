@@ -2,10 +2,10 @@
  * @file ListGroup.tsx
  * @description Design v2 inset grouped list (Settings): rounded surface,
  *   optional caption above and note below, rows separated by inset hairlines.
- *   `ListItem` takes an icon, a label, an optional value and an accessory
- *   (chevron, toggle or any element).
+ *   `ListItem` takes an icon, a label (with an optional description under
+ *   it), an optional value and an accessory (chevron, toggle or any element).
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -51,6 +51,8 @@ export function ListGroup({caption, note, raised, children}: GroupProps) {
 
 type ItemProps = {
   label: string;
+  /** Smaller text under the label, to explain the setting. */
+  description?: string;
   icon?: React.ReactNode;
   value?: string;
   /** `chevron` for navigation; a toggle via `toggle`; or any element. */
@@ -60,13 +62,20 @@ type ItemProps = {
   onPress?: () => void;
 };
 
-export function ListItem({label, icon, value, accessory, toggle, destructive, onPress}: ItemProps) {
+export function ListItem({label, description, icon, value, accessory, toggle, destructive, onPress}: ItemProps) {
   const content = (
     <>
       {icon ? <View style={styles.icon}>{icon}</View> : null}
-      <Text variant="body" numberOfLines={1} style={[styles.label, destructive && styles.destructive]}>
-        {label}
-      </Text>
+      {description ? (
+        <View style={styles.label}>
+          <Text variant="body" style={destructive && styles.destructive}>{label}</Text>
+          <Text variant="footnote" color="textSecondary">{description}</Text>
+        </View>
+      ) : (
+        <Text variant="body" numberOfLines={1} style={[styles.label, destructive && styles.destructive]}>
+          {label}
+        </Text>
+      )}
       {value ? (
         <Text variant="body" color="textSecondary" numberOfLines={1}>
           {value}
@@ -119,7 +128,7 @@ const styles = StyleSheet.create({
     gap: spacing.m - 4,
   },
   icon: {width: ICON_COLUMN, alignItems: 'center'},
-  label: {flex: 1},
+  label: {flex: 1, gap: 2, paddingVertical: 10},
   destructive: {color: colors.destructive},
   chevron: {transform: [{scaleX: -1}]},
   separator: {

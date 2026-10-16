@@ -7,6 +7,7 @@
 import {
   collectAlbums,
   collectArtists,
+  creditedArtists,
   filterEntries,
   sortEntries,
   type LibraryEntry,
@@ -76,5 +77,26 @@ describe('filterEntries', () => {
     expect(filterEntries(list, 'ete').map(e => e.id)).toEqual(['1']);
     expect(filterEntries(list, 'helene').map(e => e.id)).toEqual(['2']);
     expect(filterEntries(list, '  ')).toHaveLength(2);
+  });
+});
+
+describe('creditedArtists / collectArtists with several artists', () => {
+  const multi = {
+    id: 's1', title: 'Old Town Road', album: '7', duration: 1,
+    artist: 'Lil Nas X • Billy Ray Cyrus', artistId: 'lnx',
+    artists: [{id: 'lnx', name: 'Lil Nas X'}, {id: 'brc', name: 'Billy Ray Cyrus'}],
+  } as SubsonicSong;
+
+  it('uses the server list of artists', () => {
+    expect(creditedArtists(multi)).toEqual([{id: 'lnx', name: 'Lil Nas X'}, {id: 'brc', name: 'Billy Ray Cyrus'}]);
+  });
+  it('without a list, keeps the first name with the artist id', () => {
+    expect(creditedArtists({artist: 'Daft Punk • Pharrell Williams', artistId: 'dp'})).toEqual([{id: 'dp', name: 'Daft Punk'}]);
+  });
+  it('keeps names joined with & whole', () => {
+    expect(creditedArtists({artist: 'Bigflo & Oli', artistId: 'bo'})).toEqual([{id: 'bo', name: 'Bigflo & Oli'}]);
+  });
+  it('lists each artist of a song on its own', () => {
+    expect(collectArtists([], [], [multi]).map(a => a.name)).toEqual(['Lil Nas X', 'Billy Ray Cyrus']);
   });
 });

@@ -4,7 +4,7 @@
  *   helpers for stream/cover-art URLs. All requests are made against the active
  *   server stored in settingsStore.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import type {Server} from '../store/settingsStore';
@@ -114,16 +114,47 @@ export async function subsonicGet<T>(
   }
 }
 
+/** Why a server could not be reached, so the setup screen can say it plainly (F29). */
+export type PingFailure = 'auth' | 'http' | 'timeout' | 'unreachable' | 'notSubsonic' | 'server';
+
+export class PingError extends Error {
+  kind: PingFailure;
+  /** HTTP status (`http`, `auth`). */
+  status?: number;
+  constructor(kind: PingFailure, message: string, status?: number) {
+    super(message);
+    this.name = 'PingError';
+    this.kind = kind;
+    this.status = status;
+  }
+}
+
+/** Checks a server and its credentials; throws a `PingError` saying why it failed. */
 export async function pingServer(server: Server): Promise<void> {
   const p = new URLSearchParams({
     u: server.username, p: server.password, v: '1.16.1', c: 'Musonic', f: 'json',
   });
   const urlStr = `${server.url.replace(/\/$/, '')}/rest/ping.view?${p.toString()}`;
-  const res = await fetchWithTimeout(urlStr, 8000);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  const body = data['subsonic-response'];
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(urlStr, 8000);
+  } catch (err) {
+    const aborted = (err as {name?: string})?.name === 'AbortError';
+    throw new PingError(aborted ? 'timeout' : 'unreachable', String((err as Error)?.message ?? err));
+  }
+  if (res.status === 401 || res.status === 403) throw new PingError('auth', `HTTP ${res.status}`, res.status);
+  if (!res.ok) throw new PingError('http', `HTTP ${res.status}`, res.status);
+  let body: any;
+  try {
+    body = (await res.json())?.['subsonic-response'];
+  } catch {
+    body = undefined;
+  }
+  // A web page or another API answered: not a Subsonic server at this address.
+  if (!body) throw new PingError('notSubsonic', 'Not a Subsonic response');
   if (body.status !== 'ok') {
-    throw new Error(body.error?.message ?? 'Auth failed');
+    // Subsonic error 40: wrong username or password.
+    const kind = body.error?.code === 40 ? 'auth' : 'server';
+    throw new PingError(kind, body.error?.message ?? 'Auth failed');
   }
 }

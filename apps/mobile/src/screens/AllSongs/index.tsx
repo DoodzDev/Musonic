@@ -8,11 +8,13 @@
  *   detail layout, songs on the shared `TrackRow`.
  *   The full library is fetched once via paginated empty-query search3 calls
  *   (no single Subsonic "get everything" endpoint exists), then filtered
- *   client-side by the search field. Playback goes through the playback
+ *   client-side by the search field. The last list is kept on the device
+ *   (read only when the screen opens, not at launch) so the songs show at
+ *   once, then the server's answer replaces it. Playback goes through the playback
  *   engine (playFromList). Offline (or when the server cannot be reached),
  *   lists the downloaded tracks: the only ones that can play.
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -40,6 +42,7 @@ import {playFromList} from '../../services/playback/launchers';
 import {usePlayerStore} from '../../store/playerStore';
 import {useSettingsStore, type AllSongsSortMode} from '../../store/settingsStore';
 import {useDownloadStore} from '../../store/downloadStore';
+import {storage} from '../../store/storage';
 import {downloadedSongs} from '../../utils/offlineSongs';
 import {songToTrack} from '../../utils/songToTrack';
 import {useIsLandscape} from '../../hooks/useIsLandscape';
@@ -85,6 +88,26 @@ async function fetchAllNativeSongs(): Promise<SubsonicSong[]> {
   return all;
 }
 
+/** Device copy of the last list: only what the rows, sorts and playback use. */
+const CACHE_KEY = 'all-songs-cache-v1';
+
+function readCache(): SubsonicSong[] {
+  try {
+    const raw = storage.getString(CACHE_KEY);
+    return raw ? (JSON.parse(raw) as SubsonicSong[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCache(songs: SubsonicSong[]) {
+  const slim = songs.map(s => ({
+    id: s.id, title: s.title, artist: s.artist, artistId: s.artistId, album: s.album, albumId: s.albumId,
+    coverArt: s.coverArt, duration: s.duration, suffix: s.suffix, created: (s as {created?: string}).created,
+  }));
+  storage.set(CACHE_KEY, JSON.stringify(slim));
+}
+
 export default function AllSongsScreen() {
   const t = useT();
   const navigation = useNavigation<any>();
@@ -121,9 +144,16 @@ export default function AllSongsScreen() {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    // Last list at once (no skeleton when there is one), then the server's.
+    const cached = readCache();
+    setSongs(cached);
+    setLoading(cached.length === 0);
     fetchAllNativeSongs()
-      .then(result => { if (!cancelled) setSongs(result); })
+      .then(result => {
+        if (cancelled) return;
+        setSongs(result);
+        writeCache(result);
+      })
       .catch(() => { if (!cancelled) setSongs(offlineList()); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };

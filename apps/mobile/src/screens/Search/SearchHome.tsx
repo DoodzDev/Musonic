@@ -1,36 +1,35 @@
 /**
  * @file SearchHome.tsx
- * @description Search landing screen. Shows the search bar and three Deezer-powered
- *   recommendation sections: based on liked songs, based on recent listens, and
- *   based on similar artists from the user's top liked artist.
- *   Recommendations are streamed via OctoFiesta using Deezer IDs as Subsonic IDs.
- *   Tapped tracks play alone, then autoplay (playback engine, ADR-009 A8).
+ * @description Search landing screen (Design v2, R5.2). Large title with the
+ *   account avatar, a search field that opens the live search, then the
+ *   genres of the library to browse (each opens its page), then the
+ *   Deezer-powered discovery shelves (shared Home cards): albums and tracks
+ *   based on liked songs, based on recent listens, and "in the same style as"
+ *   up to three artists. Recommendations are streamed via OctoFiesta using
+ *   Deezer IDs as Subsonic IDs. Tapped tracks play alone, then autoplay
+ *   (playback engine, ADR-009 A8).
  * @author DoodzProg
- * @version 1.2.0
+ * @version 2.0.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import {Pressable, StatusBar, StyleSheet, View} from 'react-native';
+import Animated from 'react-native-reanimated';
 import {useNavigation} from '@react-navigation/native';
-import {darkTheme} from '../../theme';
-import GlobalHeader from '../../components/GlobalHeader';
-import AlbumCard from '../../components/AlbumCard';
-import SectionHeader from '../../components/SectionHeader';
+import {LargeTitle, LargeTitleHeader, useLargeTitleInset, useLargeTitleScroll} from '../../components/ui/LargeTitleHeader';
+import Text from '../../components/ui/Text';
+import EmptyState from '../../components/ui/EmptyState';
+import {SkeletonShelf} from '../../components/ui/Skeleton';
+import SectionHeader from '../../components/ui/SectionHeader';
+import PressableScale from '../../components/ui/PressableScale';
+import ProfileButton from '../../components/shell/ProfileButton';
+import {AlbumCard, HomeShelf} from '../../components/home/HomeCards';
+import {SearchIcon} from '../../components/icons';
+import {colors, radii, spacing} from '../../theme';
 import {useT} from '../../i18n';
 import {useSettingsStore} from '../../store/settingsStore';
 import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
-import {useIsLandscape} from '../../hooks/useIsLandscape';
-import {getStarred, getRecentAlbums} from '../../api/endpoints/library';
+import {getStarred, getRecentAlbums, getGenres, type SubsonicGenre} from '../../api/endpoints/library';
 import {getStreamUrl, getCoverArtUrl} from '../../api/client';
 import {playFromList} from '../../services/playback/launchers';
 import type {Track} from '../../store/playerStore';
@@ -41,9 +40,9 @@ import {
   type DeezerTrack,
 } from '../../api/deezer';
 import {useDockInset} from '../../navigation/dockLayout';
-import {SearchIcon} from '../../components/icons';
 
-// ─── Search icon ──────────────────────────────────────────────────────────────
+/** Genres shown before "See all". */
+const GENRES_SHOWN = 8;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -139,9 +138,19 @@ export default function SearchHome() {
   const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
   const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
   const landscapePadding = useLandscapeSidebarPadding();
-  const isLandscape = useIsLandscape();
+  const {scrollY, onScroll} = useLargeTitleScroll();
+  const top = useLargeTitleInset();
 
   const [reco, setReco] = useState<RecoState>(EMPTY_RECO);
+  const [genres, setGenres] = useState<SubsonicGenre[]>([]);
+  const [allGenres, setAllGenres] = useState(false);
+
+  useEffect(() => {
+    if (isOfflineMode) return;
+    let cancelled = false;
+    getGenres().then(g => { if (!cancelled) setGenres(g); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [isOfflineMode]);
   const [loading, setLoading] = useState(true);
 
   const mountedRef = useRef(true);
@@ -264,211 +273,149 @@ export default function SearchHome() {
     reco.recentTracks.length > 0 ||
     reco.sameStyleSections.length > 0;
 
-  const searchBar = (
-    <TouchableOpacity
-      style={styles.fakeSearchBar}
-      activeOpacity={0.9}
-      onPress={() => navigation.navigate('SearchActive')}>
-      <SearchIcon size={24} color="#121212" />
-      <Text style={styles.fakeInputText}>{t.search.placeholder}</Text>
-    </TouchableOpacity>
-  );
+  const openSearch = () => navigation.navigate('SearchActive');
+  const albumOf = (track: DeezerTrack) => `ext-deezer-album-${track.album.id}`;
 
   return (
-    <SafeAreaView style={[styles.root, landscapePadding]} edges={isFullscreenMode ? [] : ['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={darkTheme.background} />
-      <GlobalHeader
-        variant="simple"
-        title={t.search.headerTitle}
-        landscapeInlineExtra={<View style={styles.landscapeSearchBarWrap}>{searchBar}</View>}
-      />
-
-      {/* Search bar — its own row in portrait; inline in the header above in landscape */}
-      {!isLandscape && (
-        <View style={styles.searchContainer}>
-          {searchBar}
-        </View>
-      )}
-
-      {/* Recommendation sections */}
-      <ScrollView
-        style={styles.scroll}
+    <View style={[styles.root, landscapePadding]}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.background} hidden={isFullscreenMode} />
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, {paddingBottom: dockInset}]}>
+        contentContainerStyle={{paddingTop: top, paddingBottom: dockInset + spacing.m}}>
+        <LargeTitle title={t.search.headerTitle} scrollY={scrollY} />
 
-        <Text style={styles.discoverTitle}>{t.search.discover.sectionTitle}</Text>
+        <Pressable
+          onPress={openSearch}
+          accessibilityRole="search"
+          accessibilityLabel={t.search.placeholder}
+          android_ripple={{color: colors.fill}}
+          style={styles.field}>
+          <SearchIcon size={18} color={colors.textSecondary} />
+          <Text variant="body" color="textSecondary" numberOfLines={1}>{t.search.placeholder}</Text>
+        </Pressable>
 
-        {isOfflineMode && (
-          <View style={styles.emptyWrap}>
-            <Text style={styles.emptyText}>{t.search.offlineEmptyState}</Text>
+        {!isOfflineMode && genres.length > 0 ? (
+          <View style={styles.browse}>
+            <SectionHeader
+              title={t.search.browse}
+              onSeeAll={genres.length > GENRES_SHOWN && !allGenres ? () => setAllGenres(true) : undefined}
+            />
+            <View style={styles.genres}>
+              {(allGenres ? genres : genres.slice(0, GENRES_SHOWN)).map(g => (
+                <PressableScale
+                  key={g.value}
+                  onPress={() => navigation.navigate('MixDetail', {genre: g.value, browse: true})}
+                  accessibilityLabel={`${g.value}, ${t.allSongs.trackCount(g.songCount)}`}
+                  style={styles.genre}>
+                  <Text variant="headline" numberOfLines={1}>{g.value}</Text>
+                  <Text variant="footnote" color="textSecondary">{t.allSongs.trackCount(g.songCount)}</Text>
+                </PressableScale>
+              ))}
+            </View>
           </View>
-        )}
+        ) : null}
 
-        {!isOfflineMode && loading && (
-          <View style={styles.loaderWrap}>
-            <ActivityIndicator color={darkTheme.accent} size="small" />
-            <Text style={styles.loaderText}>{t.search.discover.loading}</Text>
-          </View>
-        )}
+        {isOfflineMode ? <EmptyState title={t.search.offlineEmptyState} /> : null}
+        {!isOfflineMode && loading ? <><SkeletonShelf /><SkeletonShelf /></> : null}
+        {!isOfflineMode && !loading && !hasAnyReco ? <EmptyState title={t.search.discover.empty} /> : null}
 
-        {!isOfflineMode && !loading && !hasAnyReco && (
-          <View style={styles.emptyWrap}>
-            <Text style={styles.emptyText}>{t.search.discover.empty}</Text>
-          </View>
-        )}
-
-        {/* Albums basés sur vos titres likés */}
-        {!loading && reco.likedAlbums.length > 0 && (
-          <View style={styles.section}>
-            <SectionHeader title={t.search.discover.albumsBasedOnLikes} />
-            <FlatList
-              horizontal
+        {!loading ? (
+          <>
+            <HomeShelf
+              title={t.search.discover.albumsBasedOnLikes}
               data={reco.likedAlbums}
-              keyExtractor={item => `liked-alb-${item.id}`}
-              renderItem={({item}) => (
+              keyOf={item => `liked-alb-${item.id}`}
+              renderItem={item => (
                 <AlbumCard
-                  id={String(item.id)}
                   name={item.album.title}
-                  artist={item.artist.name}
-                  imageUrl={item.album.cover_medium}
-                  label={t.home.typeAlbum}
+                  subtitle={`${t.home.typeAlbum} · ${item.artist.name}`}
+                  coverUrl={item.album.cover_medium}
                   onPress={() => handleTrackPress(item)}
                 />
               )}
-              contentContainerStyle={styles.hList}
-              showsHorizontalScrollIndicator={false}
             />
-          </View>
-        )}
-
-        {/* Titres basés sur vos titres likés */}
-        {!loading && reco.likedTracks.length > 0 && (
-          <View style={styles.section}>
-            <SectionHeader title={t.search.discover.tracksBasedOnLikes} />
-            <FlatList
-              horizontal
+            <HomeShelf
+              title={t.search.discover.tracksBasedOnLikes}
               data={reco.likedTracks}
-              keyExtractor={item => `liked-trk-${item.id}`}
-              renderItem={({item}) => (
+              keyOf={item => `liked-trk-${item.id}`}
+              renderItem={item => (
                 <AlbumCard
-                  id={String(item.id)}
                   name={item.title}
-                  artist={item.artist.name}
-                  imageUrl={item.album.cover_medium}
-                  label={t.search.trackType}
+                  subtitle={`${t.search.trackType} · ${item.artist.name}`}
+                  coverUrl={item.album.cover_medium}
                   onPress={() => handleTrackPlay(item)}
                 />
               )}
-              contentContainerStyle={styles.hList}
-              showsHorizontalScrollIndicator={false}
             />
-          </View>
-        )}
-
-        {/* Basés sur vos écoutes récentes */}
-        {!loading && reco.recentTracks.length > 0 && (
-          <View style={styles.section}>
-            <SectionHeader title={t.search.discover.basedOnRecent} />
-            <FlatList
-              horizontal
+            <HomeShelf
+              title={t.search.discover.basedOnRecent}
               data={reco.recentTracks}
-              keyExtractor={item => `recent-${item.id}`}
-              renderItem={({item}) => (
+              keyOf={item => `recent-${item.id}`}
+              renderItem={item => (
                 <AlbumCard
-                  id={String(item.id)}
                   name={item.isSingle ? item.title : item.album.title}
-                  artist={item.artist.name}
-                  imageUrl={item.album.cover_medium}
-                  label={item.isSingle ? t.home.typeSingle : t.home.typeAlbum}
+                  subtitle={`${item.isSingle ? t.home.typeSingle : t.home.typeAlbum} · ${item.artist.name}`}
+                  coverUrl={item.album.cover_medium}
                   onPress={() => handleTrackPress(item)}
                 />
               )}
-              contentContainerStyle={styles.hList}
-              showsHorizontalScrollIndicator={false}
             />
-          </View>
-        )}
-
-        {/* Dans le même style que… — sections groupées */}
-        {!loading && reco.sameStyleSections.length > 0 && (
-          <View style={styles.section}>
-            <SectionHeader title={t.search.discover.sameStyleTitle} />
-            {reco.sameStyleSections.map((section, idx) => (
-              <View key={`style-${idx}`} style={styles.sameStyleBlock}>
-                <Text style={styles.sameStyleArtistLabel}>{section.artistName}</Text>
-                <FlatList
-                  horizontal
-                  data={[
-                    ...section.albums.map(track => ({track, asAlbum: true})),
-                    ...section.tracks.map(track => ({track, asAlbum: false})),
-                  ]}
-                  keyExtractor={item => `s${idx}-${item.asAlbum ? 'a' : 't'}-${item.track.id}`}
-                  renderItem={({item}) => (
-                    <AlbumCard
-                      id={String(item.track.id)}
-                      name={item.asAlbum ? item.track.album.title : item.track.title}
-                      artist={item.track.artist.name}
-                      imageUrl={item.track.album.cover_medium}
-                      label={item.asAlbum ? t.home.typeAlbum : t.search.trackType}
-                      onPress={() => {
-                        if (item.asAlbum) {
-                          navigation.navigate('AlbumDetail', {albumId: `ext-deezer-album-${item.track.album.id}`});
-                        } else {
-                          playFromList({type: 'search'}, [deezerTrackToTrack(item.track)], 0);
-                        }
-                      }}
-                    />
-                  )}
-                  contentContainerStyle={styles.hList}
-                  showsHorizontalScrollIndicator={false}
-                />
-              </View>
+            {reco.sameStyleSections.map(section => (
+              <HomeShelf
+                key={`style-${section.artistName}`}
+                title={t.search.discover.sameStyle(section.artistName)}
+                data={[
+                  ...section.albums.map(track => ({track, asAlbum: true})),
+                  ...section.tracks.map(track => ({track, asAlbum: false})),
+                ]}
+                keyOf={item => `${section.artistName}-${item.asAlbum ? 'a' : 't'}-${item.track.id}`}
+                renderItem={item => (
+                  <AlbumCard
+                    name={item.asAlbum ? item.track.album.title : item.track.title}
+                    subtitle={`${item.asAlbum ? t.home.typeAlbum : t.search.trackType} · ${item.track.artist.name}`}
+                    coverUrl={item.track.album.cover_medium}
+                    onPress={() => (item.asAlbum
+                      ? navigation.navigate('AlbumDetail', {albumId: albumOf(item.track)})
+                      : playFromList({type: 'search'}, [deezerTrackToTrack(item.track)], 0))}
+                  />
+                )}
+              />
             ))}
-          </View>
-        )}
+          </>
+        ) : null}
+      </Animated.ScrollView>
 
-        <View style={styles.bottomPad} />
-      </ScrollView>
-    </SafeAreaView>
+      <LargeTitleHeader title={t.search.headerTitle} scrollY={scrollY} align="left" left={<ProfileButton />} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: darkTheme.background},
-  searchContainer: {paddingHorizontal: 16, paddingBottom: 16, paddingTop: 8},
-  landscapeSearchBarWrap: {marginLeft: 16, marginRight: 16},
-  fakeSearchBar: {
+  root: {flex: 1, backgroundColor: colors.background},
+  field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    height: 48,
-    borderRadius: 6,
+    gap: spacing.s,
+    // Same look as the shared SearchField.
+    height: 40,
+    marginHorizontal: spacing.gutter,
+    marginBottom: spacing.s,
+    paddingHorizontal: 10,
+    borderRadius: radii.tile,
+    backgroundColor: colors.fill,
+    overflow: 'hidden',
+  },
+  browse: {paddingHorizontal: spacing.gutter, paddingBottom: spacing.l, gap: spacing.s},
+  genres: {flexDirection: 'row', flexWrap: 'wrap', gap: 10},
+  genre: {
+    // Two columns: half the row minus half the gap.
+    width: '48.5%',
     paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: radii.button,
+    backgroundColor: colors.surface1,
+    gap: 2,
   },
-  fakeInputText: {color: '#555', fontSize: 16, fontWeight: '600', marginLeft: 12},
-  scroll: {flex: 1},
-  scrollContent: {paddingBottom: 16},
-  discoverTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#fff',
-    paddingHorizontal: 16,
-    marginBottom: 4,
-    marginTop: 8,
-  },
-  section: {marginBottom: 8},
-  sameStyleBlock: {marginBottom: 16},
-  sameStyleArtistLabel: {fontSize: 15, fontWeight: '700', color: '#b3b3b3', paddingHorizontal: 16, paddingBottom: 6},
-  hList: {paddingHorizontal: 16, paddingBottom: 4},
-  loaderWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    gap: 10,
-  },
-  loaderText: {color: '#888', fontSize: 14},
-  emptyWrap: {paddingHorizontal: 16, paddingVertical: 32},
-  emptyText: {color: '#666', fontSize: 14, textAlign: 'center'},
-  bottomPad: {height: 180},
 });

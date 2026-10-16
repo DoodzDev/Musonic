@@ -5,17 +5,20 @@
  *   Shuffle and Play, then the tracks (shared `TrackRow`: like, add to a
  *   playlist, download; tap = play from that track). Opened from the Home
  *   with its songs; opened from "Recently played" (genre only), it draws a
- *   fresh mix of that genre. Built on the shared detail layout.
- *   (`DetailScaffold`), like albums and playlists.
+ *   fresh mix of that genre. With `browse` (Search > Browse), the page of a
+ *   genre instead: all its songs, without the Magic pill. Built on the
+ *   shared detail layout (`DetailScaffold`), like albums and playlists.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {useRoute, type RouteProp} from '@react-navigation/native';
 import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
+import {mixCovers} from '@musonic/core/home';
 import {homeSource} from '../../services/home/homeSource';
+import {getSongsByGenre} from '../../api/endpoints/library';
 import {playFromList} from '../../services/playback/launchers';
 import {songToTrack, type SongLike} from '../../utils/songToTrack';
 import {usePlayerStore} from '../../store/playerStore';
@@ -25,6 +28,7 @@ import Text from '../../components/ui/Text';
 import Raised from '../../components/ui/Raised';
 import CoverArt from '../../components/CoverArt';
 import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
+import EmptyState from '../../components/ui/EmptyState';
 import {showToast} from '../../components/Toast';
 import {SparkleIcon} from '../../components/icons';
 import DetailScaffold from '../../components/detail/DetailScaffold';
@@ -33,7 +37,8 @@ import {colors, radii} from '../../theme';
 import {useT} from '../../i18n';
 import type {SubsonicSong} from '../../api/types';
 
-export type MixDetailParams = {genre: string; songs?: SongLike[]; covers?: string[]};
+/** `browse`: the genre page (all its songs) rather than a Magic Mix. */
+export type MixDetailParams = {genre: string; songs?: SongLike[]; covers?: string[]; browse?: boolean};
 
 const COVER = 232;
 const SIDE_COVER = 128;
@@ -45,21 +50,30 @@ export default function MixDetailScreen() {
   const [songs, setSongs] = useState<SongLike[]>(params.songs ?? []);
   const [loading, setLoading] = useState(!params.songs);
   const [addTo, setAddTo] = useState<SongLike | null>(null);
+  const [failed, setFailed] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (params.songs) return;
-    homeSource.getRandomSongs({genre: params.genre, size: MIX_SIZE})
+    setLoading(true);
+    setFailed(false);
+    const request = params.browse
+      ? getSongsByGenre(params.genre)
+      : homeSource.getRandomSongs({genre: params.genre, size: MIX_SIZE});
+    request
       .then(setSongs)
-      .catch(() => setSongs([]))
+      .catch(() => { setSongs([]); setFailed(true); })
       .finally(() => setLoading(false));
-  }, [params.genre, params.songs]);
+  }, [params.genre, params.songs, params.browse]);
+
+  useEffect(load, [load]);
 
   const covers = useMemo(() => {
     if (params.covers?.length) return params.covers;
-    return [...new Set(songs.map(s => s.coverArt).filter((c): c is string => !!c))].slice(0, 4);
+    return mixCovers(songs);
   }, [params.covers, songs]);
   const tracks = useMemo(() => songs.map(songToTrack), [songs]);
   const source = {type: 'mix' as const, id: params.genre, name: params.genre};
+  const subtitle = params.browse ? t.allSongs.trackCount(songs.length) : t.home.mixSubtitle(songs.length);
 
   const active = useActiveTrack();
   const {state} = usePlaybackState();
@@ -100,10 +114,12 @@ export default function MixDetailScreen() {
           ? covers.slice(0, 4).map(id => <CoverArt key={id} id={id} size={size / 2} borderRadius={0} />)
           : <CoverArt id={covers[0]} size={size} borderRadius={0} />}
       </View>
-      <View style={styles.magicPill}>
-        <SparkleIcon size={12} color={colors.accent} />
-        <Text variant="caption" style={styles.magicText}>{t.ui.badgeMagic}</Text>
-      </View>
+      {params.browse ? null : (
+        <View style={styles.magicPill}>
+          <SparkleIcon size={12} color={colors.accent} />
+          <Text variant="caption" style={styles.magicText}>{t.ui.badgeMagic}</Text>
+        </View>
+      )}
     </Raised>
   );
   const playRow = (
@@ -114,7 +130,7 @@ export default function MixDetailScreen() {
       <View style={styles.header}>
         {mosaic(COVER)}
         <Text variant="title2" numberOfLines={2} style={styles.title}>{params.genre}</Text>
-        <Text variant="footnote" color="textSecondary">{t.home.mixSubtitle(songs.length)}</Text>
+        <Text variant="footnote" color="textSecondary">{subtitle}</Text>
       </View>
       <View style={styles.playSpacing}>{playRow}</View>
     </View>
@@ -123,7 +139,7 @@ export default function MixDetailScreen() {
     <View>
       {mosaic(SIDE_COVER)}
       <Text variant="title3" numberOfLines={2} style={styles.sideTitle}>{params.genre}</Text>
-      <Text variant="footnote" color="textSecondary">{t.home.mixSubtitle(songs.length)}</Text>
+      <Text variant="footnote" color="textSecondary">{subtitle}</Text>
       <View style={styles.sidePlay}>{playRow}</View>
     </View>
   );
@@ -140,6 +156,9 @@ export default function MixDetailScreen() {
         renderItem={renderItem}
         keyExtractor={(s, i) => `${s.id}-${i}`}
         loading={loading}
+        empty={failed
+          ? <EmptyState title={t.mixDetail.loadError} action={{label: t.common.retry, onPress: load}} />
+          : <EmptyState title={t.mixDetail.empty} />}
       />
       <AddToPlaylistSheet
         visible={!!addTo}

@@ -62,7 +62,7 @@ export const t = {
     passwordLabel: 'Mot de passe',
     connectButton: 'Se connecter',
     savedAccounts: 'Comptes enregistrés',
-    successMessage: '✓ Connecté ! Chargement...',
+    successMessage: 'Connecté ! Chargement…',
     missingFieldsTitle: 'Champs manquants',
     missingFieldsBody: 'URL, identifiant et mot de passe requis.',
     errors: {
@@ -71,6 +71,7 @@ export const t = {
       serverError: (code: number) => `Erreur serveur (${code}) — le serveur est en panne`,
       timeout: "Connexion trop lente — délai dépassé",
       unreachable: "Serveur introuvable — vérifie l'URL",
+      notSubsonic: "Aucun serveur Subsonic à cette adresse — vérifie l'URL",
       generic: 'Connexion impossible',
     },
     httpWarning: 'HTTP au lieu de HTTPS — tes identifiants peuvent transiter en clair.',
@@ -156,7 +157,10 @@ export const t = {
     trackType: 'Titre',
     artistType: 'Artiste',
     albumType: 'Album',
-    noResults: (q: string) => `Aucun résultat pour "${q}"`,
+    noResults: (q: string) => `Aucun résultat pour « ${q} »`,
+    browse: 'Parcourir',
+    bestResult: 'Meilleur résultat',
+    scope: {all: 'Tout', library: 'Ma bibliothèque', online: 'En ligne'},
     sections: {
       songs: 'Titres',
       artists: 'Artistes',
@@ -511,8 +515,8 @@ export const t = {
       navBarRight: 'Droite',
       fullscreenLabel: 'Mode plein écran',
       fullscreenDesc: "Masquer l'heure, le wifi, la batterie et les notifications en haut de l'écran.",
-      fullPlayerLayoutLabel: 'Disposition du lecteur (horizontal)',
-      fullPlayerLayoutDesc: "Choisir de quel côté afficher la pochette quand le lecteur plein écran est en mode horizontal.",
+      fullPlayerLayoutLabel: 'Disposition du lecteur (mode paysage)',
+      fullPlayerLayoutDesc: "Choisir de quel côté afficher la pochette quand le lecteur plein écran est en mode paysage.",
       fullPlayerCoverLeft: 'Pochette à gauche',
       fullPlayerCoverRight: 'Pochette à droite',
     },
@@ -589,6 +593,11 @@ export const t = {
   },
 
   // ─── Album Detail ──────────────────────────────────────────────────────────
+  mixDetail: {
+    loadError: 'Impossible de charger ces titres',
+    empty: 'Aucun titre ici pour le moment',
+  },
+
   albumDetail: {
     unknownYear: 'Année inconnue',
     unknownAlbum: 'Album inconnu',

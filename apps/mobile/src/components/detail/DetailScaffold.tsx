@@ -7,15 +7,16 @@
  *   column on the left (with Back and the actions on top) and only the list
  *   scrolls, on the right, so the tracks are visible at once.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useMemo, useRef} from 'react';
-import {ActivityIndicator, ScrollView, StyleSheet, View, type ListRenderItem} from 'react-native';
+import {ScrollView, StyleSheet, View, type ListRenderItem} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated';
 import {useNavigation} from '@react-navigation/native';
 import {useLargeTitleScroll} from '../ui/LargeTitleHeader';
+import {SkeletonList} from '../ui/Skeleton';
 import {CoverBackdrop, DETAIL_BAR_HEIGHT, DetailTopBar, GlassButton} from './DetailParts';
 import {BackArrowIcon} from '../icons';
 import {useIsLandscape} from '../../hooks/useIsLandscape';
@@ -104,7 +105,8 @@ export default function DetailScaffold<T>({
   }, [isLandscape, insets.top, topPadding, itemHeight, data, rowOffsets]);
   const layoutProps = rowOffsets ? {getItemLayout} : {};
 
-  const listEmpty = loading ? <ActivityIndicator color={colors.accent} style={styles.loading} /> : <>{empty}</>;
+  // Rows shaped like the real ones while loading, rather than a spinner (R5.10).
+  const listEmpty = loading ? <SkeletonList /> : <>{empty}</>;
 
   if (isLandscape) {
     return (
@@ -166,5 +168,4 @@ const styles = StyleSheet.create({
   sideBar: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.m},
   sideRight: {flexDirection: 'row', gap: spacing.s},
   list: {flex: 1},
-  loading: {marginTop: 48},
 });

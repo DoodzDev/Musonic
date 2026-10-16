@@ -4,7 +4,7 @@
  *   `loadHome` only needs the few server calls of `HomeSource`, so any client
  *   can feed it (the web's `SubsonicClient`, the mobile app's own API layer).
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.2.1
  * @license CC-BY-NC-4.0
  */
 
@@ -96,6 +96,29 @@ const QUICK_ACCESS_SIZE = 8;
 const REDISCOVER_AFTER_DAYS = 60;
 const DAY_MS = 86_400_000;
 
+/** Up to four covers for a mix mosaic, one per album (each track of an album has its own cover id). */
+export function mixCovers(songs: Song[]): string[] {
+  const byAlbum = new Map<string, string>();
+  for (const s of songs) {
+    const key = s.albumId ?? s.album ?? s.coverArt;
+    if (s.coverArt && key && !byAlbum.has(key)) byAlbum.set(key, s.coverArt);
+    if (byAlbum.size === 4) break;
+  }
+  return [...byAlbum.values()];
+}
+
+/**
+ * Artists credited on a song or album, one by one. The server joins several
+ * artists in `artist` ("Lil Nas X • Billy Ray Cyrus") with the id of the
+ * first one: use its `artists` list when it gives one, else the first name.
+ */
+function credited(item: Song | Album): { id: string; name: string }[] {
+  const listed = (item.artists ?? []).filter((a) => a.id && a.name);
+  if (listed.length > 0) return listed;
+  const first = item.artist?.split('•')[0].trim();
+  return item.artistId && first ? [{ id: item.artistId, name: first }] : [];
+}
+
 /** Ranks artists from play counts, liked songs and liked artists. */
 export function favoriteArtists(base: HomeBase): ArtistScore[] {
   const scores = new Map<string, ArtistScore>();
@@ -108,9 +131,11 @@ export function favoriteArtists(base: HomeBase): ArtistScore[] {
   };
   base.frequent.forEach((album, i) => {
     // Some servers omit playCount: fall back to the rank in the "frequent" list.
-    add(album.artistId, album.artist, album.playCount ?? base.frequent.length - i, album.coverArt);
+    for (const a of credited(album)) add(a.id, a.name, album.playCount ?? base.frequent.length - i, album.coverArt);
   });
-  base.starred.song.forEach((song) => add(song.artistId, song.artist, 1, song.coverArt));
+  base.starred.song.forEach((song) => {
+    for (const a of credited(song)) add(a.id, a.name, 1, song.coverArt);
+  });
   base.starred.artist.forEach((artist) => {
     add(artist.id, artist.name, 5);
     const entry = scores.get(artist.id);
@@ -248,7 +273,7 @@ export function buildHome(base: HomeBase, seeds: HomeSeeds, extra: HomeExtra, rn
       id: `mix-${m.genre}`,
       genre: m.genre,
       songs: m.songs,
-      covers: [...new Set(m.songs.map((s) => s.coverArt).filter((c): c is string => !!c))].slice(0, 4),
+      covers: mixCovers(m.songs),
     }));
   addRotating({ id: 'magicMixes', kind: 'mixes', items: mixes }, WEIGHTS.magicMixes);
 

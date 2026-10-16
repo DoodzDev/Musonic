@@ -59,7 +59,7 @@ export const en = {
     passwordLabel: 'Password',
     connectButton: 'Connect',
     savedAccounts: 'Saved accounts',
-    successMessage: '✓ Connected! Loading...',
+    successMessage: 'Connected! Loading…',
     missingFieldsTitle: 'Missing fields',
     missingFieldsBody: 'URL, username and password are required.',
     errors: {
@@ -68,6 +68,7 @@ export const en = {
       serverError: (code: number) => `Server error (${code}) — server is down`,
       timeout: 'Connection timed out',
       unreachable: 'Server not found — check the URL',
+      notSubsonic: 'No Subsonic server at this address — check the URL',
       generic: 'Unable to connect',
     },
     httpWarning: 'Using HTTP instead of HTTPS. Your credentials may be sent in plaintext.',
@@ -154,6 +155,9 @@ export const en = {
     artistType: 'Artist',
     albumType: 'Album',
     noResults: (q: string) => `No results for "${q}"`,
+    browse: 'Browse',
+    bestResult: 'Top result',
+    scope: {all: 'All', library: 'My library', online: 'Online'},
     sections: {
       songs: 'Songs',
       artists: 'Artists',
@@ -582,6 +586,11 @@ export const en = {
   },
 
   // ─── Album Detail ──────────────────────────────────────────────────────────
+  mixDetail: {
+    loadError: 'Could not load these songs',
+    empty: 'No songs here yet',
+  },
+
   albumDetail: {
     unknownYear: 'Unknown year',
     unknownAlbum: 'Unknown album',

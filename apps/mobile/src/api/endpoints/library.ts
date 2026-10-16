@@ -1,9 +1,9 @@
 /**
  * @file library.ts
  * @description Subsonic library API endpoints: recently/frequently played albums,
- *   starred items, similar songs/artists, and star/unstar actions.
+ *   starred items, similar songs/artists, genres, and star/unstar actions.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import {subsonicGet} from '../client';
@@ -65,6 +65,21 @@ export async function unstar(id: string) {
 export async function getRandomSongs(size = 10): Promise<SubsonicSong[]> {
   const res = await subsonicGet<any>('getRandomSongs.view', {size});
   return res.randomSongs?.song ?? [];
+}
+
+export type SubsonicGenre = {value: string; songCount: number; albumCount: number};
+
+/** Genres of the library, the largest first. */
+export async function getGenres(): Promise<SubsonicGenre[]> {
+  const res = await subsonicGet<any>('getGenres.view');
+  const genres: SubsonicGenre[] = res.genres?.genre ?? [];
+  return genres.filter(g => g.value && g.songCount > 0).sort((a, b) => b.songCount - a.songCount);
+}
+
+/** Songs of a genre (Subsonic caps a page at 500). */
+export async function getSongsByGenre(genre: string, count = 500): Promise<SubsonicSong[]> {
+  const res = await subsonicGet<any>('getSongsByGenre.view', {genre, count});
+  return res.songsByGenre?.song ?? [];
 }
 
 export async function getSimilarSongs(id: string, count = 20): Promise<SubsonicSong[]> {

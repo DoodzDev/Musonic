@@ -17,7 +17,7 @@
  */
 
 import React, {useCallback, useMemo, useState} from 'react';
-import {ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, View} from 'react-native';
+import {RefreshControl, ScrollView, StatusBar, StyleSheet, View} from 'react-native';
 import Animated from 'react-native-reanimated';
 import {useNavigation} from '@react-navigation/native';
 import type {CardItem, Shelf} from '@musonic/core/home';
@@ -31,6 +31,7 @@ import {LargeTitle, LargeTitleHeader, useLargeTitleInset, useLargeTitleScroll} f
 import Chip from '../../components/ui/Chip';
 import Text from '../../components/ui/Text';
 import Button from '../../components/ui/Button';
+import {SkeletonShelf} from '../../components/ui/Skeleton';
 import ProfileButton from '../../components/shell/ProfileButton';
 import {
   AlbumCard,
@@ -279,7 +280,7 @@ export default function HomeScreen() {
           </Text>
         ) : null}
 
-        {!feed && loading ? <ActivityIndicator color={colors.accent} style={styles.loading} /> : null}
+        {!feed && loading ? <><SkeletonShelf /><SkeletonShelf /></> : null}
 
         {!feed && !loading ? (
           <View style={styles.empty}>
@@ -366,7 +367,6 @@ const styles = StyleSheet.create({
   chipsScroll: {flexGrow: 0, flexShrink: 0},
   chips: {paddingHorizontal: HOME_GUTTER, gap: 8, paddingTop: 4, paddingBottom: 22},
   offlineNote: {paddingHorizontal: HOME_GUTTER, paddingBottom: 12},
-  loading: {marginTop: 48},
   empty: {alignItems: 'center', gap: 8, paddingTop: 48, paddingHorizontal: HOME_GUTTER},
   emptyText: {textAlign: 'center'},
   quickGrid: {paddingHorizontal: HOME_GUTTER, gap: 8, marginBottom: 30},

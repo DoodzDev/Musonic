@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { MemoryCache } from '../cache.ts';
 import type { Album, Song } from '../subsonic/types.ts';
-import { buildHome, favoriteArtists, planSeeds, topGenres, type HomeBase, type HomeExtra, type HomeSeeds } from './home.ts';
+import { buildHome, favoriteArtists, mixCovers, planSeeds, topGenres, type HomeBase, type HomeExtra, type HomeSeeds } from './home.ts';
 import { dailySeed, seededRng, shuffled } from './random.ts';
 
 const NOW = new Date('2026-10-12T20:00:00');
@@ -69,9 +69,30 @@ describe('favoriteArtists', () => {
     expect(boosted[0].artist.id).toBe('ar2');
   });
 
+  it('counts each artist of a song with several artists', () => {
+    const duo = song('d', { artist: 'Lil Nas X • Billy Ray Cyrus', artistId: 'lnx', artists: [{ id: 'lnx', name: 'Lil Nas X' }, { id: 'brc', name: 'Billy Ray Cyrus' }] });
+    const joined = song('j', { artist: 'Daft Punk • Pharrell Williams', artistId: 'dp' });
+    const ranked = favoriteArtists(base({ frequent: [], starred: { song: [duo, joined], album: [], artist: [] } }));
+    expect(ranked.map((r) => r.artist.name)).toEqual(['Lil Nas X', 'Billy Ray Cyrus', 'Daft Punk']);
+  });
+
   it('uses the rank when the server gives no play count', () => {
     const ranked = favoriteArtists(base({ frequent: [album('a', { artistId: 'x', artist: 'X' }), album('b', { artistId: 'y', artist: 'Y' })], starred: { song: [], album: [], artist: [] } }));
     expect(ranked.map((r) => r.artist.id)).toEqual(['x', 'y']);
+  });
+});
+
+describe('mixCovers', () => {
+  it('keeps one cover per album, four at most', () => {
+    const songs = [
+      song('a', { albumId: 'A', coverArt: 'ca1' }),
+      song('b', { albumId: 'A', coverArt: 'ca2' }),
+      song('c', { albumId: 'B', coverArt: 'cb' }),
+      song('d', { albumId: 'C', coverArt: 'cc' }),
+      song('e', { albumId: 'D', coverArt: 'cd' }),
+      song('f', { albumId: 'E', coverArt: 'ce' }),
+    ];
+    expect(mixCovers(songs)).toEqual(['ca1', 'cb', 'cc', 'cd']);
   });
 });
 

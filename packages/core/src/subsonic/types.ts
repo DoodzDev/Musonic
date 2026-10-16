@@ -45,6 +45,14 @@ export interface Song {
   genre?: string;
   playCount?: number;
   starred?: string;
+  /** Each credited artist (OpenSubsonic); `artist` joins their names with " • ". */
+  artists?: ArtistRef[];
+}
+
+/** One credited artist of a song or album (OpenSubsonic `artists`). */
+export interface ArtistRef {
+  id: string;
+  name: string;
 }
 
 export interface Album {
@@ -62,6 +70,8 @@ export interface Album {
   played?: string;
   starred?: string;
   created?: string;
+  /** Each credited artist (OpenSubsonic); `artist` joins their names with " • ". */
+  artists?: ArtistRef[];
 }
 
 export interface Artist {

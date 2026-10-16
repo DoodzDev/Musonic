@@ -24,7 +24,12 @@ export type SubsonicAlbum = {
   duration: number;
   year?: number;
   genre?: string;
+  /** Each credited artist (OpenSubsonic); `artist` joins their names with " • ". */
+  artists?: ArtistRef[];
 };
+
+/** One credited artist of a song or album (OpenSubsonic `artists`). */
+export type ArtistRef = {id: string; name: string};
 
 export type SubsonicSong = {
   id: string;
@@ -42,6 +47,8 @@ export type SubsonicSong = {
   bitRate?: number;
   /** File extension of the original file (`flac`, `mp3`…). */
   suffix?: string;
+  /** Each credited artist (OpenSubsonic); `artist` joins their names with " • ". */
+  artists?: ArtistRef[];
 };
 
 export type SubsonicPlaylist = {
