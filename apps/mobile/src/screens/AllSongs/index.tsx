@@ -1,79 +1,67 @@
 /**
  * @file index.tsx
- * @description "My Music" screen — browses and plays the user's entire native
- *   Navidrome library (shuffle or in order), excluding ext- (Deezer) tracks.
- *   Full library is fetched once via paginated empty-query search3 calls (no
- *   single Subsonic "get everything" endpoint exists), then filtered client-side
- *   by the search bar.
- *   Playback goes through the playback engine (playFromList).
- *   Offline (or when the server cannot be reached), lists the downloaded tracks:
- *   the only ones that can play.
+ * @description "My Music" screen (Design v2, R5.7) — the user's whole native
+ *   Navidrome library (Deezer `ext-` tracks left out). My Music cover, title,
+ *   "N songs · length"; Play and Shuffle; a search field; the sort (title,
+ *   artist, recently added) and, in the alphabetical orders, a letter header
+ *   before each section and a sheet to jump to a letter. Built on the shared
+ *   detail layout, songs on the shared `TrackRow`.
+ *   The full library is fetched once via paginated empty-query search3 calls
+ *   (no single Subsonic "get everything" endpoint exists), then filtered
+ *   client-side by the search field. Playback goes through the playback
+ *   engine (playFromList). Offline (or when the server cannot be reached),
+ *   lists the downloaded tracks: the only ones that can play.
  * @author DoodzProg
- * @version 1.3.0
- * @license MIT
+ * @version 2.0.0
+ * @license CC-BY-NC-4.0
  */
-
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {useStableCallback} from '../../hooks/useStableCallback';
-import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  StatusBar,
-  ActivityIndicator,
-} from 'react-native';
-import {FlashList} from '@shopify/flash-list';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {Pressable, StyleSheet, View} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
-import {darkTheme} from '../../theme';
-import BackArrowIcon from '../../components/icons/BackArrowIcon';
-import PlayIcon from '../../components/icons/PlayIcon';
-import SearchIcon from '../../components/icons/SearchIcon';
-import ShuffleIcon from '../../components/icons/ShuffleIcon';
-import CoverArt from '../../components/CoverArt';
-import HeartIcon from '../../components/icons/HeartIcon';
-import PlusCircleIconComponent from '../../components/icons/PlusCircleIcon';
-import CheckCircleGreenIcon from '../../components/icons/CheckCircleGreenIcon';
-import DownloadStatusIcon from '../../components/icons/DownloadStatusIcon';
+import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
+import DetailScaffold from '../../components/detail/DetailScaffold';
+import {DETAIL_BAR_HEIGHT, PlayShuffleRow} from '../../components/detail/DetailParts';
+import TrackRow from '../../components/ui/TrackRow';
+import Text from '../../components/ui/Text';
+import Raised from '../../components/ui/Raised';
+import SearchField from '../../components/ui/SearchField';
+import EmptyState from '../../components/ui/EmptyState';
+import PressableScale from '../../components/ui/PressableScale';
+import Sheet from '../../components/ui/Sheet';
+import {ListGroup, ListItem} from '../../components/ui/ListGroup';
+import {AllSongsCover, ALL_SONGS_COVER_COLORS} from '../../components/ui/SpecialCovers';
+import SongOptionsSheet from '../../components/SongOptionsSheet';
 import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
 import {showToast} from '../../components/Toast';
-import {subsonicGet, getStreamUrl, getCoverArtUrl} from '../../api/client';
+import {CheckIcon, SortIcon} from '../../components/icons';
+import {subsonicGet} from '../../api/client';
 import {playFromList} from '../../services/playback/launchers';
 import {usePlayerStore} from '../../store/playerStore';
-import {useSettingsStore} from '../../store/settingsStore';
-import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
+import {useSettingsStore, type AllSongsSortMode} from '../../store/settingsStore';
 import {useDownloadStore} from '../../store/downloadStore';
-import type {SubsonicSong} from '../../api/types';
-import type {Track} from '../../store/playerStore';
 import {downloadedSongs} from '../../utils/offlineSongs';
+import {songToTrack} from '../../utils/songToTrack';
+import {useIsLandscape} from '../../hooks/useIsLandscape';
+import {colors, radii, spacing} from '../../theme';
 import {useT} from '../../i18n';
-import {useDockInset} from '../../navigation/dockLayout';
+import type {SubsonicSong} from '../../api/types';
+import {buildRows, headerIndex, sortSongs, INDEX_LETTERS, type Row} from './allSongsModel';
 
 const FULL_LIBRARY_PAGE_SIZE = 500;
 const FULL_LIBRARY_MAX_PAGES = 10;
+const COVER = 200;
+const SIDE_COVER = 128;
+/** Heights of the list rows: the list knows every offset (1,700+ rows, jumps to a letter). */
+const SONG_HEIGHT = 64;
+const HEADER_HEIGHT = 36;
+const SORTS: AllSongsSortMode[] = ['az', 'artist', 'recent'];
+const rowHeight = (row: Row) => (row.kind === 'header' ? HEADER_HEIGHT : SONG_HEIGHT);
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function songToTrack(s: SubsonicSong): Track {
-  const id = String(s.id);
-  return {
-    id,
-    title: s.title,
-    artist: s.artist,
-    album: s.album || '',
-    duration: s.duration || 0,
-    coverArt: s.coverArt,
-    streamUrl: getStreamUrl(id),
-    url: getStreamUrl(id),
-    artwork: getCoverArtUrl(s.coverArt || id, 300),
-  };
-}
-
-function isNative(id: unknown): boolean {
-  return !String(id).startsWith('ext-');
+function lengthLabel(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return h > 0 ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
 }
 
 /**
@@ -91,86 +79,42 @@ async function fetchAllNativeSongs(): Promise<SubsonicSong[]> {
       artistCount: 0,
     });
     const batch: SubsonicSong[] = res.searchResult3?.song ?? [];
-    all.push(...batch.filter(s => isNative(s.id)));
+    all.push(...batch.filter(s => !String(s.id).startsWith('ext-')));
     if (batch.length < FULL_LIBRARY_PAGE_SIZE) break;
   }
   return all;
 }
 
-// ─── Song Row ────────────────────────────────────────────────────────────────
-
-type SongRowProps = {
-  song: SubsonicSong;
-  index: number;
-  onPress: (index: number) => void;
-  onAddToPlaylist: (song: SubsonicSong) => void;
-};
-
-const SongRow = React.memo(function SongRow({song, index, onPress, onAddToPlaylist}: SongRowProps) {
-  const likedSongIds = usePlayerStore(s => s.likedSongIds);
-  const localLikeOverrides = usePlayerStore(s => s.localLikeOverrides);
-  const pendingLikes = usePlayerStore(s => s.pendingLikes);
-  const toggleLike = usePlayerStore(s => s.toggleLike);
-  const savedSet = usePlaylistCacheStore(s => s.savedSet);
-  const id = String(song.id);
-  const isLiked = localLikeOverrides[id] !== undefined ? localLikeOverrides[id] : likedSongIds.has(id);
-  const isInPlaylist = savedSet.has(id);
-
-  return (
-    <TouchableOpacity style={styles.songRow} onPress={() => onPress(index)} activeOpacity={0.7}>
-      <CoverArt id={song.coverArt} size={48} borderRadius={4} />
-      <View style={styles.songInfo}>
-        <Text style={styles.songTitle} numberOfLines={1}>{song.title}</Text>
-        <Text style={styles.songArtist} numberOfLines={1}>{song.artist}</Text>
-      </View>
-      <View style={styles.songActions}>
-        <TouchableOpacity
-          hitSlop={{top: 10, bottom: 10, left: 10, right: 6}}
-          onPress={() => toggleLike(id, song.title, song.artist)}
-          disabled={pendingLikes.has(id)}>
-          {pendingLikes.has(id)
-            ? <ActivityIndicator size="small" color={darkTheme.accent} style={styles.likeSpinner} />
-            : <HeartIcon size={20} color={isLiked ? darkTheme.accent : '#444'} filled={isLiked} />}
-        </TouchableOpacity>
-        <TouchableOpacity
-          hitSlop={{top: 10, bottom: 10, left: 6, right: 6}}
-          onPress={() => onAddToPlaylist(song)}>
-          {isInPlaylist
-            ? <CheckCircleGreenIcon size={20} />
-            : <PlusCircleIconComponent size={20} color="#444" />}
-        </TouchableOpacity>
-        <TouchableOpacity
-          hitSlop={{top: 10, bottom: 10, left: 6, right: 10}}
-          onPress={() => useDownloadStore.getState().enqueueTrack(song)}>
-          <DownloadStatusIcon trackId={id} size={20} />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
-// Callbacks are stable (useStableCallback) and receive the row's index/song,
-// so comparing data and position is enough and no stale closure can run.
-}, (prev, next) =>
-  prev.song.id === next.song.id && prev.song.title === next.song.title && prev.index === next.index);
-
-// ─── Screen ──────────────────────────────────────────────────────────────────
-
 export default function AllSongsScreen() {
-  const dockInset = useDockInset();
-  const landscapePadding = useLandscapeSidebarPadding();
   const t = useT();
   const navigation = useNavigation<any>();
-  const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
+  const isLandscape = useIsLandscape();
   const shuffleMode = usePlayerStore(s => s.shuffleMode);
   const toggleShuffle = usePlayerStore(s => s.toggleShuffle);
+  const likedSongIds = usePlayerStore(s => s.likedSongIds);
+  const overrides = usePlayerStore(s => s.localLikeOverrides);
+  const toggleLike = usePlayerStore(s => s.toggleLike);
+  const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
+  const sort = useSettingsStore(s => s.allSongsSortMode);
+  const setSort = useSettingsStore(s => s.setAllSongsSortMode);
+  const downloads = useDownloadStore(s => s.downloads);
+  const activeDownloads = useDownloadStore(s => s.activeDownloads);
+  const active = useActiveTrack();
+  const {state} = usePlaybackState();
+
   const [songs, setSongs] = useState<SubsonicSong[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [addToPlaylistSong, setAddToPlaylistSong] = useState<SubsonicSong | null>(null);
-  const [addToPlaylistVisible, setAddToPlaylistVisible] = useState(false);
+  const [query, setQuery] = useState('');
+  const [menuSong, setMenuSong] = useState<SubsonicSong | null>(null);
+  const [addTo, setAddTo] = useState<SubsonicSong | null>(null);
+  const [sortVisible, setSortVisible] = useState(false);
+  const [jumpVisible, setJumpVisible] = useState(false);
+  const listRef = useRef<any>(null);
+  const insets = useSafeAreaInsets();
 
-  const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
   useEffect(() => {
     let cancelled = false;
+    // Only downloaded tracks can play offline: list them.
     const offlineList = () => downloadedSongs(useDownloadStore.getState().downloads);
     if (isOfflineMode) {
       setSongs(offlineList());
@@ -185,221 +129,199 @@ export default function AllSongsScreen() {
     return () => { cancelled = true; };
   }, [isOfflineMode]);
 
-  const searchedSongs = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return songs;
-    return songs.filter(
-      s => s.title.toLowerCase().includes(q) || (s.artist ?? '').toLowerCase().includes(q),
+  const searching = query.trim().length > 0;
+  const sorted = useMemo(() => sortSongs(songs, sort), [songs, sort]);
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return sorted;
+    return sorted.filter(s => s.title.toLowerCase().includes(q) || (s.artist ?? '').toLowerCase().includes(q));
+  }, [sorted, query]);
+  const rows = useMemo(() => buildRows(shown, sort, !searching), [shown, sort, searching]);
+  const tracks = useMemo(() => shown.map(songToTrack), [shown]);
+  const totalSeconds = useMemo(() => songs.reduce((sum, s) => sum + (s.duration || 0), 0), [songs]);
+  const withHeaders = !searching && sort !== 'recent' && shown.length > 0;
+
+  const jumpTo = useCallback((letter: string) => {
+    setJumpVisible(false);
+    const index = headerIndex(rows, letter);
+    if (index === undefined) return;
+    // The header lands just under the top bar (portrait) or the status bar (landscape).
+    const viewOffset = insets.top + (isLandscape ? 0 : DETAIL_BAR_HEIGHT);
+    listRef.current?.scrollToIndex({index, viewOffset, animated: false});
+  }, [rows, insets.top, isLandscape]);
+
+  const playAll = useCallback(() => { if (tracks.length) playFromList({type: 'library'}, tracks); }, [tracks]);
+
+  const renderItem = useCallback(({item}: {item: Row}) => {
+    if (item.kind === 'header') {
+      return (
+        <Pressable
+          onPress={() => setJumpVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`${item.letter}, ${t.allSongs.jumpTitle}`}
+          style={styles.header}>
+          <Text variant="headline" color="textSecondary">{item.letter}</Text>
+        </Pressable>
+      );
+    }
+    const song = item.song;
+    const id = String(song.id);
+    const isCurrent = active?.id != null && String(active.id) === id;
+    const dl = activeDownloads[id];
+    return (
+      <TrackRow
+        title={song.title}
+        subtitle={song.artist}
+        coverId={song.coverArt}
+        playback={isCurrent ? (state === State.Playing ? 'playing' : 'current') : 'idle'}
+        liked={overrides[id] ?? likedSongIds.has(id)}
+        download={id in downloads ? 'done' : dl && (dl.status === 'queued' || dl.status === 'downloading') ? 'downloading' : 'none'}
+        onPress={() => playFromList({type: 'library'}, tracks, item.index)}
+        onLongPress={() => setMenuSong(song)}
+        onToggleLike={() => toggleLike(id, song.title, song.artist)}
+        onAddToPlaylist={() => setAddTo(song)}
+        onDownload={() => useDownloadStore.getState().enqueueTrack(song)}
+      />
     );
-  }, [songs, searchQuery]);
+  }, [t, active?.id, state, overrides, likedSongIds, downloads, activeDownloads, tracks, toggleLike]);
 
-  const handlePressResult = useCallback((index: number) => {
-    playFromList({type: 'library'}, searchedSongs.map(songToTrack), index);
-  }, [searchedSongs]);
+  const meta = loading ? '…' : [t.allSongs.trackCount(songs.length), totalSeconds > 0 ? lengthLabel(totalSeconds) : ''].filter(Boolean).join(' · ');
 
-  const onRowPress = useStableCallback(handlePressResult);
-  const onRowAddToPlaylist = useStableCallback((song: SubsonicSong) => {
-    setAddToPlaylistSong(song);
-    setAddToPlaylistVisible(true);
-  });
+  const playRow = (
+    <PlayShuffleRow onPlay={playAll} onShuffle={toggleShuffle} shuffleMode={shuffleMode} disabled={!tracks.length} />
+  );
 
-  const handlePlayAll = useCallback(() => {
-    if (searchedSongs.length === 0) return;
-    playFromList({type: 'library'}, searchedSongs.map(songToTrack));
-  }, [searchedSongs]);
+  const sortRow = songs.length > 0 ? (
+    <View style={styles.sortRow}>
+      <PressableScale onPress={() => setSortVisible(true)} hitSlop={10} accessibilityLabel={`${t.library.sortTitle}, ${t.allSongs.sort[sort]}`} style={styles.sortBtn}>
+        <SortIcon size={14} color={colors.textSecondary} />
+        <Text variant="footnote" color="textSecondary" style={styles.sortLabel}>{t.allSongs.sort[sort]}</Text>
+      </PressableScale>
+      {withHeaders ? (
+        <PressableScale onPress={() => setJumpVisible(true)} hitSlop={10} accessibilityLabel={t.allSongs.jumpTitle}>
+          <Text variant="footnote" color="accent" style={styles.sortLabel}>A–Z</Text>
+        </PressableScale>
+      ) : null}
+    </View>
+  ) : null;
+
+  const hero = (
+    <View>
+      <View style={styles.hero}>
+        <Raised radius={radii.button}><AllSongsCover size={COVER} borderRadius={radii.button} /></Raised>
+        <Text variant="title2" style={styles.title}>{t.allSongs.title}</Text>
+        <Text variant="footnote" color="textSecondary">{meta}</Text>
+      </View>
+      <View style={styles.playSpacing}>{playRow}</View>
+      {songs.length > 6 ? (
+        <View style={styles.search}>
+          <SearchField value={query} onChangeText={setQuery} placeholder={t.allSongs.searchPlaceholder} />
+        </View>
+      ) : null}
+      {sortRow}
+    </View>
+  );
+
+  const side = (
+    <View>
+      <Raised radius={radii.tile}><AllSongsCover size={SIDE_COVER} borderRadius={radii.tile} /></Raised>
+      <Text variant="title3" style={styles.sideTitle}>{t.allSongs.title}</Text>
+      <Text variant="footnote" color="textSecondary">{meta}</Text>
+      <View style={styles.sidePlay}>{playRow}</View>
+      {songs.length > 6 ? (
+        <View style={styles.sideSearch}>
+          <SearchField value={query} onChangeText={setQuery} placeholder={t.allSongs.searchPlaceholder} />
+        </View>
+      ) : null}
+      <View style={styles.sideSort}>{sortRow}</View>
+    </View>
+  );
+
+  const present = useMemo(() => new Set(rows.flatMap(r => (r.kind === 'header' ? [r.letter] : []))), [rows]);
 
   return (
-    <SafeAreaView style={[styles.root, landscapePadding]} edges={isFullscreenMode ? [] : ['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={darkTheme.background} />
-
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <BackArrowIcon />
-        </TouchableOpacity>
-        <View style={styles.searchPill}>
-          <SearchIcon size={16} color="#888" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t.allSongs.searchPlaceholder}
-            placeholderTextColor="#666"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-      </View>
-
-      <View style={styles.titleBlock}>
-        <Text style={styles.title}>{t.allSongs.title}</Text>
-        <Text style={styles.subtitle}>
-          {loading ? '…' : t.allSongs.trackCount(songs.length)}
-        </Text>
-      </View>
-
-      {!loading && searchedSongs.length > 0 && (
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.shuffleBtn} onPress={toggleShuffle} activeOpacity={0.8}>
-            <ShuffleIcon mode={shuffleMode} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.playBtn} onPress={handlePlayAll} activeOpacity={0.85}>
-            <PlayIcon />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      <FlashList
-        data={searchedSongs}
-        keyExtractor={s => s.id}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.center}>
-            {loading ? (
-              <>
-                <ActivityIndicator size="large" color={darkTheme.accent} />
-                <Text style={styles.hintText}>{t.allSongs.loadingLibrary}</Text>
-              </>
-            ) : (
-              <Text style={styles.hintText}>{t.allSongs.searchEmpty}</Text>
-            )}
-          </View>
-        }
-        renderItem={({item, index}) => (
-          <SongRow
-            song={item}
-            index={index}
-            onPress={onRowPress}
-            onAddToPlaylist={onRowAddToPlaylist}
-          />
-        )}
-        contentContainerStyle={[styles.listContent, {paddingBottom: dockInset}]}
+    <>
+      <DetailScaffold
+        title={t.allSongs.title}
+        tint={ALL_SONGS_COVER_COLORS[0]}
+        hero={hero}
+        side={side}
+        showTitleAt={COVER + 36}
+        data={rows}
+        renderItem={renderItem}
+        keyExtractor={r => r.key}
+        loading={loading}
+        empty={<EmptyState title={searching ? t.allSongs.searchEmpty : t.library.emptyState} />}
+        listRef={listRef}
+        itemHeight={rowHeight}
       />
-
+      <Sheet visible={sortVisible} onClose={() => setSortVisible(false)} title={t.library.sortTitle}>
+        <View style={styles.sheetBody}>
+          <ListGroup raised>
+            {SORTS.map(m => (
+              <ListItem
+                key={m}
+                label={t.allSongs.sort[m]}
+                accessory={sort === m ? <CheckIcon size={20} color={colors.accent} strokeWidth={2.5} /> : undefined}
+                onPress={() => { setSort(m); setSortVisible(false); }}
+              />
+            ))}
+          </ListGroup>
+        </View>
+      </Sheet>
+      <Sheet visible={jumpVisible} onClose={() => setJumpVisible(false)} title={t.allSongs.jumpTitle}>
+        <View style={styles.letters}>
+          {INDEX_LETTERS.map(letter => {
+            const on = present.has(letter);
+            return (
+              <PressableScale
+                key={letter}
+                onPress={() => jumpTo(letter)}
+                disabled={!on}
+                haptic="selection"
+                accessibilityLabel={letter}
+                accessibilityState={{disabled: !on}}
+                style={[styles.letter, !on && styles.letterOff]}>
+                <Text variant="headline" color={on ? 'textPrimary' : 'textSecondary'}>{letter}</Text>
+              </PressableScale>
+            );
+          })}
+        </View>
+      </Sheet>
       <AddToPlaylistSheet
-        visible={addToPlaylistVisible}
-        onClose={() => setAddToPlaylistVisible(false)}
-        trackId={addToPlaylistSong ? String(addToPlaylistSong.id) : undefined}
-        trackTitle={addToPlaylistSong?.title}
+        visible={!!addTo}
+        onClose={() => setAddTo(null)}
+        trackId={addTo ? String(addTo.id) : undefined}
+        trackTitle={addTo?.title}
         onToast={showToast}
       />
-    </SafeAreaView>
+      <SongOptionsSheet
+        visible={!!menuSong}
+        onClose={() => setMenuSong(null)}
+        track={menuSong}
+        onToast={showToast}
+        onNavigateAlbum={albumId => navigation.navigate('AlbumDetail', {albumId})}
+        onNavigateArtist={(artistId, artistName) => navigation.navigate('ArtistDetail', {artistId, artistName})}
+      />
+    </>
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: darkTheme.background},
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: 4,
-    gap: 8,
-  },
-  backBtn: {
-    padding: 6,
-  },
-  searchPill: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#282828',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    color: '#fff',
-    fontSize: 14,
-    padding: 0,
-  },
-  titleBlock: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 4,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#fff',
-    marginBottom: 6,
-    letterSpacing: -0.3,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#b3b3b3',
-    fontWeight: '500',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    gap: 16,
-  },
-  shuffleBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: darkTheme.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 8,
-    shadowColor: darkTheme.accent,
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-  },
-  listContent: {
-    paddingBottom: 140,
-  },
-  songRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: 16,
-    paddingRight: 10,
-    paddingVertical: 8,
-  },
-  songInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  songTitle: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  songArtist: {
-    color: '#b3b3b3',
-    fontSize: 13,
-    marginTop: 2,
-  },
-  songActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  likeSpinner: {
-    width: 20,
-    height: 20,
-  },
-  center: {
-    alignItems: 'center',
-    paddingTop: 40,
-    gap: 12,
-  },
-  hintText: {
-    color: '#666',
-    fontSize: 14,
-  },
+  hero: {alignItems: 'center', paddingHorizontal: spacing.gutter, paddingTop: spacing.s, gap: 2},
+  title: {marginTop: 16},
+  playSpacing: {paddingTop: 18, paddingBottom: 12},
+  search: {paddingHorizontal: spacing.gutter, paddingBottom: 6},
+  sortRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.gutter, paddingTop: 6, paddingBottom: 6},
+  sortBtn: {flexDirection: 'row', alignItems: 'center', gap: 6},
+  sortLabel: {fontWeight: '600'},
+  header: {height: HEADER_HEIGHT, justifyContent: 'flex-end', paddingHorizontal: spacing.gutter, paddingBottom: 4},
+  sideTitle: {fontWeight: '700', marginTop: 12},
+  sidePlay: {marginTop: 16, marginHorizontal: -spacing.gutter},
+  sideSearch: {marginTop: 12},
+  sideSort: {marginTop: 6, marginHorizontal: -spacing.gutter},
+  sheetBody: {paddingHorizontal: spacing.m, paddingBottom: spacing.m},
+  letters: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, paddingHorizontal: spacing.m, paddingBottom: spacing.l},
+  letter: {width: 48, height: 48, borderRadius: radii.tile, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center'},
+  letterOff: {opacity: 0.35},
 });

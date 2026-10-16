@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Mini player tinted by the cover** — behind the cover and titles of the mini player, a heavily zoomed, blurred piece of the cover fades into the glass, darkened just enough for the text to stay readable.
 
+- **New Library (Design v2)** — large title, tabs (Playlists, Albums, Artists, Downloaded), the Liked songs and My music tiles on top, a sort line with the item count, list or grid view (remembered), items pinned on top of their tab (remembered), and the "new playlist" button in the header. The Library is kept on the device, so it fills at once on launch and still shows offline.
+- **New album, playlist, artist and mix pages (Design v2)** — one shared layout: large cover over a wash of its colour, a bar that shows the title once you scroll, Play (or Pause) and Shuffle buttons, round actions, and the tracks on the shared track row. In landscape, the cover and buttons stay in a column on the left and only the tracks scroll. Albums show the genre, year and real audio quality, Add and Download; playlists keep editing (reorder, remove) with a clear Cancel · Save bar, a search field and online suggestions; artists get a full-width photo, popular tracks, albums and similar artists.
+- **New Liked songs and recommendations (Design v2)** — same layout, with Download all, a card to the recommendations and a search field; the recommendations page shows up to 50 online tracks and a button for new suggestions.
+- **New My music (Design v2)** — same layout for your whole library, sorted by title, artist or recently added (remembered), with a letter before each section and a sheet to jump straight to a letter.
+
 ### Changed
 - **One icon set for the whole app** — every icon now comes from the shared set (no more slightly different copies of the same icon from screen to screen), and the icons of the option menus are centred on their text.
 
@@ -28,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Search in the library** — the magnifier of the library opens a field that filters your playlists by name as you type (accents and case ignored).
 
 ### Fixed
+- **Wrong artist photo and tracks** — when several Deezer artists share a name, Musonic now picks the best-known one (it used to take the first result, e.g. an unknown namesake instead of the rapper Vald).
+- **No quality badge on online tracks** — tracks streamed from the online catalogue no longer show a meaningless quality badge.
 - **Liked songs and My music offline** — offline, "Liked songs" lists the downloaded liked tracks and "My music" the downloaded tracks, instead of an empty list. The liked count in the library stays right after starting offline.
 - **Playlist covers offline** — the cover of a playlist holding downloaded tracks is kept on the device and shows offline, in the library and on the playlist.
 - **Cover art offline** — covers are now saved with downloaded tracks and shown everywhere offline: lists, mini player, full player, notification and lock screen. Covers of tracks downloaded earlier are fetched automatically the next time the server is reachable.

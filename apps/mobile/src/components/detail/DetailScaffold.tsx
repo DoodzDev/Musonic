@@ -7,10 +7,10 @@
  *   column on the left (with Back and the actions on top) and only the list
  *   scrolls, on the right, so the tracks are visible at once.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
-import React from 'react';
+import React, {useCallback, useMemo, useRef} from 'react';
 import {ActivityIndicator, ScrollView, StyleSheet, View, type ListRenderItem} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated';
@@ -52,6 +52,10 @@ type Props<T> = {
   empty?: React.ReactNode;
   /** Portrait: the hero starts at the very top, under the status bar (artist photo). */
   fullBleed?: boolean;
+  /** Ref of the list, to jump to a row (`scrollToIndex`, needs `itemHeight`). */
+  listRef?: React.Ref<any>;
+  /** Fixed height of each row: the list then knows every offset without measuring (long lists, jumps). */
+  itemHeight?: (item: T) => number;
 };
 
 export default function DetailScaffold<T>({
@@ -69,6 +73,8 @@ export default function DetailScaffold<T>({
   loading,
   empty,
   fullBleed = false,
+  listRef,
+  itemHeight,
 }: Props<T>) {
   const t = useT();
   const navigation = useNavigation();
@@ -80,6 +86,24 @@ export default function DetailScaffold<T>({
   const goBack = () => navigation.goBack();
 
   const topPadding = fullBleed ? 0 : insets.top + DETAIL_BAR_HEIGHT + spacing.s;
+  const heroHeight = useRef(0);
+  const rowOffsets = useMemo(() => {
+    if (!itemHeight) return null;
+    const out: number[] = [];
+    let y = 0;
+    for (const item of data) {
+      out.push(y);
+      y += itemHeight(item);
+    }
+    return out;
+  }, [data, itemHeight]);
+  // Offsets in the scroll content, like the measured ones: padding and hero included.
+  const getItemLayout = useCallback((_: unknown, index: number) => {
+    const base = isLandscape ? insets.top + spacing.s : topPadding + heroHeight.current;
+    return {length: itemHeight!(data[index]), offset: base + rowOffsets![index], index};
+  }, [isLandscape, insets.top, topPadding, itemHeight, data, rowOffsets]);
+  const layoutProps = rowOffsets ? {getItemLayout} : {};
+
   const listEmpty = loading ? <ActivityIndicator color={colors.accent} style={styles.loading} /> : <>{empty}</>;
 
   if (isLandscape) {
@@ -97,6 +121,8 @@ export default function DetailScaffold<T>({
           {side ?? hero}
         </ScrollView>
         <Animated.FlatList
+          ref={listRef}
+          {...layoutProps}
           style={styles.list}
           data={data as T[]}
           renderItem={renderItem}
@@ -114,10 +140,12 @@ export default function DetailScaffold<T>({
     <View style={[styles.root, landscapePadding]}>
       {fullBleed ? null : <CoverBackdrop coverId={coverId} tint={tint} />}
       <Animated.FlatList
+        ref={listRef}
+        {...layoutProps}
         data={data as T[]}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
-        ListHeaderComponent={<>{hero}</>}
+        ListHeaderComponent={rowOffsets ? <View onLayout={e => { heroHeight.current = e.nativeEvent.layout.height; }}>{hero}</View> : <>{hero}</>}
         ListFooterComponent={<>{footer}</>}
         ListEmptyComponent={listEmpty}
         onScroll={onScroll}

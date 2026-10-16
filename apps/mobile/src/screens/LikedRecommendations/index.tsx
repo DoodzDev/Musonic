@@ -8,7 +8,7 @@
  *   similar songs of liked tracks, without what is already liked. Each refresh
  *   draws new seeds. Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.0.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -46,7 +46,9 @@ type Recommendations = {songs: SubsonicSong[]; seeds: string[]};
 async function buildRecommendations(liked: SubsonicSong[]): Promise<Recommendations> {
   const seen = new Set(liked.map(s => String(s.id)));
   const pool: SubsonicSong[] = [];
-  const artists = shuffle([...new Set(liked.map(s => s.artist).filter(Boolean))], Math.random).slice(0, MAX_SEED_ARTISTS);
+  // The server joins several artists with " • ": seed with each of them on its own.
+  const names = liked.flatMap(s => (s.artist ?? '').split('•').map(a => a.trim())).filter(Boolean);
+  const artists = shuffle([...new Set(names)], Math.random).slice(0, MAX_SEED_ARTISTS);
   const seedTracks = shuffle(liked.filter(s => !String(s.id).startsWith('ext-')), Math.random)
     .slice(0, MAX_SEED_TRACKS)
     .map(s => String(s.id));

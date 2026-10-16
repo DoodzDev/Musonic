@@ -262,6 +262,9 @@ export const en = {
     trackCount: (n: number) => `${n} song${n !== 1 ? 's' : ''}`,
     searchPlaceholder: 'Search your music',
     searchEmpty: 'No matching tracks',
+    sort: {az: 'Title (A-Z)', artist: 'Artist', recent: 'Recently added'},
+    jumpTitle: 'Jump to letter',
+    jumpHint: 'Tap a letter to jump to it',
     loadingLibrary: 'Loading your whole library…',
   },
 

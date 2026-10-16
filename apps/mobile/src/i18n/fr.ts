@@ -267,6 +267,9 @@ export const t = {
     searchPlaceholder: 'Rechercher dans ma musique',
     searchEmpty: 'Aucun titre trouvé',
     loadingLibrary: 'Chargement de toute votre bibliothèque…',
+    sort: {az: 'Titre (A-Z)', artist: 'Artiste', recent: 'Ajoutés récemment'},
+    jumpTitle: 'Aller à la lettre',
+    jumpHint: 'Touchez une lettre pour y aller',
   },
 
   // ─── Playlist Detail ───────────────────────────────────────────────────────

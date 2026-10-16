@@ -5,10 +5,10 @@
  *   nav bar position, fullscreen mode (hides the OS status bar), the
  *   landscape full-player cover/progress column order, haptic feedback and
  *   the "Previous always goes back" playback rule, and the Library view
- *   (list or grid, pinned items).
+ *   (list or grid, pinned items) and the sort of My Music.
  *   Persisted across restarts; consumed by RootNavigator to gate the server-setup flow.
  * @author DoodzProg
- * @version 1.4.0
+ * @version 1.5.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -18,6 +18,7 @@ import {migrateSettings, SETTINGS_VERSION} from './settingsMigrations';
 
 export type Locale = 'fr' | 'en';
 export type LibrarySortMode = 'recent' | 'added' | 'alpha' | 'custom';
+export type AllSongsSortMode = 'az' | 'artist' | 'recent';
 export type NavBarPosition = 'left' | 'right';
 export type LibraryViewMode = 'list' | 'grid';
 export type FullPlayerCoverSide = 'left' | 'right';
@@ -77,6 +78,9 @@ type SettingsState = {
   setLibraryViewMode: (mode: LibraryViewMode) => void;
   /** Library items pinned on top of their tab (playlist, album or artist ids). */
   pinnedLibraryIds: string[];
+  /** Order of My Music. */
+  allSongsSortMode: AllSongsSortMode;
+  setAllSongsSortMode: (mode: AllSongsSortMode) => void;
   togglePinnedLibraryId: (id: string) => void;
 };
 
@@ -129,6 +133,8 @@ export const useSettingsStore = create<SettingsState>()(
       libraryViewMode: 'list',
       setLibraryViewMode: mode => set({libraryViewMode: mode}),
       pinnedLibraryIds: [],
+      allSongsSortMode: 'az',
+      setAllSongsSortMode: mode => set({allSongsSortMode: mode}),
       togglePinnedLibraryId: id =>
         set(s => ({
           pinnedLibraryIds: s.pinnedLibraryIds.includes(id)
