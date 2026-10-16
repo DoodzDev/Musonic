@@ -11,7 +11,7 @@
  *   genre instead: all its songs, without the Magic pill. Built on the
  *   shared detail layout (`DetailScaffold`), like albums and playlists.
  * @author DoodzProg
- * @version 1.4.0
+ * @version 1.5.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -104,11 +104,18 @@ export default function MixDetailScreen() {
   const overrides = usePlayerStore(s => s.localLikeOverrides);
   const toggleLike = usePlayerStore(s => s.toggleLike);
   const toggleShuffle = usePlayerStore(s => s.toggleShuffle);
+  const togglePlay = usePlayerStore(s => s.togglePlay);
   const shuffleMode = usePlayerStore(s => s.shuffleMode);
   const downloads = useDownloadStore(s => s.downloads);
   const active_downloads = useDownloadStore(s => s.activeDownloads);
 
-  const playAll = useCallback(() => { playFromList(source, tracks); }, [tracks]); // eslint-disable-line react-hooks/exhaustive-deps
+  // This mix is playing when the current track is one of its tracks: Play then pauses.
+  const ids = useMemo(() => new Set(list.map(s => String(s.id))), [list]);
+  const isThisMix = active?.id != null && ids.has(String(active.id));
+  const playAll = useCallback(() => {
+    if (isThisMix) { togglePlay(); return; }
+    playFromList(source, tracks);
+  }, [tracks, isThisMix, togglePlay]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const renderItem = useCallback(({item, index}: {item: SongLike; index: number}) => {
     const id = String(item.id);
@@ -131,14 +138,15 @@ export default function MixDetailScreen() {
     );
   }, [active?.id, state, overrides, likedSongIds, downloads, active_downloads, tracks, toggleLike]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const mosaic = (size: number) => (
+  // The pill only on the large cover: on the small one (landscape) it would cover half of it.
+  const mosaic = (size: number, pill = true) => (
     <Raised radius={radii.card} fill style={{width: size, height: size}}>
       <View style={styles.mosaic}>
         {covers.length >= 4
           ? covers.slice(0, 4).map(id => <CoverArt key={id} id={id} size={size / 2} borderRadius={0} />)
           : <CoverArt id={covers[0]} size={size} borderRadius={0} />}
       </View>
-      {params.browse ? null : (
+      {params.browse || !pill ? null : (
         <View style={styles.magicPill}>
           <SparkleIcon size={12} color={colors.accent} />
           <Text variant="caption" style={styles.magicText}>{t.ui.badgeMagic}</Text>
@@ -147,7 +155,7 @@ export default function MixDetailScreen() {
     </Raised>
   );
   const playRow = (
-    <PlayShuffleRow onPlay={playAll} onShuffle={toggleShuffle} shuffleMode={shuffleMode} disabled={tracks.length === 0} />
+    <PlayShuffleRow onPlay={playAll} onShuffle={toggleShuffle} shuffleMode={shuffleMode} disabled={tracks.length === 0} playing={isThisMix && state === State.Playing} />
   );
   const hero = (
     <View>
@@ -161,7 +169,7 @@ export default function MixDetailScreen() {
   );
   const side = (
     <View>
-      {mosaic(SIDE_COVER)}
+      {mosaic(SIDE_COVER, false)}
       <Text variant="title3" numberOfLines={2} style={styles.sideTitle}>{params.genre}</Text>
       <Text variant="footnote" color="textSecondary">{subtitle}</Text>
       <View style={styles.sidePlay}>{playRow}</View>
@@ -205,7 +213,7 @@ const styles = StyleSheet.create({
     height: 24,
     paddingHorizontal: 9,
     borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.32)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,

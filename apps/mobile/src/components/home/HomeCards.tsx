@@ -6,7 +6,7 @@
  *   "raised" relief (soft shadow + fine light edge) for a light 3D feel, and
  *   every card says what it is (album, track, playlist).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.1.1
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -31,7 +31,8 @@ const CARD = 150;
 const ARTIST = 104;
 const FOR_YOU_W = 260;
 const FOR_YOU_H = 300;
-const GLASS_PILL = 'rgba(0,0,0,0.32)';
+// Dark enough to stay readable on light covers.
+const GLASS_PILL = 'rgba(0,0,0,0.55)';
 
 // ─── Quick access ─────────────────────────────────────────────────────────────
 
