@@ -1,340 +1,308 @@
 /**
  * @file index.tsx
- * @description Artist detail screen. Compact header (name left, framed photo
- *   right) used in both orientations — no full-bleed hero photo. Artist name
- *   fades into the top bar next to the back button once the header has
- *   scrolled out of view. Shows top songs (tap to play), and album discography
- *   fetched from the Subsonic API.
+ * @description Artist screen (Design v2, R5.6). Full-width photo fading into
+ *   the background with the name and "N albums · M songs in your library";
+ *   Play and Shuffle; the popular tracks (the server's, else the online
+ *   ranking, played from the server copy when the song is on it); the
+ *   albums; similar artists. Landscape:
+ *   photo and actions in a fixed column, the rest scrolls on the right.
  *   Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 1.2.0
- * @license MIT
+ * @version 2.0.0
+ * @license CC-BY-NC-4.0
  */
-
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {
-  ActivityIndicator,
-  Animated,
-  FlatList,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  Image,
-} from 'react-native';
-import {useHeaderTopInset} from '../../hooks/useHeaderTopInset';
-import {useNavigation, useRoute} from '@react-navigation/native';
-import type {RouteProp} from '@react-navigation/native';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {Image, StyleSheet, View} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
+import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {darkTheme} from '../../theme';
+import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
+import DetailScaffold from '../../components/detail/DetailScaffold';
+import {PlayShuffleRow} from '../../components/detail/DetailParts';
+import {AlbumCard, ArtistBubble, HomeShelf} from '../../components/home/HomeCards';
+import TrackRow from '../../components/ui/TrackRow';
+import Text from '../../components/ui/Text';
+import Raised from '../../components/ui/Raised';
+import SectionHeader from '../../components/ui/SectionHeader';
+import EmptyState from '../../components/ui/EmptyState';
+import ArtistAvatar from '../../components/ui/ArtistAvatar';
+import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
+import SongOptionsSheet from '../../components/SongOptionsSheet';
+import {showToast} from '../../components/Toast';
 import {subsonicGet, getStreamUrl, getCoverArtUrl} from '../../api/client';
-import {
-  getDeezerArtistId,
-  getDeezerRelatedArtists,
-  getDeezerArtistTopTracks,
-  enrichTracksWithAlbumType,
-  type DeezerTrack,
-} from '../../api/deezer';
+import {getDeezerArtistId, getDeezerArtistTopTracks, getDeezerRelatedArtists, getArtistImage, type DeezerArtist, type DeezerTrack} from '../../api/deezer';
 import {playFromList} from '../../services/playback/launchers';
-import type {Track} from '../../store/playerStore';
-import type {LibraryStackParams} from '../../navigation/types';
-import AlbumCard from '../../components/AlbumCard';
-import BackArrowIcon from '../../components/icons/BackArrowIcon';
-import PlayIcon from '../../components/icons/PlayIcon';
-import CoverArt from '../../components/CoverArt';
+import {usePlayerStore, type Track} from '../../store/playerStore';
+import {useDownloadStore} from '../../store/downloadStore';
+import {colors, spacing} from '../../theme';
 import {useT, getT} from '../../i18n';
-import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
-import {useDockInset} from '../../navigation/dockLayout';
+import type {SubsonicAlbum, SubsonicSong} from '../../api/types';
+import type {LibraryStackParams} from '../../navigation/types';
 
-function artDedupeById(tracks: DeezerTrack[]): DeezerTrack[] {
-  const seen = new Set<number>();
-  return tracks.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
+const HERO_HEIGHT = 380;
+const SIDE_PHOTO = 160;
+const POPULAR = 5;
+
+/** A popular track: from the server, or online (Deezer) when the artist is not on it. */
+type Popular = {song: SubsonicSong; online: boolean};
+
+function deezerToSong(t: DeezerTrack): SubsonicSong {
+  const id = `ext-deezer-song-${t.id}`;
+  return {id, title: t.title, artist: t.artist.name, album: t.album.title, duration: t.duration, coverArt: id};
 }
 
-function artDedupeAlbums(tracks: DeezerTrack[]): DeezerTrack[] {
-  const seen = new Set<number>();
-  return tracks.filter(t => {
-    if (t.isSingle) return true;
-    if (seen.has(t.album.id)) return false;
-    seen.add(t.album.id);
-    return true;
-  });
+const fold = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+/**
+ * Popular tracks from the online ranking: each one is the server copy when
+ * the artist's albums hold a song with the same title, the online track
+ * otherwise. Without a ranking, the artist's server songs.
+ */
+export function mergePopular(ranking: readonly DeezerTrack[], serverSongs: readonly SubsonicSong[]): Popular[] {
+  if (ranking.length === 0) return serverSongs.map(song => ({song, online: String(song.id).startsWith('ext-')}));
+  const byTitle = new Map<string, SubsonicSong>();
+  for (const s of serverSongs) if (!byTitle.has(fold(s.title))) byTitle.set(fold(s.title), s);
+  const out: Popular[] = [];
+  const seen = new Set<string>();
+  for (const t of ranking) {
+    const local = byTitle.get(fold(t.title));
+    const song = local ?? deezerToSong(t);
+    if (seen.has(String(song.id))) continue;
+    seen.add(String(song.id));
+    out.push({song, online: String(song.id).startsWith('ext-')});
+  }
+  return out;
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
-type RouteT = RouteProp<LibraryStackParams, 'ArtistDetail'>;
+function toTrack(s: SubsonicSong): Track {
+  const cover = s.coverArt || s.id;
+  return {
+    id: String(s.id), title: s.title, artist: s.artist, artistId: s.artistId, album: s.album,
+    duration: s.duration || 0, coverArt: cover,
+    streamUrl: getStreamUrl(s.id), url: getStreamUrl(s.id), artwork: getCoverArtUrl(cover, 300),
+  };
+}
 
 export default function ArtistDetailScreen() {
-  const dockInset = useDockInset();
   const t = useT();
-  const topInset = useHeaderTopInset();
-  const landscapePadding = useLandscapeSidebarPadding();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<LibraryStackParams, 'ArtistDetail'>>();
-  const route = useRoute<RouteT>();
-  const {artistId: routeArtistId, artistName: routeArtistName} = route.params;
+  const {artistId: routeId, artistName: routeName} = useRoute<RouteProp<LibraryStackParams, 'ArtistDetail'>>().params;
 
-  const [artistName, setArtistName] = useState<string>(t.artistDetail.loading);
-  const [artistImage, setArtistImage] = useState<string | null>(null);
-  const [albums, setAlbums] = useState<any[]>([]);
-  const [topSongs, setTopSongs] = useState<any[]>([]);
+  const [name, setName] = useState(routeName ?? '');
+  const [serverId, setServerId] = useState<string | undefined>(routeId);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [albums, setAlbums] = useState<SubsonicAlbum[]>([]);
+  const [popular, setPopular] = useState<Popular[]>([]);
+  const [similar, setSimilar] = useState<DeezerArtist[]>([]);
   const [loading, setLoading] = useState(true);
-  const [similarAlbums, setSimilarAlbums] = useState<DeezerTrack[]>([]);
+  const [menuSong, setMenuSong] = useState<SubsonicSong | null>(null);
+  const [addTo, setAddTo] = useState<SubsonicSong | null>(null);
 
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const [headerHeight, setHeaderHeight] = useState(140);
-
-  // Compact title fades into the top bar once the name+photo header block
-  // (measured via onLayout) has scrolled out of view, so there's always
-  // something identifying the artist even once the header itself is gone.
-  const compactTitleOpacity = scrollY.interpolate({
-    inputRange: [Math.max(0, headerHeight - 40), headerHeight],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
-  const topBarBgOpacity = compactTitleOpacity;
+  const active = useActiveTrack();
+  const {state} = usePlaybackState();
+  const shuffleMode = usePlayerStore(s => s.shuffleMode);
+  const toggleShuffle = usePlayerStore(s => s.toggleShuffle);
+  const likedSongIds = usePlayerStore(s => s.likedSongIds);
+  const overrides = usePlayerStore(s => s.localLikeOverrides);
+  const toggleLike = usePlayerStore(s => s.toggleLike);
+  const downloads = useDownloadStore(s => s.downloads);
+  const activeDownloads = useDownloadStore(s => s.activeDownloads);
 
   useEffect(() => {
-    if (loading || !artistName || artistName === t.artistDetail.loading) return;
-    async function loadSimilar() {
+    let cancelled = false;
+    (async () => {
       try {
-        const deezerId = await getDeezerArtistId(artistName);
-        if (!deezerId) return;
-        const related = await getDeezerRelatedArtists(deezerId, 6);
-        const rawArrays = await Promise.all(
-          related.map(ra => getDeezerArtistTopTracks(ra.id, 8).catch(() => [] as DeezerTrack[])),
-        );
-        const flat = artDedupeById(rawArrays.flat());
-        const enriched = await enrichTracksWithAlbumType(flat);
-        const simList = artDedupeAlbums(enriched.filter(tr => !tr.isSingle)).slice(0, 12);
-        setSimilarAlbums(simList);
-      } catch { /* silent */ }
-    }
-    loadSimilar();
-  }, [loading, artistName]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    async function loadArtistData() {
-      try {
-        let artistId = routeArtistId;
-        if (!artistId && routeArtistName) {
-          const res = await subsonicGet<any>('search3.view', {query: routeArtistName, artistCount: 1, albumCount: 0, songCount: 0});
-          const d = res['subsonic-response'] || res;
-          artistId = d.searchResult3?.artist?.[0]?.id;
+        let id = routeId;
+        if (!id && routeName) {
+          const res = await subsonicGet<any>('search3.view', {query: routeName, artistCount: 5, albumCount: 0, songCount: 0});
+          const hit = (res.searchResult3?.artist ?? []).find((a: any) => a.name?.toLowerCase() === routeName.toLowerCase());
+          id = hit?.id;
         }
-        if (!artistId) {
-          setArtistName(routeArtistName || getT().artistDetail.unknownArtist);
-          if (routeArtistName) {
-            const r = await fetch(`https://api.deezer.com/search/artist?q=${encodeURIComponent(routeArtistName)}`);
-            const j = await r.json();
-            if (j.data?.length > 0) setArtistImage(j.data[0].picture_xl);
+        let artistName = routeName ?? '';
+        let serverPopular: Popular[] = [];
+        let serverSongs: SubsonicSong[] = [];
+        // Online ids (ext-…) are not on the server: no albums, no server top songs.
+        if (id && !id.startsWith('ext-')) {
+          const res = await subsonicGet<any>('getArtist.view', {id});
+          const artist = res.artist || {};
+          artistName = artist.name || artistName;
+          const artistAlbums: SubsonicAlbum[] = artist.album || [];
+          if (!cancelled) {
+            setServerId(id);
+            setAlbums(artistAlbums);
           }
-          setLoading(false);
+          const lists = await Promise.all(artistAlbums.slice(0, 8).map(a =>
+            subsonicGet<any>('getAlbum.view', {id: a.id}).then(r => (r.album?.song ?? []) as SubsonicSong[]).catch(() => [])));
+          serverSongs = lists.flat();
+          try {
+            const top = await subsonicGet<any>('getTopSongs.view', {artist: artistName, count: 10});
+            serverPopular = (top.topSongs?.song ?? []).map((song: SubsonicSong) => ({song, online: String(song.id).startsWith('ext-')}));
+          } catch {
+            // Top songs are optional.
+          }
+        }
+        if (cancelled) return;
+        setName(artistName || getT().artistDetail.unknownArtist);
+        setPopular(serverPopular);
+        if (!artistName) return;
+        getArtistImage(artistName).then(url => { if (!cancelled && url) setPhoto(url); }).catch(() => {});
+        const deezerId = await getDeezerArtistId(artistName).catch(() => null);
+        if (cancelled) return;
+        if (!deezerId) {
+          if (serverPopular.length === 0) setPopular(mergePopular([], serverSongs).slice(0, 10));
           return;
         }
-        const resArtist = await subsonicGet<any>('getArtist.view', { id: artistId });
-        const data = resArtist['subsonic-response'] || resArtist;
-        const artistData = data.artist || {};
-        
-        setArtistName(artistData.name || getT().artistDetail.unknownArtist);
-        setAlbums(artistData.album || []);
-
-        try {
-          const resTop = await subsonicGet<any>('getTopSongs.view', { artist: artistData.name });
-          const topData = resTop['subsonic-response'] || resTop;
-          setTopSongs(topData.topSongs?.song || []);
-        } catch { console.warn('getTopSongs not supported'); }
-
-        if (artistData.name) {
-          const resDeezer = await fetch(`https://api.deezer.com/search/artist?q=${encodeURIComponent(artistData.name)}`);
-          const jsonDeezer = await resDeezer.json();
-          if (jsonDeezer.data && jsonDeezer.data.length > 0) {
-            setArtistImage(jsonDeezer.data[0].picture_xl);
-          }
+        getDeezerRelatedArtists(deezerId, 10).then(list => { if (!cancelled) setSimilar(list); }).catch(() => {});
+        if (serverPopular.length === 0) {
+          const ranking = await getDeezerArtistTopTracks(deezerId, 10).catch(() => []);
+          if (!cancelled) setPopular(mergePopular(ranking, serverSongs).slice(0, 10));
         }
-      } catch (error) {
-        console.warn('ArtistDetail load error:', error);
+      } catch {
+        if (!cancelled) setName(n => n || getT().artistDetail.unknownArtist);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
-    }
-    loadArtistData();
-  }, [routeArtistId, routeArtistName]);
+    })();
+    return () => { cancelled = true; };
+  }, [routeId, routeName]);
 
-  const topSongsToTracks = useCallback((): Track[] => topSongs.map((s: any) => ({
-    id: s.id,
-    title: s.title,
-    artist: s.artist,
-    artistId: s.artistId,
-    album: s.album,
-    duration: s.duration || 0,
-    coverArt: s.coverArt,
-    streamUrl: getStreamUrl(s.id),
-    url: getStreamUrl(s.id),
-    artwork: getCoverArtUrl(s.coverArt || s.id, 300),
-  })), [topSongs]);
+  const tracks = useMemo(() => popular.map(p => toTrack(p.song)), [popular]);
+  const source = useMemo(() => ({type: 'artist' as const, id: serverId ?? name, name}), [serverId, name]);
+  const playAll = useCallback(() => { if (tracks.length) playFromList(source, tracks); }, [source, tracks]);
 
-  const handlePlayTopSongs = useCallback(async () => {
-    if (!topSongs.length) return;
-    // ISS-025: the popular tracks are the queue, shuffle respected.
-    await playFromList({type: 'artist', id: routeArtistId, name: routeArtistName}, topSongsToTracks());
-  }, [topSongs, topSongsToTracks, routeArtistId, routeArtistName]);
+  // The server also lists online albums (ext-…) of the artist: only its own count as "in your library".
+  const ownAlbums = albums.filter(a => !String(a.id).startsWith('ext-'));
+  const songTotal = ownAlbums.reduce((sum, a) => sum + (a.songCount || 0), 0);
+  const subtitle = ownAlbums.length ? t.artistDetail.inLibrary(ownAlbums.length, songTotal) : t.artistDetail.onlineArtist;
+  const shown = popular.slice(0, POPULAR);
 
-  const handlePressTopSong = useCallback(async (index: number) => {
-    if (!topSongs.length) return;
-    await playFromList({type: 'artist', id: routeArtistId, name: routeArtistName}, topSongsToTracks(), index);
-  }, [topSongs, topSongsToTracks, routeArtistId, routeArtistName]);
+  const renderItem = useCallback(({item, index}: {item: Popular; index: number}) => {
+    const id = String(item.song.id);
+    const isCurrent = active?.id != null && String(active.id) === id;
+    const dl = activeDownloads[id];
+    return (
+      <TrackRow
+        title={item.song.title}
+        subtitle={item.song.album}
+        coverId={item.song.coverArt}
+        badges={item.online ? ['online'] : undefined}
+        playback={isCurrent ? (state === State.Playing ? 'playing' : 'current') : 'idle'}
+        liked={overrides[id] ?? likedSongIds.has(id)}
+        download={id in downloads ? 'done' : dl && (dl.status === 'queued' || dl.status === 'downloading') ? 'downloading' : 'none'}
+        onPress={() => playFromList(source, tracks, index)}
+        onLongPress={() => setMenuSong(item.song)}
+        onToggleLike={() => toggleLike(id, item.song.title, item.song.artist)}
+        onAddToPlaylist={() => setAddTo(item.song)}
+        onDownload={() => useDownloadStore.getState().enqueueTrack(item.song)}
+      />
+    );
+  }, [active?.id, state, overrides, likedSongIds, downloads, activeDownloads, source, tracks, toggleLike]);
 
-  // Same compact header (name left, framed photo right) in both orientations
-  // — no more huge full-bleed photo to scroll past. It's normal scrolling
-  // content (measured via onLayout), and the artist name fades into the top
-  // bar next to the back button once the header has scrolled out of view.
-  return (
-    <View style={[styles.root, landscapePadding]}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+  const playRow = (
+    <PlayShuffleRow onPlay={playAll} onShuffle={toggleShuffle} shuffleMode={shuffleMode} disabled={!tracks.length} />
+  );
 
-      <View style={[styles.topBar, {paddingTop: topInset}]}>
-        <Animated.View style={[StyleSheet.absoluteFill, styles.topBarBg, {opacity: topBarBgOpacity}]} pointerEvents="none" />
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <View style={styles.backBtnBg}><BackArrowIcon size={24} /></View>
-        </TouchableOpacity>
-        <Animated.Text style={[styles.topBarTitle, {opacity: compactTitleOpacity}]} numberOfLines={1}>
-          {artistName}
-        </Animated.Text>
-      </View>
+  const popularTitle = shown.length ? (
+    <View style={styles.sectionHeader}><SectionHeader title={t.artistDetail.popularSongs} /></View>
+  ) : null;
 
-      <Animated.ScrollView
-        showsVerticalScrollIndicator={false}
-        onScroll={Animated.event([{nativeEvent: {contentOffset: {y: scrollY}}}], {useNativeDriver: true})}
-        scrollEventThrottle={16}
-        contentContainerStyle={[styles.scrollContent, {paddingBottom: dockInset}]}
-      >
-        <View style={styles.headerBlock} onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}>
-          <Text style={styles.artistName} numberOfLines={2}>{artistName}</Text>
-          <View style={styles.artistPhotoFrame}>
-            {artistImage ? (
-              <Image source={{uri: artistImage}} style={styles.artistPhoto} />
-            ) : (
-              <View style={[styles.artistPhoto, styles.coverPlaceholder]} />
-            )}
-          </View>
+  const hero = (
+    <View>
+      <View style={[styles.photo, {height: HERO_HEIGHT + insets.top}]}>
+        {photo ? <Image source={{uri: photo}} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <View style={[StyleSheet.absoluteFill, styles.noPhoto]} />}
+        <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.6)', colors.background]} locations={[0.45, 0.8, 1]} style={StyleSheet.absoluteFill} />
+        <View style={styles.heroText}>
+          <Text variant="largeTitle" numberOfLines={2} style={styles.name}>{name}</Text>
+          {subtitle ? <Text variant="footnote" style={styles.heroSub}>{subtitle}</Text> : null}
         </View>
-
-        {loading ? (
-          <ActivityIndicator size="large" color={darkTheme.accent} style={styles.loader} />
-        ) : (
-          <View style={styles.content}>
-
-            {topSongs.length > 0 && (
-              <View style={styles.actionRow}>
-                <TouchableOpacity style={styles.playBtn} onPress={handlePlayTopSongs}>
-                  <PlayIcon size={24} />
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {topSongs.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{t.artistDetail.popularSongs}</Text>
-                {topSongs.slice(0, 5).map((song, index) => (
-                  <TouchableOpacity
-                    key={song.id}
-                    style={styles.songRow}
-                    activeOpacity={0.7}
-                    onPress={() => handlePressTopSong(index)}>
-                    <Text style={styles.songIndex}>{index + 1}</Text>
-                    <CoverArt id={song.coverArt} size={44} borderRadius={4} />
-                    <View style={styles.songInfo}>
-                      <Text style={styles.songTitle} numberOfLines={1}>{song.title}</Text>
-                      <Text style={styles.songArtist} numberOfLines={1}>{song.album}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-
-            {albums.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{t.artistDetail.popularReleases}</Text>
-                <FlatList
-                  horizontal
-                  data={albums}
-                  keyExtractor={a => a.id}
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.hList}
-                  renderItem={({item}) => (
-                    <AlbumCard
-                      id={item.id}
-                      name={item.name}
-                      artist={item.artist}
-                      coverArt={item.coverArt}
-                      onPress={() => navigation.navigate('AlbumDetail', { albumId: item.id })}
-                    />
-                  )}
-                />
-              </View>
-            )}
-
-            {similarAlbums.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{t.artistDetail.similarRecommendations}</Text>
-                <FlatList
-                  horizontal
-                  data={similarAlbums}
-                  keyExtractor={item => `sim-${item.id}`}
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.hList}
-                  renderItem={({item}) => (
-                    <AlbumCard
-                      id={String(item.id)}
-                      name={item.album.title}
-                      artist={item.artist.name}
-                      imageUrl={item.album.cover_medium}
-                      onPress={() => navigation.navigate('AlbumDetail', {albumId: `ext-deezer-album-${item.album.id}`})}
-                    />
-                  )}
-                />
-              </View>
-            )}
-          </View>
-        )}
-      </Animated.ScrollView>
+      </View>
+      <View style={styles.playSpacing}>{playRow}</View>
+      {popularTitle}
     </View>
+  );
+
+  const side = (
+    <View>
+      <Raised radius={SIDE_PHOTO / 2} shadow={false}>
+        <ArtistAvatar name={name} imageUrl={photo ?? undefined} size={SIDE_PHOTO} />
+      </Raised>
+      <Text variant="title2" numberOfLines={2} style={styles.sideName}>{name}</Text>
+      {subtitle ? <Text variant="footnote" color="textSecondary">{subtitle}</Text> : null}
+      <View style={styles.sidePlay}>{playRow}</View>
+    </View>
+  );
+
+  const footer = (
+    <View style={styles.footer}>
+      <HomeShelf
+        title={t.artistDetail.albums}
+        data={albums}
+        keyOf={a => a.id}
+        renderItem={a => (
+          <AlbumCard
+            name={a.name}
+            subtitle={[a.year, String(a.id).startsWith('ext-') ? t.ui.badgeOnline : ''].filter(Boolean).join(' · ') || undefined}
+            coverId={a.coverArt} onPress={() => navigation.push('AlbumDetail', {albumId: a.id})} />
+        )}
+      />
+      <HomeShelf
+        title={t.artistDetail.similarArtists}
+        data={similar}
+        keyOf={a => `sim-${a.id}`}
+        gap={16}
+        renderItem={a => (
+          <ArtistBubble name={a.name} imageUrl={a.picture_medium} onPress={() => navigation.push('ArtistDetail', {artistName: a.name})} />
+        )}
+      />
+    </View>
+  );
+
+  return (
+    <>
+      <DetailScaffold
+        title={name}
+        fullBleed
+        hero={hero}
+        side={side}
+        showTitleAt={HERO_HEIGHT - 60}
+        data={shown}
+        renderItem={renderItem}
+        keyExtractor={p => String(p.song.id)}
+        footer={footer}
+        loading={loading}
+        empty={!albums.length ? <EmptyState title={t.artistDetail.empty} /> : null}
+      />
+      <SongOptionsSheet
+        visible={!!menuSong}
+        onClose={() => setMenuSong(null)}
+        track={menuSong}
+        onToast={showToast}
+        onNavigateAlbum={albumId => navigation.push('AlbumDetail', {albumId})}
+        onNavigateArtist={(artistId, artistName) => navigation.push('ArtistDetail', {artistId, artistName})}
+      />
+      <AddToPlaylistSheet
+        visible={!!addTo}
+        onClose={() => setAddTo(null)}
+        trackId={addTo ? String(addTo.id) : undefined}
+        trackTitle={addTo?.title}
+        onToast={showToast}
+      />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  coverPlaceholder: {backgroundColor: '#333'},
-  scrollContent: {paddingBottom: 100},
-  loader: {marginTop: 50},
-  root: { flex: 1, backgroundColor: darkTheme.background },
-  // Real (non-absolute) top bar — back button always visible, title fades in
-  // once the header block below has scrolled past (see compactTitleOpacity).
-  topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 10, gap: 12 },
-  topBarBg: { backgroundColor: darkTheme.background },
-  topBarTitle: { flex: 1, fontSize: 17, fontWeight: '700', color: '#fff' },
-  backBtn: { padding: 6 },
-  backBtnBg: { backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 6 },
-  // Header block — name left, framed photo right, both visible without
-  // scrolling, in both orientations. Frame follows the nested-radius rule:
-  // outer radius (16) = inner photo radius (12) + the frame's own padding (4).
-  headerBlock: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16, gap: 16 },
-  artistName: { flex: 1, fontSize: 28, fontWeight: '900', color: '#fff' },
-  artistPhotoFrame: {
-    width: 108, height: 108, borderRadius: 16, padding: 4,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
-  },
-  artistPhoto: { width: '100%', height: '100%', borderRadius: 12, resizeMode: 'cover' },
-  content: { flex: 1, backgroundColor: darkTheme.background },
-  actionRow: { paddingHorizontal: 16, marginBottom: 24, flexDirection: 'row', justifyContent: 'flex-end' },
-  playBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: darkTheme.accent, alignItems: 'center', justifyContent: 'center' },
-  section: { marginBottom: 32 },
-  sectionTitle: { fontSize: 20, fontWeight: '700', color: '#fff', paddingHorizontal: 16, marginBottom: 16 },
-  hList: { paddingHorizontal: 16, gap: 16 },
-  songRow: { flexDirection: 'row', alignItems: 'center', paddingLeft: 8, paddingRight: 16, paddingVertical: 10, gap: 12 },
-  songIndex: { width: 24, fontSize: 14, fontWeight: '600', color: '#888', textAlign: 'right' },
-  songInfo: { flex: 1 },
-  songTitle: { fontSize: 16, fontWeight: '500', color: '#fff' },
-  songArtist: { fontSize: 13, color: '#aaa', marginTop: 2 },
+  photo: {justifyContent: 'flex-end', overflow: 'hidden'},
+  noPhoto: {backgroundColor: colors.surface1},
+  heroText: {paddingHorizontal: spacing.gutter, paddingBottom: spacing.m, gap: 4},
+  name: {fontSize: 40, lineHeight: 44, fontWeight: '800', letterSpacing: -1},
+  heroSub: {color: 'rgba(255,255,255,0.75)'},
+  playSpacing: {paddingTop: 14, paddingBottom: 22},
+  sectionHeader: {paddingHorizontal: spacing.gutter, paddingBottom: 4},
+  footer: {paddingTop: 26},
+  sideName: {marginTop: 12},
+  sidePlay: {marginTop: 16, marginHorizontal: -spacing.gutter},
 });
+

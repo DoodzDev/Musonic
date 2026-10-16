@@ -1,181 +1,74 @@
 /**
  * @file index.tsx
- * @description Liked Songs screen. Text-only header (no cover) with a top search
- *   bar, like/add-to-playlist/download actions per row, and remove-from-liked
- *   actions.
- *   Playback goes through the playback engine (playFromList).
+ * @description Liked Songs screen (Design v2, R5.7). Liked cover, title,
+ *   "N songs · length"; Play, Shuffle and Download all; a card to the
+ *   recommendations; a search field; the songs (shared `TrackRow`: unlike,
+ *   add to a playlist, download, long press = track menu). Built on the shared
+ *   detail layout. Playback goes through the playback engine (playFromList).
  *   Offline (or when the server cannot be reached), lists the downloaded liked
  *   songs, from the copy of the liked list saved on the last online visit.
  * @author DoodzProg
- * @version 1.3.0
- * @license MIT
+ * @version 2.0.0
+ * @license CC-BY-NC-4.0
  */
-
-import React, {useState, useCallback, useMemo} from 'react';
-import {useStableCallback} from '../../hooks/useStableCallback';
-import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  StatusBar,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
-import {FlashList} from '@shopify/flash-list';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import React, {useCallback, useMemo, useState} from 'react';
+import {Alert, Pressable, StyleSheet, View} from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import LinearGradient from 'react-native-linear-gradient';
-import {darkTheme} from '../../theme';
-import BackArrowIcon from '../../components/icons/BackArrowIcon';
-import PlayIcon from '../../components/icons/PlayIcon';
-import SearchIcon from '../../components/icons/SearchIcon';
-import DotsVerticalIcon from '../../components/icons/DotsVerticalIcon';
+import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
+import DetailScaffold from '../../components/detail/DetailScaffold';
+import {PlayShuffleRow, SquareButton} from '../../components/detail/DetailParts';
+import TrackRow from '../../components/ui/TrackRow';
+import Text from '../../components/ui/Text';
+import Raised from '../../components/ui/Raised';
+import SearchField from '../../components/ui/SearchField';
+import EmptyState from '../../components/ui/EmptyState';
+import {LikedCover, LIKED_COVER_COLORS} from '../../components/ui/SpecialCovers';
+import SongOptionsSheet from '../../components/SongOptionsSheet';
+import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
+import {showToast} from '../../components/Toast';
+import {BackArrowIcon, DownloadIcon, SparkleIcon} from '../../components/icons';
 import {getStarred} from '../../api/endpoints/library';
-import {getStreamUrl, getCoverArtUrl} from '../../api/client';
 import {playFromList} from '../../services/playback/launchers';
 import {usePlayerStore} from '../../store/playerStore';
 import {useSettingsStore} from '../../store/settingsStore';
 import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
 import {useDownloadStore} from '../../store/downloadStore';
-import type {SubsonicSong} from '../../api/types';
 import {offlineLikedSongs} from '../../utils/offlineSongs';
-import type {Track} from '../../store/playerStore';
-import CoverArt from '../../components/CoverArt';
-import HeartIcon from '../../components/icons/HeartIcon';
-import ShuffleIcon from '../../components/icons/ShuffleIcon';
-import PlusCircleIconComponent from '../../components/icons/PlusCircleIcon';
-import CheckCircleGreenIcon from '../../components/icons/CheckCircleGreenIcon';
-import DownloadStatusIcon from '../../components/icons/DownloadStatusIcon';
-import SongOptionsSheet from '../../components/SongOptionsSheet';
-import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
-import {showToast} from '../../components/Toast';
+import {songToTrack} from '../../utils/songToTrack';
+import {colors, radii, spacing} from '../../theme';
 import {useT, getT} from '../../i18n';
-import {useDockInset} from '../../navigation/dockLayout';
+import type {SubsonicSong} from '../../api/types';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const COVER = 200;
+const SIDE_COVER = 128;
 
-function songToTrack(s: SubsonicSong): Track {
-  const id = String(s.id);
-  return {
-    id,
-    title: s.title,
-    artist: s.artist,
-    album: s.album || '',
-    duration: s.duration || 0,
-    coverArt: s.coverArt,
-    streamUrl: getStreamUrl(id),
-    url: getStreamUrl(id),
-    artwork: getCoverArtUrl(s.coverArt || id, 300),
-  };
+function lengthLabel(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return h > 0 ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
 }
 
-// ─── Song Row ────────────────────────────────────────────────────────────────
-
-type SongRowProps = {
-  song: SubsonicSong;
-  index: number;
-  onPress: (index: number) => void;
-  onMore: (song: SubsonicSong) => void;
-  onAddToPlaylist: (song: SubsonicSong) => void;
-};
-
-const SongRow = React.memo(function SongRow({song, index, onPress, onMore, onAddToPlaylist}: SongRowProps) {
-  const likedSongIds = usePlayerStore(s => s.likedSongIds);
-  const localLikeOverrides = usePlayerStore(s => s.localLikeOverrides);
-  const pendingLikes = usePlayerStore(s => s.pendingLikes);
-  const toggleLike = usePlayerStore(s => s.toggleLike);
-  const savedSet = usePlaylistCacheStore(s => s.savedSet);
-  const id = String(song.id);
-  const isLiked = localLikeOverrides[id] !== undefined ? localLikeOverrides[id] : likedSongIds.has(id);
-  const isInPlaylist = savedSet.has(id);
-
-  const handleDownloadPress = useCallback(() => {
-    const isDownloaded = id in useDownloadStore.getState().downloads;
-    if (isDownloaded) {
-      const d = getT();
-      Alert.alert(
-        d.downloads.deleteSongTitle,
-        d.downloads.deleteSongMessage(song.title),
-        [
-          {text: d.downloads.cancelButton, style: 'cancel'},
-          {
-            text: d.downloads.deleteConfirm,
-            style: 'destructive',
-            onPress: () => useDownloadStore.getState().deleteDownload(id),
-          },
-        ],
-      );
-    } else {
-      useDownloadStore.getState().enqueueTrack(song);
-    }
-  }, [id, song]);
-
-  return (
-    <TouchableOpacity style={styles.songRow} onPress={() => onPress(index)} onLongPress={() => onMore(song)} delayLongPress={400} activeOpacity={0.7}>
-      <CoverArt id={song.coverArt} size={48} borderRadius={4} />
-      <View style={styles.songInfo}>
-        <Text style={styles.songTitle} numberOfLines={1}>{song.title}</Text>
-        <Text style={styles.songArtist} numberOfLines={1}>{song.artist}</Text>
-      </View>
-      <View style={styles.songActions}>
-        <TouchableOpacity
-          hitSlop={{top: 10, bottom: 10, left: 10, right: 6}}
-          onPress={() => toggleLike(id, song.title, song.artist)}
-          disabled={pendingLikes.has(id)}>
-          {pendingLikes.has(id)
-            ? <ActivityIndicator size="small" color={darkTheme.accent} style={styles.likeSpinner} />
-            : <HeartIcon size={20} color={isLiked ? darkTheme.accent : '#444'} filled={isLiked} />}
-        </TouchableOpacity>
-        <TouchableOpacity
-          hitSlop={{top: 10, bottom: 10, left: 6, right: 6}}
-          onPress={() => onAddToPlaylist(song)}>
-          {isInPlaylist
-            ? <CheckCircleGreenIcon size={20} />
-            : <PlusCircleIconComponent size={20} color="#444" />}
-        </TouchableOpacity>
-        <TouchableOpacity
-          hitSlop={{top: 10, bottom: 10, left: 6, right: 6}}
-          onPress={handleDownloadPress}>
-          <DownloadStatusIcon trackId={id} size={20} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.moreBtn}
-          hitSlop={{top: 8, bottom: 8, left: 4, right: 8}}
-          onPress={() => onMore(song)}>
-          <DotsVerticalIcon size={20} color="#b3b3b3" />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
-// Callbacks are stable (useStableCallback) and receive the row's index/song,
-// so comparing data and position is enough and no stale closure can run.
-}, (prev, next) =>
-  prev.song.id === next.song.id && prev.song.title === next.song.title && prev.index === next.index);
-
-// ─── Screen ──────────────────────────────────────────────────────────────────
-
 export default function LikedSongsScreen() {
-  const dockInset = useDockInset();
-  const landscapePadding = useLandscapeSidebarPadding();
   const t = useT();
   const navigation = useNavigation<any>();
-  const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
   const shuffleMode = usePlayerStore(s => s.shuffleMode);
   const toggleShuffle = usePlayerStore(s => s.toggleShuffle);
   const setLikedSongs = usePlayerStore(s => s.setLikedSongs);
-  const localLikeOverrides = usePlayerStore(s => s.localLikeOverrides);
+  const likedSongIds = usePlayerStore(s => s.likedSongIds);
+  const overrides = usePlayerStore(s => s.localLikeOverrides);
+  const toggleLike = usePlayerStore(s => s.toggleLike);
+  const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
+  const downloads = useDownloadStore(s => s.downloads);
+  const activeDownloads = useDownloadStore(s => s.activeDownloads);
+  const active = useActiveTrack();
+  const {state} = usePlaybackState();
+
   const [songs, setSongs] = useState<SubsonicSong[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [menuSong, setMenuSong] = useState<SubsonicSong | null>(null);
+  const [addTo, setAddTo] = useState<SubsonicSong | null>(null);
 
-  const [selectedSong, setSelectedSong] = useState<SubsonicSong | null>(null);
-  const [songOptsVisible, setSongOptsVisible] = useState(false);
-  const [addToPlaylistSong, setAddToPlaylistSong] = useState<SubsonicSong | null>(null);
-  const [addToPlaylistVisible, setAddToPlaylistVisible] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
   useFocusEffect(useCallback(() => {
     // Only downloaded tracks can play offline: list the downloaded liked ones.
     const offlineList = () => offlineLikedSongs(
@@ -188,7 +81,6 @@ export default function LikedSongsScreen() {
       setLoading(false);
       return;
     }
-    setLoading(true);
     getStarred()
       .then(d => {
         setSongs(d.songs);
@@ -199,297 +91,179 @@ export default function LikedSongsScreen() {
       .finally(() => setLoading(false));
   }, [setLikedSongs, isOfflineMode]));
 
-  const displayedSongs = songs.filter(s => localLikeOverrides[String(s.id)] !== false);
+  // Unliked here: hidden at once, before the server list is fetched again.
+  const liked = useMemo(() => songs.filter(s => overrides[String(s.id)] !== false), [songs, overrides]);
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return liked;
+    return liked.filter(s => s.title.toLowerCase().includes(q) || (s.artist ?? '').toLowerCase().includes(q));
+  }, [liked, query]);
+  const tracks = useMemo(() => shown.map(songToTrack), [shown]);
+  const totalSeconds = useMemo(() => liked.reduce((sum, s) => sum + (s.duration || 0), 0), [liked]);
 
-  const searchedSongs = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return displayedSongs;
-    return displayedSongs.filter(
-      s => s.title.toLowerCase().includes(q) || (s.artist ?? '').toLowerCase().includes(q),
+  const toDownload = useMemo(
+    () => liked.filter(s => !String(s.id).startsWith('ext-') && !downloads[String(s.id)]),
+    [liked, downloads],
+  );
+  const allDownloaded = liked.length > 0 && toDownload.length === 0;
+
+  const downloadAll = useCallback(() => {
+    const d = getT();
+    if (allDownloaded) {
+      showToast(d.likedSongs.allDownloaded);
+      return;
+    }
+    Alert.alert(d.likedSongs.downloadAll, d.likedSongs.downloadAllMessage(toDownload.length), [
+      {text: d.playlistOptions.cancelButton, style: 'cancel'},
+      {
+        text: d.songOptions.download,
+        onPress: () => {
+          useDownloadStore.getState().enqueueBatch(toDownload);
+          showToast(d.songOptions.downloadQueued);
+        },
+      },
+    ]);
+  }, [allDownloaded, toDownload]);
+
+  const playAll = useCallback(() => { if (tracks.length) playFromList({type: 'liked'}, tracks); }, [tracks]);
+
+  const renderItem = useCallback(({item, index}: {item: SubsonicSong; index: number}) => {
+    const id = String(item.id);
+    const isCurrent = active?.id != null && String(active.id) === id;
+    const dl = activeDownloads[id];
+    return (
+      <TrackRow
+        title={item.title}
+        subtitle={item.artist}
+        coverId={item.coverArt}
+        playback={isCurrent ? (state === State.Playing ? 'playing' : 'current') : 'idle'}
+        liked={overrides[id] ?? likedSongIds.has(id)}
+        download={id in downloads ? 'done' : dl && (dl.status === 'queued' || dl.status === 'downloading') ? 'downloading' : 'none'}
+        onPress={() => playFromList({type: 'liked'}, tracks, index)}
+        onLongPress={() => setMenuSong(item)}
+        onToggleLike={() => toggleLike(id, item.title, item.artist)}
+        onAddToPlaylist={() => setAddTo(item)}
+        onDownload={() => useDownloadStore.getState().enqueueTrack(item)}
+      />
     );
-  }, [displayedSongs, searchQuery]);
+  }, [active?.id, state, overrides, likedSongIds, downloads, activeDownloads, tracks, toggleLike]);
 
-  const handlePlayAll = useCallback(() => {
-    if (searchedSongs.length === 0) return;
-    playFromList({type: 'liked'}, searchedSongs.map(songToTrack));
-  }, [searchedSongs]);
-
-  const handlePressSong = useCallback(
-    (index: number) => {
-      playFromList({type: 'liked'}, searchedSongs.map(songToTrack), index);
-    },
-    [searchedSongs],
+  const playRow = (
+    <PlayShuffleRow
+      onPlay={playAll}
+      onShuffle={toggleShuffle}
+      shuffleMode={shuffleMode}
+      disabled={!tracks.length}
+      extra={isOfflineMode ? null : (
+        <SquareButton
+          icon={<DownloadIcon size={20} color={allDownloaded ? colors.success : colors.textPrimary} />}
+          onPress={downloadAll}
+          accessibilityLabel={t.likedSongs.downloadAll}
+        />
+      )}
+    />
   );
 
-  const handleMore = useCallback((song: SubsonicSong) => {
-    setSelectedSong(song);
-    setSongOptsVisible(true);
-  }, []);
+  const meta = loading ? '…' : [t.likedSongs.trackCount(liked.length), totalSeconds > 0 ? lengthLabel(totalSeconds) : ''].filter(Boolean).join(' · ');
 
-  const onRowPress = useStableCallback(handlePressSong);
-  const onRowMore = useStableCallback(handleMore);
-  const onRowAddToPlaylist = useStableCallback((song: SubsonicSong) => {
-    setAddToPlaylistSong(song);
-    setAddToPlaylistVisible(true);
-  });
+  const recoCard = isOfflineMode || liked.length === 0 ? null : (
+    <Pressable
+      onPress={() => navigation.navigate('LikedRecommendations')}
+      android_ripple={{color: colors.fill}}
+      accessibilityRole="button"
+      accessibilityLabel={`${t.likedSongs.recoTitle}, ${t.likedSongs.recoSubtitle}`}
+      style={styles.reco}>
+      <View style={styles.recoIcon}><SparkleIcon size={18} color={colors.accent} /></View>
+      <View style={styles.recoText}>
+        <Text variant="callout" style={styles.recoTitle}>{t.likedSongs.recoTitle}</Text>
+        <Text variant="footnote" color="textSecondary" numberOfLines={1}>{t.likedSongs.recoSubtitle}</Text>
+      </View>
+      <View style={styles.chevron}><BackArrowIcon size={16} color={colors.separator} /></View>
+    </Pressable>
+  );
 
-  const handleNavigateAlbum = useCallback((albumId: string) => {
-    navigation.navigate('AlbumDetail', {albumId});
-  }, [navigation]);
+  const hero = (
+    <View>
+      <View style={styles.hero}>
+        <Raised radius={radii.button}><LikedCover size={COVER} borderRadius={radii.button} /></Raised>
+        <Text variant="title2" style={styles.title}>{t.likedSongs.title}</Text>
+        <Text variant="footnote" color="textSecondary">{meta}</Text>
+      </View>
+      <View style={styles.playSpacing}>{playRow}</View>
+      {recoCard}
+      {liked.length > 6 ? (
+        <View style={styles.search}>
+          <SearchField value={query} onChangeText={setQuery} placeholder={t.likedSongs.searchPlaceholder} />
+        </View>
+      ) : null}
+    </View>
+  );
 
-  const handleNavigateArtist = useCallback((artistId: string | undefined, artistName: string) => {
-    navigation.navigate('ArtistDetail', {artistId, artistName});
-  }, [navigation]);
+  const side = (
+    <View>
+      <Raised radius={radii.tile}><LikedCover size={SIDE_COVER} borderRadius={radii.tile} /></Raised>
+      <Text variant="title3" style={styles.sideTitle}>{t.likedSongs.title}</Text>
+      <Text variant="footnote" color="textSecondary">{meta}</Text>
+      <View style={styles.sidePlay}>{playRow}</View>
+      <View style={styles.sideReco}>{recoCard}</View>
+    </View>
+  );
 
   return (
-    <SafeAreaView style={[styles.root, landscapePadding]} edges={isFullscreenMode ? [] : ['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={darkTheme.background} />
-
-      {/* Fixed row — back button + search never scroll away, unlike the
-          gradient/title block below which is part of the FlashList header. */}
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <BackArrowIcon />
-        </TouchableOpacity>
-        <View style={styles.searchPill}>
-          <SearchIcon size={16} color="#888" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t.likedSongs.searchPlaceholder}
-            placeholderTextColor="#666"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-      </View>
-
-      <FlashList
-        data={searchedSongs}
-        keyExtractor={s => s.id}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <View>
-            <LinearGradient
-              colors={['#3d1870', '#1a1040', darkTheme.background]}
-              style={styles.headerGrad}>
-              <View style={styles.titleBlock}>
-                <Text style={styles.title}>{t.likedSongs.title}</Text>
-                <Text style={styles.subtitle}>
-                  {loading ? '…' : t.likedSongs.trackCount(displayedSongs.length)}
-                </Text>
-              </View>
-            </LinearGradient>
-
-            {!loading && displayedSongs.length > 0 && (
-              <View style={styles.actionRow}>
-                <TouchableOpacity
-                  style={styles.recoButton}
-                  onPress={() => navigation.navigate('LikedRecommendations')}
-                  activeOpacity={0.8}>
-                  <Text style={styles.recoButtonText}>{t.likedSongs.recommendedButton}</Text>
-                </TouchableOpacity>
-                <View style={styles.actionRowRight}>
-                  <TouchableOpacity
-                    style={styles.shuffleBtn}
-                    onPress={toggleShuffle}
-                    activeOpacity={0.8}>
-                    <ShuffleIcon mode={shuffleMode} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.playBtn}
-                    onPress={handlePlayAll}
-                    activeOpacity={0.85}>
-                    <PlayIcon />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-          </View>
-        }
-        ListEmptyComponent={
-          loading ? (
-            <View style={styles.center}>
-              <ActivityIndicator size="large" color={darkTheme.accent} />
-            </View>
-          ) : (
-            <View style={styles.center}>
-              <Text style={styles.emptyText}>{t.likedSongs.emptyState}</Text>
-            </View>
-          )
-        }
-        renderItem={({item, index}) => (
-          <SongRow
-            song={item}
-            index={index}
-            onPress={onRowPress}
-            onMore={onRowMore}
-            onAddToPlaylist={onRowAddToPlaylist}
-          />
-        )}
-        contentContainerStyle={[styles.listContent, {paddingBottom: dockInset}]}
+    <>
+      <DetailScaffold
+        title={t.likedSongs.title}
+        tint={LIKED_COVER_COLORS[0]}
+        hero={hero}
+        side={side}
+        showTitleAt={COVER + 36}
+        data={shown}
+        renderItem={renderItem}
+        keyExtractor={s => String(s.id)}
+        loading={loading}
+        empty={<EmptyState title={query.trim() ? t.allSongs.searchEmpty : t.likedSongs.emptyState} />}
       />
-
       <AddToPlaylistSheet
-        visible={addToPlaylistVisible}
-        onClose={() => setAddToPlaylistVisible(false)}
-        trackId={addToPlaylistSong ? String(addToPlaylistSong.id) : undefined}
-        trackTitle={addToPlaylistSong?.title}
+        visible={!!addTo}
+        onClose={() => setAddTo(null)}
+        trackId={addTo ? String(addTo.id) : undefined}
+        trackTitle={addTo?.title}
         onToast={showToast}
       />
-
       <SongOptionsSheet
-        visible={songOptsVisible}
-        onClose={() => setSongOptsVisible(false)}
-        track={selectedSong}
+        visible={!!menuSong}
+        onClose={() => setMenuSong(null)}
+        track={menuSong}
         onToast={showToast}
-        onNavigateAlbum={handleNavigateAlbum}
-        onNavigateArtist={handleNavigateArtist}
+        onNavigateAlbum={albumId => navigation.navigate('AlbumDetail', {albumId})}
+        onNavigateArtist={(artistId, artistName) => navigation.navigate('ArtistDetail', {artistId, artistName})}
       />
-    </SafeAreaView>
+    </>
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: darkTheme.background},
-  headerGrad: {
-    paddingBottom: 4,
-  },
-  topBar: {
+  hero: {alignItems: 'center', paddingHorizontal: spacing.gutter, paddingTop: spacing.s, gap: 2},
+  title: {marginTop: 16},
+  playSpacing: {paddingTop: 18, paddingBottom: 12},
+  reco: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: 4,
-    gap: 8,
-  },
-  backBtn: {
-    padding: 6,
-  },
-  searchPill: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#282828',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    color: '#fff',
-    fontSize: 14,
-    padding: 0,
-  },
-  titleBlock: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#fff',
-    marginBottom: 6,
-    letterSpacing: -0.3,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#b3b3b3',
-    fontWeight: '500',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    gap: 12,
+    marginHorizontal: spacing.gutter,
+    marginBottom: 14,
     paddingVertical: 12,
-    gap: 16,
+    paddingHorizontal: 14,
+    borderRadius: radii.button,
+    backgroundColor: colors.surface1,
+    overflow: 'hidden',
   },
-  actionRowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  shuffleBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: darkTheme.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 8,
-    shadowColor: darkTheme.accent,
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-  },
-  recoButton: {
-    flexShrink: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: '#282828',
-    alignItems: 'center',
-  },
-  recoButtonText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  listContent: {
-    paddingBottom: 140,
-  },
-  songRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: 16,
-    paddingRight: 10,
-    paddingVertical: 8,
-  },
-  songInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  songTitle: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  songArtist: {
-    color: '#b3b3b3',
-    fontSize: 13,
-    marginTop: 2,
-  },
-  moreBtn: {
-    paddingVertical: 8,
-    paddingLeft: 4,
-  },
-  songActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  likeSpinner: {
-    width: 20,
-    height: 20,
-  },
-  center: {
-    alignItems: 'center',
-    paddingTop: 60,
-  },
-  emptyText: {
-    color: '#b3b3b3',
-    fontSize: 15,
-    fontWeight: '500',
-  },
+  recoIcon: {width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accentFill, alignItems: 'center', justifyContent: 'center'},
+  recoText: {flex: 1, minWidth: 0, gap: 1},
+  recoTitle: {fontWeight: '600'},
+  chevron: {transform: [{scaleX: -1}]},
+  search: {paddingHorizontal: spacing.gutter, paddingBottom: 6},
+  sideTitle: {fontWeight: '700', marginTop: 12},
+  sidePlay: {marginTop: 16, marginHorizontal: -spacing.gutter},
+  sideReco: {marginTop: 16, marginHorizontal: -spacing.gutter},
 });

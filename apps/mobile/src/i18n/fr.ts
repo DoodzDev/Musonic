@@ -196,11 +196,31 @@ export const t = {
     createPlaylistTitle: 'Nouvelle playlist',
     searchLibrary: 'Rechercher dans la bibliothèque',
     searchCancel: 'Annuler',
-    searchNoResult: 'Aucune playlist trouvée',
+    searchNoResult: 'Aucun résultat',
     createPlaylistPlaceholder: 'Nom de la playlist',
     createPlaylistCancel: 'Annuler',
     createPlaylistConfirm: 'Créer',
     createPlaylistError: 'Impossible de créer la playlist',
+    tabs: {playlists: 'Playlists', albums: 'Albums', artists: 'Artistes', downloads: 'Téléchargés'},
+    itemCount: (n: number) => `${n} élément${n !== 1 ? 's' : ''}`,
+    downloadedCount: (n: number) => `${n} titre${n !== 1 ? 's' : ''} téléchargé${n !== 1 ? 's' : ''}`,
+    showGrid: 'Afficher en grille',
+    showList: 'Afficher en liste',
+    staleNote: 'Hors connexion : dernière version enregistrée',
+    empty: {
+      playlists: {title: 'Aucune playlist', message: 'Créez une playlist pour y ranger vos titres.'},
+      albums: {title: 'Aucun album', message: 'Les albums que vous ajoutez à votre bibliothèque apparaissent ici.'},
+      artists: {title: 'Aucun artiste', message: 'Les artistes de vos albums et titres likés apparaissent ici.'},
+      downloads: {title: 'Aucun téléchargement', message: 'Téléchargez une playlist pour l’écouter hors ligne.'},
+      offline: {title: 'Indisponible hors ligne', message: 'Les albums et artistes reviennent dès que vous êtes en ligne.'},
+    },
+    pin: 'Épingler',
+    unpin: 'Désépingler',
+    pinnedToast: 'Épinglé en haut de la bibliothèque',
+    unpinnedToast: 'Désépinglé',
+    removeFromLibrary: 'Retirer de la bibliothèque',
+    removedToast: 'Retiré de la bibliothèque',
+    removeError: 'Impossible de retirer cet élément',
     sort: {
       recent: 'Récents',
       added: 'Ajoutés récemment',
@@ -216,6 +236,11 @@ export const t = {
     trackCount: (n: number) => `${n} titre${n !== 1 ? 's' : ''}`,
     recommendedButton: 'Titres recommandés',
     searchPlaceholder: 'Rechercher dans les titres likés',
+    recoTitle: 'Recommandations pour vous',
+    recoSubtitle: 'Des titres proches de ceux que vous aimez',
+    downloadAll: 'Tout télécharger',
+    allDownloaded: 'Tous les titres likés sont téléchargés',
+    downloadAllMessage: (n: number) => `Télécharger ${n} titre${n !== 1 ? 's' : ''} liké${n !== 1 ? 's' : ''} pour les écouter hors ligne ?`,
   },
 
   // ─── Liked Recommendations ─────────────────────────────────────────────────
@@ -224,6 +249,14 @@ export const t = {
     subtitle: 'Basé sur vos titres likés',
     loading: 'Recherche de recommandations…',
     emptyState: 'Aucune recommandation disponible pour le moment',
+    eyebrow: 'D’après vos titres likés',
+    heading: 'Pour vous',
+    intro: (n: number, artists: string[]) => {
+      const names = artists.length > 1 ? `${artists.slice(0, -1).join(', ')} et ${artists[artists.length - 1]}` : artists[0] ?? '';
+      return `${n} titre${n !== 1 ? 's' : ''} proche${n !== 1 ? 's' : ''} de ${names}.`;
+    },
+    playAll: 'Tout écouter',
+    refresh: 'Nouvelles suggestions',
   },
 
   // ─── Ma Musique (bibliothèque complète) ────────────────────────────────────
@@ -240,6 +273,17 @@ export const t = {
   playlistDetail: {
     trackCount: (n: number) => `${n} titre${n !== 1 ? 's' : ''}`,
     contextLabel: 'LECTURE À PARTIR DE PLAYLIST',
+    byOwner: (owner: string) => `Par ${owner}`,
+    options: 'Options de la playlist',
+    edit: 'Modifier la playlist',
+    editTitle: 'Modifier',
+    editHint: 'Faites glisser la poignée pour réordonner. Le rond rouge retire le titre de la playlist.',
+    cancel: 'Annuler',
+    searchInPlaylist: 'Rechercher dans la playlist',
+    searchEmpty: 'Aucun titre trouvé',
+    empty: {title: 'Playlist vide', message: 'Ajoutez des titres avec + depuis un album, une recherche ou les recommandations.'},
+    loadError: 'Impossible de charger la playlist',
+    addReco: (title: string) => `Ajouter ${title} à la playlist`,
     searchPlaceholder: 'Rechercher sur cette page',
     pills: {
       edit: 'Modifier',
@@ -284,6 +328,7 @@ export const t = {
   playlistOptions: {
     addToQueue: "Ajouter à la file d'attente",
     download: 'Télécharger',
+    removeDownloads: 'Supprimer les téléchargements',
     pin: 'Épingler la playlist',
     unpin: 'Désépingler la playlist',
     rename: 'Renommer la playlist',
@@ -532,6 +577,12 @@ export const t = {
     popularSongs: 'Populaires',
     popularReleases: 'Sorties populaires',
     similarRecommendations: 'Dans le même style',
+    albums: 'Albums',
+    similarArtists: 'Artistes similaires',
+    inLibrary: (albums: number, songs: number) =>
+      `${albums} album${albums !== 1 ? 's' : ''} · ${songs} titre${songs !== 1 ? 's' : ''} dans votre bibliothèque`,
+    onlineArtist: 'Artiste · En ligne',
+    empty: 'Rien à écouter pour cet artiste pour le moment.',
   },
 
   // ─── Album Detail ──────────────────────────────────────────────────────────
@@ -545,6 +596,24 @@ export const t = {
     importingAlbum: 'Import de l’album vers votre serveur…',
     stillImportingAlbum: 'Import toujours en cours, veuillez patienter…',
     importError: 'Échec de l’import de l’album',
+    add: 'Ajouter',
+    added: 'Ajouté',
+    download: 'Télécharger',
+    downloaded: 'Téléchargé',
+    more: 'Plus',
+    options: 'Options de l’album',
+    loadError: 'Impossible de charger l’album',
+    released: (year: number | string) => `Sortie en ${year}`,
+  },
+
+  // ─── Pages de détail (album, playlist, artiste, mix) ───────────────────────
+  detail: {
+    summary: (n: number, seconds: number) => {
+      const min = Math.round(seconds / 60);
+      const h = Math.floor(min / 60);
+      const length = h > 0 ? `${h} h ${String(min % 60).padStart(2, '0')}` : `${min} minute${min !== 1 ? 's' : ''}`;
+      return `${n} titre${n !== 1 ? 's' : ''}, ${length}`;
+    },
   },
 
 } as const;

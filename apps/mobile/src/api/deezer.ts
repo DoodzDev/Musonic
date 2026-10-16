@@ -4,7 +4,7 @@
  *   No API key required (public endpoints). Tracks are streamed via OctoFiesta,
  *   which accepts Deezer IDs as Subsonic IDs transparently.
  * @author DoodzProg
- * @version 1.0.2
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 
@@ -27,6 +27,8 @@ export type DeezerArtist = {
   name: string;
   picture_medium: string;
   picture_xl: string;
+  /** Number of fans: tells namesakes apart. */
+  nb_fan?: number;
 };
 
 type DeezerAlbumDetail = {
@@ -58,13 +60,26 @@ async function deezerFetch<T>(path: string): Promise<T | null> {
 const artistCache = new Map<string, Promise<DeezerArtist | null>>();
 const albumCache = new Map<number, Promise<DeezerAlbumDetail | null>>();
 
-// Returns the first artist result for a name query, cached by lowercased name.
+/**
+ * The artist a name refers to among search results: same name (case and
+ * accents ignored) with the most fans, so a namesake with a handful of fans
+ * is never picked over the real artist. Falls back on the first result.
+ */
+export function pickArtist(results: readonly DeezerArtist[], name: string): DeezerArtist | null {
+  const fold = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const wanted = fold(name);
+  const same = results.filter(a => fold(a.name) === wanted);
+  if (same.length === 0) return results[0] ?? null;
+  return same.reduce((best, a) => ((a.nb_fan ?? 0) > (best.nb_fan ?? 0) ? a : best));
+}
+
+// The artist a name refers to (see pickArtist), cached by lowercased name.
 function searchArtist(name: string): Promise<DeezerArtist | null> {
   const key = name.toLowerCase().trim();
   if (artistCache.has(key)) return artistCache.get(key)!;
   const promise = deezerFetch<{data: DeezerArtist[]}>(
     `/search/artist?q=${encodeURIComponent(name)}`,
-  ).then(data => data?.data?.[0] ?? null);
+  ).then(data => pickArtist(data?.data ?? [], name));
   artistCache.set(key, promise);
   return promise;
 }

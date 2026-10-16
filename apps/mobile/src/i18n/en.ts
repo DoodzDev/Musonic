@@ -192,11 +192,31 @@ export const en = {
     createPlaylistTitle: 'New playlist',
     searchLibrary: 'Search the library',
     searchCancel: 'Cancel',
-    searchNoResult: 'No playlist found',
+    searchNoResult: 'No results',
     createPlaylistPlaceholder: 'Playlist name',
     createPlaylistCancel: 'Cancel',
     createPlaylistConfirm: 'Create',
     createPlaylistError: 'Could not create playlist',
+    tabs: {playlists: 'Playlists', albums: 'Albums', artists: 'Artists', downloads: 'Downloaded'},
+    itemCount: (n: number) => `${n} item${n !== 1 ? 's' : ''}`,
+    downloadedCount: (n: number) => `${n} song${n !== 1 ? 's' : ''} downloaded`,
+    showGrid: 'Show as grid',
+    showList: 'Show as list',
+    staleNote: 'Offline: last saved version',
+    empty: {
+      playlists: {title: 'No playlists', message: 'Create a playlist to keep your songs together.'},
+      albums: {title: 'No albums', message: 'Albums you add to your library show up here.'},
+      artists: {title: 'No artists', message: 'Artists from your albums and liked songs show up here.'},
+      downloads: {title: 'No downloads', message: 'Download a playlist to listen offline.'},
+      offline: {title: 'Unavailable offline', message: 'Albums and artists come back once you are online.'},
+    },
+    pin: 'Pin',
+    unpin: 'Unpin',
+    pinnedToast: 'Pinned to the top of your library',
+    unpinnedToast: 'Unpinned',
+    removeFromLibrary: 'Remove from library',
+    removedToast: 'Removed from library',
+    removeError: 'Could not remove this item',
     sort: {
       recent: 'Recent',
       added: 'Recently added',
@@ -212,6 +232,11 @@ export const en = {
     trackCount: (n: number) => `${n} song${n !== 1 ? 's' : ''}`,
     recommendedButton: 'Recommended tracks',
     searchPlaceholder: 'Search in Liked Songs',
+    recoTitle: 'Recommended for you',
+    recoSubtitle: 'Songs close to the ones you love',
+    downloadAll: 'Download all',
+    allDownloaded: 'All liked songs are downloaded',
+    downloadAllMessage: (n: number) => `Download ${n} liked song${n !== 1 ? 's' : ''} to listen offline?`,
   },
 
   // ─── Liked Recommendations ─────────────────────────────────────────────────
@@ -220,6 +245,14 @@ export const en = {
     subtitle: 'Based on your liked songs',
     loading: 'Finding recommendations…',
     emptyState: 'No recommendations available right now',
+    eyebrow: 'Based on your liked songs',
+    heading: 'For you',
+    intro: (n: number, artists: string[]) => {
+      const names = artists.length > 1 ? `${artists.slice(0, -1).join(', ')} and ${artists[artists.length - 1]}` : artists[0] ?? '';
+      return `${n} song${n !== 1 ? 's' : ''} close to ${names}.`;
+    },
+    playAll: 'Play all',
+    refresh: 'New suggestions',
   },
 
   // ─── All Songs (full library) ──────────────────────────────────────────────
@@ -234,6 +267,17 @@ export const en = {
 
   // ─── Playlist Detail ───────────────────────────────────────────────────────
   playlistDetail: {
+    byOwner: (owner: string) => `By ${owner}`,
+    options: 'Playlist options',
+    edit: 'Edit playlist',
+    editTitle: 'Edit',
+    editHint: 'Drag the handle to reorder. The red circle removes the song from the playlist.',
+    cancel: 'Cancel',
+    searchInPlaylist: 'Search in playlist',
+    searchEmpty: 'No songs found',
+    empty: {title: 'Empty playlist', message: 'Add songs with + from an album, a search or the recommendations.'},
+    loadError: 'Could not load this playlist',
+    addReco: (title: string) => `Add ${title} to the playlist`,
     trackCount: (n: number) => `${n} song${n !== 1 ? 's' : ''}`,
     contextLabel: 'PLAYING FROM PLAYLIST',
     searchPlaceholder: 'Search this page',
@@ -278,6 +322,7 @@ export const en = {
 
   // ─── Playlist Options Sheet ────────────────────────────────────────────────
   playlistOptions: {
+    removeDownloads: 'Delete downloads',
     addToQueue: 'Add to queue',
     download: 'Download',
     pin: 'Pin playlist',
@@ -525,6 +570,12 @@ export const en = {
     popularSongs: 'Popular',
     popularReleases: 'Popular releases',
     similarRecommendations: 'Similar artists',
+    albums: 'Albums',
+    similarArtists: 'Similar artists',
+    inLibrary: (albums: number, songs: number) =>
+      `${albums} album${albums !== 1 ? 's' : ''} · ${songs} song${songs !== 1 ? 's' : ''} in your library`,
+    onlineArtist: 'Artist · Online',
+    empty: 'Nothing to play for this artist yet.',
   },
 
   // ─── Album Detail ──────────────────────────────────────────────────────────
@@ -538,6 +589,24 @@ export const en = {
     importingAlbum: 'Importing album to your server…',
     stillImportingAlbum: 'Still importing, please wait…',
     importError: 'Failed to import album',
+    add: 'Add',
+    added: 'Added',
+    download: 'Download',
+    downloaded: 'Downloaded',
+    more: 'More',
+    options: 'Album options',
+    loadError: 'Could not load this album',
+    released: (year: number | string) => `Released in ${year}`,
+  },
+
+  // ─── Detail pages (album, playlist, artist, mix) ────────────────────────────
+  detail: {
+    summary: (n: number, seconds: number) => {
+      const min = Math.round(seconds / 60);
+      const h = Math.floor(min / 60);
+      const length = h > 0 ? `${h} h ${String(min % 60).padStart(2, '0')}` : `${min} minute${min !== 1 ? 's' : ''}`;
+      return `${n} song${n !== 1 ? 's' : ''}, ${length}`;
+    },
   },
 
 };

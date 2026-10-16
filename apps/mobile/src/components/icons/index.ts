@@ -52,6 +52,7 @@ export {default as ProfileIcon} from './ProfileIcon';
 export {default as QueueAddIcon} from './QueueAddIcon';
 export {default as QueueIcon} from './QueueIcon';
 export {default as RepeatIcon} from './RepeatIcon';
+export {default as RefreshIcon} from './RefreshIcon';
 export {default as RotateIcon} from './RotateIcon';
 export {default as SearchIcon} from './SearchIcon';
 export {default as SelectCircleIcon} from './SelectCircleIcon';

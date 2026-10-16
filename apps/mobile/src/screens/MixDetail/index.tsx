@@ -5,15 +5,15 @@
  *   Shuffle and Play, then the tracks (shared `TrackRow`: like, add to a
  *   playlist, download; tap = play from that track). Opened from the Home
  *   with its songs; opened from "Recently played" (genre only), it draws a
- *   fresh mix of that genre.
+ *   fresh mix of that genre. Built on the shared detail layout.
+ *   (`DetailScaffold`), like albums and playlists.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {ActivityIndicator, FlatList, StyleSheet, View} from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
+import {StyleSheet, View} from 'react-native';
+import {useRoute, type RouteProp} from '@react-navigation/native';
 import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
 import {homeSource} from '../../services/home/homeSource';
 import {playFromList} from '../../services/playback/launchers';
@@ -22,29 +22,26 @@ import {usePlayerStore} from '../../store/playerStore';
 import {useDownloadStore} from '../../store/downloadStore';
 import TrackRow from '../../components/ui/TrackRow';
 import Text from '../../components/ui/Text';
-import Button from '../../components/ui/Button';
-import PressableScale from '../../components/ui/PressableScale';
 import Raised from '../../components/ui/Raised';
 import CoverArt from '../../components/CoverArt';
 import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
 import {showToast} from '../../components/Toast';
-import {BackArrowIcon, PlayIcon, ShuffleIcon, SparkleIcon} from '../../components/icons';
+import {SparkleIcon} from '../../components/icons';
+import DetailScaffold from '../../components/detail/DetailScaffold';
+import {PlayShuffleRow} from '../../components/detail/DetailParts';
 import {colors, radii} from '../../theme';
 import {useT} from '../../i18n';
-import {useDockInset} from '../../navigation/dockLayout';
 import type {SubsonicSong} from '../../api/types';
 
 export type MixDetailParams = {genre: string; songs?: SongLike[]; covers?: string[]};
 
-const COVER = 220;
+const COVER = 232;
+const SIDE_COVER = 128;
 const MIX_SIZE = 30;
 
 export default function MixDetailScreen() {
   const t = useT();
-  const navigation = useNavigation<any>();
   const {params} = useRoute<RouteProp<{MixDetail: MixDetailParams}, 'MixDetail'>>();
-  const insets = useSafeAreaInsets();
-  const dockInset = useDockInset();
   const [songs, setSongs] = useState<SongLike[]>(params.songs ?? []);
   const [loading, setLoading] = useState(!params.songs);
   const [addTo, setAddTo] = useState<SongLike | null>(null);
@@ -96,54 +93,54 @@ export default function MixDetailScreen() {
     );
   }, [active?.id, state, overrides, likedSongIds, downloads, active_downloads, tracks, toggleLike]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const half = COVER / 2;
-  const header = (
-    <View style={styles.header}>
-      <Raised radius={radii.card} fill style={styles.cover}>
-        <View style={styles.mosaic}>
-          {covers.length >= 4
-            ? covers.slice(0, 4).map(id => <CoverArt key={id} id={id} size={half} borderRadius={0} />)
-            : <CoverArt id={covers[0]} size={COVER} borderRadius={0} />}
-        </View>
-        <View style={styles.magicPill}>
-          <SparkleIcon size={12} color={colors.accent} />
-          <Text variant="caption" style={styles.magicText}>{t.ui.badgeMagic}</Text>
-        </View>
-      </Raised>
-      <Text variant="title1" numberOfLines={2} style={styles.title}>{params.genre}</Text>
-      <Text variant="footnote" color="textSecondary">{t.home.mixSubtitle(songs.length)}</Text>
-      <View style={styles.actions}>
-        <PressableScale onPress={toggleShuffle} accessibilityLabel={t.queue.shuffleTile} style={styles.shuffleBtn}>
-          <ShuffleIcon mode={shuffleMode} size={26} indicator />
-        </PressableScale>
-        <PressableScale onPress={playAll} haptic="light" disabled={tracks.length === 0} accessibilityLabel={t.fullScreenPlayer.play} style={styles.playBtn}>
-          <PlayIcon size={26} color={colors.onAccent} />
-        </PressableScale>
+  const mosaic = (size: number) => (
+    <Raised radius={radii.card} fill style={{width: size, height: size}}>
+      <View style={styles.mosaic}>
+        {covers.length >= 4
+          ? covers.slice(0, 4).map(id => <CoverArt key={id} id={id} size={size / 2} borderRadius={0} />)
+          : <CoverArt id={covers[0]} size={size} borderRadius={0} />}
       </View>
+      <View style={styles.magicPill}>
+        <SparkleIcon size={12} color={colors.accent} />
+        <Text variant="caption" style={styles.magicText}>{t.ui.badgeMagic}</Text>
+      </View>
+    </Raised>
+  );
+  const playRow = (
+    <PlayShuffleRow onPlay={playAll} onShuffle={toggleShuffle} shuffleMode={shuffleMode} disabled={tracks.length === 0} />
+  );
+  const hero = (
+    <View>
+      <View style={styles.header}>
+        {mosaic(COVER)}
+        <Text variant="title2" numberOfLines={2} style={styles.title}>{params.genre}</Text>
+        <Text variant="footnote" color="textSecondary">{t.home.mixSubtitle(songs.length)}</Text>
+      </View>
+      <View style={styles.playSpacing}>{playRow}</View>
+    </View>
+  );
+  const side = (
+    <View>
+      {mosaic(SIDE_COVER)}
+      <Text variant="title3" numberOfLines={2} style={styles.sideTitle}>{params.genre}</Text>
+      <Text variant="footnote" color="textSecondary">{t.home.mixSubtitle(songs.length)}</Text>
+      <View style={styles.sidePlay}>{playRow}</View>
     </View>
   );
 
   return (
-    <View style={styles.root}>
-      <FlatList
+    <>
+      <DetailScaffold
+        title={params.genre}
+        coverId={covers[0]}
+        hero={hero}
+        side={side}
+        showTitleAt={COVER + 36}
         data={songs}
-        keyExtractor={(s, i) => `${s.id}-${i}`}
         renderItem={renderItem}
-        ListHeaderComponent={header}
-        ListEmptyComponent={loading ? <ActivityIndicator color={colors.accent} style={styles.loading} /> : null}
-        contentContainerStyle={{paddingTop: insets.top + 56, paddingBottom: dockInset + 16}}
-        showsVerticalScrollIndicator={false}
+        keyExtractor={(s, i) => `${s.id}-${i}`}
+        loading={loading}
       />
-      <View style={[styles.back, {top: insets.top + 6}]}>
-        <Button
-          variant="icon"
-          size={40}
-          accessibilityLabel={t.common.back}
-          onPress={() => navigation.goBack()}
-          icon={<BackArrowIcon size={22} color={colors.textPrimary} />}
-          style={styles.backBtn}
-        />
-      </View>
       <AddToPlaylistSheet
         visible={!!addTo}
         onClose={() => setAddTo(null)}
@@ -151,15 +148,13 @@ export default function MixDetailScreen() {
         trackTitle={addTo?.title}
         onToast={showToast}
       />
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: colors.background},
-  header: {alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16, gap: 4},
-  cover: {width: COVER, height: COVER, marginBottom: 16},
-  mosaic: {width: COVER, height: COVER, flexDirection: 'row', flexWrap: 'wrap'},
+  header: {alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, gap: 4},
+  mosaic: {flex: 1, flexDirection: 'row', flexWrap: 'wrap'},
   magicPill: {
     position: 'absolute',
     top: 12,
@@ -173,11 +168,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   magicText: {color: colors.accent},
-  title: {textAlign: 'center'},
-  actions: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24, marginTop: 14},
-  shuffleBtn: {width: 48, height: 48, alignItems: 'center', justifyContent: 'center'},
-  playBtn: {width: 56, height: 56, borderRadius: 28, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center'},
-  loading: {marginTop: 32},
-  back: {position: 'absolute', left: 12},
-  backBtn: {backgroundColor: 'rgba(0,0,0,0.35)'},
+  title: {textAlign: 'center', marginTop: 14},
+  playSpacing: {paddingTop: 18, paddingBottom: 12},
+  sideTitle: {fontWeight: '700', marginTop: 12},
+  sidePlay: {marginTop: 16, marginHorizontal: -20},
 });

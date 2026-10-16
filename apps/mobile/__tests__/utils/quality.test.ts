@@ -28,4 +28,8 @@ describe('qualityLabel', () => {
     expect(qualityLabel({})).toBeNull();
     expect(qualityLabel({suffix: '  ', bitRate: 320})).toBeNull();
   });
+
+  it('shows nothing for online proxy tracks', () => {
+    expect(qualityLabel({suffix: 'remote', bitRate: 320})).toBeNull();
+  });
 });

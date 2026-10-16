@@ -1,10 +1,11 @@
 /**
  * @file PlaylistOptionsSheet.tsx
  * @description Bottom sheet with playlist-level actions: add all to queue,
- *   add all to another playlist, pin/unpin, rename, edit cover, and delete.
+ *   add all to another playlist, download (or delete its downloads), pin/unpin,
+ *   rename, edit cover, and delete.
  *   "Add to queue" goes through the playback engine when it drives the player.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef} from 'react';
@@ -57,6 +58,8 @@ type Props = {
   onOpenCover?: () => void;
   onAddAll?: () => void;
   onDownload?: () => void;
+  /** Set when tracks of the playlist are downloaded: offers to delete them. */
+  onDeleteDownloads?: () => void;
 };
 
 // ─── Action Row ───────────────────────────────────────────────────────────────
@@ -95,6 +98,7 @@ export default function PlaylistOptionsSheet({
   onOpenCover,
   onAddAll,
   onDownload,
+  onDeleteDownloads,
 }: Props) {
   const t = useT();
   // Measured on every render so the hidden sheet stays off-screen after rotation.
@@ -234,6 +238,9 @@ export default function PlaylistOptionsSheet({
               )}
               <ActionRow icon={<QueueAddIcon color={ICON_COLOR} />} label={t.playlistOptions.addToQueue} onPress={handleAddToQueue} />
               <ActionRow icon={<DownloadIcon size={24} color={ICON_COLOR} />} label={t.playlistOptions.download} onPress={() => { onClose(); onDownload ? onDownload() : onToast(t.playlistOptions.comingSoon); }} />
+              {onDeleteDownloads && (
+                <ActionRow icon={<TrashIcon color={ICON_COLOR} />} label={t.playlistOptions.removeDownloads} onPress={() => { onClose(); onDeleteDownloads(); }} />
+              )}
               {onAddAll && (
                 <ActionRow icon={<PlaylistAddIcon color={ICON_COLOR} />} label={t.playlistOptions.addAllToPlaylist} onPress={() => { onClose(); onAddAll(); }} />
               )}

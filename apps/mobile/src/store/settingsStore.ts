@@ -4,10 +4,11 @@
  *   language, waveform display, crossfade, mono audio, rotation lock, landscape
  *   nav bar position, fullscreen mode (hides the OS status bar), the
  *   landscape full-player cover/progress column order, haptic feedback and
- *   the "Previous always goes back" playback rule.
+ *   the "Previous always goes back" playback rule, and the Library view
+ *   (list or grid, pinned items).
  *   Persisted across restarts; consumed by RootNavigator to gate the server-setup flow.
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.4.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -18,6 +19,7 @@ import {migrateSettings, SETTINGS_VERSION} from './settingsMigrations';
 export type Locale = 'fr' | 'en';
 export type LibrarySortMode = 'recent' | 'added' | 'alpha' | 'custom';
 export type NavBarPosition = 'left' | 'right';
+export type LibraryViewMode = 'list' | 'grid';
 export type FullPlayerCoverSide = 'left' | 'right';
 
 export type Server = {
@@ -71,6 +73,11 @@ type SettingsState = {
   setLibrarySortMode: (mode: LibrarySortMode) => void;
   lastPlayedPlaylists: Record<string, number>;
   setLastPlayedPlaylist: (id: string, ts: number) => void;
+  libraryViewMode: LibraryViewMode;
+  setLibraryViewMode: (mode: LibraryViewMode) => void;
+  /** Library items pinned on top of their tab (playlist, album or artist ids). */
+  pinnedLibraryIds: string[];
+  togglePinnedLibraryId: (id: string) => void;
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -119,6 +126,15 @@ export const useSettingsStore = create<SettingsState>()(
       lastPlayedPlaylists: {},
       setLastPlayedPlaylist: (id, ts) =>
         set(s => ({lastPlayedPlaylists: {...s.lastPlayedPlaylists, [id]: ts}})),
+      libraryViewMode: 'list',
+      setLibraryViewMode: mode => set({libraryViewMode: mode}),
+      pinnedLibraryIds: [],
+      togglePinnedLibraryId: id =>
+        set(s => ({
+          pinnedLibraryIds: s.pinnedLibraryIds.includes(id)
+            ? s.pinnedLibraryIds.filter(p => p !== id)
+            : [...s.pinnedLibraryIds, id],
+        })),
       getActiveServer: () => {
         const {servers, activeServerId} = get();
         return servers.find(s => s.id === activeServerId) ?? null;
