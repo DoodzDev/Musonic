@@ -6,13 +6,14 @@
  *   choices (progress bar style, landscape navigation bar side, landscape
  *   player layout) show a small preview of each option.
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
 import {ActivityIndicator, Alert, StatusBar, StyleSheet, View} from 'react-native';
 import Animated from 'react-native-reanimated';
 import {useNavigation} from '@react-navigation/native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Circle, Path, Rect} from 'react-native-svg';
 import Slider from '@react-native-community/slider';
 import {useShallow} from 'zustand/react/shallow';
@@ -25,7 +26,6 @@ import Text from '../../components/ui/Text';
 import {BackArrowIcon} from '../../components/icons';
 import {checkForUpdate} from '../../services/updateChecker';
 import {useSettingsStore} from '../../store/settingsStore';
-import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
 import {useDockInset} from '../../navigation/dockLayout';
 import {colors, radii, spacing} from '../../theme';
 import {useT} from '../../i18n';
@@ -132,7 +132,8 @@ export default function SettingsScreen() {
   const {scrollY, onScroll} = useLargeTitleScroll();
   const top = useLargeTitleInset();
   const dockInset = useDockInset();
-  const landscapePadding = useLandscapeSidebarPadding();
+  // Settings opens over the tabs: no Rail beside it, only the side insets.
+  const insets = useSafeAreaInsets();
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const s = useSettingsStore(
     useShallow(st => ({
@@ -178,13 +179,13 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={[styles.root, landscapePadding]}>
+    <View style={[styles.root, {paddingLeft: insets.left, paddingRight: insets.right}]}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} hidden={s.isFullscreenMode} />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{paddingTop: top, paddingBottom: dockInset + spacing.l}}>
+        contentContainerStyle={[styles.column, {paddingTop: top, paddingBottom: dockInset + spacing.l}]}>
         <LargeTitle title={t.settings.title} scrollY={scrollY} />
         <View style={styles.groups}>
           <ListGroup caption={t.settings.language.sectionTitle}>
@@ -305,6 +306,7 @@ export default function SettingsScreen() {
       <LargeTitleHeader
         title={t.settings.title}
         scrollY={scrollY}
+        besideRail={false}
         left={
           <Button
             variant="icon"
@@ -321,6 +323,8 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: colors.background},
+  // Readable width in landscape, centred; the whole width in portrait.
+  column: {width: '100%', maxWidth: 760, alignSelf: 'center'},
   groups: {paddingHorizontal: spacing.m, gap: spacing.l, paddingTop: spacing.s},
   padded: {padding: 12},
   block: {paddingHorizontal: spacing.m, paddingVertical: 12, gap: 2},

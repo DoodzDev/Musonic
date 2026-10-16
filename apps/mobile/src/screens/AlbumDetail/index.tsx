@@ -342,7 +342,7 @@ export default function AlbumDetailScreen() {
       </View>
       <Text variant="title3" numberOfLines={2} style={styles.sideTitle}>{name}</Text>
       <PressableScale onPress={openArtist} hitSlop={6} accessibilityLabel={artistName}>
-        <Text variant="headline" numberOfLines={1} style={styles.artist}>{artistName}</Text>
+        <Text variant="headline" numberOfLines={1} style={[styles.artist, styles.sideArtist]}>{artistName || t.artistDetail.unknownArtist}</Text>
       </PressableScale>
       <View style={styles.sideMeta}>{metaLine}</View>
       <View style={styles.sideActions}>{actions}</View>
@@ -418,6 +418,7 @@ const styles = StyleSheet.create({
   side: {gap: 2},
   sideTop: {alignItems: 'flex-start', marginBottom: 12},
   sideTitle: {fontWeight: '700'},
+  sideArtist: {textAlign: 'left'},
   sideMeta: {alignItems: 'flex-start'},
   sideActions: {flexDirection: 'row', gap: 4, marginTop: 14, marginLeft: -10},
   sidePlay: {marginTop: 16, marginHorizontal: -spacing.gutter},

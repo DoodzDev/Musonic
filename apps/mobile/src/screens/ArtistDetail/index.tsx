@@ -225,7 +225,7 @@ export default function ArtistDetailScreen() {
 
   const side = (
     <View>
-      <Raised radius={SIDE_PHOTO / 2} shadow={false}>
+      <Raised radius={SIDE_PHOTO / 2} shadow={false} style={styles.sideCover}>
         <ArtistAvatar name={name} imageUrl={photo ?? undefined} size={SIDE_PHOTO} />
       </Raised>
       <Text variant="title2" numberOfLines={2} style={styles.sideName}>{name}</Text>
@@ -302,6 +302,7 @@ const styles = StyleSheet.create({
   playSpacing: {paddingTop: 14, paddingBottom: 22},
   sectionHeader: {paddingHorizontal: spacing.gutter, paddingBottom: 4},
   footer: {paddingTop: 26},
+  sideCover: {alignSelf: 'flex-start'},
   sideName: {marginTop: 12},
   sidePlay: {marginTop: 16, marginHorizontal: -spacing.gutter},
 });

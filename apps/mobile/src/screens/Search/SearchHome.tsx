@@ -9,11 +9,11 @@
  *   Deezer IDs as Subsonic IDs. Tapped tracks play alone, then autoplay
  *   (playback engine, ADR-009 A8).
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Pressable, StatusBar, StyleSheet, View} from 'react-native';
+import {Pressable, StatusBar, StyleSheet, View, useWindowDimensions} from 'react-native';
 import Animated from 'react-native-reanimated';
 import {useNavigation} from '@react-navigation/native';
 import {LargeTitle, LargeTitleHeader, useLargeTitleInset, useLargeTitleScroll} from '../../components/ui/LargeTitleHeader';
@@ -29,6 +29,7 @@ import {colors, radii, spacing} from '../../theme';
 import {useT} from '../../i18n';
 import {useSettingsStore} from '../../store/settingsStore';
 import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
+import {useIsLandscape} from '../../hooks/useIsLandscape';
 import {getStarred, getRecentAlbums, getGenres, type SubsonicGenre} from '../../api/endpoints/library';
 import {getStreamUrl, getCoverArtUrl} from '../../api/client';
 import {playFromList} from '../../services/playback/launchers';
@@ -43,6 +44,8 @@ import {useDockInset} from '../../navigation/dockLayout';
 
 /** Genres shown before "See all". */
 const GENRES_SHOWN = 8;
+/** Gap between genre tiles. */
+const GENRE_GAP = 10;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -138,8 +141,14 @@ export default function SearchHome() {
   const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
   const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
   const landscapePadding = useLandscapeSidebarPadding();
+  const isLandscape = useIsLandscape();
+  const {width: winW} = useWindowDimensions();
   const {scrollY, onScroll} = useLargeTitleScroll();
   const top = useLargeTitleInset();
+  // Tiles exactly as wide as the search field above: 2 columns, 4 in landscape (8 genres = 2 full rows).
+  const genreColumns = isLandscape ? 4 : 2;
+  const genreRow = winW - landscapePadding.paddingLeft - landscapePadding.paddingRight - 2 * spacing.gutter;
+  const genreWidth = Math.floor((genreRow - GENRE_GAP * (genreColumns - 1)) / genreColumns);
 
   const [reco, setReco] = useState<RecoState>(EMPTY_RECO);
   const [genres, setGenres] = useState<SubsonicGenre[]>([]);
@@ -308,7 +317,7 @@ export default function SearchHome() {
                   key={g.value}
                   onPress={() => navigation.navigate('MixDetail', {genre: g.value, browse: true})}
                   accessibilityLabel={`${g.value}, ${t.allSongs.trackCount(g.songCount)}`}
-                  style={styles.genre}>
+                  style={[styles.genre, {width: genreWidth}]}>
                   <Text variant="headline" numberOfLines={1}>{g.value}</Text>
                   <Text variant="footnote" color="textSecondary">{t.allSongs.trackCount(g.songCount)}</Text>
                 </PressableScale>
@@ -408,10 +417,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   browse: {paddingHorizontal: spacing.gutter, paddingBottom: spacing.l, gap: spacing.s},
-  genres: {flexDirection: 'row', flexWrap: 'wrap', gap: 10},
+  genres: {flexDirection: 'row', flexWrap: 'wrap', gap: GENRE_GAP},
   genre: {
-    // Two columns: half the row minus half the gap.
-    width: '48.5%',
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: radii.button,

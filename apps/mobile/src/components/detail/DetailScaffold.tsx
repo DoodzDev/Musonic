@@ -5,9 +5,10 @@
  *   pinned top bar (Back, actions, title fading in once the hero is gone),
  *   over a wash of the cover's colour. Landscape: the hero sits in a fixed
  *   column on the left (with Back and the actions on top) and only the list
- *   scrolls, on the right, so the tracks are visible at once.
+ *   scrolls, on the right, so the tracks are visible at once, under a frosted
+ *   strip that keeps them off the status bar.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useMemo, useRef} from 'react';
@@ -17,6 +18,7 @@ import Animated from 'react-native-reanimated';
 import {useNavigation} from '@react-navigation/native';
 import {useLargeTitleScroll} from '../ui/LargeTitleHeader';
 import {SkeletonList} from '../ui/Skeleton';
+import GlassSurface from '../ui/GlassSurface';
 import {CoverBackdrop, DETAIL_BAR_HEIGHT, DetailTopBar, GlassButton} from './DetailParts';
 import {BackArrowIcon} from '../icons';
 import {useIsLandscape} from '../../hooks/useIsLandscape';
@@ -25,8 +27,10 @@ import {useDockInset} from '../../navigation/dockLayout';
 import {colors, spacing} from '../../theme';
 import {useT} from '../../i18n';
 
-/** Width of the fixed hero column in landscape. */
-const SIDE_WIDTH = 280;
+/** Width of the fixed hero column in landscape (264 of content between the gutters). */
+const SIDE_WIDTH = 264 + 2 * spacing.gutter;
+/** Fade below the status bar in landscape. */
+const STATUS_FADE = 16;
 
 type Props<T> = {
   /** Shown in the top bar once the hero has scrolled away. */
@@ -134,6 +138,10 @@ export default function DetailScaffold<T>({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{paddingTop: insets.top + spacing.s, paddingBottom: dockInset + spacing.m}}
         />
+        {/* Frosted strip under the status bar, so rows never scroll under the clock. */}
+        <View pointerEvents="none" style={[styles.statusFade, {height: insets.top + STATUS_FADE}]}>
+          <GlassSurface variant="fade" solidRatio={insets.top / (insets.top + STATUS_FADE)} style={StyleSheet.absoluteFill} />
+        </View>
       </View>
     );
   }
@@ -164,8 +172,9 @@ const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: colors.background},
   row: {flexDirection: 'row'},
   side: {width: SIDE_WIDTH, flexGrow: 0},
-  sideContent: {paddingLeft: spacing.s, paddingRight: spacing.s},
+  sideContent: {paddingHorizontal: spacing.gutter},
   sideBar: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.m},
   sideRight: {flexDirection: 'row', gap: spacing.s},
   list: {flex: 1},
+  statusFade: {position: 'absolute', top: 0, left: 0, right: 0},
 });

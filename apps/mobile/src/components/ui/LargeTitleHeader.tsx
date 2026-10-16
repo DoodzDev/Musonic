@@ -9,8 +9,9 @@
  *   `useLargeTitleScroll`, entirely on the UI thread. The compact title is
  *   centred (iOS style) or, with `align="left"`, sits right after the left
  *   item in a larger size (tabs: account avatar, then the title, as on Android).
+ *   In landscape the bar's items stay clear of the navigation Rail.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -27,6 +28,7 @@ import Animated, {
 import GlassSurface from './GlassSurface';
 import Text from './Text';
 import {sizes, spacing, typography} from '../../theme';
+import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
 
 /** Scroll distance over which the compact bar fades in. */
 const SWITCH_AT = typography.largeTitle.lineHeight;
@@ -69,17 +71,22 @@ type HeaderProps = TitleProps & {
   right?: React.ReactNode;
   /** Where the compact title goes: centred (default) or right after `left`, larger. */
   align?: 'center' | 'left';
+  /** Screen shown beside the landscape Rail (tabs); off for screens over it (Settings). */
+  besideRail?: boolean;
 };
 
 /** The compact bar pinned over the top of the screen. Keeps actions visible. */
-export function LargeTitleHeader({title, scrollY, left, right, align = 'center'}: HeaderProps) {
+export function LargeTitleHeader({title, scrollY, left, right, align = 'center', besideRail = true}: HeaderProps) {
   const insets = useSafeAreaInsets();
+  const railPadding = useLandscapeSidebarPadding();
+  // The header is absolute, so the screen's own padding does not apply: keep the items off the Rail and the side insets.
+  const sides = besideRail ? railPadding : {paddingLeft: insets.left, paddingRight: insets.right};
   const barStyle = useAnimatedStyle(() => ({
     opacity: interpolate(scrollY.value, [SWITCH_AT - FADE, SWITCH_AT], [0, 1], Extrapolation.CLAMP),
   }));
 
   return (
-    <View pointerEvents="box-none" style={[styles.header, {paddingTop: insets.top}]}>
+    <View pointerEvents="box-none" style={[styles.header, sides, {paddingTop: insets.top}]}>
       <Animated.View pointerEvents="none" style={[styles.glass, {bottom: -FADE_TAIL}, barStyle]}>
         <GlassSurface
           variant="fade"

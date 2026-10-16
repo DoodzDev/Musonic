@@ -492,8 +492,8 @@ export default function PlaylistDetailScreen() {
     />
   );
 
-  const cover = (size: number, radius: number) => (
-    <Raised radius={radius}>
+  const cover = (size: number, radius: number, side = false) => (
+    <Raised radius={radius} style={side ? styles.sideCover : undefined}>
       <CoverArt key={coverVersion} id={coverArtId} playlistId={playlistId} size={size} borderRadius={radius} />
     </Raised>
   );
@@ -518,7 +518,7 @@ export default function PlaylistDetailScreen() {
 
   const side = !loading && !failed ? (
     <View>
-      {cover(SIDE_COVER, radii.tile)}
+      {cover(SIDE_COVER, radii.tile, true)}
       <Text variant="title3" numberOfLines={2} style={styles.sideTitle}>{name}</Text>
       <View style={styles.sideMeta}>{metaLine}</View>
       <View style={styles.sidePlay}>{playRow}</View>
@@ -662,6 +662,7 @@ const styles = StyleSheet.create({
   meta: {flexShrink: 1},
   playSpacing: {paddingTop: 18, paddingBottom: 12},
   search: {paddingHorizontal: spacing.gutter, paddingBottom: 6},
+  sideCover: {alignSelf: 'flex-start'},
   sideTitle: {fontWeight: '700', marginTop: 12},
   sideMeta: {alignItems: 'flex-start'},
   sidePlay: {marginTop: 16, marginHorizontal: -spacing.gutter},

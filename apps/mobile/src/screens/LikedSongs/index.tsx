@@ -201,7 +201,7 @@ export default function LikedSongsScreen() {
 
   const side = (
     <View>
-      <Raised radius={radii.tile}><LikedCover size={SIDE_COVER} borderRadius={radii.tile} /></Raised>
+      <Raised radius={radii.tile} style={styles.sideCover}><LikedCover size={SIDE_COVER} borderRadius={radii.tile} /></Raised>
       <Text variant="title3" style={styles.sideTitle}>{t.likedSongs.title}</Text>
       <Text variant="footnote" color="textSecondary">{meta}</Text>
       <View style={styles.sidePlay}>{playRow}</View>
@@ -263,6 +263,7 @@ const styles = StyleSheet.create({
   recoTitle: {fontWeight: '600'},
   chevron: {transform: [{scaleX: -1}]},
   search: {paddingHorizontal: spacing.gutter, paddingBottom: 6},
+  sideCover: {alignSelf: 'flex-start'},
   sideTitle: {fontWeight: '700', marginTop: 12},
   sidePlay: {marginTop: 16, marginHorizontal: -spacing.gutter},
   sideReco: {marginTop: 16, marginHorizontal: -spacing.gutter},

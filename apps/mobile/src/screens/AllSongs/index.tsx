@@ -254,7 +254,7 @@ export default function AllSongsScreen() {
 
   const side = (
     <View>
-      <Raised radius={radii.tile}><AllSongsCover size={SIDE_COVER} borderRadius={radii.tile} /></Raised>
+      <Raised radius={radii.tile} style={styles.sideCover}><AllSongsCover size={SIDE_COVER} borderRadius={radii.tile} /></Raised>
       <Text variant="title3" style={styles.sideTitle}>{t.allSongs.title}</Text>
       <Text variant="footnote" color="textSecondary">{meta}</Text>
       <View style={styles.sidePlay}>{playRow}</View>
@@ -346,6 +346,7 @@ const styles = StyleSheet.create({
   sortBtn: {flexDirection: 'row', alignItems: 'center', gap: 6},
   sortLabel: {fontWeight: '600'},
   header: {height: HEADER_HEIGHT, justifyContent: 'flex-end', paddingHorizontal: spacing.gutter, paddingBottom: 4},
+  sideCover: {alignSelf: 'flex-start'},
   sideTitle: {fontWeight: '700', marginTop: 12},
   sidePlay: {marginTop: 16, marginHorizontal: -spacing.gutter},
   sideSearch: {marginTop: 12},
