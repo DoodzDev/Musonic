@@ -332,7 +332,7 @@ export default function ComponentsTab() {
         <EmptyState
           icon={<CloudIcon size={40} color={colors.textSecondary} />}
           title="Hors ligne"
-          message="Seuls tes titres téléchargés sont disponibles."
+          message="Seuls vos titres téléchargés sont disponibles."
         />
       </Section>
 

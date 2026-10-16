@@ -2,12 +2,14 @@
  * @file client.ts
  * @description Subsonic API client. Builds authenticated request URLs and exposes
  *   helpers for stream/cover-art URLs. All requests are made against the active
- *   server stored in settingsStore.
+ *   server stored in settingsStore. Streams follow the quality chosen for the
+ *   current network (Wi-Fi or mobile data); downloads always get the original.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
-import type {Server} from '../store/settingsStore';
+import {useSettingsStore, type Server} from '../store/settingsStore';
+import {isOnMobileData} from '../services/network';
 import {useNetworkStore} from '../store/networkStore';
 import {getLocalCoverUri} from '../store/localCovers';
 
@@ -39,11 +41,21 @@ export function getActiveServer(): Server | null {
   return _server;
 }
 
-export function getStreamUrl(songId: string): string {
+/** Streaming bitrate cap for the current network, in kbit/s (0 = original). */
+function streamQuality(): number {
+  const s = useSettingsStore.getState();
+  return isOnMobileData() ? s.streamQualityMobile : s.streamQualityWifi;
+}
+
+/** Stream URL; `original` skips the quality cap (downloads). */
+export function getStreamUrl(songId: string, options?: {original?: boolean}): string {
   if (!_server) throw new Error('No server configured');
   const {url, username, password} = _server;
   const base = url.replace(/\/$/, '');
   const p = new URLSearchParams({id: songId, u: username, p: password, v: '1.16.1', c: 'Musonic'});
+  const quality = options?.original ? 0 : streamQuality();
+  // Navidrome transcodes down to this bitrate; files already below it are sent as is.
+  if (quality > 0) p.set('maxBitRate', String(quality));
   return `${base}/rest/stream.view?${p.toString()}`;
 }
 

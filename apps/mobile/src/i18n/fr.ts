@@ -56,7 +56,7 @@ export const t = {
   // ─── Server Setup ──────────────────────────────────────────────────────────
   serverSetup: {
     appName: 'Musonic',
-    subtitle: 'Connecte ton serveur Subsonic',
+    subtitle: 'Connectez votre serveur Subsonic',
     serverNameLabel: 'Nom du serveur',
     serverNamePlaceholder: 'Mon serveur',
     serverUrlLabel: 'URL du serveur',
@@ -78,7 +78,7 @@ export const t = {
       notSubsonic: "Aucun serveur Subsonic à cette adresse — vérifie l'URL",
       generic: 'Connexion impossible',
     },
-    httpWarning: 'HTTP au lieu de HTTPS — tes identifiants peuvent transiter en clair.',
+    httpWarning: 'HTTP au lieu de HTTPS — vos identifiants peuvent transiter en clair.',
   },
 
   // ─── Tab Bar ───────────────────────────────────────────────────────────────
@@ -140,14 +140,14 @@ export const t = {
       forYou: 'Pour vous',
       forYouFrom: (names: string) => `D'après ${names}`,
       discover: 'Artistes à découvrir',
-      favoriteArtists: 'Tes artistes préférés',
+      favoriteArtists: 'Vos artistes préférés',
       moreLike: (name: string) => `Plus dans le style de ${name}`,
-      likedAlbums: 'Albums de tes titres likés',
-      becauseLiked: (title: string) => `Parce que tu as aimé « ${title} »`,
+      likedAlbums: 'Albums de vos titres likés',
+      becauseLiked: (title: string) => `Parce que vous avez aimé « ${title} »`,
       magicMixes: 'Mix Magiques',
       magicMixesSubtitle: 'Vos titres et des découvertes, par genre',
       rediscover: 'À redécouvrir',
-      newest: 'Nouveautés dans ta bibliothèque',
+      newest: 'Nouveautés dans votre bibliothèque',
       random: 'Au hasard',
     },
     playMix: (genre: string) => `Écouter le Mix Magique ${genre}`,
@@ -313,7 +313,7 @@ export const t = {
       subtitle: 'Basée sur les titres de cette playlist',
       loading: 'Chargement des recommandations...',
       added: 'Ajouté à la playlist',
-      notOnServer: 'Titre pas encore sur ton serveur',
+      notOnServer: 'Titre pas encore sur votre serveur',
     },
   },
 
@@ -441,7 +441,7 @@ export const t = {
     clearAll: 'Tout effacer',
     clearedToast: 'File vidée',
     unreadableToast: 'Titre illisible, passage au suivant',
-    playbackFailedToast: 'Lecture impossible. Vérifie ta connexion.',
+    playbackFailedToast: 'Lecture impossible. Vérifiez votre connexion.',
     magicOfflineToast: 'Magique indisponible hors ligne',
     undo: 'Annuler',
     shuffleTile: 'Aléatoire',
@@ -518,6 +518,12 @@ export const t = {
       autoDownloadAlertMessage: "Attention : L'auto-téléchargement consomme de l'espace de stockage sur votre téléphone ET de la bande passante sur votre serveur (Navidrome). Voulez-vous vraiment l'activer ?",
       autoDownloadAlertConfirm: 'Activer',
       autoDownloadAlertCancel: 'Annuler',
+      wifiOnlyLabel: 'Wi-Fi uniquement',
+      wifiOnlyDesc: 'En données mobiles, Musonic vous demande avant de télécharger.',
+      qualityWifiLabel: 'Qualité en Wi-Fi',
+      qualityMobileLabel: 'Qualité en données mobiles',
+      qualityDesc: 'En kbit/s. Les téléchargements restent en qualité originale.',
+      qualityOriginal: 'Originale',
     },
     display: {
       lockRotationLabel: "Verrouiller la rotation de l'écran",
@@ -565,6 +571,10 @@ export const t = {
       `Supprimer la playlist « ${name} » (${n} musique${n !== 1 ? 's' : ''}) de vos téléchargements ?`,
     deleteConfirm: 'Supprimer',
     cancelButton: 'Annuler',
+    mobileDataTitle: 'Vous êtes en données mobiles',
+    mobileDataMessage: (n: number) =>
+      `Les téléchargements se font en Wi-Fi uniquement. Télécharger ${n > 1 ? `ces ${n} titres` : 'ce titre'} quand même avec vos données mobiles ?`,
+    mobileDataConfirm: 'Télécharger',
   },
 
   // ─── Full Screen Player ────────────────────────────────────────────────────

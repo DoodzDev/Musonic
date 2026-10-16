@@ -6,7 +6,7 @@
  *   choices (progress bar style, landscape navigation bar side, landscape
  *   player layout) show a small preview of each option.
  * @author DoodzProg
- * @version 2.2.0
+ * @version 2.3.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -25,7 +25,7 @@ import Button from '../../components/ui/Button';
 import Text from '../../components/ui/Text';
 import {BackArrowIcon} from '../../components/icons';
 import {checkForUpdate} from '../../services/updateChecker';
-import {useSettingsStore} from '../../store/settingsStore';
+import {useSettingsStore, type StreamQuality} from '../../store/settingsStore';
 import {useDockInset} from '../../navigation/dockLayout';
 import {colors, radii, spacing} from '../../theme';
 import {useT} from '../../i18n';
@@ -167,12 +167,24 @@ export default function SettingsScreen() {
       setStartTab: st.setStartTab,
       showHomeDate: st.showHomeDate,
       setShowHomeDate: st.setShowHomeDate,
+      downloadWifiOnly: st.downloadWifiOnly,
+      setDownloadWifiOnly: st.setDownloadWifiOnly,
+      streamQualityWifi: st.streamQualityWifi,
+      setStreamQualityWifi: st.setStreamQualityWifi,
+      streamQualityMobile: st.streamQualityMobile,
+      setStreamQualityMobile: st.setStreamQualityMobile,
       hapticsEnabled: st.hapticsEnabled,
       setHapticsEnabled: st.setHapticsEnabled,
     })),
   );
 
   const advanced = s.settingsMode === 'advanced';
+  const qualityOptions: {value: StreamQuality; label: string}[] = [
+    {value: 0, label: t.settings.playback.qualityOriginal},
+    {value: 320, label: '320'},
+    {value: 192, label: '192'},
+    {value: 128, label: '128'},
+  ];
 
   const setAutoDownload = (on: boolean) => {
     if (!on) {
@@ -244,6 +256,12 @@ export default function SettingsScreen() {
                 </View>
               </Block>
             ) : null}
+            <Block label={t.settings.playback.qualityWifiLabel} description={t.settings.playback.qualityDesc}>
+              <SegmentedControl options={qualityOptions} value={s.streamQualityWifi} onChange={s.setStreamQualityWifi} />
+            </Block>
+            <Block label={t.settings.playback.qualityMobileLabel}>
+              <SegmentedControl options={qualityOptions} value={s.streamQualityMobile} onChange={s.setStreamQualityMobile} />
+            </Block>
             <ListItem
               label={t.settings.playback.autoplayLabel}
               description={t.settings.playback.autoplayDesc}
@@ -257,6 +275,11 @@ export default function SettingsScreen() {
           </ListGroup>
 
           <ListGroup caption={t.settings.sections.downloads}>
+            <ListItem
+              label={t.settings.playback.wifiOnlyLabel}
+              description={t.settings.playback.wifiOnlyDesc}
+              toggle={{value: s.downloadWifiOnly, onValueChange: s.setDownloadWifiOnly}}
+            />
             <ListItem
               label={t.settings.playback.autoDownloadLabel}
               description={t.settings.playback.autoDownloadDesc}

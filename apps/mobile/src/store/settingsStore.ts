@@ -6,10 +6,11 @@
  *   landscape full-player cover/progress column order, haptic feedback and
  *   the "Previous always goes back" playback rule, and the Library view
  *   (list or grid, pinned items) and the sort of My Music, the Basic /
- *   Advanced settings mode, the start tab and the date on the Home.
+ *   Advanced settings mode, the start tab and the date on the Home, and the
+ *   network rules: downloads on Wi-Fi only, streaming quality per network.
  *   Persisted across restarts; consumed by RootNavigator to gate the server-setup flow.
  * @author DoodzProg
- * @version 1.6.0
+ * @version 1.7.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -22,6 +23,8 @@ export type Locale = 'fr' | 'en';
 export type LocalePref = Locale | 'system';
 export type SettingsMode = 'basic' | 'advanced';
 export type StartTab = 'Home' | 'Search' | 'Library';
+/** Max streaming bitrate in kbit/s; 0 = original file. */
+export type StreamQuality = 0 | 320 | 192 | 128;
 export type LibrarySortMode = 'recent' | 'added' | 'alpha' | 'custom';
 export type AllSongsSortMode = 'az' | 'artist' | 'recent';
 export type NavBarPosition = 'left' | 'right';
@@ -57,6 +60,13 @@ type SettingsState = {
   /** Date above the Home title. */
   showHomeDate: boolean;
   setShowHomeDate: (show: boolean) => void;
+  /** Downloads wait for Wi-Fi; on mobile data the user is asked each time. */
+  downloadWifiOnly: boolean;
+  setDownloadWifiOnly: (only: boolean) => void;
+  streamQualityWifi: StreamQuality;
+  setStreamQualityWifi: (q: StreamQuality) => void;
+  streamQualityMobile: StreamQuality;
+  setStreamQualityMobile: (q: StreamQuality) => void;
   useWaveformScrubber: boolean;
   setUseWaveformScrubber: (use: boolean) => void;
   rotationLocked: boolean;
@@ -119,6 +129,12 @@ export const useSettingsStore = create<SettingsState>()(
       setStartTab: tab => set({startTab: tab}),
       showHomeDate: true,
       setShowHomeDate: show => set({showHomeDate: show}),
+      downloadWifiOnly: true,
+      setDownloadWifiOnly: only => set({downloadWifiOnly: only}),
+      streamQualityWifi: 0,
+      setStreamQualityWifi: q => set({streamQualityWifi: q}),
+      streamQualityMobile: 192,
+      setStreamQualityMobile: q => set({streamQualityMobile: q}),
       useWaveformScrubber: false,
       setUseWaveformScrubber: use => set({useWaveformScrubber: use}),
       rotationLocked: false,

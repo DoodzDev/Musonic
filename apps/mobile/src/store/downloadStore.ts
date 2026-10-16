@@ -5,8 +5,10 @@
  *   to cap concurrent network transfers at MAX_CONCURRENT (3). Only Navidrome-
  *   indexed tracks are downloadable; Deezer-sourced tracks (ext- prefix) are
  *   silently ignored because they cannot be streamed through Navidrome.
+ *   "Wi-Fi only" (downloadGate): on mobile data the user confirms each
+ *   request; automatic downloads (`auto`) are skipped.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -14,6 +16,7 @@ import {persist, createJSONStorage} from 'zustand/middleware';
 import {mmkvStorage} from './storage';
 import RNBlobUtil from 'react-native-blob-util';
 import {getRemoteCoverArtUrl, getStreamUrl} from '../api/client';
+import {canDownloadAutomatically, confirmDownload} from '../services/downloadGate';
 import {
   LOCAL_COVER_SIZE,
   coverKeyOf,
@@ -148,7 +151,8 @@ async function _executeDownload(trackId: string, track: SubsonicSong): Promise<v
 
     store()._setActive(trackId, track.title, 'downloading', 0);
 
-    const streamUrl = getStreamUrl(trackId);
+    // Downloads keep the original file whatever the streaming quality (ADR-010 H6).
+    const streamUrl = getStreamUrl(trackId, {original: true});
 
     // Fetch the audio stream and write it directly to `localPath`.
     const res = await RNBlobUtil
@@ -247,8 +251,9 @@ type DownloadState = {
    * tracks, and tracks already in the active queue.
    *
    * @param track - SubsonicSong to enqueue.
+   * @param options.auto - Started by the app (auto-download), not the user: never asks, skipped on mobile data when Wi-Fi only.
    */
-  enqueueTrack: (track: SubsonicSong) => void;
+  enqueueTrack: (track: SubsonicSong, options?: {auto?: boolean}) => void;
 
   /**
    * Convenience wrapper that calls `enqueueTrack` for each item in the array.
@@ -310,52 +315,24 @@ export const useDownloadStore = create<DownloadState>()(
 
       // ── Actions ──────────────────────────────────────────────────────────────
 
-      enqueueTrack: (track) => {
-        const trackId = String(track.id);
-
-        // Deezer-sourced tracks cannot be fetched through Navidrome.
-        if (trackId.startsWith('ext-')) return;
-
-        const {downloads, activeDownloads} = get();
-
-        // Already finished — nothing to do.
-        if (trackId in downloads) return;
-
-        // Already queued or running — avoid duplicate.
-        const existing = activeDownloads[trackId];
-        if (existing && (existing.status === 'queued' || existing.status === 'downloading')) {
+      enqueueTrack: (track, options) => {
+        if (!isEligible(String(track.id))) return;
+        if (options?.auto) {
+          if (canDownloadAutomatically()) queueOne(track);
           return;
         }
-
-        set(s => ({
-          activeDownloads: {
-            ...s.activeDownloads,
-            [trackId]: {trackId, title: track.title, progress: 0, status: 'queued'},
-          },
-        }));
-
-        _pending.push({trackId, track});
-        _drain();
+        confirmDownload(1).then(ok => { if (ok) queueOne(track); });
       },
 
       enqueueBatch: (tracks, onComplete) => {
-        if (tracks.length === 0) { onComplete?.(); return; }
-        if (onComplete) {
-          const {downloads, activeDownloads} = get();
-          // Only watch tracks that will actually be enqueued (mirrors enqueueTrack guards).
-          const pendingIds = tracks
-            .map(t => String(t.id))
-            .filter(id => {
-              if (id.startsWith('ext-')) return false;
-              if (id in downloads) return false;
-              const active = activeDownloads[id];
-              return !(active && (active.status === 'queued' || active.status === 'downloading'));
-            });
-          if (pendingIds.length === 0) { onComplete(); }
-          else { _batchWatchers.push({pending: new Set(pendingIds), onComplete}); }
-        }
-        const enqueue = get().enqueueTrack;
-        for (const t of tracks) { enqueue(t); }
+        // Only tracks that will actually be downloaded (not online, not done, not running).
+        const eligible = tracks.filter(t => isEligible(String(t.id)));
+        if (eligible.length === 0) { onComplete?.(); return; }
+        confirmDownload(eligible.length).then(ok => {
+          if (!ok) return;
+          if (onComplete) _batchWatchers.push({pending: new Set(eligible.map(t => String(t.id))), onComplete});
+          for (const t of eligible) { queueOne(t); }
+        });
       },
 
       deleteDownload: async (trackId) => {
@@ -484,3 +461,26 @@ _syncLocalCovers(useDownloadStore.getState().downloads);
 useDownloadStore.subscribe((state, prev) => {
   if (state.downloads !== prev.downloads) _syncLocalCovers(state.downloads);
 });
+
+/** Can be downloaded: not online (ext-), not done, not already queued or running. */
+function isEligible(trackId: string): boolean {
+  if (trackId.startsWith('ext-')) return false;
+  const {downloads, activeDownloads} = useDownloadStore.getState();
+  if (trackId in downloads) return false;
+  const existing = activeDownloads[trackId];
+  return !(existing && (existing.status === 'queued' || existing.status === 'downloading'));
+}
+
+/** Adds an eligible track to the queue and starts the transfers. */
+function queueOne(track: SubsonicSong): void {
+  const trackId = String(track.id);
+  if (!isEligible(trackId)) return;
+  useDownloadStore.setState(s => ({
+    activeDownloads: {
+      ...s.activeDownloads,
+      [trackId]: {trackId, title: track.title, progress: 0, status: 'queued'},
+    },
+  }));
+  _pending.push({trackId, track});
+  _drain();
+}

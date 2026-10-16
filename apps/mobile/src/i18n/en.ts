@@ -512,6 +512,12 @@ export const en = {
       autoDownloadAlertMessage: 'Warning: Auto-download consumes storage on your device AND bandwidth on your server (Navidrome). Do you really want to enable it?',
       autoDownloadAlertConfirm: 'Enable',
       autoDownloadAlertCancel: 'Cancel',
+      wifiOnlyLabel: 'Wi-Fi only',
+      wifiOnlyDesc: 'On mobile data, Musonic asks before downloading.',
+      qualityWifiLabel: 'Quality on Wi-Fi',
+      qualityMobileLabel: 'Quality on mobile data',
+      qualityDesc: 'In kbit/s. Downloads always keep the original quality.',
+      qualityOriginal: 'Original',
     },
     display: {
       lockRotationLabel: 'Lock screen rotation',
@@ -558,6 +564,10 @@ export const en = {
       `Remove playlist "${name}" (${n} song${n !== 1 ? 's' : ''}) from your downloads?`,
     deleteConfirm: 'Remove',
     cancelButton: 'Cancel',
+    mobileDataTitle: 'You’re on mobile data',
+    mobileDataMessage: (n: number) =>
+      `Downloads use Wi-Fi only. Download ${n > 1 ? `these ${n} tracks` : 'this track'} with your mobile data anyway?`,
+    mobileDataConfirm: 'Download',
   },
 
   // ─── Full Screen Player ────────────────────────────────────────────────────

@@ -8,7 +8,7 @@
  *   seconds, so the queue can be restored at the same place. Stream errors
  *   go to the engine, which skips the unplayable track.
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.3.1
  * @license CC-BY-NC-4.0
  */
 import {AppState} from 'react-native';
@@ -238,7 +238,7 @@ export async function PlaybackService() {
             album: String(activeTrack.album ?? ''),
             coverArt: activeTrack.coverArt ? String(activeTrack.coverArt) : undefined,
             duration: Number(activeTrack.duration ?? 0),
-          });
+          }, {auto: true});
         }
       } catch { /* silent */ }
     }

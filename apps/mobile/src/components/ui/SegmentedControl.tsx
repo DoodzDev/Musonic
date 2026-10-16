@@ -3,7 +3,7 @@
  * @description Design v2 segmented control (2-4 equal segments). The selected
  *   segment's thumb slides on the UI thread; a selection haptic plays on change.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useState} from 'react';
@@ -13,9 +13,9 @@ import Text from './Text';
 import {colors, timings} from '../../theme';
 import {haptic} from '../../services/haptics';
 
-type Option<T extends string> = {value: T; label: string};
+type Option<T extends string | number> = {value: T; label: string};
 
-type Props<T extends string> = {
+type Props<T extends string | number> = {
   options: Option<T>[];
   value: T;
   onChange: (value: T) => void;
@@ -23,7 +23,7 @@ type Props<T extends string> = {
 
 const PADDING = 2;
 
-export default function SegmentedControl<T extends string>({options, value, onChange}: Props<T>) {
+export default function SegmentedControl<T extends string | number>({options, value, onChange}: Props<T>) {
   const [width, setWidth] = useState(0);
   const segment = width > 0 ? (width - PADDING * 2) / options.length : 0;
   const index = Math.max(0, options.findIndex(o => o.value === value));
