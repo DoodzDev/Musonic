@@ -6,9 +6,10 @@
  *   forwarded to the playback engine; manual skips are never crossfaded. The
  *   playing position is saved on pause, in the background and every few
  *   seconds, so the queue can be restored at the same place. Stream errors
- *   go to the engine, which skips the unplayable track.
+ *   go to the engine, which skips the unplayable track. Android Auto browsing
+ *   and taps (`remote-play-id`) start here too, so they work without the screens.
  * @author DoodzProg
- * @version 1.3.1
+ * @version 1.4.0
  * @license CC-BY-NC-4.0
  */
 import {AppState} from 'react-native';
@@ -19,6 +20,7 @@ import {useDownloadStore} from '../store/downloadStore';
 import {subsonicGet} from '../api/client';
 import {skipNext, skipPrev} from './playerActions';
 import {playbackEngine} from './playback/engine';
+import {playAutoMediaId, startAndroidAuto} from './auto/androidAuto';
 
 let wasPlayingBeforeDuck = false;
 let fadeInTimer: ReturnType<typeof setInterval> | null = null;
@@ -190,6 +192,11 @@ export async function PlaybackService() {
   TrackPlayer.addEventListener(Event.RemoteSeek, ({position}) =>
     TrackPlayer.seekTo(position),
   );
+  // Android Auto: a track tapped in the car plays its whole list (ADR-015).
+  TrackPlayer.addEventListener(Event.RemotePlayId, ({id}) => {
+    playAutoMediaId(id).catch(() => console.warn('[auto] play failed'));
+  });
+  startAndroidAuto();
   TrackPlayer.addEventListener(Event.PlaybackQueueEnded, () => {
     // Last track in queue finished — no further PlaybackActiveTrackChanged
     // will fire to trigger the submission scrobble, so flush it here.

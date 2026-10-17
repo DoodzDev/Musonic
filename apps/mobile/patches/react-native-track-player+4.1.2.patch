@@ -445,11 +445,80 @@ index b2409a0..913cf2c 100644
 +        }
      }
  }
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MediaSessionTokenHolder.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MediaSessionTokenHolder.kt
+new file mode 100644
+index 0000000..983bc0d
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MediaSessionTokenHolder.kt
+@@ -0,0 +1,38 @@
++package com.doublesymmetry.trackplayer.service
++
++import android.support.v4.media.session.MediaSessionCompat
++import androidx.annotation.MainThread
++import com.doublesymmetry.kotlinaudio.players.BaseAudioPlayer
++
++/**
++ * Musonic: shares the player's media session token with the app's Android Auto browser
++ * service, so the car drives the same session as the notification and the lock screen.
++ * KotlinAudio keeps the session private, hence the reflection (R8 is disabled in the app).
++ */
++@MainThread
++object MediaSessionTokenHolder {
++    private val listeners = mutableListOf<(MediaSessionCompat.Token) -> Unit>()
++
++    var token: MediaSessionCompat.Token? = null
++        private set
++
++    fun publishFrom(player: BaseAudioPlayer) {
++        val field = BaseAudioPlayer::class.java.getDeclaredField("mediaSession")
++        field.isAccessible = true
++        val session = field.get(player) as MediaSessionCompat
++        token = session.sessionToken
++        listeners.toList().forEach { it(session.sessionToken) }
++    }
++
++    fun clear() {
++        token = null
++    }
++
++    fun addListener(listener: (MediaSessionCompat.Token) -> Unit) {
++        listeners.add(listener)
++    }
++
++    fun removeListener(listener: (MediaSessionCompat.Token) -> Unit) {
++        listeners.remove(listener)
++    }
++}
 diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
-index afa6b0f..1dd4107 100644
+index afa6b0f..b97108d 100644
 --- a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
 +++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
-@@ -120,9 +120,22 @@ class MusicService : HeadlessJsTaskService() {
+@@ -9,12 +9,15 @@ import android.os.Binder
+ import android.os.Build
+ import android.os.Bundle
+ import android.os.IBinder
++import android.os.ResultReceiver
+ import android.support.v4.media.RatingCompat
++import android.support.v4.media.session.PlaybackStateCompat
+ import androidx.annotation.MainThread
+ import androidx.core.app.NotificationCompat
+ import androidx.core.app.NotificationCompat.PRIORITY_LOW
+ import com.doublesymmetry.kotlinaudio.models.*
+ import com.doublesymmetry.kotlinaudio.models.NotificationButton.*
++import com.doublesymmetry.kotlinaudio.players.BaseAudioPlayer
+ import com.doublesymmetry.kotlinaudio.players.QueuedAudioPlayer
+ import com.doublesymmetry.trackplayer.R as TrackPlayerR
+ import com.doublesymmetry.trackplayer.extensions.NumberExt.Companion.toMilliseconds
+@@ -33,6 +36,8 @@ import com.facebook.react.HeadlessJsTaskService
+ import com.facebook.react.bridge.Arguments
+ import com.facebook.react.jstasks.HeadlessJsTaskConfig
+ import com.facebook.react.modules.core.DeviceEventManagerModule
++import com.google.android.exoplayer2.Player
++import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
+ import com.google.android.exoplayer2.ui.R as ExoPlayerR
+ import kotlinx.coroutines.*
+ import kotlinx.coroutines.flow.flow
+@@ -120,9 +125,22 @@ class MusicService : HeadlessJsTaskService() {
              notificationBuilder.foregroundServiceBehavior = NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE
          }
          val notification = notificationBuilder.build()
@@ -475,7 +544,53 @@ index afa6b0f..1dd4107 100644
      }
  
      @MainThread
-@@ -741,7 +754,7 @@ class MusicService : HeadlessJsTaskService() {
+@@ -158,10 +176,45 @@ class MusicService : HeadlessJsTaskService() {
+ 
+         player = QueuedAudioPlayer(this@MusicService, playerConfig, bufferConfig, cacheConfig)
+         player.automaticallyUpdateNotificationMetadata = automaticallyUpdateNotificationMetadata
++        // Musonic: hand the session to the Android Auto browser service
++        MediaSessionTokenHolder.publishFrom(player)
++        installPlaybackPreparer()
+         observeEvents()
+         setupForegrounding()
+     }
+ 
++    /**
++     * Musonic: Android Auto plays a browsed item or a voice search through the JS engine
++     * (`remote-play-id` / `remote-play-search`), and shows the app's extra buttons
++     * ([MusonicCustomActions]). KotlinAudio keeps its connector private.
++     */
++    private fun installPlaybackPreparer() {
++        val field = BaseAudioPlayer::class.java.getDeclaredField("mediaSessionConnector")
++        field.isAccessible = true
++        val connector = field.get(player) as MediaSessionConnector
++        MusonicCustomActions.attach(connector)
++        connector.setPlaybackPreparer(object : MediaSessionConnector.PlaybackPreparer {
++            override fun getSupportedPrepareActions(): Long =
++                PlaybackStateCompat.ACTION_PREPARE_FROM_MEDIA_ID or
++                    PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID or
++                    PlaybackStateCompat.ACTION_PREPARE_FROM_SEARCH or
++                    PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH
++
++            // Play pressed while idle: same as without a preparer.
++            override fun onPrepare(playWhenReady: Boolean) = player.prepare()
++
++            override fun onPrepareFromMediaId(mediaId: String, playWhenReady: Boolean, extras: Bundle?) =
++                emit(MusicEvents.BUTTON_PLAY_FROM_ID, Bundle().apply { putString("id", mediaId) })
++
++            override fun onPrepareFromSearch(query: String, playWhenReady: Boolean, extras: Bundle?) =
++                emit(MusicEvents.BUTTON_PLAY_FROM_SEARCH, Bundle().apply { putString("query", query) })
++
++            override fun onPrepareFromUri(uri: Uri, playWhenReady: Boolean, extras: Bundle?) {}
++
++            override fun onCommand(player: Player, command: String, extras: Bundle?, cb: ResultReceiver?) = false
++        })
++    }
++
+     @MainThread
+     fun updateOptions(options: Bundle) {
+         latestOptions = options
+@@ -741,7 +794,7 @@ class MusicService : HeadlessJsTaskService() {
  
      @MainThread
      private fun emit(event: String, data: Bundle? = null) {
@@ -484,7 +599,7 @@ index afa6b0f..1dd4107 100644
              ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
              ?.emit(event, data?.let { Arguments.fromBundle(it) })
      }
-@@ -751,7 +764,7 @@ class MusicService : HeadlessJsTaskService() {
+@@ -751,7 +804,7 @@ class MusicService : HeadlessJsTaskService() {
          val payload = Arguments.createArray()
          data.forEach { payload.pushMap(Arguments.fromBundle(it)) }
  
@@ -493,3 +608,74 @@ index afa6b0f..1dd4107 100644
              ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
              ?.emit(event, payload)
      }
+@@ -799,6 +852,8 @@ class MusicService : HeadlessJsTaskService() {
+     @MainThread
+     override fun onDestroy() {
+         super.onDestroy()
++        MediaSessionTokenHolder.clear()
++        MusonicCustomActions.detach()
+         if (::player.isInitialized) {
+             player.destroy()
+         }
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusonicCustomActions.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusonicCustomActions.kt
+new file mode 100644
+index 0000000..2af66d7
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusonicCustomActions.kt
+@@ -0,0 +1,56 @@
++package com.doublesymmetry.trackplayer.service
++
++import android.os.Bundle
++import android.support.v4.media.session.PlaybackStateCompat
++import androidx.annotation.MainThread
++import com.google.android.exoplayer2.Player
++import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
++
++/**
++ * Musonic: extra buttons on the media session (shuffle, repeat, like), shown by Android Auto
++ * on its playback screen. They are added to KotlinAudio's own custom actions, which it
++ * rewrites when the notification is (re)created; the app sends them again on every change.
++ */
++@MainThread
++object MusonicCustomActions {
++    class Action(val name: String, val label: String, val icon: Int)
++
++    private var connector: MediaSessionConnector? = null
++    private var actions: List<Action> = emptyList()
++
++    /** Called with the action name when one of the buttons is pressed. */
++    var onAction: ((String) -> Unit)? = null
++
++    fun attach(connector: MediaSessionConnector) {
++        this.connector = connector
++        apply()
++    }
++
++    fun detach() {
++        connector = null
++    }
++
++    fun set(actions: List<Action>) {
++        this.actions = actions
++        apply()
++    }
++
++    private fun apply() {
++        val target = connector ?: return
++        val field = MediaSessionConnector::class.java.getDeclaredField("customActionProviders")
++        field.isAccessible = true
++        @Suppress("UNCHECKED_CAST")
++        val others = (field.get(target) as Array<MediaSessionConnector.CustomActionProvider>)
++            .filter { it !is Provider }
++        target.setCustomActionProviders(*(others + actions.map(::Provider)).toTypedArray())
++    }
++
++    private class Provider(val action: Action) : MediaSessionConnector.CustomActionProvider {
++        override fun getCustomAction(player: Player): PlaybackStateCompat.CustomAction =
++            PlaybackStateCompat.CustomAction.Builder(action.name, action.label, action.icon).build()
++
++        override fun onCustomAction(player: Player, action: String, extras: Bundle?) {
++            onAction?.invoke(action)
++        }
++    }
++}

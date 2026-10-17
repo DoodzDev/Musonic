@@ -29,5 +29,19 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+      <service
+        android:name=".MusonicAutoService"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.media.browse.MediaBrowserService" />
+        </intent-filter>
+      </service>
+      <provider
+        android:name=".MusonicArtworkProvider"
+        android:authorities="${applicationId}.artwork"
+        android:exported="true" />
+      <meta-data
+        android:name="com.google.android.gms.car.application"
+        android:resource="@xml/automotive_app_desc" />
     </application>
 </manifest>

@@ -3,9 +3,10 @@
  * @description Design v2 haptic feedback. One light, semantic call per kind of
  *   action so the whole app feels the same. Silent when the user turned
  *   haptics off in Musonic; still plays on silent and Do Not Disturb, like
- *   Android's own touch feedback.
+ *   Android's own touch feedback. Silent too for actions coming from the car
+ *   (Android Auto): the phone is not in the user's hand.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {trigger, type HapticFeedbackTypes} from 'react-native-haptic-feedback';
@@ -31,7 +32,19 @@ const FEEDBACK: Record<HapticKind, keyof typeof HapticFeedbackTypes> = {
  */
 const HAPTIC_OPTIONS = {ignoreAndroidSystemSettings: true};
 
+let muted = 0;
+
 export function haptic(kind: HapticKind): void {
-  if (!useSettingsStore.getState().hapticsEnabled) return;
+  if (muted > 0 || !useSettingsStore.getState().hapticsEnabled) return;
   trigger(FEEDBACK[kind], HAPTIC_OPTIONS);
+}
+
+/** Runs `action` without haptics (its synchronous part, where actions give their feedback). */
+export function withoutHaptics<T>(action: () => T): T {
+  muted++;
+  try {
+    return action();
+  } finally {
+    muted--;
+  }
 }
