@@ -5,9 +5,10 @@
  *   E special cases). C5 (repeat one at the natural end) and E2-E4 are
  *   engine behaviours, tested with the engine.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
+import { describe, expect, it } from 'vitest';
 import {
   addToQueue,
   clearAutoplay,
@@ -31,7 +32,7 @@ import {
   type QueueState,
   type QueueTrack,
   type Rng,
-} from '../../src/services/playback/buildQueue';
+} from './buildQueue.ts';
 
 type T = QueueTrack & {offline?: boolean};
 

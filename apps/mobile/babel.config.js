@@ -18,6 +18,7 @@ module.exports = {
           // Shared core of the monorepo (dependency-free modules only).
           '@musonic/core/releases': '../../packages/core/src/releases/releases.ts',
           '@musonic/core/home': '../../packages/core/src/home/home.ts',
+          '@musonic/core/playback': '../../packages/core/src/playback/buildQueue.ts',
         },
       },
     ],
