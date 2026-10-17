@@ -68,6 +68,11 @@ describe('queue snapshot', () => {
     expect(raw).toContain('al-b'); // cover id kept to rebuild the artwork
   });
 
+  test('drops a player content URI, valid only in the process that made it', () => {
+    const t = {...track('a'), artwork: 'content://com.musonic.artwork/track_a'};
+    expect(stripUrls(t).artwork).toBeUndefined();
+  });
+
   test('keeps a local artwork path, which holds no secret', () => {
     const t = {...track('a'), artwork: 'file:///data/covers/a.jpg'};
     expect(stripUrls(t).artwork).toBe('file:///data/covers/a.jpg');

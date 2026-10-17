@@ -9,7 +9,7 @@
  *   - The queue is written at most once per second; the position is a single
  *     number written on pause, in the background and every few seconds.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {storage} from '../../store/storage';
@@ -32,12 +32,15 @@ type SavedPosition = {trackId: string; seconds: number};
 /** Fields that may carry credentials, rebuilt on restore. */
 type UrlFields = {url?: string; streamUrl?: string; artwork?: string};
 
-/** Copy of a track without its URLs (local file artwork is kept, it holds no secret). */
+/**
+ * Copy of a track without its URLs. Local file artwork is kept (it holds no secret);
+ * a player content URI is dropped (it only works in the process that made it).
+ */
 export function stripUrls<T extends QueueTrack & UrlFields>(track: T): T {
   const copy = {...track};
   delete copy.url;
   delete copy.streamUrl;
-  if (copy.artwork && /^https?:/i.test(copy.artwork)) delete copy.artwork;
+  if (copy.artwork && /^(https?|content):/i.test(copy.artwork)) delete copy.artwork;
   return copy;
 }
 

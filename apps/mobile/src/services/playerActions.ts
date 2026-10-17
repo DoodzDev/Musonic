@@ -3,7 +3,7 @@
  * @description Imperative playback action helpers used across screens. Every list now starts through the playback engine (launchers.ts); the
  *   legacy loaders are gone. Skips always go through the engine.
  * @author DoodzProg
- * @version 2.2.0
+ * @version 2.3.0
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer from 'react-native-track-player';
@@ -14,6 +14,7 @@ import {playbackBridge} from '../store/playerStore';
 import {useDownloadStore} from '../store/downloadStore';
 import {useSettingsStore} from '../store/settingsStore';
 import type {Track} from '../store/playerStore';
+import {playerArtwork} from './playerArtwork';
 
 /**
  * Converts an internal Track object to an RNTP-compatible track descriptor.
@@ -21,6 +22,7 @@ import type {Track} from '../store/playerStore';
  *   1. Local file  — `file://` absolute path from the download store (offline playback).
  *   2. Navidrome   — authenticated stream URL for library-indexed tracks.
  *   3. Deezer/ext  — pre-built URL embedded in the track object for ext- tracks.
+ * The artwork is a Musonic content URI: the player publishes it to other apps.
  *
  * @param t - Internal Track object from the player store.
  * @returns RNTP track object ready to be passed to TrackPlayer.add().
@@ -47,7 +49,7 @@ export function toRNTPTrack(t: Track) {
     title: t.title,
     artist: t.artist,
     album: t.album,
-    artwork: t.artwork ?? '',
+    artwork: playerArtwork(t),
     duration: t.duration,
     coverArt: t.coverArt,
     artistId: t.artistId,
