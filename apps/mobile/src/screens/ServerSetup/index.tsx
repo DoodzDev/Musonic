@@ -7,10 +7,10 @@
  *   saved; a failure says plainly what to fix (F29), and a plain-HTTP
  *   address explains the risk (ISS-021).
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.0.1
  * @license CC-BY-NC-4.0
  */
-import React, {forwardRef, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -20,16 +20,16 @@ import {
   StyleSheet,
   TextInput,
   View,
-  type TextInputProps,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Text from '../../components/ui/Text';
+import Field from '../../components/ui/TextField';
 import {ListGroup, ListItem} from '../../components/ui/ListGroup';
 import PressableScale from '../../components/ui/PressableScale';
 import {AlertIcon, CheckIcon, LogoIcon} from '../../components/icons';
 import {pingServer, PingError} from '../../api/client';
 import {useSettingsStore, type Server} from '../../store/settingsStore';
-import {colors, radii, spacing, typography} from '../../theme';
+import {colors, radii, spacing} from '../../theme';
 import {useT, getT} from '../../i18n';
 import {hostOf} from '../../utils/hostOf';
 
@@ -46,21 +46,6 @@ function friendlyError(e: unknown): string {
     default: return `${d.generic} (${e.message})`;
   }
 }
-
-const Field = forwardRef<TextInput, TextInputProps & {label: string}>(function Field({label, ...input}, ref) {
-  return (
-    <View style={styles.field}>
-      <Text variant="footnote" color="textSecondary" style={styles.fieldLabel}>{label}</Text>
-      <TextInput
-        ref={ref}
-        {...input}
-        placeholderTextColor={colors.textSecondary}
-        selectionColor={colors.accent}
-        style={styles.input}
-      />
-    </View>
-  );
-});
 
 export default function ServerSetupScreen() {
   const t = useT();
@@ -202,17 +187,6 @@ const styles = StyleSheet.create({
   brand: {alignItems: 'center', gap: spacing.s},
   center: {textAlign: 'center'},
   form: {gap: spacing.m},
-  field: {gap: 6},
-  fieldLabel: {paddingHorizontal: 4},
-  input: {
-    height: 48,
-    paddingHorizontal: 14,
-    borderRadius: radii.tile,
-    backgroundColor: colors.fill,
-    color: colors.textPrimary,
-    fontSize: typography.body.fontSize,
-    letterSpacing: typography.body.letterSpacing,
-  },
   notice: {flexDirection: 'row', alignItems: 'flex-start', gap: spacing.s, marginTop: -spacing.s, paddingHorizontal: 4},
   noticeText: {flex: 1},
   status: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.s},

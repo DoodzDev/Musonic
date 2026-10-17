@@ -1,12 +1,12 @@
 /**
  * @file index.tsx
  * @description Settings screen (Design v2, R5.8). Large title, then inset
- *   grouped lists (shared `ListGroup`): Language, Player, Downloads, Offline,
- *   Display, About. Each setting explains itself under its name; the visual
+ *   grouped lists (shared `ListGroup`): Account, Musonic API (ADR-016),
+ *   Language, Player, Downloads, Offline, Display, About. Each setting explains itself under its name; the visual
  *   choices (progress bar style, landscape navigation bar side, landscape
  *   player layout) show a small preview of each option.
  * @author DoodzProg
- * @version 2.4.0
+ * @version 2.5.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -33,6 +33,7 @@ import {colors, radii, spacing} from '../../theme';
 import {useT} from '../../i18n';
 import {hostOf} from '../../utils/hostOf';
 import {version as APP_VERSION} from '../../../package.json';
+import MusonicApiGroup from './MusonicApiGroup';
 
 // ─── Previews ─────────────────────────────────────────────────────────────────
 
@@ -235,6 +236,8 @@ export default function SettingsScreen() {
               <ListItem label={server.username} value={hostOf(server.url)} />
             </ListGroup>
           ) : null}
+
+          <MusonicApiGroup />
 
           <ListGroup caption={t.settings.sections.player}>
             <Block label={t.settings.player.progressLabel} description={t.settings.player.progressDesc}>

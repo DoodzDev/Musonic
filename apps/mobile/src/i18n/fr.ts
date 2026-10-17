@@ -476,6 +476,23 @@ export const t = {
       sectionTitle: 'Compte',
       note: 'Comptes et serveurs se gèrent depuis votre profil.',
     },
+    musonicApi: {
+      sectionTitle: 'Musonic API',
+      note: 'Facultatif. Les titres Deezer démarrent plus vite en passant par votre Musonic API. Sans réponse de l’API, la lecture passe par le serveur habituel.',
+      urlLabel: 'Adresse',
+      urlPlaceholder: 'https://api.exemple.com',
+      keyLabel: 'Clé d’API',
+      save: 'Vérifier et enregistrer',
+      remove: 'Ne plus utiliser',
+      checking: 'Vérification…',
+      status: {
+        ok: 'Connectée : les titres Deezer passent par l’API.',
+        unauthorized: 'Clé refusée par l’API.',
+        unreachable: 'API injoignable. Vérifiez l’adresse et la connexion.',
+        notConfigured: 'Renseignez l’adresse et la clé.',
+      },
+      off: 'Non utilisée',
+    },
     sections: {
       player: 'Lecture',
       downloads: 'Téléchargements',

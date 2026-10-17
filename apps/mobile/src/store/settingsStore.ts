@@ -8,10 +8,11 @@
  *   (list or grid, pinned items) and the sort of My Music, the Basic /
  *   Advanced settings mode, the start tab and the date on the Home, and the
  *   network rules: downloads on Wi-Fi only, streaming quality per network,
- *   and the storage limit for downloads.
+ *   and the storage limit for downloads, and the optional Musonic API
+ *   (address + key, ADR-016).
  *   Persisted across restarts; consumed by RootNavigator to gate the server-setup flow.
  * @author DoodzProg
- * @version 1.8.0
+ * @version 1.9.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -112,6 +113,10 @@ type SettingsState = {
   allSongsSortMode: AllSongsSortMode;
   setAllSongsSortMode: (mode: AllSongsSortMode) => void;
   togglePinnedLibraryId: (id: string) => void;
+  /** Optional Musonic API (ADR-016); empty = not used. The key is a secret: never log it. */
+  musonicApiUrl: string;
+  musonicApiKey: string;
+  setMusonicApi: (url: string, key: string) => void;
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -185,6 +190,9 @@ export const useSettingsStore = create<SettingsState>()(
             ? s.pinnedLibraryIds.filter(p => p !== id)
             : [...s.pinnedLibraryIds, id],
         })),
+      musonicApiUrl: '',
+      musonicApiKey: '',
+      setMusonicApi: (url, key) => set({musonicApiUrl: url.trim(), musonicApiKey: key.trim()}),
       getActiveServer: () => {
         const {servers, activeServerId} = get();
         return servers.find(s => s.id === activeServerId) ?? null;
