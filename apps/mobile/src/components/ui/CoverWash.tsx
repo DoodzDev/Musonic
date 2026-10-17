@@ -5,7 +5,7 @@
  *   mini player capsule). Darkened from the cover's own colours so white text
  *   on it stays readable. Fades in when the cover changes.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useRef, useState} from 'react';
@@ -15,8 +15,12 @@ import LinearGradient from 'react-native-linear-gradient';
 import BlurredCover from './BlurredCover';
 import {coverTone, DEFAULT_TONE} from '../../services/coverTone';
 
-/** Side of the blurred square relative to the surface width: a zoomed-in piece of the cover. */
-const ZOOM = 0.75;
+/**
+ * Side of the blurred square relative to the surface width: a zoomed-in piece of the cover.
+ * Wider than the mask (gone at 78 %), so the fade never reaches the image's edge: at 0.75
+ * a vivid cover stopped in a hard vertical line by the play button.
+ */
+const ZOOM = 1;
 /** Horizontal mask: opaque on the left, gone past ~3/4 of the width. */
 const MASK_COLORS = ['#000', '#000', 'transparent'];
 const MASK_STOPS = [0, 0.3, 0.78];
