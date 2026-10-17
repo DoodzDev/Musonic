@@ -1,16 +1,19 @@
 /**
  * @file App.tsx
- * @description Web client shell: login gate, routes, sidebar and player bar.
+ * @description Web client shell: login gate, routes, sidebar, right panel (queue or lyrics) and player bar.
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
-import { MemoryCache, SubsonicClient, type Song, type SubsonicSession } from '@musonic/core';
+import { MemoryCache, SubsonicClient, type SubsonicSession } from '@musonic/core';
 import { LoginScreen } from './components/LoginScreen.tsx';
 import { PlayerBar } from './components/PlayerBar.tsx';
+import { LyricsPanel } from './components/LyricsPanel.tsx';
+import { QueuePanel } from './components/QueuePanel.tsx';
+import { ToastHost } from './components/Toast.tsx';
 import { Sidebar } from './components/Sidebar.tsx';
 import { AppContext, type AppContextValue } from './context/AppContext.tsx';
 import { useScrollMemory } from './hooks/useScrollMemory.ts';
@@ -18,12 +21,18 @@ import { clearSession, loadSession, saveSession, transportSession } from './lib/
 import { AlbumPage } from './pages/AlbumPage.tsx';
 import { ArtistPage } from './pages/ArtistPage.tsx';
 import { HomePage } from './pages/HomePage.tsx';
+import { GenrePage } from './pages/GenrePage.tsx';
+import { LibraryPage } from './pages/LibraryPage.tsx';
+import { MyMusicPage } from './pages/MyMusicPage.tsx';
 import { LikedPage } from './pages/LikedPage.tsx';
 import { PlaylistPage } from './pages/PlaylistPage.tsx';
-import { PlayerContext, type PlayerContextValue } from './player/PlayerContext.tsx';
+import { SearchPage } from './pages/SearchPage.tsx';
+import { PlayerContext, usePlayer } from './player/PlayerContext.tsx';
+import { usePlaybackEngine } from './player/usePlaybackEngine.ts';
 
 function Shell() {
   const mainRef = useRef<HTMLElement>(null);
+  const { panel } = usePlayer();
   useScrollMemory(mainRef);
   return (
     <div className="app">
@@ -34,6 +43,10 @@ function Shell() {
         <main className="main-panel" ref={mainRef}>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/my-music" element={<MyMusicPage />} />
+            <Route path="/genre/:name" element={<GenrePage />} />
             <Route path="/liked" element={<LikedPage />} />
             <Route path="/playlist/:id" element={<PlaylistPage />} />
             <Route path="/album/:id" element={<AlbumPage />} />
@@ -41,7 +54,13 @@ function Shell() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
+        {panel && (
+          <aside className="queue-panel">
+            {panel === 'queue' ? <QueuePanel /> : <LyricsPanel />}
+          </aside>
+        )}
       </div>
+      <ToastHost />
       <PlayerBar />
     </div>
   );
@@ -49,10 +68,6 @@ function Shell() {
 
 export default function App() {
   const [session, setSession] = useState<SubsonicSession | null>(loadSession);
-  const [queue, setQueue] = useState<Song[]>([]);
-  const [index, setIndex] = useState(-1);
-  const [sourceId, setSourceId] = useState<string | null>(null);
-  const [playing, setPlaying] = useState(false);
 
   const app = useMemo<AppContextValue | null>(() => {
     if (!session) return null;
@@ -63,30 +78,15 @@ export default function App() {
       logout: () => {
         clearSession();
         setSession(null);
-        setQueue([]);
-        setIndex(-1);
-        setSourceId(null);
       },
     };
   }, [session]);
 
-  const player = useMemo<PlayerContextValue>(
-    () => ({
-      queue,
-      index,
-      sourceId,
-      current: index >= 0 ? queue[index] : undefined,
-      playing,
-      setPlaying,
-      playSongs: (songs, start, source) => {
-        setQueue(songs);
-        setIndex(songs.length ? start : -1);
-        setSourceId(source);
-      },
-      setIndex,
-    }),
-    [queue, index, sourceId, playing],
-  );
+  const player = usePlaybackEngine(app?.client ?? null);
+  const { reset } = player;
+  // A new account (or a logout) never sees the previous one's queue.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => reset(), [session?.username, session?.baseUrl]);
 
   if (!app) {
     return (

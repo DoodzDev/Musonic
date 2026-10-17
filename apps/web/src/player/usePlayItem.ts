@@ -2,7 +2,7 @@
  * @file usePlayItem.ts
  * @description Starts playback of any home card: album, playlist, liked songs, artist, mix or song.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -32,23 +32,23 @@ export function usePlayItem(): (item: CardItem, list?: Song[]) => Promise<void> 
     switch (item.type) {
       case 'album': {
         const album = await cached(keys.album(item.album.id), TTL_LONG, () => client.getAlbum(item.album.id));
-        playSongs(album.song, 0, `album:${album.id}`);
+        playSongs(album.song, undefined, `album:${album.id}`);
         return;
       }
       case 'playlist': {
         const playlist = await cached(keys.playlist(item.playlist.id), TTL_SHORT, () => client.getPlaylist(item.playlist.id));
-        playSongs(playlist.entry, 0, `playlist:${playlist.id}`);
+        playSongs(playlist.entry, undefined, `playlist:${playlist.id}`);
         return;
       }
       case 'liked': {
         const starred = await cached(keys.starred, TTL_SHORT, () => client.getStarred());
-        playSongs(starred.song, 0, 'liked');
+        playSongs(starred.song, undefined, 'liked');
         return;
       }
       case 'artist': {
         const top = await cached(keys.topSongs(item.artist.name), TTL_LONG, () => client.getTopSongs(item.artist.name, 20)).catch(() => []);
         if (top.length) {
-          playSongs(top, 0, `artist:${item.artist.id}`);
+          playSongs(top, undefined, `artist:${item.artist.id}`);
           return;
         }
         // No popularity data on the server: play the artist's latest album.
@@ -56,11 +56,11 @@ export function usePlayItem(): (item: CardItem, list?: Song[]) => Promise<void> 
         const latest = artist.album.slice().sort((a, b) => (b.year ?? 0) - (a.year ?? 0))[0];
         if (!latest) return;
         const album = await cached(keys.album(latest.id), TTL_LONG, () => client.getAlbum(latest.id));
-        playSongs(album.song, 0, `artist:${item.artist.id}`);
+        playSongs(album.song, undefined, `artist:${item.artist.id}`);
         return;
       }
       case 'mix':
-        playSongs(item.songs, 0, item.id);
+        playSongs(item.songs, undefined, item.id);
         return;
       case 'song': {
         const songs = list ?? [item.song];

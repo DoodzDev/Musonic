@@ -6,6 +6,7 @@
  * @license CC-BY-NC-4.0
  */
 
+import { useState } from 'react';
 import type { Song } from '@musonic/core';
 import { Link } from 'react-router';
 import { fr } from '../i18n/fr.ts';
@@ -15,6 +16,8 @@ import { Cover } from './Cover.tsx';
 import { Equalizer } from './Equalizer.tsx';
 import { ClockIcon } from './Icons.tsx';
 import { PlayIcon } from './icons/PlayIcon.tsx';
+import { DotsHorizontalIcon } from './icons/DotsHorizontalIcon.tsx';
+import { TrackMenu, type TrackMenuTarget } from './TrackMenu.tsx';
 
 interface Props {
   songs: Song[];
@@ -25,11 +28,16 @@ interface Props {
   showCover?: boolean;
   /** Album pages number tracks with their track number. */
   numbering?: 'index' | 'track';
+  /** Set on a playlist page: the menu can remove a track from it. */
+  playlistId?: string;
 }
 
 const t = fr.table;
 
-export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover = true, numbering = 'index' }: Props) {
+export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover = true, numbering = 'index', playlistId }: Props) {
+  const [menu, setMenu] = useState<TrackMenuTarget | null>(null);
+  const openMenu = (song: Song, index: number, x: number, y: number) =>
+    setMenu({ song, x, y, playlistId, playlistIndex: playlistId ? index : undefined });
   const { playSongs, current, sourceId: playingSource, playing } = usePlayer();
   const playingId = playingSource === sourceId ? current?.id : undefined;
   const columns = showAlbum ? 'cols-4' : 'cols-3';
@@ -42,12 +50,21 @@ export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover
           <span role="columnheader">{t.title}</span>
           {showAlbum && <span role="columnheader" className="c-album">{t.album}</span>}
           <span role="columnheader" className="c-duration" aria-label={t.duration}><ClockIcon /></span>
+          <span role="columnheader" className="c-more" />
         </div>
         {songs.map((song, i) => {
           const isCurrent = song.id === playingId;
           const play = () => playSongs(songs, i, sourceId);
           return (
-            <div key={`${song.id}-${i}`} role="row" className={'track-row' + (isCurrent ? ' is-current' : '')} onDoubleClick={play}>
+            <div
+              key={`${song.id}-${i}`}
+              role="row"
+              className={'track-row' + (isCurrent ? ' is-current' : '') + (menu?.song === song ? ' is-menu' : '')}
+              onDoubleClick={play}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                openMenu(song, i, e.clientX, e.clientY);
+              }}>
               <span role="cell" className="c-index">
                 {isCurrent ? (
                   <span className="num"><Equalizer playing={playing} label={t.nowPlaying} /></span>
@@ -79,10 +96,24 @@ export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover
                 </span>
               )}
               <span role="cell" className="c-duration item-sub">{formatTime(song.duration)}</span>
+              <span role="cell" className="c-more">
+                <button
+                  type="button"
+                  className="icon-btn row-more"
+                  aria-label={fr.trackMenu.label(song.title)}
+                  title={fr.trackMenu.more}
+                  onClick={(e) => {
+                    const box = e.currentTarget.getBoundingClientRect();
+                    openMenu(song, i, box.right - 200, box.bottom + 4);
+                  }}>
+                  <DotsHorizontalIcon size={18} />
+                </button>
+              </span>
             </div>
           );
         })}
       </div>
+      {menu && <TrackMenu target={menu} onClose={() => setMenu(null)} />}
     </div>
   );
 }

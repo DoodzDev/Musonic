@@ -31,7 +31,7 @@ export function LikedPage() {
         eyebrow={fr.page.playlist}
         title={fr.page.likedSongs}
         meta={fr.page.meta([session.username, fr.page.titles(songs.length), formatTotal(total)])}
-        onPlay={() => playSongs(songs, 0, 'liked')}
+        onPlay={() => playSongs(songs, undefined, 'liked')}
         canPlay={songs.length > 0}
       />
       {songs.length ? <TrackTable songs={songs} sourceId="liked" label={fr.page.likedSongs} /> : <p className="muted">{fr.page.empty}</p>}

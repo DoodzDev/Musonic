@@ -106,6 +106,18 @@ export interface Starred {
   artist: Artist[];
 }
 
+export interface SearchResult {
+  song: Song[];
+  album: Album[];
+  artist: Artist[];
+}
+
+/** OpenSubsonic lyrics: synced lines carry their start in milliseconds. */
+export interface StructuredLyrics {
+  synced: boolean;
+  line: { start?: number; value: string }[];
+}
+
 export interface Genre {
   value: string;
   songCount?: number;

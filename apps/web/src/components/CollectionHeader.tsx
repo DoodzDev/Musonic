@@ -18,9 +18,11 @@ interface Props {
   meta: ReactNode;
   onPlay?: () => void;
   canPlay?: boolean;
+  /** Extra buttons after Play (rename, delete…). */
+  extra?: ReactNode;
 }
 
-export function CollectionHeader({ art, eyebrow, title, description, meta, onPlay, canPlay = true }: Props) {
+export function CollectionHeader({ art, eyebrow, title, description, meta, onPlay, canPlay = true, extra }: Props) {
   return (
     <>
       <header className="collection-header">
@@ -37,6 +39,7 @@ export function CollectionHeader({ art, eyebrow, title, description, meta, onPla
           <button type="button" className="btn-primary btn-play" onClick={onPlay} disabled={!canPlay}>
             <PlayIcon size={16} color="currentColor" /> {fr.page.play}
           </button>
+          {extra}
         </div>
       )}
     </>

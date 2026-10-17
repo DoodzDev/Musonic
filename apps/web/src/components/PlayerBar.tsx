@@ -1,8 +1,12 @@
 /**
  * @file PlayerBar.tsx
- * @description Bottom player bar driving the browser <audio> element.
+ * @description Bottom player bar driving the browser <audio> element: shuffle
+ *   (off / on / Magic) and repeat (none / all / one) like the mobile app,
+ *   progress and volume with a knob shown on hover and while dragging, the
+ *   volume in percent, and the queue and lyrics panels. Publishes the playback
+ *   position (lyrics) and obeys seek requests (a lyrics line clicked).
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
@@ -12,6 +16,8 @@ import { useApp } from '../context/AppContext.tsx';
 import { fr } from '../i18n/fr.ts';
 import { formatTime } from '../lib/format.ts';
 import { usePlayer } from '../player/PlayerContext.tsx';
+import { onSeekRequest, publishPosition } from '../player/position.ts';
+import { colors } from '../theme/tokens.ts';
 import { Cover } from './Cover.tsx';
 import { VolumeIcon } from './Icons.tsx';
 import { AlertIcon } from './icons/AlertIcon.tsx';
@@ -19,11 +25,13 @@ import { NextIcon } from './icons/NextIcon.tsx';
 import { PauseIcon } from './icons/PauseIcon.tsx';
 import { PlayIcon } from './icons/PlayIcon.tsx';
 import { PrevIcon } from './icons/PrevIcon.tsx';
+import { LyricsIcon } from './icons/LyricsIcon.tsx';
+import { QueueIcon } from './icons/QueueIcon.tsx';
+import { RepeatIcon } from './icons/RepeatIcon.tsx';
+import { ShuffleIcon } from './icons/ShuffleIcon.tsx';
 
 const t = fr.player;
 const VOLUME_KEY = 'musonic.volume';
-/** Same rule as the mobile app: after 3 s, Previous restarts the current track. */
-const RESTART_THRESHOLD = 3;
 
 function readVolume(): number {
   try {
@@ -38,20 +46,50 @@ function isTyping(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
 }
 
+/** Thin bar with a fill, a knob (hover / drag) and an invisible range input on top. */
+function Slider({ value, max, step, label, valueText, disabled, onChange, className }: {
+  value: number;
+  max: number;
+  step: number;
+  label: string;
+  valueText?: string;
+  disabled?: boolean;
+  onChange: (value: number) => void;
+  className?: string;
+}) {
+  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  return (
+    <div className={'track' + (className ? ` ${className}` : '') + (disabled ? ' is-disabled' : '')}>
+      <div className="track-bg"><div className="track-fill" style={{ width: `${pct}%` }} /></div>
+      <span className="track-knob" style={{ left: `${pct}%` }} aria-hidden="true" />
+      <input
+        type="range"
+        min={0}
+        max={max || 0}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        aria-label={label}
+        aria-valuetext={valueText}
+        disabled={disabled}
+      />
+    </div>
+  );
+}
+
 export function PlayerBar() {
   const { client } = useApp();
-  const { queue, index, setIndex: onIndexChange, playing, setPlaying } = usePlayer();
+  const player = usePlayer();
+  const { current: song, hasNext, playing, setPlaying, modes, panel } = player;
   const audioRef = useRef<HTMLAudioElement>(null);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(readVolume);
   const [muted, setMuted] = useState(false);
   const [failed, setFailed] = useState(false);
+  const entry = song?.entryId;
 
-  const song = index >= 0 ? queue[index] : undefined;
-  const hasNext = index + 1 < queue.length;
-
-  // Load and start the track whenever the selection changes.
+  // Load and start the track whenever the current queue entry changes.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !song) return;
@@ -60,7 +98,8 @@ export function PlayerBar() {
     setDuration(song.duration ?? 0);
     audio.src = client.streamUrl(song.id);
     audio.play().catch(() => setPlaying(false));
-  }, [client, song, setPlaying]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client, entry, setPlaying]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -74,6 +113,13 @@ export function PlayerBar() {
     }
   }, [volume, muted]);
 
+  function restart() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => setPlaying(false));
+  }
+
   function togglePlay() {
     const audio = audioRef.current;
     if (!audio || !song) return;
@@ -84,12 +130,7 @@ export function PlayerBar() {
   function previous() {
     const audio = audioRef.current;
     if (!audio) return;
-    if (audio.currentTime > RESTART_THRESHOLD || index <= 0) audio.currentTime = 0;
-    else onIndexChange(index - 1);
-  }
-
-  function next() {
-    if (hasNext) onIndexChange(index + 1);
+    if (player.previous(audio.currentTime)) restart();
   }
 
   function seek(value: number) {
@@ -97,7 +138,10 @@ export function PlayerBar() {
     if (!audio) return;
     audio.currentTime = value;
     setPosition(value);
+    publishPosition(value);
   }
+
+  useEffect(() => onSeekRequest(seek));
 
   // Space toggles playback, Ctrl+Arrows skip, unless the user is typing.
   useEffect(() => {
@@ -107,7 +151,7 @@ export function PlayerBar() {
         event.preventDefault();
         togglePlay();
       } else if (event.ctrlKey && event.key === 'ArrowRight') {
-        next();
+        if (hasNext) player.next();
       } else if (event.ctrlKey && event.key === 'ArrowLeft') {
         previous();
       }
@@ -116,7 +160,9 @@ export function PlayerBar() {
     return () => window.removeEventListener('keydown', onKey);
   });
 
-  const pct = duration > 0 ? (position / duration) * 100 : 0;
+  const shuffleLabel = t.shuffle[modes.shuffle];
+  const repeatLabel = t.repeat[modes.repeat];
+  const shownVolume = muted ? 0 : volume;
 
   return (
     <footer className="player-bar">
@@ -125,9 +171,14 @@ export function PlayerBar() {
         preload="auto"
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
-        onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)}
+        onTimeUpdate={(e) => {
+          setPosition(e.currentTarget.currentTime);
+          publishPosition(e.currentTarget.currentTime);
+        }}
         onDurationChange={(e) => Number.isFinite(e.currentTarget.duration) && setDuration(e.currentTarget.duration)}
-        onEnded={() => (hasNext ? onIndexChange(index + 1) : setPlaying(false))}
+        onEnded={() => {
+          if (player.trackEnded()) restart();
+        }}
         onError={() => song && setFailed(true)}
       />
       <div className="player-inner">
@@ -153,55 +204,74 @@ export function PlayerBar() {
 
         <div className="player-center">
           <div className="player-controls">
+            <button type="button" className="ctrl ctrl-mode" onClick={player.cycleShuffle} aria-label={shuffleLabel} title={shuffleLabel}>
+              <ShuffleIcon mode={modes.shuffle} size={20} />
+            </button>
             <button type="button" className="ctrl" onClick={previous} disabled={!song} aria-label={t.previous} title={`${t.previous} (Ctrl ←)`}>
               <PrevIcon size={24} />
             </button>
             <button type="button" className="ctrl ctrl-main" onClick={togglePlay} disabled={!song} aria-label={playing ? t.pause : t.play} title={`${playing ? t.pause : t.play} (Espace)`}>
               {playing ? <PauseIcon size={20} color="currentColor" /> : <PlayIcon size={20} color="currentColor" />}
             </button>
-            <button type="button" className="ctrl" onClick={next} disabled={!hasNext} aria-label={t.next} title={`${t.next} (Ctrl →)`}>
+            <button type="button" className="ctrl" onClick={player.next} disabled={!hasNext} aria-label={t.next} title={`${t.next} (Ctrl →)`}>
               <NextIcon size={24} />
+            </button>
+            <button type="button" className="ctrl ctrl-mode" onClick={player.cycleRepeat} aria-label={repeatLabel} title={repeatLabel}>
+              <RepeatIcon mode={modes.repeat} size={20} />
             </button>
           </div>
           <div className="progress">
             <span className="time time-left">{formatTime(position)}</span>
-            <div className="track">
-              <div className="track-bg"><div className="track-fill" style={{ width: `${pct}%` }} /></div>
-              <input
-                type="range"
-                min={0}
-                max={duration || 0}
-                step={0.1}
-                value={position}
-                onChange={(e) => seek(Number(e.target.value))}
-                aria-label={t.position}
-                aria-valuetext={`${formatTime(position)} / ${formatTime(duration)}`}
-                disabled={!song}
-              />
-            </div>
+            <Slider
+              value={position}
+              max={duration}
+              step={0.1}
+              label={t.position}
+              valueText={`${formatTime(position)} / ${formatTime(duration)}`}
+              disabled={!song}
+              onChange={seek}
+            />
             <span className="time">{formatTime(duration)}</span>
           </div>
         </div>
 
         <div className="player-side">
+          <button
+            type="button"
+            className={'icon-btn icon-mode' + (panel === 'lyrics' ? ' is-on' : '')}
+            onClick={() => player.togglePanel('lyrics')}
+            aria-label={t.lyrics}
+            aria-pressed={panel === 'lyrics'}
+            title={t.lyrics}>
+            <LyricsIcon size={20} color={panel === 'lyrics' ? colors.accent : 'currentColor'} />
+            {panel === 'lyrics' && <span className="icon-dot" />}
+          </button>
+          <button
+            type="button"
+            className={'icon-btn icon-mode' + (panel === 'queue' ? ' is-on' : '')}
+            onClick={() => player.togglePanel('queue')}
+            aria-label={t.queue}
+            aria-pressed={panel === 'queue'}
+            title={t.queue}>
+            <QueueIcon size={20} color={panel === 'queue' ? colors.accent : 'currentColor'} />
+            {panel === 'queue' && <span className="icon-dot" />}
+          </button>
           <button type="button" className="icon-btn" onClick={() => setMuted(!muted)} aria-label={muted ? t.unmute : t.mute}>
             <VolumeIcon muted={muted || volume === 0} />
           </button>
-          <div className="track track-volume">
-            <div className="track-bg"><div className="track-fill" style={{ width: `${muted ? 0 : volume * 100}%` }} /></div>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={muted ? 0 : volume}
-              onChange={(e) => {
-                setVolume(Number(e.target.value));
-                setMuted(false);
-              }}
-              aria-label={t.volume}
-            />
-          </div>
+          <Slider
+            className="track-volume"
+            value={shownVolume}
+            max={1}
+            step={0.01}
+            label={t.volume}
+            valueText={`${Math.round(shownVolume * 100)} %`}
+            onChange={(v) => {
+              setVolume(v);
+              setMuted(false);
+            }}
+          />
+          <span className="volume-pct" aria-hidden="true">{Math.round(shownVolume * 100)} %</span>
         </div>
       </div>
     </footer>

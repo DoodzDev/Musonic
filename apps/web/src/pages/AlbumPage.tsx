@@ -45,7 +45,7 @@ export function AlbumPage() {
             {fr.page.meta([album.year ? String(album.year) : undefined, fr.page.titles(album.song.length), formatTotal(total)])}
           </>
         }
-        onPlay={() => playSongs(album.song, 0, source)}
+        onPlay={() => playSongs(album.song, undefined, source)}
         canPlay={album.song.length > 0}
       />
       <TrackTable songs={album.song} sourceId={source} label={album.name} showAlbum={false} showCover={false} numbering="track" />

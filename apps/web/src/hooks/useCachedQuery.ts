@@ -1,8 +1,9 @@
 /**
  * @file useCachedQuery.ts
  * @description Loads data through the shared memory cache and tracks loading / error state.
+ *   Reloads when an edit signals `musonic:library-changed` (the edit invalidated its keys).
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -24,6 +25,13 @@ export function useCachedQuery<T>(key: string | null, ttlMs: number, load: () =>
   const [state, setState] = useState<{ key: string | null; value: QueryState<T> }>({ key, value: { status: 'loading' } });
   // Data already in the cache renders on the first pass, which lets the page restore its scroll position.
   const cached = fullKey === null ? undefined : cache.peek<T>(fullKey);
+  const [revision, setRevision] = useState(0);
+
+  useEffect(() => {
+    const bump = () => setRevision((r) => r + 1);
+    window.addEventListener('musonic:library-changed', bump);
+    return () => window.removeEventListener('musonic:library-changed', bump);
+  }, []);
 
   useEffect(() => {
     if (key === null) return;
@@ -37,7 +45,7 @@ export function useCachedQuery<T>(key: string | null, ttlMs: number, load: () =>
     };
     // `load` is recreated on every render; the key identifies the request.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, ttlMs, cache, session.username]);
+  }, [key, ttlMs, cache, session.username, revision]);
 
   if (state.key === key && state.value.status !== 'loading') return state.value;
   if (cached !== undefined) return { status: 'ready', data: cached };

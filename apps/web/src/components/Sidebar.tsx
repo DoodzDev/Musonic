@@ -1,8 +1,9 @@
 /**
  * @file Sidebar.tsx
- * @description Left navigation: brand, home, liked songs and the user's playlists.
+ * @description Left navigation: brand, profile menu, Home / Search / Library (icons filled
+ *   when active, like the mobile tab bar), liked songs and the user's playlists.
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
@@ -14,10 +15,12 @@ import { usePlayer } from '../player/PlayerContext.tsx';
 import { keys } from '../player/usePlayItem.ts';
 import { Cover } from './Cover.tsx';
 import { Equalizer } from './Equalizer.tsx';
-import { LogoutIcon } from './Icons.tsx';
 import { HomeIcon } from './icons/HomeIcon.tsx';
+import { LibraryIcon } from './icons/LibraryIcon.tsx';
+import { SearchIcon } from './icons/SearchIcon.tsx';
 import { LikedCover } from './LikedCover.tsx';
 import { LogoIcon } from './icons/LogoIcon.tsx';
+import { ProfileMenu } from './ProfileMenu.tsx';
 
 const t = fr.nav;
 
@@ -27,7 +30,7 @@ function Playing() {
 }
 
 export function Sidebar() {
-  const { client, session, logout } = useApp();
+  const { client } = useApp();
   const { sourceId } = usePlayer();
   const playlists = useCachedQuery(keys.playlists, TTL_SHORT, () => client.getPlaylists());
   const linkClass = ({ isActive }: { isActive: boolean }) => 'playlist-item' + (isActive ? ' is-selected' : '');
@@ -39,13 +42,29 @@ export function Sidebar() {
           <LogoIcon size={32} />
           <span className="brand-name">Musonic</span>
         </NavLink>
-        <span className="avatar" title={session.username} aria-label={session.username}>
-          {session.username.slice(0, 1).toUpperCase()}
-        </span>
+        <ProfileMenu />
       </div>
 
       <NavLink to="/" end className={({ isActive }) => 'nav-item' + (isActive ? ' is-active' : '')}>
-        <HomeIcon size={22} /> {t.home}
+        {({ isActive }) => (
+          <>
+            <HomeIcon size={22} filled={isActive} /> {t.home}
+          </>
+        )}
+      </NavLink>
+      <NavLink to="/search" className={({ isActive }) => 'nav-item' + (isActive ? ' is-active' : '')}>
+        {({ isActive }) => (
+          <>
+            <SearchIcon size={22} filled={isActive} /> {t.search}
+          </>
+        )}
+      </NavLink>
+      <NavLink to="/library" className={({ isActive }) => 'nav-item' + (isActive ? ' is-active' : '')}>
+        {({ isActive }) => (
+          <>
+            <LibraryIcon size={22} filled={isActive} /> {t.library}
+          </>
+        )}
       </NavLink>
 
       <div className="separator" />
@@ -78,10 +97,6 @@ export function Sidebar() {
             );
           })}
       </ul>
-
-      <button type="button" className="logout" onClick={logout}>
-        <LogoutIcon /> {t.logout}
-      </button>
     </nav>
   );
 }

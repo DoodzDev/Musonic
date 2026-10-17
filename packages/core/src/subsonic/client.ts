@@ -2,13 +2,14 @@
  * @file client.ts
  * @description Minimal Subsonic API client (JSON format, token authentication).
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
 import type {
   Album,
   AlbumListType,
+  Artist,
   AlbumWithSongs,
   ArtistInfo,
   ArtistWithAlbums,
@@ -16,7 +17,9 @@ import type {
   Playlist,
   PlaylistWithSongs,
   Song,
+  SearchResult,
   Starred,
+  StructuredLyrics,
   SubsonicErrorPayload,
   SubsonicSession,
 } from './types.ts';
@@ -52,7 +55,8 @@ export class SubsonicError extends Error {
   }
 }
 
-type Params = Record<string, string | number | undefined>;
+/** A list value is sent as a repeated parameter (`songIdToAdd=1&songIdToAdd=2`). */
+type Params = Record<string, string | number | boolean | undefined | readonly (string | number)[]>;
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
 export class SubsonicClient {
@@ -75,7 +79,8 @@ export class SubsonicClient {
       f: 'json',
     });
     for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined) query.set(key, String(value));
+      if (Array.isArray(value)) for (const item of value) query.append(key, String(item));
+      else if (value !== undefined) query.set(key, String(value));
     }
     return `${this.session.baseUrl}/rest/${endpoint}.view?${query.toString()}`;
   }
@@ -166,6 +171,87 @@ export class SubsonicClient {
   async getGenres(signal?: AbortSignal): Promise<Genre[]> {
     const res = await this.request<{ genres?: { genre?: Genre[] } }>('getGenres', {}, signal);
     return res.genres?.genre ?? [];
+  }
+
+  /** `offsets` page through the results (an empty query lists the whole library on most servers). */
+  async search(
+    query: string,
+    counts: { songs?: number; albums?: number; artists?: number } = {},
+    signal?: AbortSignal,
+    offsets: { songs?: number; albums?: number; artists?: number } = {},
+  ): Promise<SearchResult> {
+    const res = await this.request<{ searchResult3?: Partial<SearchResult> }>(
+      'search3',
+      {
+        query,
+        songCount: counts.songs ?? 20,
+        albumCount: counts.albums ?? 20,
+        artistCount: counts.artists ?? 20,
+        songOffset: offsets.songs,
+        albumOffset: offsets.albums,
+        artistOffset: offsets.artists,
+      },
+      signal,
+    );
+    const r = res.searchResult3 ?? {};
+    return { song: r.song ?? [], album: r.album ?? [], artist: r.artist ?? [] };
+  }
+
+  async getSongsByGenre(genre: string, count = 200, offset = 0, signal?: AbortSignal): Promise<Song[]> {
+    const res = await this.request<{ songsByGenre?: { song?: Song[] } }>('getSongsByGenre', { genre, count, offset }, signal);
+    return res.songsByGenre?.song ?? [];
+  }
+
+  async getArtists(signal?: AbortSignal): Promise<Artist[]> {
+    const res = await this.request<{ artists?: { index?: { artist?: Artist[] }[] } }>('getArtists', {}, signal);
+    return (res.artists?.index ?? []).flatMap((i) => i.artist ?? []);
+  }
+
+  async createPlaylist(name: string, songIds: readonly string[] = [], signal?: AbortSignal): Promise<PlaylistWithSongs> {
+    const res = await this.request<{ playlist?: PlaylistWithSongs }>('createPlaylist', { name, songId: songIds }, signal);
+    if (!res.playlist) throw new SubsonicError('Playlist not returned');
+    return { ...res.playlist, entry: res.playlist.entry ?? [] };
+  }
+
+  /** Renames, edits the comment, adds songs at the end and removes songs by position. */
+  async updatePlaylist(
+    id: string,
+    changes: { name?: string; comment?: string; add?: readonly string[]; removeIndexes?: readonly number[] },
+    signal?: AbortSignal,
+  ): Promise<void> {
+    await this.request(
+      'updatePlaylist',
+      { playlistId: id, name: changes.name, comment: changes.comment, songIdToAdd: changes.add, songIndexToRemove: changes.removeIndexes },
+      signal,
+    );
+  }
+
+  async deletePlaylist(id: string, signal?: AbortSignal): Promise<void> {
+    await this.request('deletePlaylist', { id }, signal);
+  }
+
+  async star(ids: { songs?: readonly string[]; albums?: readonly string[]; artists?: readonly string[] }, signal?: AbortSignal): Promise<void> {
+    await this.request('star', { id: ids.songs, albumId: ids.albums, artistId: ids.artists }, signal);
+  }
+
+  async unstar(ids: { songs?: readonly string[]; albums?: readonly string[]; artists?: readonly string[] }, signal?: AbortSignal): Promise<void> {
+    await this.request('unstar', { id: ids.songs, albumId: ids.albums, artistId: ids.artists }, signal);
+  }
+
+  /** Synced lyrics when the server has them (OpenSubsonic), else the plain text. */
+  async getLyrics(song: { id: string; artist?: string; title: string }, signal?: AbortSignal): Promise<StructuredLyrics | null> {
+    try {
+      const res = await this.request<{ lyricsList?: { structuredLyrics?: StructuredLyrics[] } }>('getLyricsBySongId', { id: song.id }, signal);
+      const list = res.lyricsList?.structuredLyrics ?? [];
+      const best = list.find((l) => l.synced) ?? list[0];
+      if (best && best.line.length) return best;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') throw error;
+      // Not an OpenSubsonic server: fall back to the classic endpoint.
+    }
+    const res = await this.request<{ lyrics?: { value?: string } }>('getLyrics', { artist: song.artist, title: song.title }, signal);
+    const text = res.lyrics?.value?.trim();
+    return text ? { synced: false, line: text.split(/\r?\n/).map((value) => ({ value })) } : null;
   }
 
   /** Audio URL for an `<audio>` element. Contains the token: keep it in memory only. */
