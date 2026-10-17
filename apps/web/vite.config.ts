@@ -1,8 +1,10 @@
 /**
  * @file vite.config.ts
  * @description Vite configuration for the Musonic web client, with a development relay.
+ *   `MUSONIC_WEB_BASE` sets the path the client is served under (default `/`;
+ *   `/Musonic/app/` for the GitHub Pages build).
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -60,5 +62,6 @@ function subsonicRelay(): Plugin {
 }
 
 export default defineConfig({
+  base: process.env.MUSONIC_WEB_BASE || '/',
   plugins: [react(), subsonicRelay()],
 })

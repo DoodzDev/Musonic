@@ -1,0 +1,73 @@
+name: Website & Web Client
+
+# Publishes the GitHub Pages site: the project website (docs/) at the root and
+# the web client under /app/ (https://doodzprog.github.io/Musonic/app/).
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'apps/web/**'
+      - 'packages/core/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build site and web client
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web client
+        run: npm run build --workspace apps/web
+        env:
+          MUSONIC_WEB_BASE: /Musonic/app/
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site/app
+          cp -r docs/. _site/
+          cp -r apps/web/dist/. _site/app/
+          # GitHub Pages has a single 404 page: serve the web client there so
+          # reloading a deep link (/Musonic/app/album/…) still opens the app.
+          cp _site/app/index.html _site/404.html
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
