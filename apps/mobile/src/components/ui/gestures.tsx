@@ -4,12 +4,14 @@
  *   curve and one haptic rule for every swipe in the app (ADR-010 B4: the old
  *   gestures were rebuilt from scratch).
  *   - `SwipeSurface`: up / left / right swipes on a surface (mini player).
+ *     Without `onSwipeUp` it only claims horizontal moves, so a vertical
+ *     gesture around it (full player's drag-to-close) keeps working.
  *   - `SwipeableRow`: swipe a row left or right past a threshold to run one
  *     action (Spotify-style "swipe to add to queue"); the action shows behind
  *     the row only as far as it has moved.
  *   The Sheet's swipe-to-close uses the same thresholds.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -76,8 +78,10 @@ export function SwipeSurface({onSwipeUp, onSwipeLeft, onSwipeRight, onPress, sty
     else onSwipeRight?.();
   };
 
-  const pan = Gesture.Pan()
-    .minDistance(SWIPE.activation)
+  const base = Gesture.Pan();
+  const pan = (onSwipeUp
+    ? base.minDistance(SWIPE.activation)
+    : base.activeOffsetX([-SWIPE.activation, SWIPE.activation]).failOffsetY([-SWIPE.activation, SWIPE.activation]))
     .onUpdate(e => {
       const horizontal = Math.abs(e.translationX) > Math.abs(e.translationY);
       x.value = horizontal ? rubberBand(e.translationX, SWIPE.distance) : 0;

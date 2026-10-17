@@ -2,7 +2,8 @@
  * @file FullScreenPlayer.tsx
  * @description Full-screen music player (Design v2, R4.1 to R4.3). A sheet that
  *   rises from the bottom and closes by dragging it down from its handle,
- *   header or cover. Background made of the cover itself, extremely blurred
+ *   header or cover; swiping the cover left / right skips to the next / previous
+ *   track (same gesture as the mini player). Background made of the cover itself, extremely blurred
  *   and slightly darkened (colours keep their place), cover that
  *   shrinks on pause, title and artist with + and ♥, downloaded indicator,
  *   thin progress bar with the real audio quality, large transport glyphs
@@ -16,7 +17,7 @@
  *   The heavy player body only mounts while the player is open; a light shell
  *   stays mounted to preload adjacent cover art.
  * @author DoodzProg
- * @version 2.3.0
+ * @version 2.4.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -48,7 +49,7 @@ import TrackPlayer, {useActiveTrack, usePlaybackState, useProgress, State} from 
 import FastImage from '@d11/react-native-fast-image';
 import {usePlayerStore} from '../store/playerStore';
 import {usePlaylistCacheStore} from '../store/playlistCacheStore';
-import {seekTo, skipNext, skipPrev} from '../services/playerActions';
+import {seekTo, skipNext, skipPrev, skipPrevForce} from '../services/playerActions';
 import {useDownloadStore} from '../store/downloadStore';
 import {useNavigation} from '@react-navigation/native';
 import TextTicker from 'react-native-text-ticker';
@@ -66,7 +67,7 @@ import {useTrackQuality} from '../hooks/useTrackQuality';
 import {Gesture, GestureDetector, GestureHandlerRootView} from 'react-native-gesture-handler';
 import {ToastHost} from './ui/Toast';
 import PressableScale from './ui/PressableScale';
-import {DISMISS, SWIPE} from './ui/gestures';
+import {DISMISS, SWIPE, SwipeSurface} from './ui/gestures';
 import PlayerBackground, {type Point} from './player/PlayerBackground';
 import PlayerProgress from './player/PlayerProgress';
 import PlayerControls from './player/PlayerControls';
@@ -476,11 +477,14 @@ function FullScreenPlayerContent() {
     </View>
   );
 
+  // Swipe the cover left / right for the next / previous track, like the mini player.
   const coverNode = (
     <View ref={coverRef} onLayout={measureCover} style={{width: COVER_SIZE, height: COVER_SIZE}}>
-      <Animated.View style={[styles.coverWrapper, {transform: [{scale: coverScale}]}]}>
-        <CoverArt id={currentTrack.coverArt} size={COVER_SIZE} borderRadius={radii.tile} />
-      </Animated.View>
+      <SwipeSurface onSwipeLeft={skipNext} onSwipeRight={skipPrevForce}>
+        <Animated.View style={[styles.coverWrapper, {transform: [{scale: coverScale}]}]}>
+          <CoverArt id={currentTrack.coverArt} size={COVER_SIZE} borderRadius={radii.tile} />
+        </Animated.View>
+      </SwipeSurface>
     </View>
   );
 
