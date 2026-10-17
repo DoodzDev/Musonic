@@ -3,10 +3,13 @@
  * @description Unit tests of the Android Auto browse tree (ADR-015): node and
  *   track ids round-trip, and anything else is ignored.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {
+  albumItems,
+  albumNodeId,
+  artistItems,
   parseNode,
   parseTrackRef,
   playlistItems,
@@ -23,10 +26,18 @@ describe('parseNode', () => {
     expect(parseNode(playlistNodeId('42'))).toEqual({kind: 'playlist', id: '42'});
   });
 
+  it('reads albums, artists and downloads', () => {
+    expect(parseNode('albums')).toEqual({kind: 'albums'});
+    expect(parseNode('artists')).toEqual({kind: 'artists'});
+    expect(parseNode('downloads')).toEqual({kind: 'downloads'});
+    expect(parseNode(albumNodeId('3'))).toEqual({kind: 'album', id: '3'});
+    expect(parseNode('artist:ar-9')).toEqual({kind: 'artist', id: 'ar-9'});
+  });
+
   it('rejects empty ids, track ids and unknown nodes', () => {
     expect(parseNode('playlist:')).toEqual({kind: 'unknown'});
     expect(parseNode('playlist:42|7')).toEqual({kind: 'unknown'});
-    expect(parseNode('album:3')).toEqual({kind: 'unknown'});
+    expect(parseNode('genre:rock')).toEqual({kind: 'unknown'});
   });
 });
 
@@ -41,11 +52,16 @@ describe('parseTrackRef', () => {
     expect(parseTrackRef('playlist:a:b|ext-9')).toEqual({list: {kind: 'playlist', id: 'a:b'}, trackId: 'ext-9'});
   });
 
+  it('reads tracks of an album and of the downloads', () => {
+    expect(parseTrackRef('album:3|7')).toEqual({list: {kind: 'album', id: '3'}, trackId: '7'});
+    expect(parseTrackRef('downloads|7')).toEqual({list: {kind: 'downloads'}, trackId: '7'});
+  });
+
   it('returns null for anything that is not a track', () => {
     expect(parseTrackRef('playlist:42')).toBeNull();
     expect(parseTrackRef('playlist:42|')).toBeNull();
     expect(parseTrackRef('|7')).toBeNull();
-    expect(parseTrackRef('album:3|7')).toBeNull();
+    expect(parseTrackRef('artist:3|7')).toBeNull();
   });
 });
 
@@ -66,6 +82,16 @@ describe('items', () => {
   it('builds playable tracks that point back to their list', () => {
     const items = trackItems('playlist:1', [{id: '7', title: 'A', artist: 'X'}], () => false, () => undefined);
     expect(items).toEqual([{id: 'playlist:1|7', title: 'A', subtitle: 'X', downloaded: false}]);
+  });
+
+  it('builds albums and artists that open their content', () => {
+    const artOf = (cover?: string) => (cover ? {key: cover, uri: `file:///c/${cover}.jpg`} : undefined);
+    expect(albumItems([{id: '3', name: 'A', artist: 'X'}], artOf)).toEqual([
+      {id: 'album:3', title: 'A', subtitle: 'X', browsable: true, art: {key: '3', uri: 'file:///c/3.jpg'}},
+    ]);
+    expect(artistItems([{id: 'ar-9', name: 'X', coverArt: 'ar-9'}], artOf)).toEqual([
+      {id: 'artist:ar-9', title: 'X', browsable: true, grid: true, art: {key: 'ar-9', uri: 'file:///c/ar-9.jpg'}},
+    ]);
   });
 
   it('adds the cover, falling back to the track id like the app', () => {

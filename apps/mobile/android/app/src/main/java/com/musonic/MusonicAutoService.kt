@@ -1,6 +1,8 @@
 package com.musonic
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.session.MediaSessionCompat
 import androidx.media.MediaBrowserServiceCompat
@@ -23,7 +25,18 @@ class MusonicAutoService : MediaBrowserServiceCompat() {
     super.onCreate()
     // The player may not exist yet: the car's connection waits until the token is set.
     val token = MediaSessionTokenHolder.token
-    if (token != null) sessionToken = token else MediaSessionTokenHolder.addListener(onToken)
+    if (token != null) {
+      sessionToken = token
+      return
+    }
+    MediaSessionTokenHolder.addListener(onToken)
+    // Musonic is closed: start the player without a screen.
+    MediaSessionTokenHolder.startedByCar = true
+    try {
+      startService(Intent(this, MusonicAutoStartService::class.java))
+    } catch (error: IllegalStateException) {
+      Log.w(TAG, "Player start not allowed now", error)
+    }
   }
 
   override fun onDestroy() {
@@ -45,6 +58,7 @@ class MusonicAutoService : MediaBrowserServiceCompat() {
 
   private companion object {
     const val ROOT_ID = "root"
+    const val TAG = "MusonicAuto"
     val ALLOWED_CLIENTS = setOf(
         "com.google.android.projection.gearhead", // Android Auto
         "com.android.systemui", // media controls (resume)

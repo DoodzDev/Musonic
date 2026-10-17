@@ -36,6 +36,9 @@
             <action android:name="android.media.browse.MediaBrowserService" />
         </intent-filter>
       </service>
+      <service
+        android:name=".MusonicAutoStartService"
+        android:exported="false" />
       <provider
         android:name=".MusonicArtworkProvider"
         android:authorities="${applicationId}.artwork"

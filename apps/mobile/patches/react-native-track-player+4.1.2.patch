@@ -1,8 +1,40 @@
 diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt
-index b2409a0..913cf2c 100644
+index b2409a0..5d6da3d 100644
 --- a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt
 +++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt
-@@ -251,7 +251,8 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -12,6 +12,7 @@ import com.doublesymmetry.trackplayer.extensions.NumberExt.Companion.toMilliseco
+ import com.doublesymmetry.trackplayer.model.State
+ import com.doublesymmetry.trackplayer.model.Track
+ import com.doublesymmetry.trackplayer.module.MusicEvents.Companion.EVENT_INTENT
++import com.doublesymmetry.trackplayer.service.MediaSessionTokenHolder
+ import com.doublesymmetry.trackplayer.service.MusicService
+ import com.doublesymmetry.trackplayer.utils.AppForegroundTracker
+ import com.doublesymmetry.trackplayer.utils.RejectionException
+@@ -169,8 +170,11 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+             return
+         }
+ 
++        // Musonic: Android Auto may start the player while no screen is shown (ADR-015).
++        val startedByCar = MediaSessionTokenHolder.startedByCar
++
+         // prevent crash Fatal Exception: android.app.RemoteServiceException$ForegroundServiceDidNotStartInTimeException
+-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && AppForegroundTracker.backgrounded) {
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && AppForegroundTracker.backgrounded && !startedByCar) {
+             promise.reject(
+                 "android_cannot_setup_player_in_background",
+                 "On Android the app must be in the foreground when setting up the player."
+@@ -235,7 +239,9 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+         )
+ 
+         Intent(context, MusicService::class.java).also { intent ->
+-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
++            // Musonic: from the car, a plain start (a foreground start is refused in the background);
++            // playback started from the car then lets the player go foreground.
++            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !startedByCar) {
+                 context.startForegroundService(intent)
+             } else {
+                 context.startService(intent)
+@@ -251,7 +257,8 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
      }
  
      @ReactMethod
@@ -12,7 +44,7 @@ index b2409a0..913cf2c 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          val options = Arguments.toBundle(data)
-@@ -261,10 +262,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -261,10 +268,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          }
  
          callback.resolve(null)
@@ -26,7 +58,7 @@ index b2409a0..913cf2c 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          try {
-@@ -282,10 +285,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -282,10 +291,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          } catch (exception: Exception) {
              rejectWithException(callback, exception)
          }
@@ -40,7 +72,7 @@ index b2409a0..913cf2c 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
          if (data == null) {
              callback.resolve(null)
-@@ -298,17 +303,21 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -298,17 +309,21 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          } else {
              callback.reject("invalid_track_object", "Track was not a dictionary type")
          }
@@ -64,7 +96,7 @@ index b2409a0..913cf2c 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
          val inputIndexes = Arguments.toList(data)
          if (inputIndexes != null) {
-@@ -328,10 +337,11 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -328,10 +343,11 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
              musicService.remove(indexes)
          }
          callback.resolve(null)
@@ -77,7 +109,7 @@ index b2409a0..913cf2c 100644
          scope.launch {
              if (verifyServiceBoundOrReject(callback)) return@launch
  
-@@ -346,9 +356,11 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -346,9 +362,11 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
                  callback.resolve(null)
              }
          }
@@ -90,7 +122,7 @@ index b2409a0..913cf2c 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          if (musicService.tracks.isEmpty())
-@@ -361,10 +373,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -361,10 +379,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          }
  
          callback.resolve(null)
@@ -104,7 +136,7 @@ index b2409a0..913cf2c 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          if (musicService.tracks.isEmpty())
-@@ -372,18 +386,22 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -372,18 +392,22 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
  
          musicService.clearNotificationMetadata()
          callback.resolve(null)
@@ -129,7 +161,7 @@ index b2409a0..913cf2c 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          musicService.skip(index)
-@@ -393,10 +411,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -393,10 +417,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          }
  
          callback.resolve(null)
@@ -143,7 +175,7 @@ index b2409a0..913cf2c 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          musicService.skipToNext()
-@@ -406,10 +426,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -406,10 +432,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          }
  
          callback.resolve(null)
@@ -157,7 +189,7 @@ index b2409a0..913cf2c 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          musicService.skipToPrevious()
-@@ -419,10 +441,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -419,10 +447,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          }
  
          callback.resolve(null)
@@ -171,7 +203,7 @@ index b2409a0..913cf2c 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          musicService.stop()
-@@ -430,136 +454,170 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -430,136 +460,170 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          musicService.clear()
  
          callback.resolve(null)
@@ -360,7 +392,7 @@ index b2409a0..913cf2c 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          try {
-@@ -569,61 +627,76 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -569,61 +633,76 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          } catch (exception: Exception) {
              rejectWithException(callback, exception)
          }
@@ -447,10 +479,10 @@ index b2409a0..913cf2c 100644
  }
 diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MediaSessionTokenHolder.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MediaSessionTokenHolder.kt
 new file mode 100644
-index 0000000..983bc0d
+index 0000000..e1ab748
 --- /dev/null
 +++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MediaSessionTokenHolder.kt
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,45 @@
 +package com.doublesymmetry.trackplayer.service
 +
 +import android.support.v4.media.session.MediaSessionCompat
@@ -468,6 +500,13 @@ index 0000000..983bc0d
 +
 +    var token: MediaSessionCompat.Token? = null
 +        private set
++
++    /**
++     * Set by the app when Android Auto wakes Musonic while it is closed: the player may then
++     * be set up without a screen (read from the React Native module thread).
++     */
++    @Volatile
++    var startedByCar = false
 +
 +    fun publishFrom(player: BaseAudioPlayer) {
 +        val field = BaseAudioPlayer::class.java.getDeclaredField("mediaSession")
