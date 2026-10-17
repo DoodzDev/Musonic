@@ -269,7 +269,7 @@ cd apps/mobile/android
 - **Design system** in `components/ui`: tokens, `Text`, `Button`, `ListGroup`, `Sheet`, `TrackRow`, glass surfaces, skeleton loaders. Animations run on the UI thread with Reanimated; nothing animates in a loop while idle.
 - **Shared core** (`packages/core`): the Subsonic client with token authentication, the home feed engine and the release tag reader, used by the mobile app and the web client.
 - **Offline**: MMKV persistence for settings, library, playlists and downloads; a connectivity monitor switches to offline mode after repeated failures and back when the server answers.
-- **Credentials**: stream and cover URLs carry the credentials, so they are built in memory only, never stored or logged.
+- **Credentials**: stream and cover URLs carry the credentials, so they are built in memory only, never stored or logged. The player and Android Auto only get `content://` cover addresses served by the app itself.
 
 ---
 
@@ -278,7 +278,7 @@ cd apps/mobile/android
 | Topic | Status |
 |---|---|
 | iOS | Unsigned IPA only (AltStore, Sideloadly); tested far less than Android. |
-| Android Auto | Not supported yet. |
+| Android Auto | Beta since 2.0.1: playlists, playback and Shuffle / Repeat / Like buttons. Musonic is not on the Play Store, so turn on *Unknown sources* in Android Auto's developer settings. |
 | Memory | Image caches can grow to about 900 MB on long sessions with large libraries; being worked on. |
 | Web client | Early stage, not released yet. |
 | Online catalogue | Needs OctoFiesta in front of Navidrome. |

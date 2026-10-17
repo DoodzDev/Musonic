@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-10-17
+
+**Android Auto (beta) and a security fix.** Musonic now shows up in Android Auto, the server credentials no longer reach other apps, and two small player touches.
+
+### Security
+- **Credentials no longer reach other apps** — the cover of the playing track was published to the system media session (notification, lock screen) as a server address carrying the account username and password. Apps allowed to read the playing media (notification access, smartwatch companions, Android Auto) could read it. The player now only gets an address internal to Musonic, which reads the cover itself. Changing your Navidrome password after updating is advised.
+
+### Added
+- **Android Auto (beta)** — Musonic appears in Android Auto. Browse Library → Playlists with their covers and start a playlist from any track; play / pause, previous / next and seeking work, and the playback screen gets Shuffle (off, on, Magic), Repeat and Like buttons, kept in sync with the phone. Downloaded playlists and tracks show the downloaded badge. Buttons pressed in the car do not vibrate the phone. Not there yet: albums, artists, downloads and Home in the car, voice search, and starting Musonic from the car while it is fully closed. Musonic is not on the Play Store, so Android Auto hides it until **Unknown sources** is turned on in Android Auto's developer settings.
+- **Swipe the full player's cover** — left for the next track, right for the previous one, like the mini player. Dragging the player down to close it still works.
+
+### Fixed
+- **Mini player tint** — on very colourful covers, the blurred cover behind the mini player stopped in a hard vertical line next to the play button; it now fades out smoothly.
+
 ## [2.0.0] - 2026-10-16
 
 **Musonic 2.0 — the new design.** Every screen has been rebuilt on one calm, consistent design: a floating Dock, large titles, grouped lists, softly raised covers and an orange accent kept for what matters. Playback runs on a new engine, Settings gain a Basic and an Advanced mode, and every screen works in landscape.
