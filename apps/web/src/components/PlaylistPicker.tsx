@@ -3,14 +3,15 @@
  * @description "Add to a playlist" box: the user's playlists with their cover
  *   and number of tracks; a green check marks the ones already holding the
  *   track. A click adds it, or removes it from a checked playlist. "New
- *   playlist" creates one with the track. Escape or a click outside closes.
+ *   playlist" creates one with the track. An online track is imported into
+ *   the library first. Escape or a click outside closes.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
 import { useEffect, useState } from 'react';
-import type { Song } from '@musonic/core';
+import { isExternalId, type Song } from '@musonic/core';
 import { useApp } from '../context/AppContext.tsx';
 import { TTL_SHORT, useCachedQuery } from '../hooks/useCachedQuery.ts';
 import { tr } from '../i18n/index.ts';
@@ -46,7 +47,7 @@ export function PlaylistPicker({ song, onClose }: { song: Song; onClose: () => v
 
   async function toggle(id: string, name: string, holds: boolean) {
     setBusy(id);
-    const result = holds ? await actions.removeSong(id, song.id) : await actions.addSongs(id, [song.id]);
+    const result = holds ? await actions.removeSong(id, song.id) : await actions.addSong(id, song);
     setBusy(null);
     if (result === null) toast(tr.library.failed);
     else toast(holds ? t.removedFrom(name) : t.addedTo(name));
@@ -61,9 +62,12 @@ export function PlaylistPicker({ song, onClose }: { song: Song; onClose: () => v
         confirm={tr.common.create}
         onClose={() => setNaming(false)}
         onConfirm={async (name) => {
-          const created = await actions.create(name, [song.id]);
-          toast(created ? t.addedTo(name) : tr.library.failed);
           onClose();
+          // An online track is added once imported, to the new (empty) playlist.
+          const online = isExternalId(song.id);
+          const created = await actions.create(name, online ? [] : [song.id]);
+          const added = created && (!online || (await actions.addSong(created.id, song)) !== null);
+          toast(added ? t.addedTo(name) : tr.library.failed);
         }}
       />
     );

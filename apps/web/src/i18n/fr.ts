@@ -108,6 +108,8 @@ export const fr = {
     liked: 'Ajouté aux titres likés',
     unliked: 'Retiré des titres likés',
     removed: 'Retiré de la playlist',
+    importing: 'Ajout du titre à votre bibliothèque…',
+    importSlow: 'Encore quelques secondes, le titre se télécharge…',
   },
   playlist: {
     confirmDelete: (name: string) => `Supprimer la playlist « ${name} » ? Cette action est définitive.`,

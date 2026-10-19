@@ -108,6 +108,8 @@ export const en: typeof fr = {
     liked: 'Added to liked songs',
     unliked: 'Removed from liked songs',
     removed: 'Removed from the playlist',
+    importing: 'Adding the song to your library…',
+    importSlow: 'A few more seconds, the song is downloading…',
   },
   playlist: {
     confirmDelete: (name: string) => `Delete the playlist “${name}”? This cannot be undone.`,

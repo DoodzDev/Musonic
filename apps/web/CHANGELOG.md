@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Liking an online track, or adding it to a playlist, now works: the track is first imported into your library (a message tells you while it downloads), then liked or added under its library id. Before, the server could not find it and nothing happened.
+
 ## [1.0.0] - 2026-10-19
 
 The first complete release of Musonic in the browser, made for desktop. Use it online at https://doodzprog.github.io/Musonic/app/ or host it yourself with `Musonic-Web.zip`.
