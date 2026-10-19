@@ -1,27 +1,29 @@
 /**
  * @file SearchPage.tsx
  * @description Search in the library. Empty field: proposals (Magic Mixes of the
- *   Home, browse by genre). While typing: All / Tracks / Albums / Artists; each
- *   list loads its next page by itself at the bottom, so a broad query
+ *   Home; Browse tiles: recent, most played, random, decades; the genres are
+ *   in the library: the search is for discovering). While
+ *   typing: All / Tracks / Albums / Artists; each list loads its next page by itself at the bottom, so a broad query
  *   ("michael") goes as far as the server has results. A track found plays
  *   alone, then autoplay follows (same rule as the mobile app, A8).
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { loadHome, type Album, type Artist, type CardItem, type SearchResult, type Song } from '@musonic/core';
+import { type Album, type Artist, type CardItem, type SearchResult, type Song } from '@musonic/core';
 import { Shelf } from '../components/Shelf.tsx';
+import { BROWSE_KINDS, browseKind } from '../lib/browse.ts';
 import { TrackTable } from '../components/TrackTable.tsx';
 import { SearchIcon } from '../components/icons/SearchIcon.tsx';
 import { useApp } from '../context/AppContext.tsx';
-import { TTL_LONG, TTL_SHORT, useCachedQuery } from '../hooks/useCachedQuery.ts';
-import { fr } from '../i18n/fr.ts';
-import { keys } from '../player/usePlayItem.ts';
+import { TTL_SHORT, useCachedQuery } from '../hooks/useCachedQuery.ts';
+import { useHomeFeed } from '../hooks/useHomeFeed.ts';
+import { tr } from '../i18n/index.ts';
 
-const t = fr.search;
+const t = tr.search;
 type Filter = 'all' | 'songs' | 'albums' | 'artists';
 const FILTERS: Filter[] = ['all', 'songs', 'albums', 'artists'];
 const DEBOUNCE_MS = 250;
@@ -44,29 +46,23 @@ function LoadMore({ onVisible }: { onVisible: () => void }) {
 }
 
 function Proposals() {
-  const { client, session } = useApp();
-  const [today] = useState(() => new Date());
-  const feed = useCachedQuery(keys.home(today.toDateString()), TTL_LONG, () => loadHome(client, { username: session.username, now: today }));
-  const genres = useCachedQuery('genres', TTL_LONG, () => client.getGenres());
+  const feed = useHomeFeed();
   const mixes: CardItem[] = feed.status === 'ready' ? feed.data.shelves.filter((s) => s.kind === 'mixes').flatMap((s) => s.items) : [];
-  const topGenres = genres.status === 'ready' ? genres.data.slice().sort((a, b) => (b.songCount ?? 0) - (a.songCount ?? 0)).slice(0, 24) : [];
 
   return (
     <>
       {mixes.length > 0 && <Shelf title={t.mixes} subtitle={t.mixesHint} items={mixes} />}
-      {topGenres.length > 0 && (
-        <section className="shelf">
-          <header className="shelf-head"><h2>{t.browse}</h2></header>
-          <div className="genre-grid">
-            {topGenres.map((g) => (
-              <Link key={g.value} to={`/genre/${encodeURIComponent(g.value)}`} className="genre-tile">
-                <span className="genre-name">{g.value}</span>
-                <span className="genre-count">{fr.page.titles(g.songCount ?? 0)}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      <section className="shelf">
+        <header className="shelf-head"><h2>{t.browse}</h2></header>
+        <div className="genre-grid">
+          {BROWSE_KINDS.map((kind) => (
+            <Link key={kind} to={`/browse/${kind}`} className="genre-tile">
+              <span className="genre-name">{browseKind(kind)?.title}</span>
+              <span className="genre-count">{tr.browse.hint[kind] ?? tr.browse.decadeHint}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
     </>
   );
 }
@@ -126,7 +122,10 @@ export function SearchPage() {
 
   return (
     <div className="page">
-      <h1 className="page-title">{t.title}</h1>
+      <div className="page-heading">
+        <h1 className="page-title">{t.title}</h1>
+        <p className="page-subtitle">{t.discover}</p>
+      </div>
       <label className="search-field">
         <SearchIcon size={20} />
         <input type="search" value={text} onChange={(e) => setText(e.target.value)} placeholder={t.placeholder} aria-label={t.placeholder} autoFocus />
@@ -143,8 +142,8 @@ export function SearchPage() {
       )}
 
       {!query && <Proposals />}
-      {query && first.status === 'loading' && <p className="muted">{fr.page.loading}</p>}
-      {query && first.status === 'error' && <p className="muted">{fr.page.error}</p>}
+      {query && first.status === 'loading' && <p className="muted">{tr.page.loading}</p>}
+      {query && first.status === 'error' && <p className="muted">{tr.page.error}</p>}
       {nothing && <p className="muted">{t.nothing(query)}</p>}
 
       {lists && (filter === 'all' || filter === 'songs') && lists.songs.length > 0 && (

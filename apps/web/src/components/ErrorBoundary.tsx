@@ -7,7 +7,7 @@
  */
 
 import { Component, type ReactNode } from 'react';
-import { fr } from '../i18n/fr.ts';
+import { tr } from '../i18n/index.ts';
 import { AlertIcon } from './icons/AlertIcon.tsx';
 
 interface State {
@@ -26,9 +26,9 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     return (
       <div className="crash" role="alert">
         <AlertIcon size={28} triangle />
-        <p>{fr.crash.message}</p>
+        <p>{tr.crash.message}</p>
         <button type="button" className="btn-primary" onClick={() => window.location.reload()}>
-          {fr.crash.reload}
+          {tr.crash.reload}
         </button>
       </div>
     );

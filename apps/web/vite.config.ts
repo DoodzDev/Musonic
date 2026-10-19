@@ -2,14 +2,16 @@
  * @file vite.config.ts
  * @description Vite configuration for the Musonic web client, with a development relay.
  *   `MUSONIC_WEB_BASE` sets the path the client is served under (default `/`;
- *   `/Musonic/app/` for the GitHub Pages build).
+ *   `/Musonic/app/` for the GitHub Pages build). The version of package.json
+ *   is given to the app as `__MUSONIC_WEB_VERSION__`.
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
 import { request as httpRequest, type IncomingMessage, type ServerResponse } from 'node:http'
 import { request as httpsRequest } from 'node:https'
+import { readFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
 import { defineConfig, type Plugin } from 'vite'
 
@@ -61,7 +63,11 @@ function subsonicRelay(): Plugin {
   }
 }
 
+const webVersion = (JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }).version
+
 export default defineConfig({
   base: process.env.MUSONIC_WEB_BASE || '/',
+  // Shown in the profile menu ("Musonic Web 1.0.0").
+  define: { __MUSONIC_WEB_VERSION__: JSON.stringify(webVersion) },
   plugins: [react(), subsonicRelay()],
 })

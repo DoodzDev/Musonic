@@ -1,14 +1,17 @@
 /**
  * @file fr.ts
- * @description French strings of the web client (source of truth for translations).
+ * @description French strings of the web client (source of truth: en.ts
+ *   must have the same shape). Pick the active language through i18n/index.ts.
  * @author DoodzProg
- * @version 0.4.1
+ * @version 0.5.0
  * @license CC-BY-NC-4.0
  */
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
 export const fr = {
+  /** BCP 47 tag, for dates and sorting. */
+  locale: 'fr-FR',
   login: {
     tagline: 'Connectez votre serveur de musique',
     server: 'Adresse du serveur',
@@ -19,6 +22,13 @@ export const fr = {
     passwordPlaceholder: 'Votre mot de passe',
     showPassword: 'Afficher le mot de passe',
     hidePassword: 'Masquer le mot de passe',
+    remember: 'Se souvenir de moi',
+    rememberWarning: {
+      title: 'Rester connecté sur ce navigateur ?',
+      body: 'Un jeton de connexion sera enregistré dans ce navigateur. Toute personne ou extension qui y a accès pourrait le voler et l’utiliser pour se connecter à votre serveur.',
+      advice: 'N’activez cette option que sur un ordinateur qui vous appartient, jamais sur un poste partagé ou public. « Se déconnecter » efface le jeton.',
+      confirm: 'Activer',
+    },
     submit: 'Se connecter',
     submitting: 'Connexion…',
     footnote: 'Fonctionne avec Navidrome et les serveurs compatibles Subsonic. Votre mot de passe n’est jamais envoyé en clair.',
@@ -29,14 +39,21 @@ export const fr = {
       generic: 'La connexion a échoué.',
     },
   },
+  layout: {
+    resize: 'Redimensionner le volet (double-clic : taille par défaut)',
+  },
   common: {
     cancel: 'Annuler',
     create: 'Créer',
     rename: 'Renommer',
     delete: 'Supprimer',
+    close: 'Fermer',
+    save: 'Enregistrer',
+    edit: 'Modifier',
   },
   search: {
     title: 'Rechercher',
+    discover: 'Découvrez de nouveaux titres, albums et artistes.',
     placeholder: 'Que souhaitez-vous écouter ?',
     filtersLabel: 'Filtres de recherche',
     filters: { all: 'Tout', songs: 'Titres', albums: 'Albums', artists: 'Artistes' },
@@ -46,11 +63,22 @@ export const fr = {
     mixes: 'Mix Magiques',
     mixesHint: 'Composés chaque jour à partir de votre bibliothèque.',
     browse: 'Parcourir',
+    genres: 'Genres',
     genre: 'Genre',
+  },
+  browse: {
+    newest: 'Ajoutés récemment',
+    frequent: 'Les plus écoutés',
+    random: 'Au hasard',
+    decade: (year: number) => `Années ${year < 2000 ? String(year).slice(2) : year}`,
+    hint: { newest: 'Derniers albums arrivés', frequent: 'Vos albums favoris', random: 'Une sélection différente à chaque fois' } as Partial<Record<string, string>>,
+    decadeHint: 'Albums de la décennie',
+    empty: 'Aucun album ici pour l’instant.',
   },
   library: {
     title: 'Bibliothèque',
     tabs: { playlists: 'Playlists', albums: 'Albums', artists: 'Artistes' },
+    byGenre: 'Jouer par genre',
     newPlaylist: 'Nouvelle playlist',
     myMusic: 'Ma Musique',
     myMusicSub: 'Toute votre bibliothèque',
@@ -64,6 +92,7 @@ export const fr = {
     playNext: 'Lire ensuite',
     addToQueue: 'Ajouter à la file d’attente',
     addToPlaylist: 'Ajouter à une playlist',
+    inPlaylist: 'Déjà dans une de vos playlists',
     newPlaylist: 'Nouvelle playlist…',
     like: 'Ajouter aux titres likés',
     unlike: 'Retirer des titres likés',
@@ -73,6 +102,9 @@ export const fr = {
     willPlayNext: 'Sera lu ensuite',
     addedToQueue: 'Ajouté à la file d’attente',
     addedTo: (name: string) => `Ajouté à « ${name} »`,
+    addTo: (name: string) => `Ajouter à « ${name} »`,
+    removeFrom: (name: string) => `Retirer de « ${name} »`,
+    removedFrom: (name: string) => `Retiré de « ${name} »`,
     liked: 'Ajouté aux titres likés',
     unliked: 'Retiré des titres likés',
     removed: 'Retiré de la playlist',
@@ -80,6 +112,11 @@ export const fr = {
   playlist: {
     confirmDelete: (name: string) => `Supprimer la playlist « ${name} » ? Cette action est définitive.`,
     deleted: 'Playlist supprimée',
+    edit: 'Modifier la playlist',
+    description: 'Description (facultative)',
+    descriptionPlaceholder: 'Ajoutez quelques mots sur cette playlist',
+    coverNote: 'La pochette personnalisée viendra avec Musonic Server : Navidrome ne permet pas encore de l’enregistrer pour tous les appareils.',
+    saved: 'Playlist mise à jour',
   },
   lyrics: {
     title: 'Paroles',
@@ -91,9 +128,16 @@ export const fr = {
     open: 'Profil et compte',
     title: 'Profil',
     switchAccount: 'Changer de compte',
+    settings: 'Réglages',
     about: 'À propos',
     website: 'Site de Musonic',
     logout: 'Se déconnecter',
+  },
+  settings: {
+    title: 'Réglages',
+    close: 'Fermer les réglages',
+    language: 'Langue',
+    languageHint: 'Partagée avec le site de Musonic. La page se recharge pour l’appliquer.',
   },
   nav: {
     main: 'Navigation principale',
@@ -130,10 +174,13 @@ export const fr = {
   card: {
     play: (name: string) => `Lire ${name}`,
     artist: 'Artiste',
+    album: 'Album',
+    single: 'Titre',
+    /** Kind of item then its artist, like the mobile app: "Album · Daft Punk". */
+    kindLine: (kind: string, artist?: string) => (artist ? `${kind} · ${artist}` : kind),
     mix: (genre: string) => `Mix ${genre}`,
     mixSub: 'Mix Magique',
     magic: 'Magique',
-    likedSub: (n: number) => plural(n, 'titre', 'titres'),
     playlistSub: (n: number) => `Playlist · ${plural(n, 'titre', 'titres')}`,
   },
   page: {
@@ -178,6 +225,16 @@ export const fr = {
     error: 'Lecture impossible pour ce titre.',
     queue: 'File d’attente',
     lyrics: 'Paroles',
+    expand: 'Ouvrir le lecteur',
+    collapse: 'Fermer le lecteur',
+    fullTitle: 'En cours de lecture',
+    fullscreen: 'Plein écran',
+    fullscreenExit: 'Quitter le plein écran',
+    mini: 'Mini-lecteur flottant',
+    miniClose: 'Fermer le mini-lecteur',
+    upNext: 'À suivre :',
+    keySpace: 'Espace',
+    keyEscape: 'Échap',
     shuffle: { off: 'Aléatoire : désactivé', on: 'Aléatoire : activé', magic: 'Aléatoire : Magique' },
     repeat: { none: 'Répétition : désactivée', all: 'Répétition : tout', one: 'Répétition : ce titre' },
   },

@@ -4,7 +4,7 @@
  *   by a refresh of the cached lists it affects. Failures return null / false
  *   and are reported to the user by the caller.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -39,6 +39,19 @@ export function usePlaylistActions() {
     create: (name: string, songIds: string[] = []): Promise<PlaylistWithSongs | null> =>
       attempt(() => client.createPlaylist(name, songIds), () => refresh(keys.playlists)),
     rename: (id: string, name: string) => attempt(() => client.updatePlaylist(id, { name }), () => refresh(keys.playlists, keys.playlist(id))),
+    /** Name and description (Subsonic "comment"), shared with every client. */
+    update: (id: string, changes: { name: string; comment: string }) =>
+      attempt(() => client.updatePlaylist(id, changes), () => refresh(keys.playlists, keys.playlist(id))),
+    /** Removes every occurrence of a track from a playlist (positions read from the server). */
+    removeSong: (id: string, songId: string) =>
+      attempt(
+        async () => {
+          const playlist = await client.getPlaylist(id);
+          const indexes = playlist.entry.flatMap((s, i) => (s.id === songId ? [i] : []));
+          if (indexes.length) await client.updatePlaylist(id, { removeIndexes: indexes });
+        },
+        () => refresh(keys.playlists, keys.playlist(id)),
+      ),
     remove: (id: string) => attempt(() => client.deletePlaylist(id), () => refresh(keys.playlists, keys.playlist(id))),
     addSongs: (id: string, songIds: string[]) =>
       attempt(() => client.updatePlaylist(id, { add: songIds }), () => refresh(keys.playlists, keys.playlist(id))),

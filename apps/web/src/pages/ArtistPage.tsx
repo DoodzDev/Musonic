@@ -14,7 +14,7 @@ import { Shelf } from '../components/Shelf.tsx';
 import { TrackTable } from '../components/TrackTable.tsx';
 import { useApp } from '../context/AppContext.tsx';
 import { TTL_LONG, useCachedQuery } from '../hooks/useCachedQuery.ts';
-import { fr } from '../i18n/fr.ts';
+import { tr } from '../i18n/index.ts';
 import { usePlayItem, keys } from '../player/usePlayItem.ts';
 
 const POPULAR_SHOWN = 5;
@@ -40,20 +40,20 @@ export function ArtistPage() {
     <div className="page">
       <CollectionHeader
         art={<Cover coverArt={artist.coverArt ?? `ar-${artist.id}`} fallbackCoverArt={albums[0]?.coverArt} size={208} round className="cover-hero" eager placeholder={artist.name.slice(0, 1)} />}
-        eyebrow={fr.page.artist}
+        eyebrow={tr.page.artist}
         title={artist.name}
-        meta={fr.page.albums(artist.album.length)}
+        meta={tr.page.albums(artist.album.length)}
         onPlay={() => void play({ type: 'artist', artist, fallbackCoverArt: albums[0]?.coverArt })}
         canPlay={artist.album.length > 0}
       />
       {popular.length > 0 && (
         <section className="shelf">
-          <header className="shelf-head"><h2>{fr.page.popular}</h2></header>
-          <TrackTable songs={popular} sourceId={`artist:${artist.id}`} label={fr.page.popular} />
+          <header className="shelf-head"><h2>{tr.page.popular}</h2></header>
+          <TrackTable songs={popular} sourceId={`artist:${artist.id}`} label={tr.page.popular} />
         </section>
       )}
-      {albums.length > 0 && <Shelf title={fr.page.discography} items={albums.map((a) => ({ type: 'album', album: a }))} wrap />}
-      {similar.length > 0 && <Shelf title={fr.page.similarArtists} items={similar} />}
+      {albums.length > 0 && <Shelf title={tr.page.discography} items={albums.map((a) => ({ type: 'album', album: a }))} wrap />}
+      {similar.length > 0 && <Shelf title={tr.page.similarArtists} items={similar} />}
     </div>
   );
 }

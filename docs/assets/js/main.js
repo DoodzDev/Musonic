@@ -1,10 +1,11 @@
 /**
  * @file main.js
  * @description Presentation website: English / French texts, the latest
- *   mobile version read from GitHub releases (tags `mobile-v…`), and the
- *   portrait / landscape screenshot switch.
+ *   mobile and web versions read from GitHub releases (tags `mobile-v…`,
+ *   `web-v…`, with the web download link), and the portrait / landscape
+ *   screenshot switch.
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.1.0
  * @license CC-BY-NC-4.0
  */
 
@@ -16,7 +17,7 @@ const TEXTS = {
     'nav.screens': 'Screenshots',
     'nav.start': 'Get started',
     'hero.title': 'Your music server, everywhere you listen.',
-    'hero.lead': 'Musonic plays the music you host on Navidrome or any Subsonic server. A calm app on your phone today, a web client and server tools next. No account, no ads, nothing but your library.',
+    'hero.lead': 'Musonic plays the music you host on Navidrome or any Subsonic server. A calm app on your phone and in your browser, server tools next. No account, no ads, nothing but your library.',
     'hero.version': 'Latest version',
     'hero.versionOf': (v) => `Version ${v}`,
     'hero.req': 'Android 7 or later, free and open source',
@@ -40,14 +41,14 @@ const TEXTS = {
     'status.planned': 'Planned',
     'status.idea': 'Exploring',
     'use.title': 'Use Musonic',
-    'use.lead': 'Pick the way you listen. The mobile app is ready now; the rest arrives step by step.',
+    'use.lead': 'Pick the way you listen. The mobile app and the web client are ready; the server comes next.',
     'use.mobile.title': 'Mobile',
     'use.mobile.desc': 'Install the APK on Android, or sideload the IPA on iPhone with AltStore or Sideloadly. The app tells you when an update is out.',
     'use.notes': 'Release notes',
     'use.web.title': 'Web',
-    'use.web.desc': 'Musonic in a browser tab: your library, search, playback with queue, shuffle, Magic and synced lyrics. Early version, updated as it grows. Connect to a Navidrome server over HTTPS.',
-    'cta.webTry': 'Try it online',
-    'cta.webGithub': 'View on GitHub',
+    'use.web.desc': 'The complete Musonic on your computer: library, search, playlists, synced lyrics, a full-screen player and a floating mini player that stays on top. Use it online, nothing to install, or host it yourself next to your server.',
+    'cta.webTry': 'Use it online',
+    'cta.webDownload': 'Download (self-hosting)',
     'use.soon': 'Not available yet',
     'use.server.title': 'Server',
     'use.server.desc': 'For now Musonic works with Navidrome directly. A Musonic server layer will come later.',
@@ -109,7 +110,7 @@ const TEXTS = {
     'nav.screens': 'Captures',
     'nav.start': 'Commencer',
     'hero.title': 'Votre serveur de musique, partout où vous écoutez.',
-    'hero.lead': "Musonic lit la musique que vous hébergez sur Navidrome ou tout serveur Subsonic. Une app sobre sur votre téléphone aujourd'hui, un client web et des outils serveur ensuite. Sans compte, sans pub, juste votre bibliothèque.",
+    'hero.lead': "Musonic lit la musique que vous hébergez sur Navidrome ou tout serveur Subsonic. Une app sobre sur votre téléphone et dans votre navigateur, des outils serveur ensuite. Sans compte, sans pub, juste votre bibliothèque.",
     'hero.version': 'Dernière version',
     'hero.versionOf': (v) => `Version ${v}`,
     'hero.req': 'Android 7 ou plus récent, gratuit et open source',
@@ -133,14 +134,14 @@ const TEXTS = {
     'status.planned': 'Prévu',
     'status.idea': 'À l’étude',
     'use.title': 'Utiliser Musonic',
-    'use.lead': "Choisissez comment vous écoutez. L'app mobile est prête ; le reste arrive étape par étape.",
+    'use.lead': "Choisissez comment vous écoutez. L'app mobile et le client web sont prêts ; le serveur arrive ensuite.",
     'use.mobile.title': 'Mobile',
     'use.mobile.desc': "Installez l'APK sur Android, ou l'IPA sur iPhone avec AltStore ou Sideloadly. L'app vous prévient quand une mise à jour sort.",
     'use.notes': 'Notes de version',
     'use.web.title': 'Web',
-    'use.web.desc': 'Musonic dans un onglet : votre bibliothèque, la recherche, la lecture avec file d’attente, aléatoire, Magique et paroles synchronisées. Version de développement, mise à jour au fil de l’eau. Connectez-vous à un serveur Navidrome en HTTPS.',
-    'cta.webTry': 'Essayer en ligne',
-    'cta.webGithub': 'Voir sur GitHub',
+    'use.web.desc': 'Le Musonic complet sur votre ordinateur : bibliothèque, recherche, playlists, paroles synchronisées, lecteur plein écran et mini-lecteur flottant toujours visible. Utilisez-le en ligne, sans rien installer, ou hébergez-le vous-même à côté de votre serveur.',
+    'cta.webTry': 'Utiliser en ligne',
+    'cta.webDownload': 'Télécharger (auto-hébergement)',
     'use.soon': 'Pas encore disponible',
     'use.server.title': 'Serveur',
     'use.server.desc': "Pour l'instant, Musonic fonctionne directement avec Navidrome. Une couche serveur Musonic viendra plus tard.",
@@ -199,6 +200,7 @@ const TEXTS = {
 
 let lang = 'en';
 let mobileVersion = null;
+let webVersion = null;
 
 function readStored(key) {
   try { return localStorage.getItem(key); } catch { return null; }
@@ -221,21 +223,26 @@ function applyLanguage(next) {
 }
 
 function showVersion() {
-  if (!mobileVersion) return;
-  document.querySelectorAll('.js-version').forEach((el) => { el.textContent = TEXTS[lang]['hero.versionOf'](mobileVersion); });
+  if (mobileVersion) document.querySelectorAll('.js-version').forEach((el) => { el.textContent = TEXTS[lang]['hero.versionOf'](mobileVersion); });
+  if (webVersion) document.querySelectorAll('.js-web-version').forEach((el) => { el.textContent = TEXTS[lang]['hero.versionOf'](webVersion); });
 }
 
-/** Latest published mobile release: tags `mobile-vX.Y.Z` (one repository, several apps). */
+/** Latest published mobile and web releases: tags `mobile-vX.Y.Z` and `web-vX.Y.Z` (one repository, several apps). */
 async function loadVersion() {
   try {
     const res = await fetch('https://api.github.com/repos/DoodzProg/Musonic/releases?per_page=30');
     if (!res.ok) return;
     const releases = await res.json();
     const mobile = releases.find((r) => !r.draft && !r.prerelease && /^mobile-v\d/.test(r.tag_name));
-    if (mobile) {
-      mobileVersion = mobile.tag_name.replace('mobile-v', '');
-      showVersion();
+    if (mobile) mobileVersion = mobile.tag_name.replace('mobile-v', '');
+    // The web release is never "Latest" (that one stays mobile): link its zip directly.
+    const web = releases.find((r) => !r.draft && !r.prerelease && /^web-v\d/.test(r.tag_name));
+    if (web) {
+      webVersion = web.tag_name.replace('web-v', '');
+      const zip = (web.assets || []).find((a) => a.name === 'Musonic-Web.zip');
+      document.querySelectorAll('.js-web-download').forEach((el) => { el.href = zip ? zip.browser_download_url : web.html_url; });
     }
+    showVersion();
   } catch { /* offline or rate-limited: keep "Latest version" */ }
 }
 

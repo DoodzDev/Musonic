@@ -24,5 +24,5 @@ export async function loadAllSongs(client: SubsonicClient): Promise<Song[]> {
   const seen = new Set<string>();
   return all
     .filter((s) => !seen.has(s.id) && !!seen.add(s.id))
-    .sort((a, b) => a.title.localeCompare(b.title, 'fr', { sensitivity: 'base' }));
+    .sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
 }

@@ -4,7 +4,7 @@
  *   `loadHome` only needs the few server calls of `HomeSource`, so any client
  *   can feed it (the web's `SubsonicClient`, the mobile app's own API layer).
  * @author DoodzProg
- * @version 0.2.1
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -156,12 +156,13 @@ export function topGenres(base: HomeBase, limit = 6): string[] {
   return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([genre]) => genre);
 }
 
-export function planSeeds(base: HomeBase, rng: Rng): HomeSeeds {
+/** `mixCount`: how many Magic Mixes to make (one per top genre). */
+export function planSeeds(base: HomeBase, rng: Rng, mixCount = 4): HomeSeeds {
   const favorite = pick(favoriteArtists(base).slice(0, 5), rng);
   return {
     styleArtist: favorite ? { id: favorite.artist.id, name: favorite.artist.name } : undefined,
     likedSong: pick(base.starred.song, rng),
-    genres: shuffled(topGenres(base), rng).slice(0, 4),
+    genres: shuffled(topGenres(base, Math.max(6, mixCount + 2)), rng).slice(0, mixCount),
   };
 }
 
@@ -301,7 +302,7 @@ const settled = async <T>(promise: Promise<T>, fallback: T): Promise<T> => {
 /** Fetches everything in two parallel waves and builds the feed. A failing source only hides its shelf. */
 export async function loadHome(
   client: HomeSource,
-  options: { username: string; now?: Date; signal?: AbortSignal },
+  options: { username: string; now?: Date; signal?: AbortSignal; mixCount?: number },
 ): Promise<HomeFeed> {
   const now = options.now ?? new Date();
   const signal = options.signal;
@@ -316,7 +317,7 @@ export async function loadHome(
     settled(client.getPlaylists(signal), []),
   ]);
   const base: HomeBase = { recent, frequent, newest, random, starred, playlists };
-  const seeds = planSeeds(base, rng);
+  const seeds = planSeeds(base, rng, options.mixCount);
 
   const similarArtistAlbums = async (): Promise<Album[]> => {
     if (!seeds.styleArtist) return [];

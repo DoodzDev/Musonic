@@ -1,8 +1,9 @@
 /**
  * @file session.ts
- * @description Keeps the Subsonic session for the lifetime of the browser tab.
+ * @description Keeps the Subsonic session for the lifetime of the browser tab,
+ *   or on this browser when the user ticked "Remember me".
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -11,11 +12,12 @@ import type { SubsonicSession } from '@musonic/core';
 const SESSION_KEY = 'musonic.session';
 const LAST_SERVER_KEY = 'musonic.lastServer';
 
-// sessionStorage, not localStorage: the token is a reusable credential, so it
-// is dropped when the tab closes. The clear password is never stored.
+// sessionStorage by default: the token is a reusable credential, so it is
+// dropped when the tab closes. localStorage only when the user asked to be
+// remembered (and was warned). The clear password is never stored.
 export function loadSession(): SubsonicSession | null {
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    const raw = sessionStorage.getItem(SESSION_KEY) ?? localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const s = JSON.parse(raw) as Partial<SubsonicSession>;
     if (typeof s.baseUrl !== 'string' || typeof s.username !== 'string' || typeof s.token !== 'string' || typeof s.salt !== 'string') {
@@ -27,9 +29,10 @@ export function loadSession(): SubsonicSession | null {
   }
 }
 
-export function saveSession(session: SubsonicSession): void {
+export function saveSession(session: SubsonicSession, remember: boolean): void {
   try {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    clearSession();
+    (remember ? localStorage : sessionStorage).setItem(SESSION_KEY, JSON.stringify(session));
     localStorage.setItem(LAST_SERVER_KEY, session.baseUrl);
   } catch {
     // Storage can be unavailable (private mode): the session then lasts until reload.
@@ -39,6 +42,7 @@ export function saveSession(session: SubsonicSession): void {
 export function clearSession(): void {
   try {
     sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
   } catch {
     // Nothing to clear.
   }

@@ -133,7 +133,8 @@ export type AlbumListType =
   | 'alphabeticalByName'
   | 'alphabeticalByArtist'
   | 'starred'
-  | 'byGenre';
+  | 'byGenre'
+  | 'byYear';
 
 /** Error payload of a `failed` Subsonic response. */
 export interface SubsonicErrorPayload {

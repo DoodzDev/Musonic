@@ -2,7 +2,7 @@
  * @file client.ts
  * @description Minimal Subsonic API client (JSON format, token authentication).
  * @author DoodzProg
- * @version 0.4.0
+ * @version 0.4.1
  * @license CC-BY-NC-4.0
  */
 
@@ -122,7 +122,8 @@ export class SubsonicClient {
 
   async getAlbumList(
     type: AlbumListType,
-    options: { size?: number; offset?: number; genre?: string } = {},
+    /** `fromYear` / `toYear` are required by `byYear`. */
+    options: { size?: number; offset?: number; genre?: string; fromYear?: number; toYear?: number } = {},
     signal?: AbortSignal,
   ): Promise<Album[]> {
     const res = await this.request<{ albumList2?: { album?: Album[] } }>('getAlbumList2', { type, ...options }, signal);

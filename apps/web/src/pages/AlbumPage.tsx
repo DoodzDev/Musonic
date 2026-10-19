@@ -13,7 +13,7 @@ import { Shelf } from '../components/Shelf.tsx';
 import { TrackTable } from '../components/TrackTable.tsx';
 import { useApp } from '../context/AppContext.tsx';
 import { TTL_LONG, useCachedQuery } from '../hooks/useCachedQuery.ts';
-import { fr } from '../i18n/fr.ts';
+import { tr } from '../i18n/index.ts';
 import { formatTotal } from '../lib/format.ts';
 import { usePlayer } from '../player/PlayerContext.tsx';
 import { keys } from '../player/usePlayItem.ts';
@@ -36,13 +36,13 @@ export function AlbumPage() {
     <div className="page">
       <CollectionHeader
         art={<Cover coverArt={album.coverArt} size={208} className="cover-hero" eager />}
-        eyebrow={fr.page.album}
+        eyebrow={tr.page.album}
         title={album.name}
         meta={
           <>
             {album.artistId ? <Link to={`/artist/${album.artistId}`} className="strong link">{album.artist}</Link> : album.artist}
             {' · '}
-            {fr.page.meta([album.year ? String(album.year) : undefined, fr.page.titles(album.song.length), formatTotal(total)])}
+            {tr.page.meta([album.year ? String(album.year) : undefined, tr.page.titles(album.song.length), formatTotal(total)])}
           </>
         }
         onPlay={() => playSongs(album.song, undefined, source)}
@@ -50,7 +50,7 @@ export function AlbumPage() {
       />
       <TrackTable songs={album.song} sourceId={source} label={album.name} showAlbum={false} showCover={false} numbering="track" />
       {more.length > 0 && album.artist && (
-        <Shelf title={fr.page.moreBy(album.artist)} items={more.map((a) => ({ type: 'album', album: a }))} />
+        <Shelf title={tr.page.moreBy(album.artist)} items={more.map((a) => ({ type: 'album', album: a }))} />
       )}
     </div>
   );

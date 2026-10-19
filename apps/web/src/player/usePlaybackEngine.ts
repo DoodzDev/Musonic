@@ -4,7 +4,7 @@
  *   (start, shuffle / Magic, repeat, previous, autoplay), modes remembered in
  *   the browser. Magic and autoplay suggestions come from similar songs.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -17,6 +17,7 @@ import {
   emptyQueue,
   entryKey,
   interleaveMagic,
+  moveById,
   needsAutoplay,
   next,
   playNextTrack,
@@ -173,6 +174,14 @@ export function usePlaybackEngine(client: SubsonicClient | null): PlayerContextV
       addToQueue: (song) => setQueue((q) => addToQueue(q, asEntry(song))),
       playNext: (song) => setQueue((q) => playNextTrack(q, asEntry(song))),
       remove: (key) => setQueue((q) => removeById(q, [key])),
+      // "After": moved before the target, then the target moved back before it,
+      // so a track dropped below the last one of a zone stays in that zone.
+      move: (key, targetKey, after) =>
+        setQueue((q) => {
+          if (key === targetKey) return q;
+          const before = moveById(q, key, targetKey);
+          return after ? moveById(before, targetKey, key) : before;
+        }),
       clearQueue: () => setQueue((q) => clearQueue(q)),
       cycleShuffle: () => {
         const mode = SHUFFLE_CYCLE[(SHUFFLE_CYCLE.indexOf(modes.shuffle) + 1) % SHUFFLE_CYCLE.length];

@@ -1,22 +1,23 @@
 /**
  * @file ProfileMenu.tsx
  * @description Account avatar (orange, like the mobile app) opening the profile
- *   menu: account and server, switch account, about links and log out.
- *   Opens towards the page from the avatar, always inside the window (fixed
- *   position: the sidebar would clip it). Closes on Escape or a click outside.
+ *   menu: account and server, switch account, settings, about links and log
+ *   out. Sits at the top right of the page; the menu opens below it, always
+ *   inside the window. Closes on Escape or a click outside.
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.2
  * @license CC-BY-NC-4.0
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext.tsx';
-import { fr } from '../i18n/fr.ts';
+import { tr } from '../i18n/index.ts';
+import { SettingsDialog } from './SettingsDialog.tsx';
 import { ChevronDownIcon } from './icons/ChevronDownIcon.tsx';
 
 const Chevron = () => <span className="chevron-right"><ChevronDownIcon size={16} /></span>;
 
-const t = fr.profile;
+const t = tr.profile;
 const MENU_WIDTH = 280;
 
 function serverName(baseUrl: string): string {
@@ -48,6 +49,7 @@ function LinkRow({ href, label }: { href: string; label: string }) {
 export function ProfileMenu() {
   const { session, logout } = useApp();
   const [open, setOpen] = useState(false);
+  const [settings, setSettings] = useState(false);
   const [pos, setPos] = useState({ left: 0, top: 0 });
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -85,7 +87,7 @@ export function ProfileMenu() {
         aria-expanded={open}
         aria-label={t.open}
         title={session.username}>
-        <Avatar name={session.username} size={32} />
+        <Avatar name={session.username} size={48} />
       </button>
 
       {open && (
@@ -101,6 +103,17 @@ export function ProfileMenu() {
               <span>{t.switchAccount}</span>
               <Chevron />
             </button>
+            <button
+              type="button"
+              className="menu-row"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                setSettings(true);
+              }}>
+              <span>{t.settings}</span>
+              <Chevron />
+            </button>
           </div>
 
           <span className="menu-caption">{t.about}</span>
@@ -109,7 +122,7 @@ export function ProfileMenu() {
             <LinkRow href="https://github.com/DoodzProg/Musonic" label="GitHub" />
             <LinkRow href="https://doodz.dev" label="doodz.dev" />
           </div>
-          <span className="menu-note">Musonic Web · made by Doodz</span>
+          <span className="menu-note">Musonic Web {__MUSONIC_WEB_VERSION__} · made by Doodz</span>
 
           <div className="menu-group">
             <button type="button" className="menu-row is-destructive" role="menuitem" onClick={logout}>
@@ -118,6 +131,7 @@ export function ProfileMenu() {
           </div>
         </div>
       )}
+      {settings && <SettingsDialog onClose={() => setSettings(false)} />}
     </div>
   );
 }

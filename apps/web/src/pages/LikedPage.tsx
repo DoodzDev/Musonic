@@ -11,7 +11,7 @@ import { LikedCover } from '../components/LikedCover.tsx';
 import { TrackTable } from '../components/TrackTable.tsx';
 import { useApp } from '../context/AppContext.tsx';
 import { TTL_SHORT, useCachedQuery } from '../hooks/useCachedQuery.ts';
-import { fr } from '../i18n/fr.ts';
+import { tr } from '../i18n/index.ts';
 import { formatTotal } from '../lib/format.ts';
 import { usePlayer } from '../player/PlayerContext.tsx';
 import { keys } from '../player/usePlayItem.ts';
@@ -28,13 +28,13 @@ export function LikedPage() {
     <div className="page">
       <CollectionHeader
         art={<LikedCover size={208} className="cover-hero" />}
-        eyebrow={fr.page.playlist}
-        title={fr.page.likedSongs}
-        meta={fr.page.meta([session.username, fr.page.titles(songs.length), formatTotal(total)])}
+        eyebrow={tr.page.playlist}
+        title={tr.page.likedSongs}
+        meta={tr.page.meta([session.username, tr.page.titles(songs.length), formatTotal(total)])}
         onPlay={() => playSongs(songs, undefined, 'liked')}
         canPlay={songs.length > 0}
       />
-      {songs.length ? <TrackTable songs={songs} sourceId="liked" label={fr.page.likedSongs} /> : <p className="muted">{fr.page.empty}</p>}
+      {songs.length ? <TrackTable songs={songs} sourceId="liked" label={tr.page.likedSongs} /> : <p className="muted">{tr.page.empty}</p>}
     </div>
   );
 }

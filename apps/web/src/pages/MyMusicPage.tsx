@@ -11,7 +11,7 @@ import { TrackTable } from '../components/TrackTable.tsx';
 import { PlayIcon } from '../components/icons/PlayIcon.tsx';
 import { useApp } from '../context/AppContext.tsx';
 import { TTL_LONG, useCachedQuery } from '../hooks/useCachedQuery.ts';
-import { fr } from '../i18n/fr.ts';
+import { tr } from '../i18n/index.ts';
 import { loadAllSongs, MY_MUSIC_KEY } from '../lib/allSongs.ts';
 import { formatTotal } from '../lib/format.ts';
 import { usePlayer } from '../player/PlayerContext.tsx';
@@ -26,16 +26,16 @@ export function MyMusicPage() {
   return (
     <div className="page">
       <div>
-        <span className="eyebrow">{fr.page.playlist}</span>
-        <h1 className="page-title">{fr.library.myMusic}</h1>
-        <span className="collection-stats">{fr.page.meta([fr.page.titles(songs.data.length), formatTotal(total)])}</span>
+        <span className="eyebrow">{tr.page.playlist}</span>
+        <h1 className="page-title">{tr.library.myMusic}</h1>
+        <span className="collection-stats">{tr.page.meta([tr.page.titles(songs.data.length), formatTotal(total)])}</span>
       </div>
       <div className="actions">
         <button type="button" className="btn-primary btn-play" onClick={() => playSongs(songs.data, undefined, 'mymusic')} disabled={!songs.data.length}>
-          <PlayIcon size={16} color="currentColor" /> {fr.page.play}
+          <PlayIcon size={16} color="currentColor" /> {tr.page.play}
         </button>
       </div>
-      <TrackTable songs={songs.data} sourceId="mymusic" label={fr.library.myMusic} />
+      <TrackTable songs={songs.data} sourceId="mymusic" label={tr.library.myMusic} />
     </div>
   );
 }

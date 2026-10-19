@@ -1,20 +1,26 @@
 /**
  * @file TrackTable.tsx
- * @description Track list used by playlist, album, artist and liked pages.
+ * @description Track list used by playlist, album, artist, liked, genre and
+ *   search pages. Like the mobile app, a heart shows the liked tracks and a
+ *   "+" / "✓" whether the track is in one of the user's playlists.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
 import { useState } from 'react';
 import type { Song } from '@musonic/core';
 import { Link } from 'react-router';
-import { fr } from '../i18n/fr.ts';
+import { tr } from '../i18n/index.ts';
 import { formatTime } from '../lib/format.ts';
 import { usePlayer } from '../player/PlayerContext.tsx';
 import { Cover } from './Cover.tsx';
 import { Equalizer } from './Equalizer.tsx';
 import { ClockIcon } from './Icons.tsx';
+import { AddToPlaylistButton } from './AddToPlaylistButton.tsx';
+import { LikeButton } from './LikeButton.tsx';
+import { PlaylistPicker } from './PlaylistPicker.tsx';
+import { usePlaylistMembership } from '../player/usePlaylistMembership.ts';
 import { PlayIcon } from './icons/PlayIcon.tsx';
 import { DotsHorizontalIcon } from './icons/DotsHorizontalIcon.tsx';
 import { TrackMenu, type TrackMenuTarget } from './TrackMenu.tsx';
@@ -32,10 +38,12 @@ interface Props {
   playlistId?: string;
 }
 
-const t = fr.table;
+const t = tr.table;
 
 export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover = true, numbering = 'index', playlistId }: Props) {
   const [menu, setMenu] = useState<TrackMenuTarget | null>(null);
+  const membership = usePlaylistMembership();
+  const [picker, setPicker] = useState<Song | null>(null);
   const openMenu = (song: Song, index: number, x: number, y: number) =>
     setMenu({ song, x, y, playlistId, playlistIndex: playlistId ? index : undefined });
   const { playSongs, current, sourceId: playingSource, playing } = usePlayer();
@@ -49,6 +57,8 @@ export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover
           <span role="columnheader" className="c-index">{t.index}</span>
           <span role="columnheader">{t.title}</span>
           {showAlbum && <span role="columnheader" className="c-album">{t.album}</span>}
+          <span role="columnheader" className="c-add" />
+          <span role="columnheader" className="c-like" />
           <span role="columnheader" className="c-duration" aria-label={t.duration}><ClockIcon /></span>
           <span role="columnheader" className="c-more" />
         </div>
@@ -95,13 +105,19 @@ export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover
                   )}
                 </span>
               )}
+              <span role="cell" className="c-add">
+                <AddToPlaylistButton inPlaylist={!!membership?.get(song.id)?.size} onOpen={() => setPicker(song)} />
+              </span>
+              <span role="cell" className="c-like">
+                <LikeButton song={song} />
+              </span>
               <span role="cell" className="c-duration item-sub">{formatTime(song.duration)}</span>
               <span role="cell" className="c-more">
                 <button
                   type="button"
                   className="icon-btn row-more"
-                  aria-label={fr.trackMenu.label(song.title)}
-                  title={fr.trackMenu.more}
+                  aria-label={tr.trackMenu.label(song.title)}
+                  title={tr.trackMenu.more}
                   onClick={(e) => {
                     const box = e.currentTarget.getBoundingClientRect();
                     openMenu(song, i, box.right - 200, box.bottom + 4);
@@ -114,6 +130,7 @@ export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover
         })}
       </div>
       {menu && <TrackMenu target={menu} onClose={() => setMenu(null)} />}
+      {picker && <PlaylistPicker song={picker} onClose={() => setPicker(null)} />}
     </div>
   );
 }

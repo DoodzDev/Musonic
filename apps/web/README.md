@@ -2,6 +2,13 @@
 
 Web client of Musonic, desktop first. It talks to any Subsonic-compatible server (Navidrome…) with token authentication: the password is never sent in clear.
 
+## Use it
+
+- **Online**, nothing to install: https://doodzprog.github.io/Musonic/app/ (always the latest version).
+- **Self-hosted**: download `Musonic-Web.zip` from the latest [`web-v` release](https://github.com/DoodzProg/Musonic/releases?q=web-v&expanded=true) and follow [SELF-HOSTING.md](SELF-HOSTING.md).
+
+What it does: see the [changelog](CHANGELOG.md). Releases are tagged `web-vX.Y.Z` and built by `.github/workflows/web-release.yml`.
+
 ## Development
 
 ```bash

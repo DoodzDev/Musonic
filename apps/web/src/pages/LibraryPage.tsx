@@ -1,9 +1,10 @@
 /**
  * @file LibraryPage.tsx
  * @description The library: playlists (with the liked songs and a "New playlist"
- *   button), albums and artists, each in a grid of the same cards as the Home.
+ *   button) then "Play by genre", albums and artists, each in a grid of the
+ *   same cards as the Home.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -11,6 +12,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import type { CardItem } from '@musonic/core';
 import { PageStatus } from '../components/CollectionHeader.tsx';
+import { GenreGrid } from '../components/GenreGrid.tsx';
 import { TextDialog } from '../components/TextDialog.tsx';
 import { Shelf } from '../components/Shelf.tsx';
 import { MusicNoteIcon } from '../components/icons/MusicNoteIcon.tsx';
@@ -18,13 +20,13 @@ import { PlayIcon } from '../components/icons/PlayIcon.tsx';
 import { PlusIcon } from '../components/icons/PlusIcon.tsx';
 import { useApp } from '../context/AppContext.tsx';
 import { TTL_LONG, TTL_SHORT, useCachedQuery } from '../hooks/useCachedQuery.ts';
-import { fr } from '../i18n/fr.ts';
+import { tr } from '../i18n/index.ts';
 import { loadAllSongs, MY_MUSIC_KEY } from '../lib/allSongs.ts';
 import { usePlayer } from '../player/PlayerContext.tsx';
 import { keys } from '../player/usePlayItem.ts';
 import { usePlaylistActions } from '../player/usePlaylistActions.ts';
 
-const t = fr.library;
+const t = tr.library;
 type Tab = 'playlists' | 'albums' | 'artists';
 const TABS: Tab[] = ['playlists', 'albums', 'artists'];
 
@@ -45,7 +47,7 @@ function MyMusicCard() {
           <span className="card-sub">{t.myMusicSub}</span>
         </span>
       </Link>
-      <button type="button" className="card-play" onClick={() => void play()} aria-label={`${fr.page.play} ${t.myMusic}`}>
+      <button type="button" className="card-play" onClick={() => void play()} aria-label={`${tr.page.play} ${t.myMusic}`}>
         <PlayIcon size={18} color="currentColor" />
       </button>
     </div>
@@ -61,7 +63,12 @@ function Playlists() {
     { type: 'liked', count: starred.status === 'ready' ? starred.data.song.length : 0 },
     ...playlists.data.map((playlist): CardItem => ({ type: 'playlist', playlist })),
   ];
-  return <Shelf title={t.tabs.playlists} items={items} wrap leading={<MyMusicCard />} />;
+  return (
+    <>
+      <Shelf title={t.tabs.playlists} items={items} wrap leading={<MyMusicCard />} />
+      <GenreGrid />
+    </>
+  );
 }
 
 function Albums() {
@@ -114,7 +121,7 @@ export function LibraryPage() {
           title={t.newPlaylist}
           label={t.newPlaylistLabel}
           initial={t.newPlaylistDefault}
-          confirm={fr.common.create}
+          confirm={tr.common.create}
           onConfirm={newPlaylist}
           onClose={() => setCreating(false)}
         />

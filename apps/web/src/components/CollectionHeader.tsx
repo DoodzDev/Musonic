@@ -7,7 +7,7 @@
  */
 
 import type { ReactNode } from 'react';
-import { fr } from '../i18n/fr.ts';
+import { tr } from '../i18n/index.ts';
 import { PlayIcon } from './icons/PlayIcon.tsx';
 
 interface Props {
@@ -37,7 +37,7 @@ export function CollectionHeader({ art, eyebrow, title, description, meta, onPla
       {onPlay && (
         <div className="actions">
           <button type="button" className="btn-primary btn-play" onClick={onPlay} disabled={!canPlay}>
-            <PlayIcon size={16} color="currentColor" /> {fr.page.play}
+            <PlayIcon size={16} color="currentColor" /> {tr.page.play}
           </button>
           {extra}
         </div>
@@ -47,5 +47,5 @@ export function CollectionHeader({ art, eyebrow, title, description, meta, onPla
 }
 
 export function PageStatus({ status }: { status: 'loading' | 'error' }) {
-  return <p className="page muted">{status === 'loading' ? fr.page.loading : fr.page.error}</p>;
+  return <p className="page muted">{status === 'loading' ? tr.page.loading : tr.page.error}</p>;
 }

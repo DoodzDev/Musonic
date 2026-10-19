@@ -1,8 +1,8 @@
 /**
  * @file Icons.tsx
- * @description Icons the mobile app does not have (volume, duration, password, logout), drawn in the same 2 px rounded style. Every other icon comes from components/icons/, ported from the mobile app.
+ * @description Icons the mobile app does not have (volume, duration, password, logout, mini player, full screen), drawn in the same 2 px rounded style. Every other icon comes from components/icons/, ported from the mobile app.
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
@@ -58,6 +58,29 @@ export function LogoutIcon({ size = 18 }: IconProps) {
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <path d="m16 17 5-5-5-5" />
       <path d="M21 12H9" />
+    </svg>
+  );
+}
+
+/** Floating mini player: a window with a small filled one in its bottom right corner. */
+export function MiniPlayerIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+      <rect x="2" y="4" width="20" height="16" rx="2.5" />
+      <rect x="12" y="12" width="7" height="5" rx="1" fill="currentColor" strokeWidth={1.5} />
+    </svg>
+  );
+}
+
+/** Full screen (four corners going out), or leaving it (`exit`, corners going in). */
+export function FullscreenIcon({ size = 20, exit = false }: IconProps & { exit?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+      {exit ? (
+        <path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3" />
+      ) : (
+        <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3" />
+      )}
     </svg>
   );
 }

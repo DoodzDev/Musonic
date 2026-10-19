@@ -7,19 +7,17 @@
  */
 
 import { useState } from 'react';
-import { loadHome, type CardItem, type Shelf as ShelfData, type ShelfKind } from '@musonic/core';
+import { type CardItem, type Shelf as ShelfData, type ShelfKind } from '@musonic/core';
 import { QuickTile } from '../components/Card.tsx';
 import { describe } from '../components/cardModel.ts';
 import { PageStatus } from '../components/CollectionHeader.tsx';
 import { Shelf } from '../components/Shelf.tsx';
-import { useApp } from '../context/AppContext.tsx';
-import { TTL_LONG, useCachedQuery } from '../hooks/useCachedQuery.ts';
-import { fr } from '../i18n/fr.ts';
-import { keys } from '../player/usePlayItem.ts';
+import { useHomeFeed } from '../hooks/useHomeFeed.ts';
+import { tr } from '../i18n/index.ts';
 
 type Filter = 'all' | 'playlists' | 'albums' | 'artists';
 
-const t = fr.home;
+const t = tr.home;
 
 const SHOWN: Record<Filter, ShelfKind[]> = {
   all: ['albums', 'artists', 'songs', 'mixes'],
@@ -36,16 +34,13 @@ function quickFor(filter: Filter, items: CardItem[]): CardItem[] {
 }
 
 function dayLabel(date: Date): string {
-  return new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(date);
+  return new Intl.DateTimeFormat(tr.locale, { weekday: 'long', day: 'numeric', month: 'long' }).format(date);
 }
 
 export function HomePage() {
-  const { client, session } = useApp();
   const [filter, setFilter] = useState<Filter>('all');
-  // Read the clock once per visit: the feed is keyed by day.
   const [today] = useState(() => new Date());
-  const day = today.toDateString();
-  const feed = useCachedQuery(keys.home(day), TTL_LONG, () => loadHome(client, { username: session.username, now: today }));
+  const feed = useHomeFeed();
 
   if (feed.status !== 'ready') return <PageStatus status={feed.status} />;
 

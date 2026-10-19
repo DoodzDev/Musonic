@@ -12,7 +12,7 @@ import { TrackTable } from '../components/TrackTable.tsx';
 import { PlayIcon } from '../components/icons/PlayIcon.tsx';
 import { useApp } from '../context/AppContext.tsx';
 import { TTL_LONG, useCachedQuery } from '../hooks/useCachedQuery.ts';
-import { fr } from '../i18n/fr.ts';
+import { tr } from '../i18n/index.ts';
 import { usePlayer } from '../player/PlayerContext.tsx';
 
 export function GenrePage() {
@@ -27,14 +27,14 @@ export function GenrePage() {
     <div className="page">
       <div className="page-title-row">
         <div>
-          <span className="eyebrow">{fr.search.genre}</span>
+          <span className="eyebrow">{tr.search.genre}</span>
           <h1 className="page-title">{name}</h1>
-          <span className="collection-stats">{fr.page.titles(songs.data.length)}</span>
+          <span className="collection-stats">{tr.page.titles(songs.data.length)}</span>
         </div>
       </div>
       <div className="actions">
         <button type="button" className="btn-primary btn-play" onClick={() => playSongs(songs.data, undefined, source)} disabled={!songs.data.length}>
-          <PlayIcon size={16} color="currentColor" /> {fr.page.play}
+          <PlayIcon size={16} color="currentColor" /> {tr.page.play}
         </button>
       </div>
       <TrackTable songs={songs.data} sourceId={source} label={name} />

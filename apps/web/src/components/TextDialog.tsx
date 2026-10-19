@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { fr } from '../i18n/fr.ts';
+import { tr } from '../i18n/index.ts';
 
 interface Props {
   title: string;
@@ -50,7 +50,7 @@ export function TextDialog({ title, label, initial = '', confirm, onConfirm, onC
           </span>
         </label>
         <div className="dialog-actions">
-          <button type="button" className="btn-quiet" onClick={onClose}>{fr.common.cancel}</button>
+          <button type="button" className="btn-quiet" onClick={onClose}>{tr.common.cancel}</button>
           <button type="submit" className="btn-primary btn-play" disabled={!ready}>{confirm}</button>
         </div>
       </form>

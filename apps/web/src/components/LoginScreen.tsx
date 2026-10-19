@@ -1,30 +1,34 @@
 /**
  * @file LoginScreen.tsx
  * @description Server login form. Checks the credentials with a ping before opening the app.
+ *   "Remember me" keeps the session on this browser, after a warning about the stored token.
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
 import { useState, type FormEvent } from 'react';
 import { createSession, SubsonicClient, SubsonicError, type SubsonicSession } from '@musonic/core';
-import { fr } from '../i18n/fr.ts';
+import { lang, setLang, tr } from '../i18n/index.ts';
 import { loadLastServer, transportSession } from '../lib/session.ts';
+import { ConfirmDialog } from './ConfirmDialog.tsx';
 import { EyeIcon } from './Icons.tsx';
 import { AlertIcon } from './icons/AlertIcon.tsx';
 import { LogoIcon } from './icons/LogoIcon.tsx';
 
 interface Props {
-  onLogin: (session: SubsonicSession) => void;
+  onLogin: (session: SubsonicSession, remember: boolean) => void;
 }
 
-const t = fr.login;
+const t = tr.login;
 
 export function LoginScreen({ onLogin }: Props) {
   const [server, setServer] = useState(loadLastServer);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(false);
+  const [askRemember, setAskRemember] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +48,7 @@ export function LoginScreen({ onLogin }: Props) {
     try {
       await new SubsonicClient(transportSession(session)).ping();
       setPassword('');
-      onLogin(session);
+      onLogin(session, remember);
     } catch (e) {
       if (e instanceof SubsonicError && e.isAuthError) setError(t.errors.auth);
       else if (e instanceof SubsonicError && e.isUnreachable) setError(t.errors.unreachable);
@@ -107,6 +111,14 @@ export function LoginScreen({ onLogin }: Props) {
               </button>
             </span>
           </label>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => (e.target.checked ? setAskRemember(true) : setRemember(false))}
+            />
+            <span>{t.remember}</span>
+          </label>
           {error && (
             <p className="form-error" role="alert">
               <AlertIcon size={16} triangle /> {error}
@@ -116,8 +128,27 @@ export function LoginScreen({ onLogin }: Props) {
             {busy ? t.submitting : t.submit}
           </button>
           <p className="footnote">{t.footnote}</p>
+          <p className="login-lang">
+            <button type="button" lang="en" aria-pressed={lang === 'en'} onClick={() => setLang('en')}>English</button>
+            <span aria-hidden="true">·</span>
+            <button type="button" lang="fr" aria-pressed={lang === 'fr'} onClick={() => setLang('fr')}>Français</button>
+          </p>
         </form>
       </div>
+      {askRemember && (
+        <ConfirmDialog
+          title={t.rememberWarning.title}
+          confirm={t.rememberWarning.confirm}
+          warning
+          onConfirm={() => {
+            setRemember(true);
+            setAskRemember(false);
+          }}
+          onClose={() => setAskRemember(false)}>
+          <p>{t.rememberWarning.body}</p>
+          <p>{t.rememberWarning.advice}</p>
+        </ConfirmDialog>
+      )}
     </div>
   );
 }

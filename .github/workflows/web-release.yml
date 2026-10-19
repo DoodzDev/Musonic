@@ -1,0 +1,71 @@
+name: Web Release
+
+# A `web-vX.Y.Z` tag builds the web client for self-hosting and publishes the
+# release "Musonic Web X.Y.Z" with Musonic-Web.zip, its notes taken from
+# apps/web/CHANGELOG.md. The online version is published by pages.yml.
+on:
+  push:
+    tags:
+      - 'web-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish Musonic Web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web client
+        run: npm run build --workspace apps/web
+
+      - name: Package for self-hosting
+        run: |
+          cp apps/web/SELF-HOSTING.md apps/web/dist/SELF-HOSTING.md
+          cd apps/web/dist
+          zip -r ../../../Musonic-Web.zip .
+
+      - name: Upload zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: musonic-web-${{ github.sha }}
+          path: Musonic-Web.zip
+          retention-days: 30
+
+      - name: Read version and notes
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION="${GITHUB_REF_NAME#web-v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          # The section "## [X.Y.Z]" of the changelog, up to the next "## [".
+          awk -v v="$VERSION" '
+            index($0, "## [" v "]") == 1 { on = 1; next }
+            on && /^## \[/ { exit }
+            on { print }
+          ' apps/web/CHANGELOG.md > release-notes.md
+          test -s release-notes.md || echo "See apps/web/CHANGELOG.md." > release-notes.md
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Musonic Web ${{ env.VERSION }}
+          body_path: release-notes.md
+          # "Latest" stays the mobile release: the site and README download links rely on it.
+          make_latest: false
+          files: Musonic-Web.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

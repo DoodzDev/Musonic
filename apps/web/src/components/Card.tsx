@@ -8,7 +8,7 @@
 
 import type { CardItem, Song } from '@musonic/core';
 import { Link } from 'react-router';
-import { fr } from '../i18n/fr.ts';
+import { tr } from '../i18n/index.ts';
 import { usePlayItem } from '../player/usePlayItem.ts';
 import { describe } from './cardModel.ts';
 import { Cover } from './Cover.tsx';
@@ -17,7 +17,7 @@ import { PlayIcon } from './icons/PlayIcon.tsx';
 import { SparkleIcon } from './icons/SparkleIcon.tsx';
 import { LikedCover } from './LikedCover.tsx';
 
-const t = fr.card;
+const t = tr.card;
 
 function Artwork({ item, size }: { item: CardItem; size: number }) {
   switch (item.type) {

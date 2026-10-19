@@ -4,7 +4,7 @@
  *   bar (how to play it) and the queue panel. The queue follows the same rules
  *   as the mobile app (`@musonic/core/playback`, ADR-009).
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
@@ -40,6 +40,8 @@ export interface PlayerContextValue {
   addToQueue: (song: Song) => void;
   playNext: (song: Song) => void;
   remove: (entryKey: string) => void;
+  /** Drag and drop in the queue: puts the entry just before (or after) the target entry, in the target's zone. */
+  move: (entryKey: string, targetKey: string, after: boolean) => void;
   clearQueue: () => void;
   cycleShuffle: () => void;
   cycleRepeat: () => void;

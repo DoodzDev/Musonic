@@ -6,7 +6,7 @@
 
 **Self-hosted music, beautifully played.**
 
-A music app for Navidrome and any Subsonic-compatible server, on Android and iOS (a web client is on the way).
+A music app for Navidrome and any Subsonic-compatible server, on Android, iOS and in your browser.
 Your library, on your hardware, with an app that feels like it belongs on your phone.
 
 <a href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.apk"><img src="docs/assets/img/badges/download-android.png" alt="Download Musonic for Android" height="64" /></a>
@@ -14,12 +14,13 @@ Your library, on your hardware, with an app that feels like it belongs on your p
 <a href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.ipa"><img src="docs/assets/img/badges/install-ios.png" alt="Install Musonic on iOS (sideload)" height="64" /></a>
 
 [![Latest release](https://img.shields.io/github/v/release/DoodzProg/Musonic?filter=mobile-v*&label=mobile&color=FF6B35)](https://github.com/DoodzProg/Musonic/releases/latest)
+[![Web release](https://img.shields.io/github/v/release/DoodzProg/Musonic?filter=web-v*&label=web&color=FF6B35)](https://github.com/DoodzProg/Musonic/releases?q=web-v&expanded=true)
 [![Mobile CI](https://github.com/DoodzProg/Musonic/actions/workflows/ci.yml/badge.svg)](https://github.com/DoodzProg/Musonic/actions/workflows/ci.yml)
 [![Web CI](https://github.com/DoodzProg/Musonic/actions/workflows/ci-web.yml/badge.svg)](https://github.com/DoodzProg/Musonic/actions/workflows/ci-web.yml)
 [![React Native](https://img.shields.io/badge/React%20Native-0.85-61DAFB?logo=react)](https://reactnative.dev)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
-[Presentation website](https://doodzprog.github.io/Musonic/) · [All releases](https://github.com/DoodzProg/Musonic/releases) · [Changelog](apps/mobile/CHANGELOG.md)
+[Presentation website](https://doodzprog.github.io/Musonic/) · [Web client online](https://doodzprog.github.io/Musonic/app/) · [All releases](https://github.com/DoodzProg/Musonic/releases) · Changelogs: [mobile](apps/mobile/CHANGELOG.md), [web](apps/web/CHANGELOG.md)
 
 <img src="docs/assets/img/screenshots/home.jpg" alt="Home" width="200" />
 <img src="docs/assets/img/screenshots/player.jpg" alt="Player" width="200" />
@@ -52,7 +53,7 @@ Your library, on your hardware, with an app that feels like it belongs on your p
 - **Free and open source**, no account, no ads, no tracking.
 - **Your server only**: Musonic plays what Navidrome serves; nothing is uploaded anywhere.
 - **More than your library**: recommendations and, with OctoFiesta, the online catalogue, side by side with your own music.
-- **One ecosystem**: the mobile app today, a web client and more tools to come, all in this repository.
+- **One ecosystem**: the mobile app and the web client today, more tools to come, all in this repository.
 
 ---
 
@@ -134,7 +135,7 @@ More screenshots on the [presentation website](https://doodzprog.github.io/Muson
 |---|---|
 | **Android** 7.0+ | Download [`Musonic.apk`](https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.apk) from the latest release and open it. The app tells you when a new version is out. |
 | **iOS** 15.1+ | Unsigned IPA, [`Musonic.ipa`](https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.ipa), to install with AltStore or Sideloadly. No App Store release is planned. |
-| **Web client** | The Musonic app in a browser, for desktop. In development, not released yet: see [`apps/web`](apps/web/README.md). |
+| **Web client** | The complete Musonic in a browser, for desktop. **Use it online** at [doodzprog.github.io/Musonic/app](https://doodzprog.github.io/Musonic/app/), nothing to install, or **host it yourself**: download `Musonic-Web.zip` from the latest [`web-v` release](https://github.com/DoodzProg/Musonic/releases?q=web-v&expanded=true) and follow [`SELF-HOSTING.md`](apps/web/SELF-HOSTING.md). |
 
 No account, no cloud and no API key: Musonic only talks to your own server, plus the public Deezer API for artist photos and recommendations.
 
@@ -246,7 +247,7 @@ Each app is released on its own, from `main`, with its own tag prefix:
 | Tag | Release | Built by |
 |---|---|---|
 | `mobile-vX.Y.Z` | *Musonic Mobile X.Y.Z*: signed APK and unsigned IPA | `android-release.yml`, `ios-release.yml` |
-| `web-vX.Y.Z` | *Musonic Web X.Y.Z* | (coming) |
+| `web-vX.Y.Z` | *Musonic Web X.Y.Z*: `Musonic-Web.zip` for self-hosting (the online version is published by `pages.yml` on every push) | `web-release.yml` |
 
 The in-app update prompt only looks at its own app's tags. Every push and pull request runs the checks of the parts it touches: `ci.yml` (mobile and core) and `ci-web.yml` (web and core).
 
@@ -280,7 +281,7 @@ cd apps/mobile/android
 | iOS | Unsigned IPA only (AltStore, Sideloadly); tested far less than Android. |
 | Android Auto | Beta since 2.0.1: playlists, playback and Shuffle / Repeat / Like buttons. Musonic is not on the Play Store, so turn on *Unknown sources* in Android Auto's developer settings. |
 | Memory | Image caches can grow to about 900 MB on long sessions with large libraries; being worked on. |
-| Web client | Early stage, not released yet. |
+| Web client | Chromium browsers (Brave, Chrome, Edge) recommended: the floating mini player needs them. The online version reaches servers that allow CORS over HTTPS (Navidrome does). |
 | Online catalogue | Needs OctoFiesta in front of Navidrome. |
 
 ---

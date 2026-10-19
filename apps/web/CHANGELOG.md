@@ -10,5 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-19
+
+The first complete release of Musonic in the browser, made for desktop. Use it online at https://doodzprog.github.io/Musonic/app/ or host it yourself with `Musonic-Web.zip`.
+
 ### Added
-- **Web client** — sign-in to any Subsonic-compatible server with token authentication (the password is never sent in clear), playback, home, album and artist pages.
+- **Sign-in** to Navidrome or any Subsonic-compatible server with token authentication: the password is never sent in clear. **Remember me** keeps you signed in on your own computer, after a clear warning about the token stored in the browser.
+- **Home** like the mobile app: quick access, recently played, favourite artists, “More like…”, “Because you liked…”, Magic Mixes, rediscover, new in your library, random.
+- **Library**: playlists with Liked Songs and My Music, albums, artists, and **Play by genre**.
+- **Search** in your library with Songs / Albums / Artists filters and endless results, plus **Browse**: recently added, most played, random and one tile per decade.
+- **Magic Mixes**: eight mixes a day from your favourite genres, each with its own page like a playlist.
+- **Playback engine shared with the mobile app**: shuffle off / on / Magic, repeat all / one, autoplay, previous restarts after 3 s; Space and Ctrl + arrows; media keys and the desktop media controls.
+- **Queue** panel in zones (now playing, added by you, next up, autoplay): play from any entry, remove, **reorder by drag and drop**.
+- **Synced lyrics**: from the server, else from LRCLIB; the line being sung is highlighted and a click jumps to it.
+- **Full-screen player**: blurred cover background, large cover, lyrics beside it, like, controls and volume, and the browser’s full screen.
+- **Floating mini player**: a Picture-in-Picture window (Brave, Chrome, Edge) that stays on top of everything, even when the tab is hidden or the browser minimized. Its layout follows its size, from one thin line to a large view with like and the next track.
+- **Track rows**: a heart for liked songs and a “+” / “✓” showing at a glance whether the song is in one of your playlists. Right click or “⋯” for play next, add to queue, add to a playlist, like, go to the album or the artist.
+- **Add to a playlist** box with the covers and track counts; it also removes the song from a playlist.
+- **Playlists**: create, edit the name and description (synced with every client), delete. The sidebar lists the most recently played first, with a play button on hover.
+- **Resizable side panels**: drag the edge, double-click to reset.
+- **English and French**: the browser language by default, your choice remembered and shared with the Musonic website. Settings in the profile menu, at the top right.
+- **Self-hosting**: `Musonic-Web.zip` in every `web-v` release, with a short guide.
