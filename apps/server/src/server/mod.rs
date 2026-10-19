@@ -4,11 +4,12 @@
 use axum::{Json, Router, extract::State, routing::get};
 use serde_json::{Value, json};
 
-use crate::db::Db;
+use crate::{db::Db, library::LibraryService};
 
 #[derive(Clone)]
 pub struct AppState {
     pub db: Db,
+    pub library: Option<LibraryService>,
 }
 
 pub fn router(state: AppState) -> Router {
@@ -23,6 +24,7 @@ async fn health(State(state): State<AppState>) -> Json<Value> {
         "status": if schema.is_some() { "ok" } else { "degraded" },
         "version": env!("CARGO_PKG_VERSION"),
         "schema": schema,
+        "scan": state.library.as_ref().map(LibraryService::status),
     }))
 }
 
@@ -38,6 +40,7 @@ mod tests {
     async fn health_reports_version_and_schema() {
         let app = router(AppState {
             db: Db::memory().unwrap(),
+            library: None,
         });
         let res = app
             .oneshot(Request::get("/health").body(Body::empty()).unwrap())

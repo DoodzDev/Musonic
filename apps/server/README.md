@@ -3,8 +3,8 @@
 The music server of the Musonic ecosystem: your library, your accounts and your playlists, for
 the Musonic apps and for any Subsonic client.
 
-> **Status: in development (0.1.0).** The structure, the database and the audio provider
-> interface are in place; scanning, accounts and the Subsonic API come next. Use
+> **Status: in development (0.1.0).** The database, the audio provider interface and the
+> library scanner are in place; accounts and the Subsonic API come next. Use
 > [Navidrome](https://www.navidrome.org/) in the meantime.
 
 ## What it will do
@@ -33,6 +33,9 @@ cargo run --release
 | `bind` | `MUSONIC_BIND` | `127.0.0.1:4533` |
 | `data_dir` (database, caches) | `MUSONIC_DATA_DIR` | `data` |
 | `music_dir` | `MUSONIC_MUSIC_DIR` | none |
+| `scan_interval_minutes` (0 = only on changes) | `MUSONIC_SCAN_INTERVAL_MINUTES` | `60` |
+
+`musonic-server scan [--full]` scans the library once and prints a summary.
 
 ## Development
 ```sh
@@ -43,7 +46,8 @@ cargo fmt --check
 
 Layout: `src/db` (SQLite, migrations in `migrations/`), `src/model`, `src/matcher` (matching the
 same track across sources), `src/providers` (audio provider interface and conformance checks),
-`src/stream` (segment cache), `src/library` (tags and file layout), `src/server` (HTTP).
+`src/stream` (segment cache), `src/library` (reading tags, scanner, watching, tag writing),
+`src/ids.rs` (identifiers), `src/server` (HTTP).
 
 ## License
 [PolyForm Noncommercial 1.0.0](LICENSE): free to use, study, modify and share for any

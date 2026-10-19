@@ -15,6 +15,8 @@ pub struct Config {
     pub data_dir: PathBuf,
     /// Root of the music library. Without it the server starts with an empty library.
     pub music_dir: Option<PathBuf>,
+    /// Minutes between scheduled scans (0 = none; changes are picked up as they happen anyway).
+    pub scan_interval_minutes: u64,
 }
 
 impl Default for Config {
@@ -23,6 +25,7 @@ impl Default for Config {
             bind: ([127, 0, 0, 1], 4533).into(),
             data_dir: "data".into(),
             music_dir: None,
+            scan_interval_minutes: 60,
         }
     }
 }
@@ -52,6 +55,9 @@ impl Config {
         }
         if let Some(v) = env("MUSONIC_MUSIC_DIR") {
             cfg.music_dir = Some(v.into());
+        }
+        if let Some(v) = env("MUSONIC_SCAN_INTERVAL_MINUTES") {
+            cfg.scan_interval_minutes = v.parse().context("MUSONIC_SCAN_INTERVAL_MINUTES")?;
         }
         Ok(cfg)
     }

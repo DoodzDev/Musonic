@@ -1,3 +1,9 @@
-//! The music library on disk: tags, file layout, (next) scanner, covers and lyrics.
+//! The music library on disk: reading tags, scanning, watching for changes, writing tags.
 
+pub mod read;
+pub mod scanner;
 pub mod tags;
+pub mod watcher;
+
+pub use scanner::{ScanStats, Scanner};
+pub use watcher::{LibraryService, ScanStatus};

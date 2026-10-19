@@ -6,10 +6,16 @@ use anyhow::{Context, Result, bail};
 use rusqlite::Connection;
 
 /// `(name, sql)`, in order.
-pub const MIGRATIONS: &[(&str, &str)] = &[(
-    "0001_initial",
-    include_str!("../../migrations/0001_initial.sql"),
-)];
+pub const MIGRATIONS: &[(&str, &str)] = &[
+    (
+        "0001_initial",
+        include_str!("../../migrations/0001_initial.sql"),
+    ),
+    (
+        "0002_album_cover",
+        include_str!("../../migrations/0002_album_cover.sql"),
+    ),
+];
 
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
 
