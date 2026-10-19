@@ -3,8 +3,8 @@
 The music server of the Musonic ecosystem: your library, your accounts and your playlists, for
 the Musonic apps and for any Subsonic client.
 
-> **Status: in development (0.1.0).** The database, the audio provider interface and the
-> library scanner are in place; accounts and the Subsonic API come next. Use
+> **Status: in development (0.1.0).** Library scanner, accounts and Subsonic sign-in work;
+> browsing and playing (the rest of the Subsonic API) come next. Use
 > [Navidrome](https://www.navidrome.org/) in the meantime.
 
 ## What it will do
@@ -34,8 +34,24 @@ cargo run --release
 | `data_dir` (database, caches) | `MUSONIC_DATA_DIR` | `data` |
 | `music_dir` | `MUSONIC_MUSIC_DIR` | none |
 | `scan_interval_minutes` (0 = only on changes) | `MUSONIC_SCAN_INTERVAL_MINUTES` | `60` |
+| `legacy_auth`: Subsonic token sign-in (`t` + `s`) | `MUSONIC_LEGACY_AUTH` | `true` |
+| Key encrypting the passwords kept for `legacy_auth` (64 hex) | `MUSONIC_SECRET_KEY` | `secret.key` in `data_dir`, created on first start |
 
 `musonic-server scan [--full]` scans the library once and prints a summary.
+
+### First start
+Create the administrator account, either from a client (`POST /v1/setup`, allowed only while
+there is no account) or on the command line:
+
+```sh
+musonic-server user add <name> --admin   # asks for the password (or MUSONIC_PASSWORD)
+```
+
+Clients sign in with a username and password, or better with a per-device API key
+(`POST /v1/me/api-keys`, OpenSubsonic `apiKey`). Without `legacy_auth`, only the password is
+needed to check sign-ins and nothing reversible is stored; with it (default, needed by many
+Subsonic clients), the password is also kept encrypted with a key outside the database.
+Keep `data_dir` private and backed up.
 
 ## Development
 ```sh

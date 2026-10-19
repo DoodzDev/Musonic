@@ -29,3 +29,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Library watching: changes in the music folder are scanned a few seconds later; scheduled
   scan every hour (`MUSONIC_SCAN_INTERVAL_MINUTES`).
 - `musonic-server scan [--full]`: scans once and prints what it did.
+- Accounts: administrators and users, passwords hashed with argon2id, one revocable API key
+  per device (only its hash is stored), sign-in sessions (30 days, sliding), a new password
+  ends the other sessions, the last administrator cannot be deleted. Failed sign-ins are
+  limited per address and account.
+- Subsonic API (`/rest`): sign-in by password (`p`, also `enc:`), legacy token (`t` + `s`, on by
+  default, the password then kept encrypted with AES-256-GCM under a key outside the
+  database: `MUSONIC_SECRET_KEY` or `secret.key`) and OpenSubsonic API keys; XML, JSON and
+  JSONP answers; form posts; `ping`, `getLicense`, `getOpenSubsonicExtensions`, `tokenInfo`,
+  `getUser`, `getUsers`, `createUser`, `deleteUser`, `changePassword`, `getMusicFolders`.
+- Native API (`/v1`): first administrator (`/v1/setup`), sign-in / sign-out, profile, password,
+  device keys, accounts.
+- CORS open to any origin (no cookies), for browser clients.
+- `musonic-server user add <name> [--admin]`.

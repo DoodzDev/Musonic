@@ -5,6 +5,7 @@
 //! [`providers`]. A binary starts the server with [`run`], adding its own providers through
 //! [`Extensions`].
 
+pub mod api;
 pub mod config;
 pub mod db;
 pub mod ids;
@@ -14,8 +15,10 @@ pub mod model;
 pub mod providers;
 pub mod server;
 pub mod stream;
+pub mod subsonic;
+pub mod users;
 
-use std::{sync::Arc, time::Duration};
+use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::{Context, Result};
 
@@ -24,6 +27,7 @@ use crate::{
     db::Db,
     library::{LibraryService, ScanStats, Scanner},
     providers::AudioProvider,
+    users::{Users, secret::SecretBox},
 };
 
 /// What a binary adds on top of the server.
@@ -64,16 +68,26 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
         None => None,
     };
 
-    let app = server::router(server::AppState { db, library });
+    let users = open_users(&config, db.clone())?;
+    if users.count().await? == 0 {
+        tracing::warn!(
+            "no account yet: create the administrator in the web client, with POST /v1/setup, \
+             or with `musonic-server user add <name> --admin`"
+        );
+    }
+    let app = server::router(server::AppState::new(db, library, users));
     let listener = tokio::net::TcpListener::bind(config.bind)
         .await
         .with_context(|| format!("binding {}", config.bind))?;
     tracing::info!("listening on http://{}", config.bind);
-    axum::serve(listener, app)
-        .with_graceful_shutdown(async {
-            let _ = tokio::signal::ctrl_c().await;
-        })
-        .await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(async {
+        let _ = tokio::signal::ctrl_c().await;
+    })
+    .await?;
     Ok(())
 }
 
@@ -86,4 +100,41 @@ pub async fn scan_once(config: Config, full: bool) -> Result<ScanStats> {
     std::fs::create_dir_all(&config.data_dir)?;
     let db = Db::open(&config.data_dir.join("musonic.db"))?;
     Scanner::new(db, root).await?.scan(full).await
+}
+
+fn open_users(config: &Config, db: Db) -> Result<Users> {
+    let key = std::env::var("MUSONIC_SECRET_KEY").ok();
+    let secrets = SecretBox::load(
+        key.as_deref().filter(|k| !k.trim().is_empty()),
+        &config.data_dir,
+    )?;
+    Ok(Users::new(db, secrets, config.legacy_auth))
+}
+
+/// `musonic-server user add <name> [--admin]`, password from `MUSONIC_PASSWORD` or stdin.
+pub async fn add_user(config: Config, username: &str, admin: bool) -> Result<()> {
+    std::fs::create_dir_all(&config.data_dir)?;
+    let db = Db::open(&config.data_dir.join("musonic.db"))?;
+    let password = match std::env::var("MUSONIC_PASSWORD") {
+        Ok(p) if !p.is_empty() => p,
+        _ => {
+            eprint!("Password for {username}: ");
+            let mut line = String::new();
+            std::io::stdin().read_line(&mut line)?;
+            line.trim_end_matches(['\r', '\n']).to_owned()
+        }
+    };
+    let user = open_users(&config, db)?
+        .create(username, &password, admin)
+        .await?;
+    println!(
+        "created {} ({})",
+        user.username,
+        if user.is_admin {
+            "administrator"
+        } else {
+            "user"
+        }
+    );
+    Ok(())
 }

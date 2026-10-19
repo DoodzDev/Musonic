@@ -17,6 +17,9 @@ pub struct Config {
     pub music_dir: Option<PathBuf>,
     /// Minutes between scheduled scans (0 = none; changes are picked up as they happen anyway).
     pub scan_interval_minutes: u64,
+    /// Accept the Subsonic token auth (`t` + `s`) used by many clients. It needs the password
+    /// kept encrypted next to its hash; off = only password, API key and session sign-ins.
+    pub legacy_auth: bool,
 }
 
 impl Default for Config {
@@ -26,6 +29,7 @@ impl Default for Config {
             data_dir: "data".into(),
             music_dir: None,
             scan_interval_minutes: 60,
+            legacy_auth: true,
         }
     }
 }
@@ -55,6 +59,10 @@ impl Config {
         }
         if let Some(v) = env("MUSONIC_MUSIC_DIR") {
             cfg.music_dir = Some(v.into());
+        }
+        if let Some(v) = env("MUSONIC_LEGACY_AUTH") {
+            cfg.legacy_auth =
+                matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on");
         }
         if let Some(v) = env("MUSONIC_SCAN_INTERVAL_MINUTES") {
             cfg.scan_interval_minutes = v.parse().context("MUSONIC_SCAN_INTERVAL_MINUTES")?;
