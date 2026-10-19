@@ -527,12 +527,13 @@ fn store_file(tx: &Transaction, lib: i64, r: &FileRecord) -> Result<(bool, Strin
     } else {
         info.artists.iter().map(String::as_str).collect()
     };
+    // Without an album artist tag: the main artist ("A feat. B" → "A"), as most players do.
     let album_artists: Vec<&str> = if !info.album_artists.is_empty() {
         info.album_artists.iter().map(String::as_str).collect()
     } else if info.compilation {
         vec![VARIOUS_ARTISTS]
     } else {
-        artists.clone()
+        artists[..1].to_vec()
     };
     let album_artist_display = album_artists.join(" • ");
     let artist_display = artists.join(" • ");

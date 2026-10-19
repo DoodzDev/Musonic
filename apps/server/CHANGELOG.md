@@ -42,3 +42,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   device keys, accounts.
 - CORS open to any origin (no cookies), for browser clients.
 - `musonic-server user add <name> [--admin]`.
+- Subsonic browsing: `getArtists`, `getIndexes`, `getArtist`, `getAlbum`, `getSong`,
+  `getMusicDirectory`, `getGenres`, `getAlbumList2` / `getAlbumList` (random, newest, highest,
+  frequent, recent, alphabetical, starred, by genre, by year), `getRandomSongs`,
+  `getSongsByGenre`, `getStarred2` / `getStarred`, `getTopSongs` (most played here),
+  `getSimilarSongs2` (same artists and genres), `getArtistInfo2` (similar artists by genre),
+  `getAlbumInfo2`, `getScanStatus`, `startScan`, `getNowPlaying`, `getPlaylists`,
+  `getPlaylist`, `getInternetRadioStations` (none); OpenSubsonic fields (several artists,
+  album artists, genres, release date, ISRC, sampling rate, bit depth).
+- Search (`search3`, `search2`): every word as a prefix, accents ignored; an empty query lists
+  everything.
+- Playback: `stream` sends the file with HTTP ranges (seeking), or transcodes with ffmpeg when
+  a lower bit rate or another format is asked (MP3, Opus, AAC, Vorbis; the file as is when
+  ffmpeg is missing); `download`.
+- Covers (`getCoverArt`): the album's image file or embedded picture, resized on request
+  (JPEG) and cached on disk.
+- Lyrics: `getLyricsBySongId` (synced lines from `.lrc` files) and `getLyrics`.
+- Tracks without an album artist tag: the album goes to the main artist ("A feat. B" → "A").

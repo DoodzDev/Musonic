@@ -1,84 +1,11 @@
 //! Scanner tests on real files: small WAV files written and tagged in a temporary folder.
 
-use std::{
-    path::{Path, PathBuf},
-    time::Duration,
-};
+use std::{path::PathBuf, time::Duration};
 
-use lofty::{
-    config::WriteOptions,
-    picture::{MimeType, Picture, PictureType},
-    tag::{Accessor, ItemKey, Tag, TagExt, TagType},
-};
 use rusqlite::Connection;
 
 use super::*;
-
-struct Song<'a> {
-    title: &'a str,
-    artist: &'a str,
-    album: &'a str,
-    track: u32,
-    isrc: Option<&'a str>,
-    genre: &'a str,
-    cover: bool,
-}
-
-const SONG: Song = Song {
-    title: "Hoppípolla",
-    artist: "Sigur Rós",
-    album: "Takk...",
-    track: 3,
-    isrc: None,
-    genre: "Post-Rock",
-    cover: false,
-};
-
-/// A valid one-second mono WAV file.
-fn wav() -> Vec<u8> {
-    let rate: u32 = 8000;
-    let data = vec![0u8; rate as usize * 2];
-    let mut f = Vec::new();
-    f.extend_from_slice(b"RIFF");
-    f.extend_from_slice(&(36 + data.len() as u32).to_le_bytes());
-    f.extend_from_slice(b"WAVEfmt ");
-    f.extend_from_slice(&16u32.to_le_bytes());
-    f.extend_from_slice(&1u16.to_le_bytes()); // PCM
-    f.extend_from_slice(&1u16.to_le_bytes()); // mono
-    f.extend_from_slice(&rate.to_le_bytes());
-    f.extend_from_slice(&(rate * 2).to_le_bytes());
-    f.extend_from_slice(&2u16.to_le_bytes());
-    f.extend_from_slice(&16u16.to_le_bytes());
-    f.extend_from_slice(b"data");
-    f.extend_from_slice(&(data.len() as u32).to_le_bytes());
-    f.extend_from_slice(&data);
-    f
-}
-
-fn write_song(root: &Path, rel: &str, s: &Song) {
-    let path = root.join(rel);
-    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-    std::fs::write(&path, wav()).unwrap();
-    let mut tag = Tag::new(TagType::Id3v2);
-    tag.set_title(s.title.into());
-    tag.set_artist(s.artist.into());
-    tag.set_album(s.album.into());
-    tag.set_track(s.track);
-    tag.set_genre(s.genre.into());
-    tag.insert_text(ItemKey::RecordingDate, "2005-09-12".into());
-    if let Some(isrc) = s.isrc {
-        tag.insert_text(ItemKey::Isrc, isrc.into());
-    }
-    if s.cover {
-        tag.push_picture(Picture::new_unchecked(
-            PictureType::CoverFront,
-            Some(MimeType::Png),
-            None,
-            vec![0x89, b'P', b'N', b'G', 0, 0],
-        ));
-    }
-    tag.save_to_path(&path, WriteOptions::default()).unwrap();
-}
+use crate::testing::{SONG, Song, write_song};
 
 struct Lib {
     root: PathBuf,
@@ -173,7 +100,8 @@ async fn scans_tracks_albums_artists_and_genres() {
     assert_eq!(
         lib.q::<String>("SELECT artist_display FROM album WHERE title = 'Random Access Memories'")
             .await,
-        "Daft Punk • Pharrell Williams"
+        "Daft Punk",
+        "without an album artist tag, the main artist"
     );
     assert_eq!(
         lib.q::<i64>("SELECT year FROM album WHERE title = 'Takk...'")

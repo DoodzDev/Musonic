@@ -5,6 +5,11 @@
 //! token, see [`crate::users`]), or `apiKey` (OpenSubsonic). Answers are XML by default, JSON
 //! with `f=json`, JSONP with `f=jsonp` + `callback`.
 
+mod browse;
+mod media;
+mod model;
+mod playlists;
+mod search;
 mod system;
 mod xml;
 
@@ -167,6 +172,7 @@ pub struct Ctx {
     pub state: AppState,
     pub user: User,
     pub params: Params,
+    pub headers: HeaderMap,
 }
 
 pub fn router() -> Router<AppState> {
@@ -202,7 +208,18 @@ async fn handle(
         state,
         user,
         params,
+        headers,
     };
+    // Binary answers (audio, images); errors still in the Subsonic format.
+    let media = match name.as_str() {
+        "stream" => Some(media::stream(&ctx, false).await),
+        "download" => Some(media::stream(&ctx, true).await),
+        "getCoverArt" => Some(media::cover_art(&ctx).await),
+        _ => None,
+    };
+    if let Some(result) = media {
+        return result.unwrap_or_else(|e| format.render(Err(e)));
+    }
     let reply = match name.as_str() {
         "ping" => Ok(Map::new()),
         "getLicense" => system::license(),
@@ -213,6 +230,39 @@ async fn handle(
         "deleteUser" => system::delete_user(&ctx).await,
         "changePassword" => system::change_password(&ctx).await,
         "getMusicFolders" => system::music_folders(&ctx).await,
+        "getArtists" => browse::get_artists(&ctx).await,
+        "getIndexes" => browse::get_indexes(&ctx).await,
+        "getArtist" => browse::get_artist(&ctx).await,
+        "getAlbum" => browse::get_album(&ctx).await,
+        "getSong" => browse::get_song(&ctx).await,
+        "getMusicDirectory" => browse::get_music_directory(&ctx).await,
+        "getGenres" => browse::get_genres(&ctx).await,
+        "getAlbumList2" => browse::album_list(&ctx, "albumList2").await,
+        "getAlbumList" => browse::album_list(&ctx, "albumList").await,
+        "getRandomSongs" => browse::random_songs(&ctx).await,
+        "getSongsByGenre" => browse::songs_by_genre(&ctx).await,
+        "getStarred2" => browse::starred(&ctx, "starred2").await,
+        "getStarred" => browse::starred(&ctx, "starred").await,
+        "getTopSongs" => browse::top_songs(&ctx).await,
+        "getSimilarSongs2" => browse::similar_songs(&ctx, "similarSongs2").await,
+        "getSimilarSongs" => browse::similar_songs(&ctx, "similarSongs").await,
+        "getArtistInfo2" => browse::artist_info(&ctx, "artistInfo2").await,
+        "getArtistInfo" => browse::artist_info(&ctx, "artistInfo").await,
+        "getAlbumInfo2" => browse::album_info(&ctx, "albumInfo").await,
+        "getAlbumInfo" => browse::album_info(&ctx, "albumInfo").await,
+        "getScanStatus" => browse::scan_status(&ctx).await,
+        "startScan" => browse::start_scan(&ctx).await,
+        "getNowPlaying" => Ok(one("nowPlaying", json!({ "entry": [] }))),
+        "search3" => search::search(&ctx, "searchResult3").await,
+        "search2" => search::search(&ctx, "searchResult2").await,
+        "getPlaylists" => playlists::get_playlists(&ctx).await,
+        "getPlaylist" => playlists::get_playlist(&ctx).await,
+        "getLyricsBySongId" => media::lyrics_by_song_id(&ctx).await,
+        "getLyrics" => media::lyrics(&ctx).await,
+        "getInternetRadioStations" => Ok(one(
+            "internetRadioStations",
+            json!({ "internetRadioStation": [] }),
+        )),
         _ => Err(ApiError::new(
             Code::Generic,
             format!("{name} is not implemented yet"),
@@ -346,5 +396,7 @@ pub fn one(key: &str, value: Value) -> Map<String, Value> {
     m
 }
 
+#[cfg(test)]
+mod library_tests;
 #[cfg(test)]
 mod tests;

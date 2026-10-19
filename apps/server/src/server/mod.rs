@@ -3,7 +3,7 @@
 //! CORS is open (any origin, no cookies): browsers clients such as Musonic Web call the server
 //! from another address, with credentials in parameters or an `Authorization` header.
 
-use std::{net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 
 use axum::{
     Json, Router,
@@ -31,14 +31,17 @@ pub struct AppState {
     pub limiter: Arc<AuthLimiter>,
     /// One first-account setup at a time.
     pub setup_lock: Arc<tokio::sync::Mutex<()>>,
+    /// Caches (resized covers…) live under it.
+    pub data_dir: PathBuf,
 }
 
 impl AppState {
-    pub fn new(db: Db, library: Option<LibraryService>, users: Users) -> Self {
+    pub fn new(db: Db, library: Option<LibraryService>, users: Users, data_dir: PathBuf) -> Self {
         Self {
             db,
             library,
             users,
+            data_dir,
             limiter: Arc::new(AuthLimiter::default()),
             setup_lock: Arc::new(tokio::sync::Mutex::new(())),
         }
@@ -124,7 +127,12 @@ pub mod tests {
     pub fn state() -> AppState {
         let db = Db::memory().unwrap();
         let users = Users::new(db.clone(), SecretBox::from_key(&[3; 32]), true);
-        AppState::new(db, None, users)
+        AppState::new(
+            db,
+            None,
+            users,
+            std::env::temp_dir().join("musonic-test-data"),
+        )
     }
 
     #[tokio::test]

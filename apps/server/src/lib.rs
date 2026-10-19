@@ -18,6 +18,9 @@ pub mod stream;
 pub mod subsonic;
 pub mod users;
 
+#[cfg(test)]
+mod testing;
+
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::{Context, Result};
@@ -75,7 +78,12 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
              or with `musonic-server user add <name> --admin`"
         );
     }
-    let app = server::router(server::AppState::new(db, library, users));
+    let app = server::router(server::AppState::new(
+        db,
+        library,
+        users,
+        config.data_dir.clone(),
+    ));
     let listener = tokio::net::TcpListener::bind(config.bind)
         .await
         .with_context(|| format!("binding {}", config.bind))?;

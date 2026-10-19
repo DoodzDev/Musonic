@@ -3,9 +3,9 @@
 The music server of the Musonic ecosystem: your library, your accounts and your playlists, for
 the Musonic apps and for any Subsonic client.
 
-> **Status: in development (0.1.0).** Library scanner, accounts and Subsonic sign-in work;
-> browsing and playing (the rest of the Subsonic API) come next. Use
-> [Navidrome](https://www.navidrome.org/) in the meantime.
+> **Status: in development (0.1.0).** Scanning, accounts, browsing, search, playback with
+> transcoding, covers and lyrics work; likes, playlists editing and play counts come next.
+> Use [Navidrome](https://www.navidrome.org/) in the meantime.
 
 ## What it will do
 - **Library**: scans your music folder (tags, covers, lyrics, several artists per track), and
@@ -20,7 +20,8 @@ the Musonic apps and for any Subsonic client.
   as files (see [docs/PROVIDERS.md](docs/PROVIDERS.md)).
 
 ## Build and run
-Requires Rust 1.88 or later.
+Requires Rust 1.88 or later. [ffmpeg](https://ffmpeg.org/) is needed to transcode (lower bit
+rates on mobile data); without it, files are sent as they are. `MUSONIC_FFMPEG` sets its path.
 
 ```sh
 cargo run --release
