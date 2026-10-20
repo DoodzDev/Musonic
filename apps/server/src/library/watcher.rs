@@ -2,12 +2,12 @@
 //! folder (grouped over a few seconds), on a schedule, or when asked. Scans never overlap.
 
 use std::{
-    sync::{Arc, Mutex},
+    path::Path,
+    sync::{Arc, Mutex, mpsc},
     time::Duration,
 };
 
-use notify::RecursiveMode;
-use notify_debouncer_mini::new_debouncer;
+use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Serialize;
 use tokio::sync::Notify;
 
@@ -39,22 +39,7 @@ impl LibraryService {
             status: Arc::new(Mutex::new(ScanStatus::default())),
         };
 
-        // File system events wake the task (the debouncer groups them).
-        let wake = service.wake.clone();
-        let watcher = new_debouncer(
-            DEBOUNCE,
-            move |res: notify_debouncer_mini::DebounceEventResult| {
-                if res.is_ok_and(|events| !events.is_empty()) {
-                    wake.notify_one();
-                }
-            },
-        )
-        .and_then(|mut d| {
-            d.watcher()
-                .watch(&root, RecursiveMode::Recursive)
-                .map(|_| d)
-        });
-        let watcher = match watcher {
+        let watcher = match watch(&root, service.wake.clone(), DEBOUNCE) {
             Ok(w) => Some(w),
             Err(e) => {
                 tracing::warn!(
@@ -108,5 +93,52 @@ impl LibraryService {
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .clone()
+    }
+}
+
+/// Whether an event changes the library. Opening or reading a file (a scan, a stream, a
+/// cover) does not: counting it would make every scan start the next one.
+fn is_change(kind: &EventKind) -> bool {
+    !matches!(kind, EventKind::Access(_))
+}
+
+/// Watches `root`; `wake` is notified once changes have stopped for `quiet`.
+fn watch(root: &Path, wake: Arc<Notify>, quiet: Duration) -> notify::Result<RecommendedWatcher> {
+    let (tx, rx) = mpsc::channel::<()>();
+    let mut watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
+        if res.is_ok_and(|e| is_change(&e.kind)) {
+            let _ = tx.send(());
+        }
+    })?;
+    watcher.watch(root, RecursiveMode::Recursive)?;
+    // Ends with the watcher (the sender goes away with it).
+    std::thread::spawn(move || {
+        while rx.recv().is_ok() {
+            while rx.recv_timeout(quiet).is_ok() {}
+            wake.notify_one();
+        }
+    });
+    Ok(watcher)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn reading_files_does_not_wake_changes_do() {
+        let root = crate::testing::temp_dir("watch");
+        std::fs::write(root.join("a.txt"), "x").unwrap();
+        let wake = Arc::new(Notify::new());
+        let _w = watch(&root, wake.clone(), Duration::from_millis(100)).unwrap();
+        let woken = |ms| tokio::time::timeout(Duration::from_millis(ms), wake.notified());
+
+        let _ = std::fs::read(root.join("a.txt")).unwrap();
+        let _ = std::fs::read_dir(&root).unwrap().count();
+        assert!(woken(500).await.is_err(), "a read is not a change");
+
+        std::fs::write(root.join("b.txt"), "y").unwrap();
+        assert!(woken(2000).await.is_ok(), "a new file is");
+        let _ = std::fs::remove_dir_all(&root);
     }
 }

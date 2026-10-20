@@ -32,7 +32,6 @@ image = { version = "0.25", default-features = false, features = ["jpeg", "png",
 lofty = "0.22"
 md-5 = "0.10"
 notify = "8"
-notify-debouncer-mini = "0.7"
 rand = "0.8"
 rusqlite = { version = "0.37", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
