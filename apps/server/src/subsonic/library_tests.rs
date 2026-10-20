@@ -1452,3 +1452,21 @@ async fn navidrome_playlists_likes_and_plays_are_imported_with_their_ids() {
         .unwrap();
     assert_eq!(lib.get("getSong?id=nd1").await["song"]["playCount"], 5);
 }
+
+#[tokio::test]
+async fn a_moved_music_folder_keeps_its_tracks() {
+    let mut lib = library("moved").await;
+    let id = lib.song_id("hoppipolla").await;
+    let moved = temp_dir("moved-elsewhere");
+    let _ = std::fs::remove_dir(&moved);
+    std::fs::rename(&lib.root, &moved).unwrap();
+    lib.root = moved;
+    rescan(&lib).await;
+    let s = lib.get(&format!("getSong?id={id}")).await["song"].clone();
+    assert_eq!(
+        s["title"], "Hoppípolla",
+        "same track, found in the new place"
+    );
+    let (_, _, body) = lib.raw(&format!("stream?id={id}&{AUTH}"), None).await;
+    assert!(body.len() > 1000, "and its file plays");
+}

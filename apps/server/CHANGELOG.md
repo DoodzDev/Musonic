@@ -102,6 +102,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Daily database backup (consistent copy while running) in `data_dir/backups`, 14 days kept
   (`backup_days`).
 - `Dockerfile` (with ffmpeg) and `compose.example.yml`.
+- A music folder that moved (another disk, another Docker mount) is followed: tracks, likes and
+  playlists stay, files are found in the new place.
 - `musonic_server::cli`: the command line, for binaries that add their own providers.
 - Providers can say their credentials expired: `/health` then shows `"status": "warning"` and
   the provider in `alerts`.

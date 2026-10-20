@@ -191,11 +191,26 @@ impl Scanner {
         let path = root.to_string_lossy().into_owned();
         let library_id = db
             .call(move |c| {
+                // Paths of files are relative to the folder: when the folder moved (another
+                // disk, another Docker mount), the library just follows it.
+                let before: Option<String> = c
+                    .query_row("SELECT path FROM library WHERE name = 'Music'", [], |r| {
+                        r.get(0)
+                    })
+                    .optional()?;
+                if let Some(old) = before.filter(|old| *old != path) {
+                    tracing::info!("music folder moved from {old} to {path}");
+                }
                 c.execute(
-                    "INSERT INTO library(name, path) VALUES ('Music', ?1) ON CONFLICT(path) DO NOTHING",
+                    "INSERT INTO library(name, path) VALUES ('Music', ?1)
+                     ON CONFLICT(name) DO UPDATE SET path = excluded.path",
                     [&path],
                 )?;
-                Ok(c.query_row("SELECT id FROM library WHERE path = ?1", [&path], |r| r.get(0))?)
+                Ok(
+                    c.query_row("SELECT id FROM library WHERE path = ?1", [&path], |r| {
+                        r.get(0)
+                    })?,
+                )
             })
             .await?;
         Ok(Self {
