@@ -119,6 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   alerts (expired provider credentials, given-up imports, disk almost full, no backup for two
   days, newer server released) and the latest releases of the server and of Musonic Web,
   looked up on GitHub every 6 hours (`update_check`).
+  Alerts are sent as their kind and figures, for clients to word them in their language.
 - Invitations keep the name of the account they created, also once it is deleted.
 - A suspended account signing in with its own credentials is told so (Subsonic error 50,
   native API 403), instead of "wrong password".

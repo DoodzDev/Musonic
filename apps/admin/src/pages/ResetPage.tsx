@@ -9,6 +9,7 @@
 import { useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
 import { api } from '../api.ts';
+import { t } from '../i18n/index.ts';
 import { ErrorLine } from '../components/ui.tsx';
 import { PasswordFields, PublicBox } from './LinkPage.tsx';
 import { passwordProblem, useLink } from './links.ts';
@@ -35,17 +36,17 @@ export function ResetPage() {
 
   return (
     <PublicBox>
-      <h1>{done ? 'Mot de passe changé' : 'Nouveau mot de passe'}</h1>
+      <h1>{done ? t.reset.done : t.reset.title}</h1>
       {done ? (
-        <p className="sub muted">Reconnectez-vous dans vos applications avec ce nouveau mot de passe.</p>
+        <p className="sub muted">{t.reset.doneSub}</p>
       ) : (
         blocked ? <p className="sub muted">{blocked}</p> : (
           <form onSubmit={submit}>
-            <p className="sub muted">Pour le compte <b>{info?.name ?? '…'}</b>.</p>
+            <p className="sub muted">{t.reset.forAccount} <b>{info?.name ?? '…'}</b>.</p>
             <PasswordFields password={password} confirm={confirm} onPassword={setPassword} onConfirm={setConfirm} />
-            <button className="btn primary block" disabled={!info}>Enregistrer</button>
+            <button className="btn primary block" disabled={!info}>{t.common.save}</button>
             <ErrorLine error={error} />
-            <p className="muted small" style={{ textAlign: 'center', marginTop: 18 }}>Vos appareils devront peut-être se reconnecter.</p>
+            <p className="muted small" style={{ textAlign: 'center', marginTop: 18 }}>{t.reset.devices}</p>
           </form>
         )
       )}

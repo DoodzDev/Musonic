@@ -10,6 +10,7 @@
 import { useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
 import { api } from '../api.ts';
+import { t } from '../i18n/index.ts';
 import { date } from '../format.ts';
 import { ErrorLine } from '../components/ui.tsx';
 import { PasswordFields, PublicBox } from './LinkPage.tsx';
@@ -32,31 +33,31 @@ export function InvitePage() {
       await api(`/v1/invite/${encodeURIComponent(token)}`, { method: 'POST', body: { username, password }, auth: false });
       setDone(true);
     } catch (err) {
-      setError((err as Error).message.includes('taken') ? 'Ce nom est déjà pris, choisissez-en un autre.' : (err as Error).message);
+      setError((err as Error).message.includes('taken') ? t.invite.taken : (err as Error).message);
     }
   }
 
   if (done) {
     return (
       <PublicBox>
-        <h1>Votre compte est prêt</h1>
-        <p className="sub muted">Dans l'application Musonic (ou Substreamer, Symfonium…), ajoutez le serveur :</p>
+        <h1>{t.invite.ready}</h1>
+        <p className="sub muted">{t.invite.addServer}</p>
         <div className="linkbox" style={{ justifyContent: 'center' }}>https://{location.host}</div>
-        <p className="muted small mt" style={{ textAlign: 'center' }}>et connectez-vous avec le nom et le mot de passe que vous venez de choisir.</p>
+        <p className="muted small mt" style={{ textAlign: 'center' }}>{t.invite.thenSignIn}</p>
       </PublicBox>
     );
   }
   return (
     <PublicBox>
-      <h1>Bienvenue sur Musonic</h1>
+      <h1>{t.invite.welcome}</h1>
       {blocked ? <p className="sub muted">{blocked}</p> : (
         <form onSubmit={submit}>
-          <p className="sub muted">{info?.name ? `${info.name} vous invite.` : 'Vous êtes invité.'} Choisissez votre nom et votre mot de passe.</p>
-          <div className="field"><label htmlFor="name">Nom</label><input id="name" className="input" autoComplete="username" placeholder="Votre nom, pour vous connecter" value={username} onChange={(e) => setUsername(e.target.value)} /></div>
+          <p className="sub muted">{info?.name ? t.invite.by(info.name) : t.invite.anonymous} {t.invite.choose}</p>
+          <div className="field"><label htmlFor="name">{t.invite.name}</label><input id="name" className="input" autoComplete="username" placeholder={t.invite.nameHint} value={username} onChange={(e) => setUsername(e.target.value)} /></div>
           <PasswordFields password={password} confirm={confirm} onPassword={setPassword} onConfirm={setConfirm} />
-          <button className="btn primary block" disabled={!info || !username.trim()}>Créer mon compte</button>
+          <button className="btn primary block" disabled={!info || !username.trim()}>{t.invite.create}</button>
           <ErrorLine error={error} />
-          {info?.expiresAt && <p className="muted small" style={{ textAlign: 'center', marginTop: 18 }}>Lien valable jusqu'au {date(info.expiresAt)}, une seule fois.</p>}
+          {info?.expiresAt && <p className="muted small" style={{ textAlign: 'center', marginTop: 18 }}>{t.invite.validUntil(date(info.expiresAt))}</p>}
         </form>
       )}
     </PublicBox>

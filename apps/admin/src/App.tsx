@@ -17,7 +17,9 @@ import { DashboardPage } from './pages/DashboardPage.tsx';
 import { InvitePage } from './pages/InvitePage.tsx';
 import { LoginPage, NotAdminPage } from './pages/LoginPage.tsx';
 import { ResetPage } from './pages/ResetPage.tsx';
+import { SettingsPage } from './pages/SettingsPage.tsx';
 import { SoonPage } from './pages/SoonPage.tsx';
+import { t } from './i18n/index.ts';
 
 export interface Me {
   id: string;
@@ -57,13 +59,13 @@ export default function App() {
       <Route path="/" element={gate(<DashboardPage />)} />
       <Route path="/accounts" element={gate(<AccountsPage />)} />
       <Route path="/accounts/:id" element={gate(<AccountPage me={me ?? null} />)} />
-      <Route path="/security" element={gate(<SoonPage title="Appareils et sécurité" lot="C6" />)} />
-      <Route path="/library" element={gate(<SoonPage title="Bibliothèque" lot="C5" />)} />
-      <Route path="/imports" element={gate(<SoonPage title="Imports" lot="C4" />)} />
-      <Route path="/playback" element={gate(<SoonPage title="Lecture" lot="C7" />)} />
-      <Route path="/settings" element={gate(<SoonPage title="Réglages et maintenance" lot="C7" />)} />
-      <Route path="/activity" element={gate(<SoonPage title="Activité" lot="C3" />)} />
-      <Route path="/journal" element={gate(<SoonPage title="Journal d'administration" lot="C3" />)} />
+      <Route path="/security" element={gate(<SoonPage title={t.nav.security} lot="C6" />)} />
+      <Route path="/library" element={gate(<SoonPage title={t.nav.library} lot="C5" />)} />
+      <Route path="/imports" element={gate(<SoonPage title={t.nav.imports} lot="C4" />)} />
+      <Route path="/playback" element={gate(<SoonPage title={t.nav.playback} lot="C7" />)} />
+      <Route path="/settings" element={gate(<SettingsPage />)} />
+      <Route path="/activity" element={gate(<SoonPage title={t.nav.activity} lot="C3" />)} />
+      <Route path="/journal" element={gate(<SoonPage title={t.nav.journal} lot="C3" />)} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

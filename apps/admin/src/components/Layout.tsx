@@ -12,14 +12,17 @@ import { Link, NavLink } from 'react-router';
 import { Icon, type IconName } from '@musonic/icons';
 import type { Me } from '../App.tsx';
 import { bytes, rate, uptime } from '../format.ts';
+import { alertText } from '../alerts.ts';
+import { t } from '../i18n/index.ts';
 import { StatusProvider } from '../status.tsx';
 import { useStatus } from '../useStatus.ts';
 
+const n = t.nav;
 const NAV: { title?: string; items: [string, string, IconName][] }[] = [
-  { items: [['/', 'Tableau de bord', 'home']] },
-  { title: 'Personnes', items: [['/accounts', 'Comptes', 'person'], ['/security', 'Appareils et sécurité', 'lock']] },
-  { title: 'Musique', items: [['/library', 'Bibliothèque', 'library'], ['/imports', 'Imports', 'download'], ['/playback', 'Lecture', 'play']] },
-  { title: 'Serveur', items: [['/settings', 'Réglages et maintenance', 'faders'], ['/activity', 'Activité', 'clock'], ['/journal', "Journal d'administration", 'list']] },
+  { items: [['/', n.dashboard, 'home']] },
+  { title: n.people, items: [['/accounts', n.accounts, 'person'], ['/security', n.security, 'lock']] },
+  { title: n.music, items: [['/library', n.library, 'library'], ['/imports', n.imports, 'download'], ['/playback', n.playback, 'play']] },
+  { title: n.server, items: [['/settings', n.settings, 'faders'], ['/activity', n.activity, 'clock'], ['/journal', n.journal, 'list']] },
 ];
 
 export function Layout({ me, onSignOut, children }: { me: Me; onSignOut: () => void; children: ReactNode }) {
@@ -63,29 +66,29 @@ function Frame({ me, onSignOut, children }: { me: Me; onSignOut: () => void; chi
           <div className="avatar">{me.username.slice(0, 1).toUpperCase()}</div>
           <div>
             <b className="small">{me.username}</b>
-            <div className="muted small">Administrateur</div>
+            <div className="muted small">{t.common.admin}</div>
           </div>
-          <button type="button" className="btn ghost sm" style={{ marginLeft: 'auto' }} title="Se déconnecter" onClick={onSignOut}>
+          <button type="button" className="btn ghost sm" style={{ marginLeft: 'auto' }} title={t.nav.signOut} onClick={onSignOut}>
             <Icon name="logout" size={16} />
           </button>
         </div>
       </aside>
       <main className="main">
-        <div className="ticker" role="status" aria-label="État du serveur en direct">
-          <span className="m"><span className={status ? 'pulse' : 'pulse off'} />{status ? `En ligne · ${uptime(live?.uptimeSecs ?? 0)}` : status === null ? 'Hors ligne' : '…'}</span>
+        <div className="ticker" role="status" aria-label={t.ticker.label}>
+          <span className="m"><span className={status ? 'pulse' : 'pulse off'} />{status ? t.ticker.online(uptime(live?.uptimeSecs ?? 0)) : status === null ? t.ticker.offline : '…'}</span>
           {live && (
             <>
               <span className="sep" />
-              <span className="m"><Icon name="download-arrow" size={14} /> Réception <b>{rate(live.rxBytesPerSec)}</b></span>
-              <span className="m"><Icon name="upload-arrow" size={14} /> Envoi <b>{rate(live.txBytesPerSec)}</b></span>
-              <span className="m"><Icon name="now-playing" size={14} /> <b>{status.nowPlaying.length}</b> à l'écoute</span>
-              <span className="m"><Icon name="download" size={14} /> <b>{status.imports.running + status.imports.pending}</b> import(s)</span>
+              <span className="m"><Icon name="download-arrow" size={14} /> {t.ticker.received} <b>{rate(live.rxBytesPerSec)}</b></span>
+              <span className="m"><Icon name="upload-arrow" size={14} /> {t.ticker.sent} <b>{rate(live.txBytesPerSec)}</b></span>
+              <span className="m"><Icon name="now-playing" size={14} /> <b>{status.nowPlaying.length}</b> {t.ticker.listening}</span>
+              <span className="m"><Icon name="download" size={14} /> <b>{status.imports.running + status.imports.pending}</b> {t.ticker.imports}</span>
               <span className="m">CPU <b>{Math.round(live.cpuPercent)} %</b> · RAM <b>{bytes(live.memoryBytes)}</b></span>
             </>
           )}
           {alarms.length > 0 && <span className="sep" />}
           {alarms.map((a) => (
-            <Link key={a.kind + a.title} to="/" className={'alarm' + (a.level === 'error' ? '' : ' w')} title={a.detail}>{a.title}</Link>
+            <Link key={a.kind} to="/" className={'alarm' + (a.level === 'error' ? '' : ' w')} title={alertText(a)[1]}>{alertText(a)[0]}</Link>
           ))}
         </div>
         <div className="page">{children}</div>

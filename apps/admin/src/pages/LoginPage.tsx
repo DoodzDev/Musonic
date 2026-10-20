@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router';
 import { Icon } from '@musonic/icons';
 import { api, ApiError, session } from '../api.ts';
 import { ErrorLine } from '../components/ui.tsx';
+import { t } from '../i18n/index.ts';
 
 export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
   const [username, setUsername] = useState('');
@@ -30,7 +31,8 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
       onSignedIn();
       navigate(r.user.is_admin ? '/' : '/not-admin', { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError && err.status === 401 ? 'Nom ou mot de passe incorrect.' : (err as Error).message);
+      const e = err as Error;
+      setError(err instanceof ApiError && err.status === 401 ? t.login.wrong : err instanceof ApiError && err.status === 403 ? t.login.suspended : e.message);
     } finally {
       setBusy(false);
     }
@@ -40,14 +42,14 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
     <div className="public">
       <form className="box" onSubmit={submit}>
         <div className="logo"><Icon name="logo" size={64} /></div>
-        <h1>Console Musonic</h1>
-        <p className="sub muted">Réservée aux administrateurs de ce serveur.</p>
-        <div className="field"><label htmlFor="u">Nom</label><input id="u" className="input" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} /></div>
-        <div className="field"><label htmlFor="p">Mot de passe</label><input id="p" className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
-        <button className="btn primary block" disabled={busy || !username || !password}>Se connecter</button>
+        <h1>{t.login.title}</h1>
+        <p className="sub muted">{t.login.sub}</p>
+        <div className="field"><label htmlFor="u">{t.login.name}</label><input id="u" className="input" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} /></div>
+        <div className="field"><label htmlFor="p">{t.login.password}</label><input id="p" className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+        <button className="btn primary block" disabled={busy || !username || !password}>{t.login.signIn}</button>
         <ErrorLine error={error} />
         <p className="muted small" style={{ textAlign: 'center', marginTop: 18 }}>
-          Pour écouter, utilisez Musonic Web ou l'application, avec l'adresse <b>{location.host}</b>.
+          {t.login.listen(location.host)}
         </p>
       </form>
     </div>
@@ -59,10 +61,10 @@ export function NotAdminPage({ onSignOut }: { onSignOut: () => void }) {
     <div className="public">
       <div className="box" style={{ textAlign: 'center' }}>
         <div className="logo"><Icon name="logo" size={64} /></div>
-        <h1>Vous n'êtes pas administrateur</h1>
-        <p className="sub muted">Ce compte peut écouter de la musique, mais pas gérer le serveur.</p>
-        <a className="btn primary block" href="https://doodzprog.github.io/Musonic/app/">Ouvrir Musonic Web</a>
-        <a className="btn ghost block" href="/login" style={{ marginTop: 8 }} onClick={onSignOut}>Changer de compte</a>
+        <h1>{t.login.notAdmin}</h1>
+        <p className="sub muted">{t.login.notAdminSub}</p>
+        <a className="btn primary block" href="https://doodzprog.github.io/Musonic/app/">{t.login.openWeb}</a>
+        <a className="btn ghost block" href="/login" style={{ marginTop: 8 }} onClick={onSignOut}>{t.login.switchAccount}</a>
       </div>
     </div>
   );

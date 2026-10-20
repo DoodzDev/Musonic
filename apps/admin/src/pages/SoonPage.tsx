@@ -6,11 +6,13 @@
  * @license CC-BY-NC-4.0
  */
 
+import { t } from '../i18n/index.ts';
+
 export function SoonPage({ title, lot }: { title: string; lot: string }) {
   return (
     <>
-      <div className="head"><div><h1>{title}</h1><p className="sub">Arrive avec la tranche {lot} de la console.</p></div></div>
-      <div className="card empty">Cette partie n'est pas encore construite.</div>
+      <div className="head"><div><h1>{title}</h1><p className="sub">{t.common.soon(lot)}</p></div></div>
+      <div className="card empty">{t.common.notBuilt}</div>
     </>
   );
 }

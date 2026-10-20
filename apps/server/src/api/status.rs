@@ -75,14 +75,18 @@ pub struct Playing {
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct Imports {
+    #[ts(type = "number")]
     pub pending: i64,
+    #[ts(type = "number")]
     pub running: i64,
+    #[ts(type = "number")]
     pub failed: i64,
+    #[ts(type = "number")]
     pub done: i64,
 }
 
-/// Something to look at, worst first.
-#[derive(Serialize, TS)]
+/// Something to look at, worst first. The console writes the sentence, in its language.
+#[derive(Default, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct Alert {
@@ -90,8 +94,20 @@ pub struct Alert {
     pub kind: String,
     /// `error` or `warning`.
     pub level: String,
-    pub title: String,
-    pub detail: String,
+    /// `credentials`: the provider.
+    pub provider: Option<String>,
+    /// `imports`: how many were given up.
+    #[ts(type = "number | null")]
+    pub count: Option<i64>,
+    /// `disk`: free bytes.
+    #[ts(type = "number | null")]
+    pub free_bytes: Option<u64>,
+    /// `backup`: when the last one was made (Unix seconds).
+    #[ts(type = "number | null")]
+    pub since: Option<i64>,
+    /// `update`: the version released, and the one installed.
+    pub version: Option<String>,
+    pub current: Option<String>,
 }
 
 #[derive(Serialize, TS)]
@@ -228,8 +244,8 @@ pub async fn status(State(state): State<AppState>, auth: Auth) -> Reply {
             alerts.push(Alert {
                 kind: "credentials".into(),
                 level: "error".into(),
-                title: format!("Le fournisseur « {provider} » n'est plus connecté"),
-                detail: "Ses identifiants ont expiré (l'ARL pour Deezer) : les titres en ligne se lisent en extrait et les imports attendent.".into(),
+                provider: Some(provider.to_owned()),
+                ..Default::default()
             });
         }
     }
@@ -237,8 +253,8 @@ pub async fn status(State(state): State<AppState>, auth: Auth) -> Reply {
         alerts.push(Alert {
             kind: "imports".into(),
             level: "warning".into(),
-            title: format!("{} import(s) abandonné(s)", imports.failed),
-            detail: "Ils seront relancés si quelqu'un like ou ajoute ces titres à nouveau.".into(),
+            count: Some(imports.failed),
+            ..Default::default()
         });
     }
     if let Some(d) = &disk
@@ -248,8 +264,8 @@ pub async fn status(State(state): State<AppState>, auth: Auth) -> Reply {
         alerts.push(Alert {
             kind: "disk".into(),
             level: "error".into(),
-            title: "Disque presque plein".into(),
-            detail: format!("Moins de 10 % libre ({} Go).", d.free_bytes / 1_000_000_000),
+            free_bytes: Some(d.free_bytes),
+            ..Default::default()
         });
     }
     if let Some(at) = folders.last_backup_at
@@ -258,24 +274,17 @@ pub async fn status(State(state): State<AppState>, auth: Auth) -> Reply {
         alerts.push(Alert {
             kind: "backup".into(),
             level: "warning".into(),
-            title: "Pas de sauvegarde depuis plus de 2 jours".into(),
-            detail: "Les sauvegardes sont faites chaque jour : regardez les journaux du serveur."
-                .into(),
+            since: Some(at),
+            ..Default::default()
         });
     }
     if server_update {
         alerts.push(Alert {
             kind: "update".into(),
             level: "warning".into(),
-            title: format!(
-                "Musonic Server {} est disponible",
-                releases
-                    .server
-                    .as_ref()
-                    .map(|r| r.version.as_str())
-                    .unwrap_or("")
-            ),
-            detail: format!("Vous avez la version {version}."),
+            version: releases.server.as_ref().map(|r| r.version.clone()),
+            current: Some(version.clone()),
+            ..Default::default()
         });
     }
 

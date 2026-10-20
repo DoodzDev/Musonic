@@ -9,6 +9,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { Icon } from '@musonic/icons';
+import { t } from '../i18n/index.ts';
 
 export function Toggle({ on, onChange, label }: { on: boolean; onChange: (on: boolean) => void; label: string }) {
   return <button type="button" role="switch" aria-checked={on} aria-label={label} className={'toggle' + (on ? ' on' : '')} onClick={() => onChange(!on)} />;
@@ -55,7 +56,7 @@ export function CopyLink({ url }: { url: string }) {
         }}
       >
         {copied && <Icon name="check" size={14} />}
-        {copied ? 'Copié' : 'Copier'}
+        {copied ? t.common.copied : t.common.copy}
       </button>
     </div>
   );

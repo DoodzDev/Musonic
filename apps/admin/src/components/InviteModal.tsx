@@ -10,6 +10,7 @@ import { useState } from 'react';
 import type { Invitation } from '@musonic/core';
 import { api, linkUrl } from '../api.ts';
 import { Duration } from './Duration.tsx';
+import { t } from '../i18n/index.ts';
 import { CopyLink, ErrorLine, Modal, Seg } from './ui.tsx';
 
 export function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
@@ -30,24 +31,24 @@ export function InviteModal({ onClose, onCreated }: { onClose: () => void; onCre
   }
 
   return (
-    <Modal title="Inviter quelqu'un" onClose={onClose}>
-      <p className="muted small">La personne choisira elle-même son nom et son mot de passe. Vous ne les verrez jamais.</p>
+    <Modal title={t.inviteModal.title} onClose={onClose}>
+      <p className="muted small">{t.inviteModal.sub}</p>
       {link ? (
         <>
-          <div className="field"><label>Lien à envoyer (montré une seule fois)</label><CopyLink url={link} /></div>
-          <div className="actions"><button className="btn primary" onClick={onClose}>Terminé</button></div>
+          <div className="field"><label>{t.inviteModal.link}</label><CopyLink url={link} /></div>
+          <div className="actions"><button className="btn primary" onClick={onClose}>{t.common.done}</button></div>
         </>
       ) : (
         <>
           <div className="field">
-            <label htmlFor="note"><b>Note</b> (seulement pour vous)</label>
-            <input id="note" className="input" placeholder="Ex. « Invitation pour ma cousine Léa »" value={note} onChange={(e) => setNote(e.target.value)} />
-            <span className="muted small">Pour retrouver cette invitation dans la liste. Ce n'est pas le nom du compte : la personne choisira elle-même son nom et son mot de passe.</span>
+            <label htmlFor="note"><b>{t.inviteModal.note}</b> {t.inviteModal.noteFor}</label>
+            <input id="note" className="input" placeholder={t.inviteModal.noteHint} value={note} onChange={(e) => setNote(e.target.value)} />
+            <span className="muted small">{t.inviteModal.noteHelp}</span>
           </div>
-          <div className="field"><label>Rôle</label><Seg value={role} options={[['user', 'Utilisateur'], ['admin', 'Administrateur']]} onChange={setRole} /></div>
-          <div className="field"><label>Valable</label><Duration seconds={seconds} onChange={setSeconds} /></div>
+          <div className="field"><label>{t.accounts.role}</label><Seg value={role} options={[['user', t.common.user], ['admin', t.common.admin]]} onChange={setRole} /></div>
+          <div className="field"><label>{t.inviteModal.valid}</label><Duration seconds={seconds} onChange={setSeconds} /></div>
           <ErrorLine error={error} />
-          <div className="actions"><button className="btn ghost" onClick={onClose}>Annuler</button><button className="btn primary" onClick={create}>Créer l'invitation</button></div>
+          <div className="actions"><button className="btn ghost" onClick={onClose}>{t.common.cancel}</button><button className="btn primary" onClick={create}>{t.inviteModal.create}</button></div>
         </>
       )}
     </Modal>

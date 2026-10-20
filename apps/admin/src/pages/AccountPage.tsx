@@ -16,16 +16,18 @@ import type { Me } from '../App.tsx';
 import { useAutoRefresh } from '../refresh.ts';
 import { api, linkUrl } from '../api.ts';
 import { date, relative } from '../format.ts';
+import { t } from '../i18n/index.ts';
 import { Duration } from '../components/Duration.tsx';
 import { CopyLink, ErrorLine, Modal, Seg, Toggle } from '../components/ui.tsx';
 
 type QuotaKey = 'importsPerDay' | 'importsPerMonth' | 'importBytesMax' | 'maxBitRate';
 
+const a_ = t.account;
 const QUOTAS: { key: QuotaKey; label: string; presets: [number, string][]; unit: string; scale: number }[] = [
-  { key: 'importsPerDay', label: 'Imports par jour', presets: [[10, '10'], [50, '50']], unit: 'imports', scale: 1 },
-  { key: 'importsPerMonth', label: 'Imports par mois', presets: [[100, '100'], [500, '500']], unit: 'imports', scale: 1 },
-  { key: 'importBytesMax', label: 'Place maximale de ses imports', presets: [[1, '1 Go'], [5, '5 Go']], unit: 'Go', scale: 1e9 },
-  { key: 'maxBitRate', label: 'Débit maximal en lecture', presets: [[320, '320 kbit/s'], [192, '192 kbit/s'], [128, '128 kbit/s']], unit: 'kbit/s', scale: 1 },
+  { key: 'importsPerDay', label: a_.importsPerDay, presets: [[10, '10'], [50, '50']], unit: a_.unitImports, scale: 1 },
+  { key: 'importsPerMonth', label: a_.importsPerMonth, presets: [[100, '100'], [500, '500']], unit: a_.unitImports, scale: 1 },
+  { key: 'importBytesMax', label: a_.importBytesMax, presets: [[1, `1 ${a_.unitGb}`], [5, `5 ${a_.unitGb}`]], unit: a_.unitGb, scale: 1e9 },
+  { key: 'maxBitRate', label: a_.maxBitRate, presets: [[320, '320 kbit/s'], [192, '192 kbit/s'], [128, '128 kbit/s']], unit: a_.unitKbps, scale: 1 },
 ];
 
 function QuotaField({ q, value, onChange }: { q: (typeof QUOTAS)[number]; value: number | null; onChange: (v: number | null) => void }) {
@@ -45,9 +47,9 @@ function QuotaField({ q, value, onChange }: { q: (typeof QUOTAS)[number]; value:
           else if (v !== 'custom') onChange(Number(v) * q.scale);
         }}
       >
-        <option value="none">{q.key === 'maxBitRate' ? 'Sans limite' : 'Illimité'}</option>
+        <option value="none">{q.key === 'maxBitRate' ? t.common.noLimit : t.common.unlimited}</option>
         {q.presets.map(([p, l]) => <option key={p} value={p}>{l}</option>)}
-        <option value="custom">Personnalisé…</option>
+        <option value="custom">{t.common.customValue}</option>
       </select>
       {custom && (
         <div className="row">
@@ -78,48 +80,45 @@ export function AccountPage({ me }: { me: Me | null }) {
 
   const run = (p: Promise<unknown>) => {
     setError(null);
-    return p.then(load).catch((e: Error) => setError(e.message.includes('administrator') ? 'Le serveur doit garder au moins un administrateur actif.' : e.message));
+    return p.then(load).catch((e: Error) => setError(e.message.includes('administrator') ? t.account.lastAdmin : e.message));
   };
   const patch = (body: object) => run(api(`/v1/users/${id}`, { method: 'PATCH', body }));
   const setLimits = (changes: Partial<Limits>) => {
     setSaved(false);
     void run(api(`/v1/users/${id}/limits`, { method: 'PUT', body: { ...a.limits, ...changes } }).then(() => setSaved(true)));
   };
-  const rights: [keyof Limits, string, string][] = [
-    ['canImport', 'Importer depuis Deezer', 'Ses likes et playlists de titres en ligne sont téléchargés.'],
-    ['canOnline', 'Voir le catalogue en ligne', 'Recherche, pages et écoute hors de la bibliothèque.'],
-    ['canDownload', 'Télécharger les fichiers', 'Téléchargement direct depuis les applications.'],
-    ['canPublicPlaylists', 'Playlists publiques', 'Visibles par les autres comptes.'],
-  ];
+  const rights: [keyof Limits, string, string][] = (['canImport', 'canOnline', 'canDownload', 'canPublicPlaylists'] as const).map(
+    (k) => [k, t.account[k][0], t.account[k][1]],
+  );
 
   return (
     <>
-      <Link className="btn ghost sm" to="/accounts"><Icon name="back-arrow" size={14} /> Comptes</Link>
+      <Link className="btn ghost sm" to="/accounts"><Icon name="back-arrow" size={14} /> {t.account.back}</Link>
       <div className="head mt-s">
         <div className="row">
           <div className="avatar" style={{ width: 56, height: 56, fontSize: 22 }}>{a.username.slice(0, 1).toUpperCase()}</div>
-          <div><h1>{a.username}{isMe && <span className="muted small" style={{ marginLeft: 8 }}>vous</span>}</h1><p className="sub">{a.isAdmin ? 'Administrateur' : 'Utilisateur'} · compte créé le {date(a.createdAt)} · dernière connexion : {relative(a.lastLoginAt).toLowerCase()}</p></div>
+          <div><h1>{a.username}{isMe && <span className="muted small" style={{ marginLeft: 8 }}>{t.common.you}</span>}</h1><p className="sub">{t.account.summary(a.isAdmin ? t.common.admin : t.common.user, date(a.createdAt), relative(a.lastLoginAt).toLowerCase())}</p></div>
         </div>
         <div className="row">
-          <button className="btn" onClick={() => setModal('reset')}>Lien de réinitialisation</button>
-          {!isMe && <button className="btn danger" onClick={() => setModal('delete')}><Icon name="trash" size={14} /> Supprimer</button>}
+          <button className="btn" onClick={() => setModal('reset')}>{t.account.resetLink}</button>
+          {!isMe && <button className="btn danger" onClick={() => setModal('delete')}><Icon name="trash" size={14} /> {t.account.delete}</button>}
         </div>
       </div>
       <ErrorLine error={error} />
 
       <div className="grid g2">
         <div className="card">
-          <h2>Rôle</h2>
-          <Seg value={a.isAdmin ? 'admin' : 'user'} options={[['user', 'Utilisateur'], ['admin', 'Administrateur']]} onChange={(v) => patch({ isAdmin: v === 'admin' })} />
-          <p className="muted small mt-s">Un administrateur gère le serveur depuis cette console. Dans les applications, les deux rôles ont exactement les mêmes fonctions.</p>
-          <h2 className="mt">Compte</h2>
-          <div className="setting"><div><b>Compte actif</b><p>Suspendu : il ne peut plus se connecter, rien n'est supprimé.</p></div><Toggle label="Compte actif" on={!a.suspended} onChange={(on) => patch({ suspended: !on })} /></div>
-          <div className="setting"><div><b>Déconnecter partout</b><p>Ferme ses sessions et révoque ses clés d'appareils.</p></div><button className="btn sm" onClick={() => run(api(`/v1/users/${id}/logout`, { method: 'POST' }))}>Déconnecter</button></div>
+          <h2>{t.account.role}</h2>
+          <Seg value={a.isAdmin ? 'admin' : 'user'} options={[['user', t.common.user], ['admin', t.common.admin]]} onChange={(v) => patch({ isAdmin: v === 'admin' })} />
+          <p className="muted small mt-s">{t.account.roleHelp}</p>
+          <h2 className="mt">{t.account.account}</h2>
+          <div className="setting"><div><b>{t.account.active}</b><p>{t.account.activeHelp}</p></div><Toggle label={t.account.active} on={!a.suspended} onChange={(on) => patch({ suspended: !on })} /></div>
+          <div className="setting"><div><b>{t.account.logout}</b><p>{t.account.logoutHelp}</p></div><button className="btn sm" onClick={() => run(api(`/v1/users/${id}/logout`, { method: 'POST' }))}>{t.account.logoutButton}</button></div>
         </div>
         <div className="card">
-          <h2>Droits</h2>
+          <h2>{t.account.rights}</h2>
           {a.isAdmin ? (
-            <p className="muted small">Les administrateurs ne sont jamais limités.</p>
+            <p className="muted small">{t.account.adminsUnlimited}</p>
           ) : (
             rights.map(([key, title, desc]) => (
               <div key={key} className="setting"><div><b>{title}</b><p>{desc}</p></div><Toggle label={title} on={Boolean(a.limits[key])} onChange={(on) => setLimits({ [key]: on })} /></div>
@@ -128,23 +127,23 @@ export function AccountPage({ me }: { me: Me | null }) {
         </div>
         {!a.isAdmin && (
           <div className="card" style={{ gridColumn: '1/-1' }}>
-            <div className="spread"><h2 style={{ margin: 0 }}>Quotas</h2><span className="muted small">{saved ? 'Enregistré' : 'Par défaut : illimité'}</span></div>
+            <div className="spread"><h2 style={{ margin: 0 }}>{t.account.quotas}</h2><span className="muted small">{saved ? t.account.saved : t.account.defaultUnlimited}</span></div>
             <div className="grid g4 mt-s">
               {QUOTAS.map((q) => <QuotaField key={q.key} q={q} value={(a.limits[q.key] as number | null) ?? null} onChange={(v) => setLimits({ [q.key]: v })} />)}
             </div>
-            <div className="small muted">Ce mois-ci : {a.importsThisMonth} import(s).</div>
+            <div className="small muted">{t.account.thisMonth(a.importsThisMonth)}</div>
           </div>
         )}
         <div className="card" style={{ gridColumn: '1/-1' }}>
-          <h2>Appareils</h2>
+          <h2>{t.account.devices}</h2>
           {d.apiKeys.map((k) => (
             <div key={k.id} className="list-item">
               <Icon name="phone" size={18} />
-              <div><b className="small">{k.name}</b><div className="muted small">Créée {relative(k.created_at)} · dernière utilisation : {relative(k.last_used_at).toLowerCase()}</div></div>
-              <button className="btn sm danger" style={{ marginLeft: 'auto' }} onClick={() => run(api(`/v1/users/${id}/api-keys/${k.id}`, { method: 'DELETE' }))}>Révoquer</button>
+              <div><b className="small">{k.name}</b><div className="muted small">{t.account.keyLine(relative(k.created_at), relative(k.last_used_at).toLowerCase())}</div></div>
+              <button className="btn sm danger" style={{ marginLeft: 'auto' }} onClick={() => run(api(`/v1/users/${id}/api-keys/${k.id}`, { method: 'DELETE' }))}>{t.account.revoke}</button>
             </div>
           ))}
-          {d.apiKeys.length === 0 && <p className="muted small">Aucune clé d'appareil. Les adresses IP et les connexions arrivent avec la tranche C6.</p>}
+          {d.apiKeys.length === 0 && <p className="muted small">{t.account.noKeys}</p>}
         </div>
       </div>
 
@@ -168,19 +167,19 @@ function ResetModal({ username, id, onClose }: { username: string; id: string; o
     }
   }
   return (
-    <Modal title={`Réinitialiser le mot de passe de ${username}`} onClose={onClose}>
-      <p className="muted small">Envoyez-lui le lien : il choisira son nouveau mot de passe. Usage unique. Vous ne verrez jamais le mot de passe.</p>
+    <Modal title={t.account.resetTitle(username)} onClose={onClose}>
+      <p className="muted small">{t.account.resetSub}</p>
       {link ? (
         <>
           <CopyLink url={link} />
-          <div className="actions"><button className="btn primary" onClick={onClose}>Terminé</button></div>
+          <div className="actions"><button className="btn primary" onClick={onClose}>{t.common.done}</button></div>
         </>
       ) : (
         <>
-          <div className="field"><label>Valable</label><Duration seconds={seconds} onChange={setSeconds} /></div>
-          <div className="setting"><div><b>Déconnecter ses appareils</b><p>Quand il aura choisi son nouveau mot de passe.</p></div><Toggle label="Déconnecter ses appareils" on={logout} onChange={setLogout} /></div>
+          <div className="field"><label>{t.inviteModal.valid}</label><Duration seconds={seconds} onChange={setSeconds} /></div>
+          <div className="setting"><div><b>{t.account.resetDevices}</b><p>{t.account.resetDevicesHelp}</p></div><Toggle label={t.account.resetDevices} on={logout} onChange={setLogout} /></div>
           <ErrorLine error={error} />
-          <div className="actions"><button className="btn ghost" onClick={onClose}>Annuler</button><button className="btn primary" onClick={create}>Créer le lien</button></div>
+          <div className="actions"><button className="btn ghost" onClick={onClose}>{t.common.cancel}</button><button className="btn primary" onClick={create}>{t.account.createLink}</button></div>
         </>
       )}
     </Modal>
@@ -191,13 +190,13 @@ function DeleteModal({ username, onClose, onDelete }: { username: string; onClos
   const [typed, setTyped] = useState('');
   const [error, setError] = useState<string | null>(null);
   return (
-    <Modal title={`Supprimer le compte de ${username} ?`} onClose={onClose}>
-      <p className="muted small">Ses likes, playlists, écoutes et appareils seront supprimés. Les titres de la bibliothèque restent. C'est définitif.</p>
-      <div className="field"><label>Tapez <b>{username}</b> pour confirmer</label><input className="input" value={typed} onChange={(e) => setTyped(e.target.value)} /></div>
+    <Modal title={t.account.deleteTitle(username)} onClose={onClose}>
+      <p className="muted small">{t.account.deleteSub}</p>
+      <div className="field"><label>{t.account.typeToConfirm(username)}</label><input className="input" value={typed} onChange={(e) => setTyped(e.target.value)} /></div>
       <ErrorLine error={error} />
       <div className="actions">
-        <button className="btn ghost" onClick={onClose}>Annuler</button>
-        <button className="btn danger" disabled={typed !== username} onClick={() => onDelete().catch((e: Error) => setError(e.message))}>Supprimer définitivement</button>
+        <button className="btn ghost" onClick={onClose}>{t.common.cancel}</button>
+        <button className="btn danger" disabled={typed !== username} onClick={() => onDelete().catch((e: Error) => setError(e.message))}>{t.account.deleteForever}</button>
       </div>
     </Modal>
   );

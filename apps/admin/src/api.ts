@@ -8,6 +8,8 @@
  * @license CC-BY-NC-4.0
  */
 
+import { t } from './i18n/index.ts';
+
 const TOKEN_KEY = 'musonic.admin.session';
 
 export class ApiError extends Error {
@@ -56,12 +58,12 @@ export async function api<T>(path: string, options: { method?: string; body?: un
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
     });
   } catch {
-    throw new ApiError(0, 'Le serveur ne répond pas.');
+    throw new ApiError(0, t.common.noAnswer);
   }
   const data = (await res.json().catch(() => ({}))) as { error?: string };
   if (!res.ok) {
     if (res.status === 401 && options.auth !== false) session.clear();
-    throw new ApiError(res.status, data.error ?? `Erreur ${res.status}`);
+    throw new ApiError(res.status, data.error ?? t.common.error(res.status));
   }
   return data as T;
 }

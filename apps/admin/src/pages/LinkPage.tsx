@@ -9,6 +9,7 @@
 
 import type { ReactNode } from 'react';
 import { Icon } from '@musonic/icons';
+import { t } from '../i18n/index.ts';
 
 export function PublicBox({ children }: { children: ReactNode }) {
   return (
@@ -24,8 +25,8 @@ export function PublicBox({ children }: { children: ReactNode }) {
 export function PasswordFields({ password, confirm, onPassword, onConfirm }: { password: string; confirm: string; onPassword: (v: string) => void; onConfirm: (v: string) => void }) {
   return (
     <>
-      <div className="field"><label htmlFor="pw">Mot de passe</label><input id="pw" className="input" type="password" autoComplete="new-password" placeholder="Au moins 8 caractères" value={password} onChange={(e) => onPassword(e.target.value)} /></div>
-      <div className="field"><label htmlFor="pw2">Confirmer le mot de passe</label><input id="pw2" className="input" type="password" autoComplete="new-password" value={confirm} onChange={(e) => onConfirm(e.target.value)} /></div>
+      <div className="field"><label htmlFor="pw">{t.link.password}</label><input id="pw" className="input" type="password" autoComplete="new-password" placeholder={t.link.passwordHint} value={password} onChange={(e) => onPassword(e.target.value)} /></div>
+      <div className="field"><label htmlFor="pw2">{t.link.confirm}</label><input id="pw2" className="input" type="password" autoComplete="new-password" value={confirm} onChange={(e) => onConfirm(e.target.value)} /></div>
     </>
   );
 }
