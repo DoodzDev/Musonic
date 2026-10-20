@@ -1,19 +1,21 @@
 /**
  * @file DashboardPage.tsx
  * @description Home of the console: alerts, figures of the library, disk space (server and
- *   music), recent activity, who is listening, versions. Live, from the shared status.
+ *   music) and this month's traffic (in detail on « Données »), recent activity, who is listening, versions. Live, from the shared status.
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
 import { Link } from 'react-router';
 import { Icon } from '@musonic/icons';
-import type { Activity, AdminStatus } from '@musonic/core';
+import type { Activity, AdminStatus, Measures } from '@musonic/core';
 import { bytes, hours, relative, uptime } from '../format.ts';
 import { useStatus } from '../useStatus.ts';
 import { alertText } from '../alerts.ts';
 import { t } from '../i18n/index.ts';
+import { monthTraffic, useMonthTraffic } from '../traffic.ts';
+import { QuotaMeter } from '../components/QuotaMeter.tsx';
 
 function activityText(a: Activity): string {
   switch (a.kind) {
@@ -36,12 +38,12 @@ function Bar({ part, of, color, sub }: { part: number; of: number; color?: strin
   );
 }
 
-function DiskCard({ s }: { s: AdminStatus }) {
+function DiskCard({ s, month }: { s: AdminStatus; month: Measures | null }) {
   const d = s.disk;
   const used = d ? d.totalBytes - d.freeBytes : 0;
   return (
     <div className="card">
-      <h2>{t.dashboard.disk}</h2>
+      <div className="spread"><h2 style={{ margin: 0 }}>{t.dashboard.disk}</h2><Link className="btn ghost sm" to="/data">{t.dashboard.seeData} <Icon name="chevron-right" size={14} /></Link></div>
       {d ? (
         <>
           <div className="spread small"><span><span className="legend" style={{ background: 'var(--blue)' }} /><b>{t.dashboard.server}</b> {t.dashboard.wholeDisk} : {t.dashboard.of(bytes(used), bytes(d.totalBytes))}</span><span className="muted">{Math.round((used / d.totalBytes) * 100)} %</span></div>
@@ -53,17 +55,19 @@ function DiskCard({ s }: { s: AdminStatus }) {
       ) : (
         <p className="muted small">{t.dashboard.diskUnknown}</p>
       )}
-      <dl className="kv mt">
-        <dt>{t.dashboard.database}</dt><dd>{bytes(s.folders.databaseBytes)}</dd>
-        <dt>{t.dashboard.backups}</dt><dd>{s.folders.backups} · {bytes(s.folders.backupsBytes)}{s.folders.lastBackupAt ? t.dashboard.lastBackup(relative(s.folders.lastBackupAt).toLowerCase()) : ''}</dd>
-        <dt>{t.dashboard.caches}</dt><dd>{bytes(s.folders.cacheBytes)}</dd>
-      </dl>
+      {month && (
+        <>
+          <div className="spread small mt"><b>{t.dashboard.traffic}</b><span className="muted">{bytes(monthTraffic(month).sent)}{month.quotaOutBytes > 0 ? ` / ${bytes(month.quotaOutBytes)}` : ''}</span></div>
+          <QuotaMeter m={month} />
+        </>
+      )}
     </div>
   );
 }
 
 export function DashboardPage() {
   const s = useStatus();
+  const [month] = useMonthTraffic();
   if (s === undefined) return <div className="head"><div><h1>{t.dashboard.title}</h1><p className="sub">…</p></div></div>;
   if (s === null) return <div className="head"><div><h1>{t.dashboard.title}</h1><p className="sub">{t.common.noAnswer}</p></div></div>;
   const web = s.releases.web;
@@ -95,7 +99,7 @@ export function DashboardPage() {
       </div>
 
       <div className="grid g2 mt">
-        <DiskCard s={s} />
+        <DiskCard s={s} month={month} />
         <div className="card">
           <div className="spread"><h2 style={{ margin: 0 }}>{t.dashboard.recent}</h2><Link className="btn ghost sm" to="/activity">{t.common.seeMore} <Icon name="chevron-right" size={14} /></Link></div>
           {s.recent.map((a, i) => (

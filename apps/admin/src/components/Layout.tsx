@@ -22,7 +22,7 @@ const NAV: { title?: string; items: [string, string, IconName][] }[] = [
   { items: [['/', n.dashboard, 'home']] },
   { title: n.people, items: [['/accounts', n.accounts, 'person'], ['/security', n.security, 'lock']] },
   { title: n.music, items: [['/library', n.library, 'library'], ['/imports', n.imports, 'download'], ['/playback', n.playback, 'play']] },
-  { title: n.server, items: [['/settings', n.settings, 'faders'], ['/activity', n.activity, 'clock'], ['/journal', n.journal, 'list']] },
+  { title: n.server, items: [['/data', n.data, 'grid'], ['/settings', n.settings, 'faders'], ['/activity', n.activity, 'clock'], ['/journal', n.journal, 'list']] },
 ];
 
 export function Layout({ me, onSignOut, children }: { me: Me; onSignOut: () => void; children: ReactNode }) {

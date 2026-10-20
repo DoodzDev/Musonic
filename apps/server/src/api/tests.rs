@@ -633,3 +633,60 @@ async fn the_dashboard_status_is_for_administrators() {
     .await;
     assert_eq!(s, StatusCode::FORBIDDEN);
 }
+
+#[tokio::test]
+async fn the_measures_page_adds_up_hours() {
+    let (app, st, admin) = admin_app().await;
+    st.db
+        .call(|c| {
+            c.execute_batch(
+                "INSERT INTO metric_hour(hour, host_tx, app_tx, cpu_sum, samples, memory_max)
+                 VALUES (10, 300, 100, 30, 3, 50), (11, 30, 10, 0, 1, 70), (30, 1, 1, 0, 1, 1)",
+            )?;
+            Ok(())
+        })
+        .await
+        .unwrap();
+    let (s, r) = call(
+        &app,
+        "POST",
+        "/v1/admin/measures",
+        Some(&admin),
+        Some(json!({"edges": [0, 86400]})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK, "{r}");
+    assert_eq!(r["buckets"][0]["hostTx"], 330);
+    assert_eq!(r["buckets"][0]["appTx"], 110);
+    assert_eq!(r["buckets"][0]["memoryMax"], 70);
+    assert_eq!(r["buckets"][0]["hours"], 2, "hour 30 is the next day");
+    assert_eq!(r["quotaOutBytes"], 10_000_000_000_000u64);
+    assert_eq!(r["since"], 36000);
+    let (s, _) = call(
+        &app,
+        "POST",
+        "/v1/admin/measures",
+        Some(&admin),
+        Some(json!({"edges": [5, 5]})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::BAD_REQUEST);
+    let (s, _) = call(
+        &app,
+        "PUT",
+        "/v1/admin/traffic-quota",
+        Some(&admin),
+        Some(json!({"outBytes": 5_000_000})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK);
+    let (_, r) = call(
+        &app,
+        "POST",
+        "/v1/admin/measures",
+        Some(&admin),
+        Some(json!({"edges": [0, 3600]})),
+    )
+    .await;
+    assert_eq!(r["quotaOutBytes"], 5_000_000);
+}

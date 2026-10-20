@@ -14,6 +14,7 @@ import { Layout } from './components/Layout.tsx';
 import { AccountPage } from './pages/AccountPage.tsx';
 import { AccountsPage } from './pages/AccountsPage.tsx';
 import { DashboardPage } from './pages/DashboardPage.tsx';
+import { DataPage } from './pages/DataPage.tsx';
 import { InvitePage } from './pages/InvitePage.tsx';
 import { LoginPage, NotAdminPage } from './pages/LoginPage.tsx';
 import { ResetPage } from './pages/ResetPage.tsx';
@@ -63,6 +64,7 @@ export default function App() {
       <Route path="/library" element={gate(<SoonPage title={t.nav.library} lot="C5" />)} />
       <Route path="/imports" element={gate(<SoonPage title={t.nav.imports} lot="C4" />)} />
       <Route path="/playback" element={gate(<SoonPage title={t.nav.playback} lot="C7" />)} />
+      <Route path="/data" element={gate(<DataPage />)} />
       <Route path="/settings" element={gate(<SettingsPage />)} />
       <Route path="/activity" element={gate(<SoonPage title={t.nav.activity} lot="C3" />)} />
       <Route path="/journal" element={gate(<SoonPage title={t.nav.journal} lot="C3" />)} />

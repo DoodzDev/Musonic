@@ -4,6 +4,7 @@
   --bg:#000;--panel:#161618;--main:#121214;--s1:#1c1c1e;--s2:#2c2c2e;--fill:rgba(118,118,128,.24);
   --text:#fff;--text2:rgba(235,235,245,.62);--text3:rgba(235,235,245,.75);--sep:rgba(84,84,88,.55);
   --accent:#ff6b35;--accent-2:#ffb38f;--blue:#64d2ff;--accent-fill:rgba(255,107,53,.2);--on-accent:#1a0a04;--red:#ff6961;--green:#30d158;--yellow:#ffd60a;
+  --c-musonic:#e8622e;--c-other:#4f8fe8;
   --hover:rgba(255,255,255,.06);--sel:rgba(255,255,255,.08);
   --rim:inset 0 .5px 0 rgba(255,255,255,.16),inset 0 0 0 .5px rgba(255,255,255,.06);
   --r-sm:8px;--r-md:12px;--r-lg:14px;--r-xl:20px;
@@ -54,7 +55,7 @@ h2{font-size:17px;margin:0 0 12px}
 .alert b{display:block}.alert p{margin:2px 0 0;color:var(--text3);font-size:14px}
 .alert .btn{margin-left:auto;flex:none}
 /* Buttons */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:99px;background:var(--fill);font-weight:550;font-size:14px;white-space:nowrap}
+.btn{text-decoration:none;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:99px;background:var(--fill);font-weight:550;font-size:14px;white-space:nowrap}
 .btn:hover{filter:brightness(1.15)}
 .btn.primary{background:var(--accent);color:var(--on-accent)}
 .btn.danger{background:rgba(255,105,97,.16);color:var(--red)}
@@ -152,3 +153,30 @@ tr.click:hover td{background:var(--hover);cursor:pointer}
 .pulse.off{background:var(--text2);animation:none;box-shadow:none}
 .alert>div:first-child{flex:1}
 a.tag{text-decoration:none}
+/* Charts (« Données »): validated palette, recessive grid, text in text colors. */
+.filters{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.filters .period{gap:4px}.filters .period b{min-width:150px;text-align:center;font-weight:550;text-transform:capitalize}
+.btn:disabled{opacity:.35;cursor:default;filter:none}
+.hero{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.hero b{font-size:34px;font-weight:650;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.bar.quota{height:12px;gap:2px;background:var(--s2)}
+.bar.quota i:last-child{border-radius:0 99px 99px 0}
+.chart{min-width:0}
+.chart-legend{display:flex;gap:16px;font-size:13px;color:var(--text3);margin-top:10px}
+.chart-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chart-box{position:relative;margin-top:10px}
+.chart-box svg{display:block;overflow:visible}
+.chart-box text{fill:var(--text2);font-size:11px;font-variant-numeric:tabular-nums}
+.chart-box .grid{stroke:var(--sep);stroke-width:.5;stroke-dasharray:2 3}
+.chart-box .axis{stroke:var(--sep);stroke-width:1}
+.chart-box .crosshair{stroke:var(--text2);stroke-width:1}
+.chart-box .marker{stroke:var(--s1);stroke-width:2}
+.chart-empty{position:absolute;inset:0 0 24px 56px;display:grid;place-items:center;color:var(--text2);font-size:13px;pointer-events:none}
+.chart-tip{position:absolute;top:0;transform:translateX(-50%);background:var(--s2);box-shadow:var(--rim),0 8px 24px rgba(0,0,0,.45);border-radius:var(--r-sm);padding:8px 10px;font-size:12.5px;min-width:170px;pointer-events:none;z-index:2}
+.chart-tip b{display:block;margin-bottom:4px;font-weight:550}
+.chart-tip div{display:flex;align-items:center;gap:6px;color:var(--text3)}
+.chart-tip div span{margin-left:auto;color:var(--text);font-variant-numeric:tabular-nums}
+.chart-tip i{width:8px;height:8px;border-radius:2px;flex:none}
+.chart-tip .tip-total{border-top:.5px solid var(--sep);margin-top:4px;padding-top:4px}
+.chart-table{max-height:240px;overflow:auto;margin-top:10px;font-size:13px}
+.chart-table td{padding:7px 12px;font-variant-numeric:tabular-nums}

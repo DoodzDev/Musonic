@@ -45,6 +45,9 @@ pub struct Config {
     pub admin_dir: Option<PathBuf>,
     /// Look on GitHub for newer releases of the server and of Musonic Web (every 6 hours).
     pub update_check: bool,
+    /// The machine's `/proc/net/dev` when the server runs in a container (mount it read-only
+    /// there), to count the traffic of the whole machine and not only the server's.
+    pub host_net_dev: Option<PathBuf>,
 }
 
 impl Default for Config {
@@ -66,6 +69,7 @@ impl Default for Config {
             backup_days: 14,
             admin_dir: None,
             update_check: true,
+            host_net_dev: Some("/host/net/dev".into()),
         }
     }
 }
@@ -122,6 +126,9 @@ impl Config {
         if let Some(v) = env("MUSONIC_UPDATE_CHECK") {
             cfg.update_check =
                 matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on");
+        }
+        if let Some(v) = env("MUSONIC_HOST_NET_DEV") {
+            cfg.host_net_dev = Some(v.into());
         }
         if let Some(v) = env("MUSONIC_ADMIN_DIR") {
             cfg.admin_dir = Some(v.into());

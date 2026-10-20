@@ -5,6 +5,7 @@
 //! | Route | |
 //! |---|---|
 //! | `GET /v1/events` | WebSocket of real-time events for the signed-in account (ADR-018); token also as `?token=`, device id as `?device=` |
+//! | `POST /v1/admin/measures`, `PUT /v1/admin/traffic-quota` | « Données » page of the console: traffic, processor, memory, disk over time ([`measures`]) |
 //! | `GET /v1/admin/status` | Dashboard and event bar of the console (administrators): live figures, disk, library, now playing, alerts, releases |
 //! | `GET /v1/info` | What this server is and can do (no sign-in): clients tell Musonic Server from another Subsonic server with it |
 //! | `GET /v1/setup` | `{"needed": true}` until the first account exists |
@@ -34,6 +35,7 @@ use serde_json::{Value, json};
 use crate::{server::AppState, users::User};
 
 mod admin;
+mod measures;
 mod status;
 
 pub struct ApiError(StatusCode, String);
@@ -122,6 +124,7 @@ pub fn router() -> Router<AppState> {
                 .delete(delete_user),
         )
         .merge(admin::router())
+        .merge(measures::router())
 }
 
 /// Version of the native API; raised when it changes in a way clients must know.

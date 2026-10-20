@@ -140,10 +140,13 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
     state.admin_dir = admin_dir(&config);
     state.music_dir = config.music_dir.clone();
     state.import_dir = config.import_dir.clone();
-    state.metrics = Some(metrics::Metrics::start(
-        config.data_dir.clone(),
-        config.update_check,
-    ));
+    state.metrics = Some(metrics::Metrics::start(metrics::Options {
+        db: Some(state.db.clone()),
+        data_dir: config.data_dir.clone(),
+        music_dir: config.music_dir.clone(),
+        check_releases: config.update_check,
+        host_net_dev: config.host_net_dev.clone(),
+    }));
     match &state.admin_dir {
         Some(d) => tracing::info!("administration console: {}", d.display()),
         None => tracing::info!("no administration console installed"),

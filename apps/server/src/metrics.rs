@@ -13,6 +13,8 @@ use std::{
 use serde::Serialize;
 use ts_rs::TS;
 
+use crate::db::Db;
+
 const FAST: Duration = Duration::from_secs(2);
 const SLOW: Duration = Duration::from_secs(60);
 const RELEASES: Duration = Duration::from_secs(6 * 3600);
@@ -32,6 +34,12 @@ pub struct Live {
     pub rx_bytes_per_sec: u64,
     #[ts(type = "number")]
     pub tx_bytes_per_sec: u64,
+    /// The whole machine, when its counters are visible (see `host_net_dev`).
+    pub host_visible: bool,
+    #[ts(type = "number")]
+    pub host_rx_bytes_per_sec: u64,
+    #[ts(type = "number")]
+    pub host_tx_bytes_per_sec: u64,
     #[ts(type = "number")]
     pub uptime_secs: u64,
 }
@@ -71,6 +79,19 @@ pub struct Releases {
     pub checked_at: Option<i64>,
 }
 
+/// Measures of the hour in progress, written to `metric_hour` every minute.
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct Bucket {
+    pub hour: i64,
+    pub host_rx: u64,
+    pub host_tx: u64,
+    pub app_rx: u64,
+    pub app_tx: u64,
+    pub cpu_sum: f64,
+    pub samples: u64,
+    pub memory_max: u64,
+}
+
 #[derive(Default)]
 struct State {
     live: Live,
@@ -78,19 +99,51 @@ struct State {
     releases: Releases,
     /// (when, CPU ticks of the process, bytes received, bytes sent).
     last: Option<(Instant, u64, u64, u64)>,
+    host_last: Option<(u64, u64)>,
+    bucket: Bucket,
+    /// Finished hours not written yet.
+    done: Vec<Bucket>,
+}
+
+/// Where and what to measure.
+pub struct Options {
+    pub db: Option<Db>,
+    pub data_dir: PathBuf,
+    pub music_dir: Option<PathBuf>,
+    pub check_releases: bool,
+    /// The machine's `/proc/net/dev`, made visible to a container (read-only mount).
+    pub host_net_dev: Option<PathBuf>,
 }
 
 pub struct Metrics {
     started: Instant,
     state: Mutex<State>,
+    host_net_dev: Option<PathBuf>,
+}
+
+/// Bytes since the last reading, a counter reset (reboot, restart) counting from zero.
+fn delta(now: u64, before: u64) -> u64 {
+    if now >= before { now - before } else { now }
+}
+
+fn hour_now() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64 / 3600)
+        .unwrap_or_default()
 }
 
 impl Metrics {
-    /// Starts sampling. `data_dir` holds the database, backups and caches.
-    pub fn start(data_dir: PathBuf, check_releases: bool) -> Arc<Self> {
+    /// Starts sampling (and, with a database, keeping hourly measures).
+    pub fn start(opts: Options) -> Arc<Self> {
+        let host_net_dev = opts.host_net_dev.clone().filter(|p| p.is_file());
+        if let Some(p) = &host_net_dev {
+            tracing::info!("machine traffic read from {}", p.display());
+        }
         let this = Arc::new(Self {
             started: Instant::now(),
             state: Mutex::new(State::default()),
+            host_net_dev,
         });
         let fast = this.clone();
         tokio::spawn(async move {
@@ -101,6 +154,7 @@ impl Metrics {
             }
         });
         let slow = this.clone();
+        let (data_dir, music_dir, db) = (opts.data_dir, opts.music_dir, opts.db);
         tokio::spawn(async move {
             let mut every = tokio::time::interval(SLOW);
             loop {
@@ -111,9 +165,15 @@ impl Metrics {
                 {
                     s.folders = folders;
                 }
+                if let Some(db) = &db {
+                    let disk = disk(music_dir.as_deref().unwrap_or(&data_dir));
+                    if let Err(e) = slow.flush(db, disk.map(|(t, f)| t - f)).await {
+                        tracing::warn!("keeping measures: {e:#}");
+                    }
+                }
             }
         });
-        if check_releases {
+        if opts.check_releases {
             let rel = this.clone();
             tokio::spawn(async move {
                 let mut every = tokio::time::interval(RELEASES);
@@ -136,20 +196,119 @@ impl Metrics {
     fn sample(&self) {
         let now = Instant::now();
         let ticks = cpu_ticks();
-        let (rx, tx) = network();
+        let (rx, tx) = network(Path::new("/proc/net/dev"), false);
+        let host = self.host_net_dev.as_deref().map(|p| network(p, true));
+        let hour = hour_now();
         let Ok(mut s) = self.state.lock() else {
             return;
         };
-        if let Some((at, t0, rx0, tx0)) = s.last {
-            let secs = now.duration_since(at).as_secs_f64().max(0.001);
-            let per_sec = |a: u64, b: u64| (a.saturating_sub(b) as f64 / secs) as u64;
-            s.live.cpu_percent =
-                (ticks.saturating_sub(t0) as f64 / clock_ticks() / secs * 100.0) as f32;
-            s.live.rx_bytes_per_sec = per_sec(rx, rx0);
-            s.live.tx_bytes_per_sec = per_sec(tx, tx0);
+        if s.bucket.hour != hour {
+            let finished = std::mem::replace(
+                &mut s.bucket,
+                Bucket {
+                    hour,
+                    ..Default::default()
+                },
+            );
+            if finished.hour != 0 && finished.samples > 0 {
+                s.done.push(finished);
+            }
         }
         s.live.memory_bytes = memory();
+        s.bucket.memory_max = s.bucket.memory_max.max(s.live.memory_bytes);
+        if let Some((at, t0, rx0, tx0)) = s.last {
+            let secs = now.duration_since(at).as_secs_f64().max(0.001);
+            let (drx, dtx) = (delta(rx, rx0), delta(tx, tx0));
+            s.live.cpu_percent = (delta(ticks, t0) as f64 / clock_ticks() / secs * 100.0) as f32;
+            s.live.rx_bytes_per_sec = (drx as f64 / secs) as u64;
+            s.live.tx_bytes_per_sec = (dtx as f64 / secs) as u64;
+            s.bucket.app_rx += drx;
+            s.bucket.app_tx += dtx;
+            s.bucket.cpu_sum += f64::from(s.live.cpu_percent);
+            s.bucket.samples += 1;
+            if let (Some((hrx, htx)), Some((hrx0, htx0))) = (host, s.host_last) {
+                let (dhrx, dhtx) = (delta(hrx, hrx0), delta(htx, htx0));
+                s.live.host_rx_bytes_per_sec = (dhrx as f64 / secs) as u64;
+                s.live.host_tx_bytes_per_sec = (dhtx as f64 / secs) as u64;
+                s.bucket.host_rx += dhrx;
+                s.bucket.host_tx += dhtx;
+            }
+        }
+        s.live.host_visible = host.is_some();
+        s.host_last = host;
         s.last = Some((now, ticks, rx, tx));
+    }
+
+    /// Writes the measures gathered since the last time (added to their hour's row).
+    async fn flush(&self, db: &Db, disk_used: Option<u64>) -> anyhow::Result<()> {
+        let buckets: Vec<Bucket> = {
+            let Ok(mut s) = self.state.lock() else {
+                return Ok(());
+            };
+            let mut out = std::mem::take(&mut s.done);
+            let (hour, memory_max) = (s.bucket.hour, s.live.memory_bytes);
+            let current = std::mem::replace(
+                &mut s.bucket,
+                Bucket {
+                    hour,
+                    memory_max,
+                    ..Default::default()
+                },
+            );
+            if current.hour != 0 && current.samples > 0 {
+                out.push(current);
+            }
+            out
+        };
+        if buckets.is_empty() {
+            return Ok(());
+        }
+        db.call(move |c| {
+            let tx = c.transaction()?;
+            for b in &buckets {
+                tx.execute(
+                    "INSERT INTO metric_hour(hour, host_rx, host_tx, app_rx, app_tx, cpu_sum, samples,
+                         memory_max, disk_used, music_bytes)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9,
+                         (SELECT sum(size) FROM track_file WHERE missing = 0))
+                     ON CONFLICT(hour) DO UPDATE SET host_rx = host_rx + excluded.host_rx,
+                         host_tx = host_tx + excluded.host_tx, app_rx = app_rx + excluded.app_rx,
+                         app_tx = app_tx + excluded.app_tx, cpu_sum = cpu_sum + excluded.cpu_sum,
+                         samples = samples + excluded.samples,
+                         memory_max = max(memory_max, excluded.memory_max),
+                         disk_used = coalesce(excluded.disk_used, disk_used),
+                         music_bytes = coalesce(excluded.music_bytes, music_bytes)",
+                    rusqlite::params![
+                        b.hour,
+                        b.host_rx as i64,
+                        b.host_tx as i64,
+                        b.app_rx as i64,
+                        b.app_tx as i64,
+                        b.cpu_sum,
+                        b.samples as i64,
+                        b.memory_max as i64,
+                        disk_used.map(|d| d as i64)
+                    ],
+                )?;
+            }
+            tx.commit()?;
+            Ok(())
+        })
+        .await
+    }
+
+    /// Measures not written to the database yet (the last minute, at most).
+    pub fn pending(&self) -> Vec<Bucket> {
+        self.state
+            .lock()
+            .map(|s| {
+                let mut out = s.done.clone();
+                if s.bucket.samples > 0 {
+                    out.push(s.bucket.clone());
+                }
+                out
+            })
+            .unwrap_or_default()
     }
 
     pub fn live(&self) -> Live {
@@ -241,15 +400,39 @@ fn memory() -> u64 {
         .map_or(0, |kb| kb * 1024)
 }
 
-/// Bytes received and sent by every network interface but loopback.
-fn network() -> (u64, u64) {
-    let Ok(dev) = std::fs::read_to_string("/proc/net/dev") else {
+/// Bytes received and sent by the interfaces of a `/proc/net/dev`: all but loopback, and for
+/// the machine (`host`) only its real network cards, not the virtual ones of containers.
+fn network(path: &Path, host: bool) -> (u64, u64) {
+    let Ok(dev) = std::fs::read_to_string(path) else {
         return (0, 0);
     };
+    parse_net_dev(&dev, host)
+}
+
+fn parse_net_dev(dev: &str, host: bool) -> (u64, u64) {
+    const VIRTUAL: &[&str] = &[
+        "lo",
+        "docker",
+        "br-",
+        "veth",
+        "virbr",
+        "cni",
+        "flannel",
+        "vxlan",
+        "tailscale",
+        "pterodactyl",
+    ];
     dev.lines()
         .skip(2)
         .filter_map(|l| l.split_once(':'))
-        .filter(|(name, _)| name.trim() != "lo")
+        .filter(|(name, _)| {
+            let name = name.trim();
+            if host {
+                !VIRTUAL.iter().any(|v| name.starts_with(v))
+            } else {
+                name != "lo"
+            }
+        })
         .fold((0, 0), |(rx, tx), (_, rest)| {
             let f: Vec<u64> = rest
                 .split_whitespace()
@@ -379,6 +562,15 @@ mod tests {
         assert_eq!(newest(&list, "server-v").unwrap().url, "u2");
         assert!(is_newer("0.10.0", "0.9.9"));
         assert!(!is_newer("0.1.0", "0.1.0"));
+    }
+
+    #[test]
+    fn counts_real_cards_for_the_machine() {
+        let dev = "Inter-|...\n face |...\n    lo: 100 0 0 0 0 0 0 0 100 0 0 0 0 0 0 0\n  ens3: 5000 0 0 0 0 0 0 0 9000 0 0 0 0 0 0 0\npterodactyl0: 6 0 0 0 0 0 0 0 6 0 0 0 0 0 0 0\ndocker0: 70 0 0 0 0 0 0 0 80 0 0 0 0 0 0 0\nveth1a: 3 0 0 0 0 0 0 0 4 0 0 0 0 0 0 0\n";
+        assert_eq!(parse_net_dev(dev, true), (5000, 9000));
+        assert_eq!(parse_net_dev(dev, false), (5079, 9090));
+        assert_eq!(delta(150, 100), 50);
+        assert_eq!(delta(20, 100), 20, "a counter reset counts from zero");
     }
 
     #[test]

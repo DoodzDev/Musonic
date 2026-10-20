@@ -4,4 +4,8 @@ export type Live = {
 /**
  * Of one core (can exceed 100 with several).
  */
-cpuPercent: number, memoryBytes: number, rxBytesPerSec: number, txBytesPerSec: number, uptimeSecs: number, };
+cpuPercent: number, memoryBytes: number, rxBytesPerSec: number, txBytesPerSec: number, 
+/**
+ * The whole machine, when its counters are visible (see `host_net_dev`).
+ */
+hostVisible: boolean, hostRxBytesPerSec: number, hostTxBytesPerSec: number, uptimeSecs: number, };
