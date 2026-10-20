@@ -47,6 +47,8 @@ pub struct AppState {
     pub imports: Option<crate::library::import::ImportService>,
     /// Real-time events to the devices of each account.
     pub events: crate::events::Events,
+    /// The built administration console (`index.html` and its files), when installed.
+    pub admin_dir: Option<PathBuf>,
 }
 
 impl AppState {
@@ -65,6 +67,7 @@ impl AppState {
             provider_health: Arc::default(),
             imports: None,
             events: Default::default(),
+            admin_dir: None,
         }
     }
 }
@@ -90,6 +93,7 @@ pub fn router(state: AppState) -> Router {
             Method::HEAD,
             Method::POST,
             Method::PUT,
+            Method::PATCH,
             Method::DELETE,
         ])
         .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE, header::RANGE])
@@ -98,13 +102,33 @@ pub fn router(state: AppState) -> Router {
             header::CONTENT_LENGTH,
             header::ACCEPT_RANGES,
         ]);
-    Router::new()
-        .route("/", get(home))
+    let admin = state
+        .admin_dir
+        .clone()
+        .filter(|d| d.join("index.html").is_file());
+    let app = Router::new()
         .route("/health", get(health))
         .merge(subsonic::router())
-        .merge(api::router())
-        .layer(cors)
-        .with_state(state)
+        .merge(api::router());
+    // The administration console at the server's address; any other path opens it too (its
+    // own pages: /accounts, /invite/…). Without it, a page says how to use the server.
+    let app = match admin {
+        Some(dir) => app
+            .route("/v1/{*rest}", axum::routing::any(api_not_found))
+            .fallback_service(
+                tower_http::services::ServeDir::new(&dir)
+                    .fallback(tower_http::services::ServeFile::new(dir.join("index.html"))),
+            ),
+        None => app.route("/", get(home)),
+    };
+    app.layer(cors).with_state(state)
+}
+
+async fn api_not_found() -> (axum::http::StatusCode, Json<Value>) {
+    (
+        axum::http::StatusCode::NOT_FOUND,
+        Json(json!({ "error": "no such route" })),
+    )
 }
 
 /// Client address, for the sign-in limiter: the address forwarded by the proxy in front
@@ -176,6 +200,43 @@ pub mod tests {
             users,
             std::env::temp_dir().join("musonic-test-data"),
         )
+    }
+
+    #[tokio::test]
+    async fn the_console_is_served_at_the_servers_address() {
+        let dir = crate::testing::temp_dir("console");
+        std::fs::create_dir_all(dir.join("assets")).unwrap();
+        std::fs::write(
+            dir.join("index.html"),
+            "<!doctype html><title>Console</title>",
+        )
+        .unwrap();
+        std::fs::write(dir.join("assets/app.js"), "console.log(1)").unwrap();
+        let mut st = state();
+        st.admin_dir = Some(dir.clone());
+        let app = router(st);
+        let get = async |uri: &str| {
+            let res = app
+                .clone()
+                .oneshot(Request::get(uri).body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            let status = res.status();
+            let body = res.into_body().collect().await.unwrap().to_bytes();
+            (status, String::from_utf8_lossy(&body).into_owned())
+        };
+        assert!(get("/").await.1.contains("Console"));
+        assert!(
+            get("/accounts/abc").await.1.contains("Console"),
+            "its own pages"
+        );
+        assert!(get("/invite/token").await.1.contains("Console"));
+        assert_eq!(get("/assets/app.js").await.1, "console.log(1)");
+        let (status, body) = get("/v1/nope").await;
+        assert_eq!(status, 404);
+        assert!(body.contains("error"), "the API keeps JSON errors");
+        assert!(get("/health").await.1.contains("schema"));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[tokio::test]

@@ -182,6 +182,31 @@ pub struct Ctx {
 }
 
 impl Ctx {
+    /// What this user may do (administrators: everything).
+    pub async fn limits(&self) -> crate::users::admin::Limits {
+        self.state
+            .users
+            .limits(&self.user.id)
+            .await
+            .unwrap_or_else(|e| {
+                tracing::error!("limits of {}: {e:#}", self.user.username);
+                crate::users::admin::Limits::default()
+            })
+    }
+
+    /// The bit rate to stream at: the client's wish, within the user's limit (kbit/s, 0 = any).
+    pub async fn max_bit_rate(&self) -> i64 {
+        let wanted: i64 = self
+            .params
+            .get("maxBitRate")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0);
+        match self.limits().await.max_bit_rate.map(i64::from) {
+            Some(cap) if wanted <= 0 || wanted > cap => cap,
+            _ => wanted,
+        }
+    }
+
     /// Tells the user's devices what changed (see [`crate::events`]).
     pub fn emit(&self, event: crate::events::Event) {
         let by = crate::events::device(&self.headers, self.params.get("device"));
@@ -307,6 +332,7 @@ async fn authenticate(state: &AppState, p: &Params, addr: &str) -> Result<User, 
         }
         return match users.check_api_key(key).await? {
             Ok(u) => Ok(u),
+            Err(AuthError::Suspended) => Err(suspended()),
             Err(_) => Err(ApiError::new(Code::InvalidApiKey, "Invalid API key")),
         };
     }
@@ -340,6 +366,8 @@ async fn authenticate(state: &AppState, p: &Params, addr: &str) -> Result<User, 
             Code::TokenAuthNotSupported,
             "Token authentication is not available on this server: use apiKey",
         )),
+        // The right password: not a guess, the limiter does not count it.
+        Err(AuthError::Suspended) => Err(suspended()),
         Err(_) => {
             let tried = p.get("p").or(p.get("t")).unwrap_or_default();
             state.limiter.failed(addr, username, tried);
@@ -349,6 +377,14 @@ async fn authenticate(state: &AppState, p: &Params, addr: &str) -> Result<User, 
             ))
         }
     }
+}
+
+/// What a suspended account is told (its own credentials were right).
+fn suspended() -> ApiError {
+    ApiError::new(
+        Code::NotAuthorized,
+        "This account is suspended: ask the server's administrator",
+    )
 }
 
 enum Format {

@@ -246,3 +246,323 @@ async fn device_keys_and_accounts() {
         StatusCode::OK
     );
 }
+
+/// An administrator signed in, and the app.
+async fn admin_app() -> (Router, crate::server::AppState, String) {
+    let st = state();
+    let app = router(st.clone());
+    let (_, r) = call(
+        &app,
+        "POST",
+        "/v1/setup",
+        None,
+        Some(json!({"username": "Doodz", "password": "correct horse"})),
+    )
+    .await;
+    (app, st, r["token"].as_str().unwrap().to_owned())
+}
+
+async fn sign_in(app: &Router, user: &str, password: &str) -> StatusCode {
+    call(
+        app,
+        "POST",
+        "/v1/auth/login",
+        None,
+        Some(json!({"username": user, "password": password})),
+    )
+    .await
+    .0
+}
+
+#[tokio::test]
+async fn invitations_create_accounts_without_the_admin_seeing_a_password() {
+    let (app, _, admin) = admin_app().await;
+    let (s, r) = call(
+        &app,
+        "POST",
+        "/v1/invitations",
+        Some(&admin),
+        Some(json!({"note": "Cousine", "seconds": 3600})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK);
+    let token = r["token"].as_str().unwrap().to_owned();
+    assert_eq!(r["invitation"]["note"], "Cousine");
+    assert!(
+        !r.to_string().contains("password"),
+        "nothing about a password: {r}"
+    );
+
+    // The public page, without signing in.
+    let (s, page) = call(&app, "GET", &format!("/v1/invite/{token}"), None, None).await;
+    assert_eq!(s, StatusCode::OK);
+    assert_eq!(page["state"], "valid");
+    assert_eq!(page["name"], "Doodz");
+    let (s, r) = call(
+        &app,
+        "POST",
+        &format!("/v1/invite/{token}"),
+        None,
+        Some(json!({"username": "Lea", "password": "her own choice"})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK, "{r}");
+    assert_eq!(r["user"]["is_admin"], false);
+    assert!(r["token"].is_string(), "signed in at once");
+    assert_eq!(sign_in(&app, "Lea", "her own choice").await, StatusCode::OK);
+
+    // Used once only.
+    let (_, page) = call(&app, "GET", &format!("/v1/invite/{token}"), None, None).await;
+    assert_eq!(page["state"], "used");
+    let (s, _) = call(
+        &app,
+        "POST",
+        &format!("/v1/invite/{token}"),
+        None,
+        Some(json!({"username": "Other", "password": "another one"})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::BAD_REQUEST);
+    let (_, list) = call(&app, "GET", "/v1/invitations", Some(&admin), None).await;
+    assert_eq!(list[0]["usedBy"], "Lea");
+
+    // Revoked, unknown, out of range, not for users.
+    let (_, r) = call(
+        &app,
+        "POST",
+        "/v1/invitations",
+        Some(&admin),
+        Some(json!({"seconds": 600})),
+    )
+    .await;
+    let id = r["invitation"]["id"].as_str().unwrap().to_owned();
+    let t2 = r["token"].as_str().unwrap().to_owned();
+    call(
+        &app,
+        "DELETE",
+        &format!("/v1/invitations/{id}"),
+        Some(&admin),
+        None,
+    )
+    .await;
+    assert_eq!(
+        call(&app, "GET", &format!("/v1/invite/{t2}"), None, None)
+            .await
+            .1["state"],
+        "revoked"
+    );
+    assert_eq!(
+        call(&app, "GET", "/v1/invite/nope", None, None).await.1["state"],
+        "unknown"
+    );
+    let (s, _) = call(
+        &app,
+        "POST",
+        "/v1/invitations",
+        Some(&admin),
+        Some(json!({"seconds": 5})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::BAD_REQUEST, "at least a minute");
+    let (_, lea) = call(
+        &app,
+        "POST",
+        "/v1/auth/login",
+        None,
+        Some(json!({"username": "Lea", "password": "her own choice"})),
+    )
+    .await;
+    let lea = lea["token"].as_str().unwrap().to_owned();
+    let (s, _) = call(
+        &app,
+        "POST",
+        "/v1/invitations",
+        Some(&lea),
+        Some(json!({"seconds": 600})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn reset_links_let_people_choose_a_new_password() {
+    let (app, st, admin) = admin_app().await;
+    let hugo = st
+        .users
+        .create("Hugo", "old password", false)
+        .await
+        .unwrap();
+    st.users.create_api_key(&hugo.id, "Pixel 8").await.unwrap();
+    let (s, r) = call(
+        &app,
+        "POST",
+        &format!("/v1/users/{}/password-reset", hugo.id),
+        Some(&admin),
+        Some(json!({"seconds": 86400})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK);
+    let token = r["token"].as_str().unwrap().to_owned();
+    assert_eq!(
+        call(&app, "GET", "/v1/password-resets", Some(&admin), None)
+            .await
+            .1[0]["username"],
+        "Hugo"
+    );
+    let (_, page) = call(&app, "GET", &format!("/v1/reset/{token}"), None, None).await;
+    assert_eq!(
+        (page["state"].as_str(), page["name"].as_str()),
+        (Some("valid"), Some("Hugo"))
+    );
+
+    let (s, _) = call(
+        &app,
+        "POST",
+        &format!("/v1/reset/{token}"),
+        None,
+        Some(json!({"password": "short"})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::BAD_REQUEST, "8 characters at least");
+    let (s, _) = call(
+        &app,
+        "POST",
+        &format!("/v1/reset/{token}"),
+        None,
+        Some(json!({"password": "new password"})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK);
+    assert_eq!(sign_in(&app, "Hugo", "new password").await, StatusCode::OK);
+    assert_eq!(
+        sign_in(&app, "Hugo", "old password").await,
+        StatusCode::UNAUTHORIZED
+    );
+    assert!(
+        st.users.api_keys(&hugo.id).await.unwrap().is_empty(),
+        "devices signed out"
+    );
+    assert_eq!(
+        call(&app, "GET", &format!("/v1/reset/{token}"), None, None)
+            .await
+            .1["state"],
+        "used"
+    );
+    assert!(
+        call(&app, "GET", "/v1/password-resets", Some(&admin), None)
+            .await
+            .1
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+}
+
+#[tokio::test]
+async fn roles_suspension_and_rights() {
+    let (app, st, admin) = admin_app().await;
+    let me = st.users.list().await.unwrap()[0].id.clone();
+    let hugo = st
+        .users
+        .create("Hugo", "his password", false)
+        .await
+        .unwrap();
+
+    // Never without an active administrator.
+    let (s, r) = call(
+        &app,
+        "PATCH",
+        &format!("/v1/users/{me}"),
+        Some(&admin),
+        Some(json!({"isAdmin": false})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::BAD_REQUEST, "{r}");
+    let (s, _) = call(
+        &app,
+        "PATCH",
+        &format!("/v1/users/{me}"),
+        Some(&admin),
+        Some(json!({"suspended": true})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::BAD_REQUEST);
+
+    // Suspended: no sign-in at all, nothing deleted.
+    let (s, r) = call(
+        &app,
+        "PATCH",
+        &format!("/v1/users/{}", hugo.id),
+        Some(&admin),
+        Some(json!({"suspended": true})),
+    )
+    .await;
+    assert_eq!((s, r["suspended"].as_bool()), (StatusCode::OK, Some(true)));
+    assert_eq!(
+        sign_in(&app, "Hugo", "his password").await,
+        StatusCode::FORBIDDEN,
+        "told the account is suspended"
+    );
+    assert_eq!(
+        sign_in(&app, "Hugo", "not his").await,
+        StatusCode::UNAUTHORIZED
+    );
+    call(
+        &app,
+        "PATCH",
+        &format!("/v1/users/{}", hugo.id),
+        Some(&admin),
+        Some(json!({"suspended": false})),
+    )
+    .await;
+    assert_eq!(sign_in(&app, "Hugo", "his password").await, StatusCode::OK);
+
+    // Rights and quotas: unlimited by default, then set.
+    let (_, list) = call(&app, "GET", "/v1/users", Some(&admin), None).await;
+    let h = list
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|u| u["username"] == "Hugo")
+        .unwrap()
+        .clone();
+    assert_eq!(h["limits"]["canImport"], true);
+    assert!(h["limits"]["importsPerDay"].is_null());
+    let limits = json!({"canImport": true, "canOnline": false, "canDownload": false,
+        "canPublicPlaylists": false, "importsPerDay": 5, "importsPerMonth": null,
+        "importBytesMax": null, "maxBitRate": 128});
+    let (s, r) = call(
+        &app,
+        "PUT",
+        &format!("/v1/users/{}/limits", hugo.id),
+        Some(&admin),
+        Some(limits),
+    )
+    .await;
+    assert_eq!((s, r["importsPerDay"].as_u64()), (StatusCode::OK, Some(5)));
+    assert_eq!(
+        st.users.limits(&hugo.id).await.unwrap().max_bit_rate,
+        Some(128)
+    );
+
+    // Promoted: no limits for administrators.
+    call(
+        &app,
+        "PATCH",
+        &format!("/v1/users/{}", hugo.id),
+        Some(&admin),
+        Some(json!({"isAdmin": true})),
+    )
+    .await;
+    assert!(st.users.limits(&hugo.id).await.unwrap().can_online);
+    // Now Doodz can step down.
+    let (s, _) = call(
+        &app,
+        "PATCH",
+        &format!("/v1/users/{me}"),
+        Some(&admin),
+        Some(json!({"isAdmin": false})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK);
+}

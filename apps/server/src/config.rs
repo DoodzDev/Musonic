@@ -40,6 +40,9 @@ pub struct Config {
     pub import_quality: String,
     /// Daily database backups kept in `<data_dir>/backups` (0 = none).
     pub backup_days: u64,
+    /// The built administration console. Default: `admin` next to the binary, else
+    /// `/usr/share/musonic/admin`.
+    pub admin_dir: Option<PathBuf>,
 }
 
 impl Default for Config {
@@ -59,6 +62,7 @@ impl Default for Config {
             import_dir: "Musonic".to_owned(),
             import_quality: "mp3_320".to_owned(),
             backup_days: 14,
+            admin_dir: None,
         }
     }
 }
@@ -111,6 +115,9 @@ impl Config {
         }
         if let Some(v) = env("MUSONIC_IMPORT_QUALITY") {
             cfg.import_quality = v;
+        }
+        if let Some(v) = env("MUSONIC_ADMIN_DIR") {
+            cfg.admin_dir = Some(v.into());
         }
         if let Some(v) = env("MUSONIC_BACKUP_DAYS") {
             cfg.backup_days = v.parse().context("MUSONIC_BACKUP_DAYS")?;

@@ -57,8 +57,15 @@ cargo run --release
 `musonic-server scan [--full]` scans the library once and prints a summary.
 
 ### Docker
-`Dockerfile` builds the server with ffmpeg; `compose.example.yml` runs it (data and music
-folders, limits, logs, healthcheck).
+`Dockerfile` builds the server, with ffmpeg and its administration console, from the
+repository root: `docker build -t musonic-server -f apps/server/Dockerfile .`;
+`compose.example.yml` runs it (data and music folders, limits, logs, healthcheck).
+
+### Administration console
+Open the server's address in a browser and sign in with an administrator account: accounts,
+invitations and password reset links, rights and quotas (see `apps/admin`). It is served from
+`admin_dir` (`MUSONIC_ADMIN_DIR`; default: `admin` next to the binary, else
+`/usr/share/musonic/admin`); without it, the address shows a short page instead.
 
 ### Coming from Navidrome
 With the same music folder, and the accounts created here under the same names:

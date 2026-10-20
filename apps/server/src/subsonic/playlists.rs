@@ -353,6 +353,11 @@ pub async fn update_playlist(ctx: &Ctx) -> Reply {
     let name = ctx.params.get("name").map(str::to_owned);
     let comment = ctx.params.get("comment").map(str::to_owned);
     let public = ctx.params.get("public").map(|v| v == "true");
+    // A user without the right keeps their playlists private.
+    let public = match public {
+        Some(true) if !ctx.limits().await.can_public_playlists => Some(false),
+        p => p,
+    };
     let add = online::resolve_tracks(ctx, list(ctx, "songIdToAdd")).await?;
     let import = ctx.state.imports.is_some();
     let changed = id.clone();

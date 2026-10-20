@@ -113,6 +113,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   header or `device` parameter).
 - `online: true` on songs, albums and artists that have no file in the library (online
   catalog, songs liked but not imported yet), for an "Online" badge in clients.
+- Administration console, served at the server's address (`admin_dir`, see `apps/admin`).
+- Account management (administrators): accounts listed with their devices and imports; role
+  (always at least one active administrator), suspension (no sign-in at all, nothing
+  deleted), sign out everywhere, revoke one device key. **Invitation links**: the person
+  creates their account, choosing name and password; **password reset links**: they choose a
+  new password (optionally signing their devices out). Links are random, stored hashed, used
+  once, valid from a minute to a year; the administrator never sees a password.
+- **Rights and quotas** of users who are not administrators, all allowed and unlimited by
+  default: importing online songs, the online catalog, downloads, public playlists; imports
+  per day and per month, total size of their imports, highest streaming bit rate.
 - Failed sign-ins count each different wrong password once: an app that keeps retrying a
   password changed since no longer locks its user out of the new one.
 - A music folder that moved (another disk, another Docker mount) is followed: tracks, likes and

@@ -264,3 +264,61 @@ fn decodes_form_values() {
     assert_eq!(p.get("end"), Some("%4"));
     assert_eq!(p.get("d"), Some("4"));
 }
+
+#[tokio::test]
+async fn a_suspended_account_is_told_so_only_with_its_own_password() {
+    let (app, st) = setup().await;
+    let doodz = st
+        .users
+        .list()
+        .await
+        .unwrap()
+        .into_iter()
+        .find(|u| u.username == "Doodz")
+        .unwrap();
+    let (_, key) = st.users.create_api_key(&doodz.id, "Pixel").await.unwrap();
+    // Another administrator keeps the server managed.
+    let guest = st
+        .users
+        .list()
+        .await
+        .unwrap()
+        .into_iter()
+        .find(|u| u.username == "guest")
+        .unwrap();
+    st.users
+        .update(
+            &guest.id,
+            crate::users::admin::AccountChanges {
+                is_admin: Some(true),
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
+    st.users
+        .update(
+            &doodz.id,
+            crate::users::admin::AccountChanges {
+                suspended: Some(true),
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
+    let r = get(&app, "/rest/ping?u=Doodz&p=correct%20horse&f=json").await;
+    assert_eq!(r["error"]["code"], 50);
+    assert!(
+        r["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("suspended")
+    );
+    let r = get(&app, &format!("/rest/ping?apiKey={key}&f=json")).await;
+    assert_eq!(r["error"]["code"], 50, "device keys too");
+    let r = get(&app, "/rest/ping?u=Doodz&p=wrong%20one&f=json").await;
+    assert_eq!(
+        r["error"]["code"], 40,
+        "a wrong password is not told the account is suspended"
+    );
+}

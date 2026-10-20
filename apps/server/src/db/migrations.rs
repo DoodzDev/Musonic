@@ -19,6 +19,10 @@ pub const MIGRATIONS: &[(&str, &str)] = &[
         "0003_imports",
         include_str!("../../migrations/0003_imports.sql"),
     ),
+    (
+        "0004_accounts_admin",
+        include_str!("../../migrations/0004_accounts_admin.sql"),
+    ),
 ];
 
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;

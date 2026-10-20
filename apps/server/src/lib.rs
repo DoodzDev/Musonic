@@ -136,6 +136,11 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
         );
     }
     let mut state = server::AppState::new(db, library, users, config.data_dir.clone());
+    state.admin_dir = admin_dir(&config);
+    match &state.admin_dir {
+        Some(d) => tracing::info!("administration console: {}", d.display()),
+        None => tracing::info!("no administration console installed"),
+    }
     if config.online {
         state.online = Some(Arc::new(online::Deezer::new(&config.deezer_api_url)?));
     }
@@ -203,6 +208,21 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
     })
     .await?;
     Ok(())
+}
+
+/// Where the built administration console is: the setting, else next to the binary, else the
+/// usual system place.
+fn admin_dir(config: &Config) -> Option<std::path::PathBuf> {
+    let next_to_binary = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.join("admin")));
+    config
+        .admin_dir
+        .clone()
+        .into_iter()
+        .chain(next_to_binary)
+        .chain([std::path::PathBuf::from("/usr/share/musonic/admin")])
+        .find(|d| d.join("index.html").is_file())
 }
 
 /// Providers in the order they are tried: the binary's own, the configured Subsonic server,

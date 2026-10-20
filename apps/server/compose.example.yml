@@ -3,7 +3,9 @@
 #   docker compose exec musonic-server musonic-server user add <name> --admin
 services:
   musonic-server:
-    build: .                     # or an image you built: image: musonic-server
+    build:                       # or an image you built: image: musonic-server
+      context: ../..             # the repository root (the console is built too)
+      dockerfile: apps/server/Dockerfile
     container_name: musonic-server
     restart: unless-stopped
     user: "1000:1000"            # the owner of your music and data folders

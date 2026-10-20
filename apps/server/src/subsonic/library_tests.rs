@@ -1633,3 +1633,96 @@ async fn the_account_is_told_when_its_import_is_done() {
             .ends_with("One More Time.mp3")
     );
 }
+
+#[tokio::test]
+async fn rights_and_quotas_are_applied_to_users() {
+    use crate::users::admin::Limits;
+    let (lib, importer) = importing("rights", None).await;
+    let hugo = lib
+        .st
+        .users
+        .create("Hugo", "his password", false)
+        .await
+        .unwrap();
+    let as_hugo = |q: &str| format!("{q}&u=Hugo&p=his%20password&f=json");
+    let get_hugo = async |q: &str| -> Value {
+        let (_, _, body) = lib.raw(&as_hugo(q), None).await;
+        serde_json::from_slice::<Value>(&body).unwrap()["subsonic-response"].clone()
+    };
+
+    // Unlimited by default: online search, like → import.
+    let r = get_hugo("search3?query=one%20more").await;
+    assert_eq!(r["searchResult3"]["song"][0]["id"], "dz-track-1001");
+
+    // No online catalog, no import, no download, private playlists.
+    let none = Limits {
+        can_import: false,
+        can_online: false,
+        can_download: false,
+        can_public_playlists: false,
+        ..Limits::default()
+    };
+    lib.st.users.set_limits(&hugo.id, none).await.unwrap();
+    let r = get_hugo("search3?query=one%20more").await;
+    assert!(
+        r["searchResult3"]["song"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|s| s.get("online").is_none()),
+        "library only"
+    );
+    assert_eq!(get_hugo("star?id=dz-track-1001").await["error"]["code"], 70);
+    let local = lib.song_id("hoppipolla").await;
+    assert_eq!(
+        get_hugo(&format!("download?id={local}")).await["error"]["code"],
+        50
+    );
+    let pl = get_hugo("createPlaylist?name=Mine").await["playlist"]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    get_hugo(&format!("updatePlaylist?playlistId={pl}&public=true")).await;
+    assert_eq!(
+        get_hugo(&format!("getPlaylist?id={pl}")).await["playlist"]["public"],
+        false
+    );
+
+    // Online allowed but no imports: liked, not imported.
+    let online_only = Limits {
+        can_import: false,
+        ..Limits::default()
+    };
+    lib.st
+        .users
+        .set_limits(&hugo.id, online_only)
+        .await
+        .unwrap();
+    get_hugo("star?id=dz-track-1001").await;
+    assert_eq!(importer.clone().run_due().await.unwrap(), 0);
+
+    // One import a day.
+    let one_a_day = Limits {
+        imports_per_day: Some(1),
+        ..Limits::default()
+    };
+    lib.st.users.set_limits(&hugo.id, one_a_day).await.unwrap();
+    get_hugo("star?id=dz-track-1002").await;
+    get_hugo("createPlaylist?name=More&songId=dz-track-1001").await;
+    assert_eq!(
+        importer.clone().run_due().await.unwrap(),
+        1,
+        "the second waits for tomorrow"
+    );
+
+    // Administrators are never limited.
+    let (status, headers, _) = lib.raw(&format!("download?id={local}&{AUTH}"), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        !headers[header::CONTENT_TYPE]
+            .to_str()
+            .unwrap()
+            .contains("json"),
+        "the file"
+    );
+}

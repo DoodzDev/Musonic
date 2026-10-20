@@ -6,7 +6,10 @@ on:
       - main
     paths:
       - 'apps/web/**'
+      - 'apps/admin/**'
       - 'packages/core/**'
+      - 'packages/icons/**'
+      - 'apps/mobile/src/components/icons/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/ci-web.yml'
@@ -15,14 +18,17 @@ on:
       - main
     paths:
       - 'apps/web/**'
+      - 'apps/admin/**'
       - 'packages/core/**'
+      - 'packages/icons/**'
+      - 'apps/mobile/src/components/icons/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/ci-web.yml'
 
 jobs:
   check:
-    name: Core Tests, Web Lint & Build
+    name: Core Tests, Web & Console Lint & Build
     runs-on: ubuntu-latest
 
     steps:
@@ -49,3 +55,14 @@ jobs:
 
       - name: Web build
         run: npm run build --workspace apps/web
+
+      - name: Icons generated from the mobile set are up to date
+        run: |
+          python3 packages/icons/scripts/generate.py
+          git diff --exit-code -- packages/icons/src/icons.ts
+
+      - name: Console lint
+        run: npm run lint --workspace apps/admin
+
+      - name: Console build
+        run: npm run build --workspace apps/admin

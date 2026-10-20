@@ -16,11 +16,17 @@ use crate::{
     },
 };
 
-fn catalog(ctx: &Ctx) -> Result<&Deezer, ApiError> {
-    ctx.state
+/// The online catalog, when enabled and allowed for this user.
+async fn catalog(ctx: &Ctx) -> Result<&Deezer, ApiError> {
+    let dz = ctx
+        .state
         .online
         .as_deref()
-        .ok_or_else(|| ApiError::not_found("Online item"))
+        .ok_or_else(|| ApiError::not_found("Online item"))?;
+    if !ctx.limits().await.can_online {
+        return Err(ApiError::not_found("Online item"));
+    }
+    Ok(dz)
 }
 
 fn unavailable(e: anyhow::Error) -> ApiError {
@@ -63,7 +69,7 @@ pub async fn resolve_tracks(ctx: &Ctx, ids: Vec<String>) -> Result<Vec<String>, 
         if fetched.iter().any(|t| t.id == *n) {
             continue;
         }
-        match catalog(ctx)?.track(*n).await.map_err(unavailable)? {
+        match catalog(ctx).await?.track(*n).await.map_err(unavailable)? {
             Some(t) => fetched.push(t),
             None => {
                 return Err(ApiError::new(
@@ -101,7 +107,8 @@ pub async fn resolve_tracks(ctx: &Ctx, ids: Vec<String>) -> Result<Vec<String>, 
 /// An online album stored in the library (its songs stored as tracks without a file): the
 /// album's library id and its tracks' ids.
 pub async fn resolve_album(ctx: &Ctx, n: u64) -> Result<(String, Vec<String>), ApiError> {
-    let a = catalog(ctx)?
+    let a = catalog(ctx)
+        .await?
         .album(n)
         .await
         .map_err(unavailable)?
@@ -139,7 +146,8 @@ pub async fn resolve_album(ctx: &Ctx, n: u64) -> Result<(String, Vec<String>), A
 
 /// An online artist stored in the library: their library id.
 pub async fn resolve_artist(ctx: &Ctx, n: u64) -> Result<String, ApiError> {
-    let a = catalog(ctx)?
+    let a = catalog(ctx)
+        .await?
         .artist(n)
         .await
         .map_err(unavailable)?
@@ -209,7 +217,8 @@ async fn songs(
 }
 
 pub async fn get_song(ctx: &Ctx, n: u64) -> Result<Value, ApiError> {
-    let t = catalog(ctx)?
+    let t = catalog(ctx)
+        .await?
         .track(n)
         .await
         .map_err(unavailable)?
@@ -219,7 +228,8 @@ pub async fn get_song(ctx: &Ctx, n: u64) -> Result<Value, ApiError> {
 
 /// An online album with its songs; `shown_id` = the id the client asked for.
 pub async fn get_album(ctx: &Ctx, n: u64, shown_id: &str) -> Result<Value, ApiError> {
-    let a = catalog(ctx)?
+    let a = catalog(ctx)
+        .await?
         .album(n)
         .await
         .map_err(unavailable)?
@@ -231,7 +241,7 @@ pub async fn get_album(ctx: &Ctx, n: u64, shown_id: &str) -> Result<Value, ApiEr
 
 /// An online artist with their albums.
 pub async fn get_artist(ctx: &Ctx, n: u64, shown_id: &str) -> Result<Value, ApiError> {
-    let dz = catalog(ctx)?;
+    let dz = catalog(ctx).await?;
     let (artist, albums) = tokio::join!(dz.artist(n), dz.artist_albums(n));
     let a = artist
         .map_err(unavailable)?
@@ -257,7 +267,7 @@ pub async fn get_artist(ctx: &Ctx, n: u64, shown_id: &str) -> Result<Value, ApiE
 
 /// Picture of an online item: album cover, artist photo, a track's album cover.
 pub async fn cover_url(ctx: &Ctx, item: OnlineId) -> Result<Option<String>, ApiError> {
-    let dz = catalog(ctx)?;
+    let dz = catalog(ctx).await?;
     Ok(match item {
         OnlineId::Album(n) => dz
             .album(n)
@@ -303,6 +313,9 @@ pub async fn search_more(
     let Some(dz) = ctx.state.online.as_deref() else {
         return Default::default();
     };
+    if !ctx.limits().await.can_online {
+        return Default::default();
+    }
     let (ac, lc, sc) = counts;
     let (artists, albums, tracks) = tokio::join!(
         async {

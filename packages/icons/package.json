@@ -1,0 +1,16 @@
+{
+  "name": "@musonic/icons",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Musonic's icons for web apps, generated from the mobile app's icon set.",
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "scripts": {
+    "generate": "python3 scripts/generate.py"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "license": "CC-BY-NC-4.0"
+}

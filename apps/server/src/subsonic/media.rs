@@ -220,6 +220,9 @@ fn ffmpeg_bin() -> String {
 
 pub async fn stream(ctx: &Ctx, download: bool) -> Result<Response, ApiError> {
     let id = ctx.params.require("id")?.to_owned();
+    if download && !ctx.limits().await.can_download {
+        return Err(ApiError::forbidden());
+    }
     // Playing an online song is a use: it is stored first (see `crate::online`).
     let id = online::resolve_tracks(ctx, vec![id]).await?.remove(0);
     let file = match audio_file(ctx, &id).await {
@@ -241,11 +244,8 @@ pub async fn stream(ctx: &Ctx, download: bool) -> Result<Response, ApiError> {
         )
         .await);
     }
-    let max: i64 = ctx
-        .params
-        .get("maxBitRate")
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(0);
+    // The client's wish, within the user's limit.
+    let max = ctx.max_bit_rate().await;
     let offset: i64 = ctx
         .params
         .get("timeOffset")
@@ -294,11 +294,12 @@ pub async fn stream(ctx: &Ctx, download: bool) -> Result<Response, ApiError> {
 
 /// Serves a provider's stream, with HTTP ranges like a file.
 async fn remote_stream(ctx: &Ctx, id: &str, download: bool) -> Result<Response, ApiError> {
-    let max: i64 = ctx
-        .params
-        .get("maxBitRate")
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(0);
+    // Without a file, the audio comes from online: not for users without the online catalog.
+    if !ctx.limits().await.can_online {
+        return Err(ApiError::not_found("Song"));
+    }
+    // The client's wish, within the user's limit.
+    let max = ctx.max_bit_rate().await;
     let opened = crate::remote::open(
         &ctx.state.remote(),
         id,

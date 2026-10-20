@@ -13,7 +13,7 @@
 //! | `GET /v1/me` | The signed-in user |
 //! | `PUT /v1/me/password` | `{current, new}` |
 //! | `GET/POST /v1/me/api-keys`, `DELETE /v1/me/api-keys/{id}` | Per-device keys (`{name}` → key shown once) |
-//! | `GET/POST /v1/users`, `DELETE /v1/users/{id}` | Accounts (administrators) |
+//! | `GET/POST /v1/users`, `GET/PATCH/DELETE /v1/users/{id}` | Accounts (administrators); the console creates them by invitation (see [`admin`]) |
 
 use std::net::SocketAddr;
 
@@ -31,6 +31,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::{server::AppState, users::User};
+
+mod admin;
 
 pub struct ApiError(StatusCode, String);
 
@@ -109,8 +111,14 @@ pub fn router() -> Router<AppState> {
         .route("/v1/me/password", put(change_password))
         .route("/v1/me/api-keys", get(list_keys).post(create_key))
         .route("/v1/me/api-keys/{id}", delete(revoke_key))
-        .route("/v1/users", get(list_users).post(create_user))
-        .route("/v1/users/{id}", delete(delete_user))
+        .route("/v1/users", get(admin::list_accounts).post(create_user))
+        .route(
+            "/v1/users/{id}",
+            get(admin::user)
+                .patch(admin::update_user)
+                .delete(delete_user),
+        )
+        .merge(admin::router())
 }
 
 /// Version of the native API; raised when it changes in a way clients must know.
@@ -273,6 +281,10 @@ async fn login(
             let token = state.users.create_session(&user.id).await?;
             Ok(Json(json!({ "token": token, "user": user })))
         }
+        Err(crate::users::AuthError::Suspended) => Err(ApiError(
+            StatusCode::FORBIDDEN,
+            "account suspended: ask the server's administrator".into(),
+        )),
         Err(_) => {
             state.limiter.failed(&from, &body.username, &body.password);
             Err(ApiError(
@@ -347,13 +359,6 @@ async fn revoke_key(State(state): State<AppState>, auth: Auth, Path(id): Path<St
         return Err(ApiError(StatusCode::NOT_FOUND, "no such key".into()));
     }
     Ok(Json(json!({})))
-}
-
-async fn list_users(State(state): State<AppState>, auth: Auth) -> Reply {
-    if !auth.user.is_admin {
-        return Err(ApiError::forbidden());
-    }
-    Ok(Json(json!(state.users.list().await?)))
 }
 
 #[derive(Deserialize)]

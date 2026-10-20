@@ -4,6 +4,7 @@
 //! the clients that need it), the password is also kept encrypted ([`secret::SecretBox`]).
 //! API keys and session tokens are random and stored as SHA-256 hashes only.
 
+pub mod admin;
 pub mod limiter;
 pub mod secret;
 
@@ -37,6 +38,8 @@ pub struct User {
     pub is_admin: bool,
     pub created_at: i64,
     pub last_login_at: Option<i64>,
+    /// Cannot sign in (set from the administration console).
+    pub suspended: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -55,11 +58,11 @@ pub struct Users {
     pub legacy_auth: bool,
 }
 
-fn sha256_hex(text: &str) -> String {
+pub(crate) fn sha256_hex(text: &str) -> String {
     hex::encode(Sha256::digest(text.as_bytes()))
 }
 
-fn random_token() -> String {
+pub(crate) fn random_token() -> String {
     let mut bytes = [0u8; 32];
     rand::thread_rng().fill_bytes(&mut bytes);
     URL_SAFE_NO_PAD.encode(bytes)
@@ -95,6 +98,8 @@ pub enum AuthError {
     TokenAuthUnavailable,
     /// Unknown or revoked API key.
     InvalidApiKey,
+    /// Right credentials, but the account is suspended (only said to its rightful owner).
+    Suspended,
 }
 
 fn row_user(r: &rusqlite::Row) -> rusqlite::Result<User> {
@@ -105,10 +110,12 @@ fn row_user(r: &rusqlite::Row) -> rusqlite::Result<User> {
         is_admin: r.get::<_, i64>(3)? != 0,
         created_at: r.get(4)?,
         last_login_at: r.get(5)?,
+        suspended: r.get::<_, i64>(6)? != 0,
     })
 }
 
-const USER_COLUMNS: &str = "id, username, display_name, is_admin, created_at, last_login_at";
+const USER_COLUMNS: &str =
+    "id, username, display_name, is_admin, created_at, last_login_at, suspended";
 
 impl Users {
     pub fn new(db: Db, secrets: SecretBox, legacy_auth: bool) -> Self {
@@ -241,7 +248,7 @@ impl Users {
                 Ok(c.query_row(
                     &format!("SELECT {USER_COLUMNS}, password_hash, legacy_password_enc FROM user WHERE username = ?1"),
                     [&username],
-                    |r| Ok((row_user(r)?, r.get(6)?, r.get(7)?)),
+                    |r| Ok((row_user(r)?, r.get(7)?, r.get(8)?)),
                 )
                 .optional()?)
             })
@@ -280,6 +287,9 @@ impl Users {
         if !ok {
             return Ok(Err(AuthError::WrongCredentials));
         }
+        if user.suspended {
+            return Ok(Err(AuthError::Suspended));
+        }
         self.touch_login(&user.id).await;
         Ok(Ok(user))
     }
@@ -303,6 +313,9 @@ impl Users {
         let password = self.secrets.decrypt(&sealed)?;
         if md5_hex(&format!("{password}{salt}")) != token.to_ascii_lowercase() {
             return Ok(Err(AuthError::WrongCredentials));
+        }
+        if user.suspended {
+            return Ok(Err(AuthError::Suspended));
         }
         Ok(Ok(user))
     }
@@ -406,7 +419,11 @@ impl Users {
                 Ok(user)
             })
             .await?;
-        Ok(user.ok_or(AuthError::InvalidApiKey))
+        match user {
+            Some(u) if u.suspended => Ok(Err(AuthError::Suspended)),
+            Some(u) => Ok(Ok(u)),
+            None => Ok(Err(AuthError::InvalidApiKey)),
+        }
     }
 
     /// A sign-in session for the web client / native API. Returns the token (shown once).
@@ -434,7 +451,7 @@ impl Users {
                     .query_row(
                         &format!(
                             "SELECT {} FROM user u JOIN session s ON s.user_id = u.id
-                             WHERE s.token_hash = ?1 AND s.expires_at > unixepoch()",
+                             WHERE s.token_hash = ?1 AND s.expires_at > unixepoch() AND u.suspended = 0",
                             USER_COLUMNS.split(", ").map(|col| format!("u.{col}")).collect::<Vec<_>>().join(", ")
                         ),
                         [&hash],

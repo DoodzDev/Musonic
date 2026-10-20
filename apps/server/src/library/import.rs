@@ -50,6 +50,11 @@ pub fn queue(c: &Connection, track: &str, user: Option<&str>) -> rusqlite::Resul
     if has_file {
         return Ok(false);
     }
+    if let Some(user) = user
+        && !may_import(c, user)?
+    {
+        return Ok(false);
+    }
     let changed = c
         .prepare_cached(
             "INSERT INTO import_job(track_id, requested_by) VALUES (?1, ?2)
@@ -59,6 +64,45 @@ pub fn queue(c: &Connection, track: &str, user: Option<&str>) -> rusqlite::Resul
         )?
         .execute(params![track, user])?;
     Ok(changed > 0)
+}
+
+/// The user's right to import, and their quotas (see `users::admin::Limits`).
+fn may_import(c: &Connection, user: &str) -> rusqlite::Result<bool> {
+    let limits = crate::users::admin::limits_of(c, user)?;
+    if !limits.can_import {
+        return Ok(false);
+    }
+    let count = |since: &str| -> rusqlite::Result<u32> {
+        c.prepare_cached(&format!(
+            "SELECT count(*) FROM import_job WHERE requested_by = ?1 AND created_at >= unixepoch('now', '{since}')"
+        ))?
+        .query_row([user], |r| r.get(0))
+    };
+    if limits
+        .imports_per_day
+        .is_some_and(|max| count("start of day").is_ok_and(|n| n >= max))
+    {
+        return Ok(false);
+    }
+    if limits
+        .imports_per_month
+        .is_some_and(|max| count("start of month").is_ok_and(|n| n >= max))
+    {
+        return Ok(false);
+    }
+    if let Some(max) = limits.import_bytes_max {
+        let used: i64 = c
+            .prepare_cached(
+                "SELECT coalesce(sum(f.size), 0) FROM import_job j
+                   JOIN track_file f ON f.track_id = j.track_id AND f.missing = 0
+                  WHERE j.requested_by = ?1 AND j.state = 'done'",
+            )?
+            .query_row([user], |r| r.get(0))?;
+        if used as u64 >= max {
+            return Ok(false);
+        }
+    }
+    Ok(true)
 }
 
 #[derive(Debug, Default, Clone, Serialize)]
