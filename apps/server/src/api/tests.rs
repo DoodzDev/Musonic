@@ -609,8 +609,8 @@ async fn the_dashboard_status_is_for_administrators() {
     assert_eq!(r["library"]["accounts"], 1);
     assert_eq!(r["imports"]["failed"], 0);
     assert!(r["alerts"].as_array().unwrap().is_empty());
-    assert_eq!(r["recent"][0]["kind"], "account");
-    assert_eq!(r["recent"][0]["who"], "Doodz");
+    assert_eq!(r["recent"][0]["code"], "account.created");
+    assert_eq!(r["recent"][0]["target"], "Doodz");
     st.users
         .create("Hugo", "his password", false)
         .await
@@ -689,4 +689,126 @@ async fn the_measures_page_adds_up_hours() {
     )
     .await;
     assert_eq!(r["quotaOutBytes"], 5_000_000);
+}
+
+#[tokio::test]
+async fn the_journal_tells_who_did_what() {
+    let (app, st, admin) = admin_app().await;
+    let hugo = st
+        .users
+        .create("Hugo", "his password", false)
+        .await
+        .unwrap();
+    let (s, _) = call(
+        &app,
+        "POST",
+        "/v1/auth/login",
+        None,
+        Some(json!({"username": "Hugo", "password": "wrong guess", "client": "Musonic Web"})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::UNAUTHORIZED);
+    let (_, login) = call(
+        &app,
+        "POST",
+        "/v1/auth/login",
+        None,
+        Some(json!({"username": "Hugo", "password": "his password", "client": "Musonic Web"})),
+    )
+    .await;
+    let (s, _) = call(
+        &app,
+        "PATCH",
+        &format!("/v1/users/{}", hugo.id),
+        Some(&admin),
+        Some(json!({"isAdmin": true})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK);
+
+    let (s, r) = call(&app, "GET", "/v1/admin/journal", Some(&admin), None).await;
+    assert_eq!(s, StatusCode::OK, "{r}");
+    let codes: Vec<&str> = r["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e["code"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        codes,
+        ["account.role", "login.ok", "login.fail", "account.created"]
+    );
+    assert_eq!(r["entries"][1]["device"], "Musonic Web");
+    assert_eq!(r["entries"][2]["user"], "Hugo");
+    assert!(
+        r["entries"][2]["detail"].is_null(),
+        "the password tried is never written"
+    );
+    assert_eq!(r["size"]["lines"], 4);
+    assert_eq!(r["size"]["maxBytes"], crate::journal::DEFAULT_MAX_BYTES);
+
+    let (_, r) = call(
+        &app,
+        "GET",
+        "/v1/admin/journal?admin=true",
+        Some(&admin),
+        None,
+    )
+    .await;
+    assert_eq!(r["entries"].as_array().unwrap().len(), 1);
+    assert_eq!(r["entries"][0]["user"], "Doodz");
+    assert_eq!(r["entries"][0]["target"], "Hugo");
+    assert_eq!(r["entries"][0]["detail"], "admin");
+    let (_, r) = call(
+        &app,
+        "GET",
+        "/v1/admin/journal?kind=login&limit=1",
+        Some(&admin),
+        None,
+    )
+    .await;
+    assert_eq!(r["entries"][0]["code"], "login.ok");
+
+    let (s, r) = call(
+        &app,
+        "PUT",
+        "/v1/admin/journal/settings",
+        Some(&admin),
+        Some(json!({"maxBytes": 5})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK, "{r}");
+    assert_eq!(
+        r["maxBytes"],
+        crate::journal::MIN_MAX_BYTES,
+        "never under the minimum"
+    );
+
+    let (s, _) = call(
+        &app,
+        "GET",
+        "/v1/admin/journal",
+        login["token"].as_str(),
+        None,
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK, "Hugo is an administrator now");
+    let (_, r) = call(
+        &app,
+        "PATCH",
+        &format!("/v1/users/{}", hugo.id),
+        Some(&admin),
+        Some(json!({"isAdmin": false})),
+    )
+    .await;
+    assert_eq!(r["isAdmin"], false);
+    let (s, _) = call(
+        &app,
+        "GET",
+        "/v1/admin/journal",
+        login["token"].as_str(),
+        None,
+    )
+    .await;
+    assert_eq!(s, StatusCode::FORBIDDEN);
 }

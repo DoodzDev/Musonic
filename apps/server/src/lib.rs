@@ -10,6 +10,7 @@ pub mod config;
 pub mod db;
 pub mod events;
 pub mod ids;
+pub mod journal;
 pub mod library;
 pub mod matcher;
 pub mod metrics;
@@ -137,6 +138,16 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
         );
     }
     let mut state = server::AppState::new(db, library, users, config.data_dir.clone());
+    state.journal = journal::Journal::open(&config.data_dir.join("events.db"))
+        .context("opening the journal (events.db)")?;
+    state.journal.load_settings(&state.db).await?;
+    state.journal.maintain();
+    state
+        .journal
+        .log(journal::Entry::new("server.start").detail(env!("CARGO_PKG_VERSION")));
+    state.provider_health = Arc::new(providers::ProviderHealth::with_journal(
+        state.journal.clone(),
+    ));
     state.admin_dir = admin_dir(&config);
     state.music_dir = config.music_dir.clone();
     state.import_dir = config.import_dir.clone();
@@ -175,23 +186,32 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
                 library: state.library.clone(),
                 http: reqwest::Client::new(),
                 events: Some(state.events.clone()),
+                journal: Some(state.journal.clone()),
             }
             .start(),
         );
     }
     if config.backup_days > 0 {
-        let (db, dir, days) = (
+        let (db, dir, days, journal) = (
             state.db.clone(),
             config.data_dir.join("backups"),
             config.backup_days,
+            state.journal.clone(),
         );
         tokio::spawn(async move {
             let mut every = tokio::time::interval(Duration::from_secs(24 * 3600));
             loop {
                 every.tick().await;
                 match db.daily_backup(&dir, days).await {
-                    Ok(p) => tracing::info!("database backed up to {}", p.display()),
-                    Err(e) => tracing::error!("database backup: {e:#}"),
+                    Ok(p) => {
+                        tracing::info!("database backed up to {}", p.display());
+                        let size = std::fs::metadata(&p).map(|m| m.len()).unwrap_or_default();
+                        journal.log(journal::Entry::new("backup.done").detail(size));
+                    }
+                    Err(e) => {
+                        tracing::error!("database backup: {e:#}");
+                        journal.log(journal::Entry::new("backup.failed"));
+                    }
                 }
             }
         });

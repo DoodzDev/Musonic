@@ -1,7 +1,7 @@
 /**
  * @file Layout.tsx
  * @description Frame of the console: the menu on the left, the event bar at the top (live
- *   rates, listeners, imports, CPU and memory, alarms), the page.
+ *   rates, listeners, imports, CPU and memory, alarms), the page. Plain text, no badges.
  * @author DoodzProg
  * @version 0.1.0
  * @license CC-BY-NC-4.0
@@ -80,20 +80,21 @@ function Frame({ me, onSignOut, children }: { me: Me; onSignOut: () => void; chi
       </aside>
       <main className="main">
         <div className="ticker" role="status" aria-label={t.ticker.label}>
-          <span className="m"><span className={status ? 'pulse' : 'pulse off'} />{status ? t.ticker.online(uptime(live?.uptimeSecs ?? 0)) : status === null ? t.ticker.offline : '…'}</span>
+          <span className={'m' + (status === null ? ' down' : '')}>{status ? t.ticker.online(uptime(live?.uptimeSecs ?? 0)) : status === null ? t.ticker.offline : '…'}</span>
           {live && (
             <>
               <span className="sep" />
-              <span className="m"><Icon name="download-arrow" size={14} /> {t.ticker.received} <b>{rate(live.rxBytesPerSec)}</b></span>
-              <span className="m"><Icon name="upload-arrow" size={14} /> {t.ticker.sent} <b>{rate(live.txBytesPerSec)}</b></span>
-              <span className="m"><Icon name="now-playing" size={14} /> <b>{status.nowPlaying.length}</b> {t.ticker.listening}</span>
-              <span className="m"><Icon name="download" size={14} /> <b>{status.imports.running + status.imports.pending}</b> {t.ticker.imports}</span>
-              <span className="m">CPU <b>{Math.round(live.cpuPercent)} %</b> · RAM <b>{bytes(live.memoryBytes)}</b></span>
+              {/* Each figure in a box of fixed width: the bar does not move when they change. */}
+              <Link to="/data" className="m"><Icon name="download-arrow" size={14} /> {t.ticker.received} <b className="w-rate">{rate(live.rxBytesPerSec)}</b></Link>
+              <Link to="/data" className="m"><Icon name="upload-arrow" size={14} /> {t.ticker.sent} <b className="w-rate">{rate(live.txBytesPerSec)}</b></Link>
+              <Link to="/activity#now" className="m"><Icon name="now-playing" size={14} /> <b className="w-count">{status.nowPlaying.length}</b> {t.ticker.listening}</Link>
+              <Link to="/imports" className="m"><Icon name="download" size={14} /> <b className="w-count">{status.imports.running + status.imports.pending}</b> {t.ticker.imports}</Link>
+              <Link to="/data#cpu" className="m">CPU <b className="w-cpu">{Math.round(live.cpuPercent)} %</b></Link>
+              <Link to="/data#cpu" className="m">RAM <b className="w-ram">{bytes(live.memoryBytes)}</b></Link>
             </>
           )}
-          {alarms.length > 0 && <span className="sep" />}
-          {alarms.map((a) => (
-            <Link key={a.kind} to="/" className={'alarm' + (a.level === 'error' ? '' : ' w')} title={alertText(a)[1]}>{alertText(a)[0]}</Link>
+          {alarms.map((a, i) => (
+            <Link key={a.kind} to="/" className={'alarm' + (a.level === 'error' ? '' : ' w') + (i === 0 ? ' first' : '')} title={alertText(a)[1]}><Icon name="alert-triangle" size={14} />{alertText(a)[0]}</Link>
           ))}
         </div>
         <div className="page">{children}</div>

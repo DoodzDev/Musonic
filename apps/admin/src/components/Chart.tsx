@@ -33,6 +33,8 @@ interface Props {
   height?: number;
   /** Across the whole grid. */
   wide?: boolean;
+  /** To reach it from a link (`#id`). */
+  id?: string;
 }
 
 const LEFT = 56, RIGHT = 8, TOP = 10, BOTTOM = 24;
@@ -50,7 +52,7 @@ function column(x: number, y: number, w: number, h: number, round: boolean): str
   return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
 }
 
-export function Chart({ title, aside, kind, labels, titles, series, format, max, height = 200, wide }: Props) {
+export function Chart({ title, aside, kind, labels, titles, series, format, max, height = 200, wide, id }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(600);
   const [hover, setHover] = useState<number | null>(null);
@@ -76,7 +78,7 @@ export function Chart({ title, aside, kind, labels, titles, series, format, max,
   const empty = totals.every((v, i) => v === 0 && series.every((s) => s.values[i] == null));
 
   return (
-    <div className={'card chart' + (wide ? ' wide' : '')}>
+    <div id={id} className={'card chart anchor' + (wide ? ' wide' : '')}>
       <div className="spread">
         <h2 style={{ margin: 0 }}>{title}</h2>
         <div className="row">

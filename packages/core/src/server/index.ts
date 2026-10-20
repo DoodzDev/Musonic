@@ -4,7 +4,7 @@
  *   generated from the server's Rust code (`apps/server`, `cargo test`; see ADR-018).
  *   Never edit `generated/` by hand.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -36,6 +36,9 @@ export type { Folders } from './generated/Folders.ts';
 export type { Playing } from './generated/Playing.ts';
 export type { Imports } from './generated/Imports.ts';
 export type { Alert } from './generated/Alert.ts';
-export type { Activity } from './generated/Activity.ts';
+export type { JournalEntry } from './generated/JournalEntry.ts';
+export type { JournalPage } from './generated/JournalPage.ts';
+export type { JournalQuery } from './generated/JournalQuery.ts';
+export type { JournalSize } from './generated/JournalSize.ts';
 export type { Releases } from './generated/Releases.ts';
 export type { Release } from './generated/Release.ts';

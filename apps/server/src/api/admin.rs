@@ -27,6 +27,7 @@ use ts_rs::TS;
 
 use super::{ApiError, Auth, Reply};
 use crate::{
+    journal::Entry,
     server::AppState,
     users::{
         ApiKeyInfo, User,
@@ -153,12 +154,35 @@ pub(super) async fn update_user(
     Json(changes): Json<AccountChanges>,
 ) -> Reply {
     admin(&auth)?;
+    let before = state.users.get(&id).await?.ok_or_else(not_found)?;
     let u = state
         .users
         .update(&id, changes)
         .await
         .map_err(|e| ApiError::bad(e.to_string()))?
         .ok_or_else(not_found)?;
+    let by = |code| {
+        Entry::new(code)
+            .by_admin(&auth.user.username)
+            .target(&u.username)
+    };
+    if before.is_admin != u.is_admin {
+        state
+            .journal
+            .log(by("account.role").detail(if u.is_admin { "admin" } else { "user" }));
+    }
+    if before.suspended != u.suspended {
+        state.journal.log(by(if u.suspended {
+            "account.suspended"
+        } else {
+            "account.restored"
+        }));
+    }
+    if before.display_name != u.display_name {
+        state
+            .journal
+            .log(by("account.renamed").detail(&u.display_name));
+    }
     Ok(Json(json!(account(&state, u).await?)))
 }
 
@@ -169,8 +193,13 @@ async fn set_limits(
     Json(limits): Json<Limits>,
 ) -> Reply {
     admin(&auth)?;
-    state.users.get(&id).await?.ok_or_else(not_found)?;
+    let u = state.users.get(&id).await?.ok_or_else(not_found)?;
     state.users.set_limits(&id, limits).await?;
+    state.journal.log(
+        Entry::new("account.limits")
+            .by_admin(&auth.user.username)
+            .target(&u.username),
+    );
     Ok(Json(json!(state.users.limits(&id).await?)))
 }
 
@@ -180,8 +209,13 @@ async fn logout_everywhere(
     Path(id): Path<String>,
 ) -> Reply {
     admin(&auth)?;
-    state.users.get(&id).await?.ok_or_else(not_found)?;
+    let u = state.users.get(&id).await?.ok_or_else(not_found)?;
     state.users.logout_everywhere(&id).await?;
+    state.journal.log(
+        Entry::new("account.logout")
+            .by_admin(&auth.user.username)
+            .target(&u.username),
+    );
     Ok(Json(json!({})))
 }
 
@@ -192,6 +226,12 @@ async fn revoke_key(
 ) -> Reply {
     admin(&auth)?;
     if state.users.revoke_api_key(&id, &key).await? {
+        let name = state.users.get(&id).await?.map(|u| u.username);
+        state.journal.log(
+            Entry::new("key.revoked")
+                .by_admin(&auth.user.username)
+                .target(name.unwrap_or(id)),
+        );
         Ok(Json(json!({})))
     } else {
         Err(ApiError(StatusCode::NOT_FOUND, "no such key".into()))
@@ -226,6 +266,12 @@ async fn reset_link(
         .await
         .map_err(|e| ApiError::bad(e.to_string()))?
         .ok_or_else(not_found)?;
+    let name = state.users.get(&id).await?.map(|u| u.username);
+    state.journal.log(
+        Entry::new("reset.created")
+            .by_admin(&auth.user.username)
+            .target(name.unwrap_or(id)),
+    );
     Ok(Json(json!({ "reset": reset, "token": token })))
 }
 
@@ -237,6 +283,9 @@ async fn resets(State(state): State<AppState>, auth: Auth) -> Reply {
 async fn revoke_reset(State(state): State<AppState>, auth: Auth, Path(id): Path<String>) -> Reply {
     admin(&auth)?;
     if state.users.revoke_password_reset(&id).await? {
+        state
+            .journal
+            .log(Entry::new("reset.revoked").by_admin(&auth.user.username));
         Ok(Json(json!({})))
     } else {
         Err(ApiError(StatusCode::NOT_FOUND, "no such link".into()))
@@ -272,6 +321,11 @@ async fn invite(
         .invite(&body.note, body.is_admin, body.seconds, &auth.user.id)
         .await
         .map_err(|e| ApiError::bad(e.to_string()))?;
+    let mut e = Entry::new("invite.created")
+        .by_admin(&auth.user.username)
+        .detail(if body.is_admin { "admin" } else { "user" });
+    e.target = Some(body.note.trim().to_owned()).filter(|n| !n.is_empty());
+    state.journal.log(e);
     Ok(Json(json!({ "invitation": invitation, "token": token })))
 }
 
@@ -282,6 +336,9 @@ async fn revoke_invitation(
 ) -> Reply {
     admin(&auth)?;
     if state.users.revoke_invitation(&id).await? {
+        state
+            .journal
+            .log(Entry::new("invite.revoked").by_admin(&auth.user.username));
         Ok(Json(json!({})))
     } else {
         Err(ApiError(StatusCode::NOT_FOUND, "no such invitation".into()))
@@ -320,13 +377,26 @@ struct NewAccount {
 async fn accept_invitation(
     State(state): State<AppState>,
     Path(token): Path<String>,
+    peer: Option<axum::Extension<axum::extract::ConnectInfo<std::net::SocketAddr>>>,
+    headers: axum::http::HeaderMap,
     Json(body): Json<NewAccount>,
 ) -> Reply {
+    let by = state
+        .users
+        .invitation_by_token(&token)
+        .await?
+        .1
+        .and_then(|i| i.created_by);
     let user = state
         .users
         .accept_invitation(&token, &body.username, &body.password)
         .await
         .map_err(|e| ApiError::bad(e.to_string()))?;
+    let mut e = Entry::new("invite.used")
+        .user(&user.username)
+        .ip(crate::server::client_addr(&headers, peer.map(|p| p.0.0)));
+    e.target = by;
+    state.journal.log(e);
     let session = state.users.create_session(&user.id).await?;
     Ok(Json(json!({ "token": session, "user": user })))
 }
@@ -348,6 +418,8 @@ struct NewPassword {
 async fn use_reset(
     State(state): State<AppState>,
     Path(token): Path<String>,
+    peer: Option<axum::Extension<axum::extract::ConnectInfo<std::net::SocketAddr>>>,
+    headers: axum::http::HeaderMap,
     Json(body): Json<NewPassword>,
 ) -> Reply {
     let user = state
@@ -355,5 +427,10 @@ async fn use_reset(
         .use_password_reset(&token, &body.password)
         .await
         .map_err(|e| ApiError::bad(e.to_string()))?;
+    state.journal.log(
+        Entry::new("reset.used")
+            .user(&user.username)
+            .ip(crate::server::client_addr(&headers, peer.map(|p| p.0.0))),
+    );
     Ok(Json(json!({ "username": user.username })))
 }

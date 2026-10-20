@@ -9,24 +9,15 @@
 
 import { Link } from 'react-router';
 import { Icon } from '@musonic/icons';
-import type { Activity, AdminStatus, Measures } from '@musonic/core';
+import type { AdminStatus, Measures } from '@musonic/core';
 import { bytes, hours, relative, uptime } from '../format.ts';
 import { useStatus } from '../useStatus.ts';
 import { alertText } from '../alerts.ts';
+import { describe, icon } from '../journal.ts';
+import { NowPlaying } from '../components/NowPlaying.tsx';
 import { t } from '../i18n/index.ts';
 import { monthTraffic, useMonthTraffic } from '../traffic.ts';
 import { QuotaMeter } from '../components/QuotaMeter.tsx';
-
-function activityText(a: Activity): string {
-  switch (a.kind) {
-    case 'import':
-      return t.dashboard.importedBy(a.what, a.who);
-    case 'login':
-      return t.dashboard.signedIn(a.who ?? '?');
-    default:
-      return t.dashboard.created(a.who ?? '?');
-  }
-}
 
 function Bar({ part, of, color, sub }: { part: number; of: number; color?: string; sub?: number }) {
   const pct = (v: number) => `${Math.min(100, (v / Math.max(of, 1)) * 100)}%`;
@@ -76,8 +67,7 @@ export function DashboardPage() {
   return (
     <>
       <div className="head">
-        <div><h1>{t.dashboard.title}</h1><p className="sub">{s.alerts.length ? t.dashboard.toLook(s.alerts.length) : t.dashboard.allGood}</p></div>
-        <span className="tag ok"><span className="dotlive" />{t.dashboard.onlineFor(uptime(s.live.uptimeSecs))}</span>
+        <div><h1>{t.dashboard.title}</h1><p className="sub">{s.alerts.length ? t.dashboard.toLook(s.alerts.length) : t.dashboard.allGood} · {t.dashboard.onlineFor(uptime(s.live.uptimeSecs))}</p></div>
       </div>
 
       {s.alerts.map((a) => {
@@ -102,10 +92,10 @@ export function DashboardPage() {
         <DiskCard s={s} month={month} />
         <div className="card">
           <div className="spread"><h2 style={{ margin: 0 }}>{t.dashboard.recent}</h2><Link className="btn ghost sm" to="/activity">{t.common.seeMore} <Icon name="chevron-right" size={14} /></Link></div>
-          {s.recent.map((a, i) => (
-            <div key={i} className="list-item">
-              {a.kind === 'import' ? <Icon name="download" size={18} /> : <div className="avatar">{(a.who ?? '?').slice(0, 1).toUpperCase()}</div>}
-              <div><b className="small">{activityText(a)}</b><div className="muted small">{relative(a.at)}</div></div>
+          {s.recent.slice(0, 4).map((a) => (
+            <div key={a.id} className="list-item">
+              <Icon name={icon(a)} size={18} />
+              <div><b className="small">{describe(a)}</b><div className="muted small">{relative(a.at)}{a.device ? ` · ${a.device}` : ''}</div></div>
             </div>
           ))}
           {s.recent.length === 0 && <p className="muted small">{t.dashboard.nothing}</p>}
@@ -115,18 +105,12 @@ export function DashboardPage() {
       <div className="grid g2 mt">
         <div className="card">
           <div className="spread"><h2 style={{ margin: 0 }}>{t.dashboard.now}</h2><span className="muted small">{t.dashboard.nowCount(s.nowPlaying.length)}</span></div>
-          {s.nowPlaying.map((p, i) => (
-            <div key={i} className="list-item">
-              <div className="avatar">{p.username.slice(0, 1).toUpperCase()}</div>
-              <div><b className="small">{t.dashboard.listensTo(p.username, p.title)}</b><div className="muted small">{p.artist}{p.player ? ` · ${p.player}` : ''} · {relative(p.since)}</div></div>
-            </div>
-          ))}
-          {s.nowPlaying.length === 0 && <p className="muted small">{t.dashboard.nobody}</p>}
+          <NowPlaying playing={s.nowPlaying} />
           <p className="note mt-s">{t.dashboard.connectSoon}</p>
         </div>
         <div className="card">
           <h2>{t.dashboard.versions}</h2>
-          <div className="setting"><div><b>Musonic Server</b><p>{t.dashboard.installed(s.version)}{server ? t.dashboard.latest(server.version) : ''}</p></div>{s.serverUpdate ? <a className="tag wait" href={server?.url} target="_blank" rel="noreferrer">{t.dashboard.update}</a> : <span className="tag ok">{t.dashboard.upToDate}</span>}</div>
+          <div className="setting"><div><b>Musonic Server</b><p>{t.dashboard.installed(s.version)}{server ? t.dashboard.latest(server.version) : ''}</p></div>{s.serverUpdate ? <a className="text-link" href={server?.url} target="_blank" rel="noreferrer">{t.dashboard.update}</a> : <span className="muted small">{t.dashboard.upToDate}</span>}</div>
           <div className="setting"><div><b>Musonic Web</b><p>{web ? t.dashboard.webLatest(web.version) : t.dashboard.webUnknown} · {t.dashboard.webSoon}</p></div>{web && <a className="btn sm" href={web.url} target="_blank" rel="noreferrer">{t.common.see}</a>}</div>
           <p className="muted small">{s.releases.checkedAt ? t.dashboard.checked(relative(s.releases.checkedAt).toLowerCase()) : t.dashboard.notChecked}</p>
         </div>

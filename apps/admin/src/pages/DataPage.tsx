@@ -16,6 +16,7 @@ import { api } from '../api.ts';
 import { bytes, date, rate, relative } from '../format.ts';
 import { useAutoRefresh } from '../refresh.ts';
 import { useStatus } from '../useStatus.ts';
+import { useHashScroll } from '../hash.ts';
 import { t } from '../i18n/index.ts';
 import { Chart, type Series } from '../components/Chart.tsx';
 import { ErrorLine, Modal, Seg } from '../components/ui.tsx';
@@ -134,6 +135,7 @@ export function DataPage() {
   const [loadedAt, setLoadedAt] = useState(0);
   const [month, reloadMonth] = useMonthTraffic();
   const [editing, setEditing] = useState(false);
+  useHashScroll(m !== null);
   const [error, setError] = useState<string | null>(null);
 
   // Stable while the period does not change.
@@ -183,7 +185,7 @@ export function DataPage() {
           <p className="sub">{t.data.sub}{m?.since ? ` ${t.data.since(date(m.since))}` : ''}</p>
         </div>
         {live && (
-          <span className="tag"><span className="dotlive" />{t.data.live} · <Icon name="upload-arrow" size={12} /> {rate(live.hostVisible ? live.hostTxBytesPerSec : live.txBytesPerSec)} · <Icon name="download-arrow" size={12} /> {rate(live.hostVisible ? live.hostRxBytesPerSec : live.rxBytesPerSec)}</span>
+          <span className="muted small">{t.data.live} · <Icon name="upload-arrow" size={12} /> {rate(live.hostVisible ? live.hostTxBytesPerSec : live.txBytesPerSec)} · <Icon name="download-arrow" size={12} /> {rate(live.hostVisible ? live.hostRxBytesPerSec : live.rxBytesPerSec)}</span>
         )}
       </div>
 
@@ -231,6 +233,7 @@ export function DataPage() {
         <Chart title={t.data.sent} kind="bars" labels={labels} titles={titles} series={traffic((r) => [r.hostTx, r.appTx])} format={bytes} />
         <Chart title={t.data.received} kind="bars" labels={labels} titles={titles} series={traffic((r) => [r.hostRx, r.appRx])} format={bytes} />
         <Chart
+          id="cpu"
           title={t.data.cpu}
           aside={cpuAvg !== null && <span className="muted small">{t.data.average(percent(cpuAvg))}</span>}
           kind="line" labels={labels} titles={titles} format={percent}

@@ -54,6 +54,8 @@ pub struct AppState {
     pub import_dir: String,
     /// Live measures for the console.
     pub metrics: Option<Arc<crate::metrics::Metrics>>,
+    /// What happened, for the console (`events.db`).
+    pub journal: crate::journal::Journal,
 }
 
 impl AppState {
@@ -76,6 +78,7 @@ impl AppState {
             music_dir: None,
             import_dir: "Musonic".to_owned(),
             metrics: None,
+            journal: crate::journal::Journal::memory(),
         }
     }
 }

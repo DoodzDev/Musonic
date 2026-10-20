@@ -1,5 +1,6 @@
 //! `GET /v1/admin/status`: everything the console's dashboard and event bar show, for
-//! administrators. Live figures come from [`crate::metrics`]; the rest from the database.
+//! administrators. Live figures come from [`crate::metrics`], recent activity from the
+//! journal, the rest from the database.
 
 use axum::{Json, extract::State};
 use serde::Serialize;
@@ -8,6 +9,7 @@ use ts_rs::TS;
 
 use super::{ApiError, Auth, Reply};
 use crate::{
+    journal::JournalEntry,
     metrics::{self, Folders, Live, Releases},
     server::AppState,
 };
@@ -24,7 +26,8 @@ pub struct AdminStatus {
     pub now_playing: Vec<Playing>,
     pub imports: Imports,
     pub alerts: Vec<Alert>,
-    pub recent: Vec<Activity>,
+    /// The last lines of the journal.
+    pub recent: Vec<JournalEntry>,
     pub releases: Releases,
     /// A newer server is released.
     pub server_update: bool,
@@ -110,24 +113,12 @@ pub struct Alert {
     pub current: Option<String>,
 }
 
-#[derive(Serialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct Activity {
-    /// `import`, `login`, `account`.
-    pub kind: String,
-    #[ts(type = "number")]
-    pub at: i64,
-    pub who: Option<String>,
-    pub what: String,
-}
-
 pub async fn status(State(state): State<AppState>, auth: Auth) -> Reply {
     if !auth.user.is_admin {
         return Err(ApiError::forbidden());
     }
     let import_prefix = format!("{}/%", state.import_dir.trim_end_matches('/'));
-    let (library, recent, imports) = state
+    let (library, imports) = state
         .db
         .call(move |c| {
             let library = c.query_row(
@@ -156,31 +147,9 @@ pub async fn status(State(state): State<AppState>, auth: Auth) -> Reply {
                     })
                 },
             )?;
-            let recent = c
-                .prepare(
-                    "SELECT * FROM (
-                        SELECT 'import' AS kind, j.updated_at AS at, u.username, t.title || ' — ' || t.artist_display
-                          FROM import_job j JOIN track t ON t.id = j.track_id
-                          LEFT JOIN user u ON u.id = j.requested_by WHERE j.state = 'done'
-                        UNION ALL
-                        SELECT 'login', last_login_at, username, '' FROM user WHERE last_login_at IS NOT NULL
-                        UNION ALL
-                        SELECT 'account', created_at, username, '' FROM user)
-                     ORDER BY at DESC LIMIT 8",
-                )?
-                .query_map([], |r| {
-                    Ok(Activity {
-                        kind: r.get(0)?,
-                        at: r.get(1)?,
-                        who: r.get(2)?,
-                        what: r.get(3)?,
-                    })
-                })?
-                .collect::<rusqlite::Result<Vec<_>>>()?;
             let counts = crate::library::import::counts(c)?;
             Ok((
                 library,
-                recent,
                 Imports {
                     pending: counts.pending,
                     running: counts.running,
@@ -188,6 +157,14 @@ pub async fn status(State(state): State<AppState>, auth: Auth) -> Reply {
                     done: counts.done,
                 },
             ))
+        })
+        .await?;
+
+    let recent = state
+        .journal
+        .read(crate::journal::JournalQuery {
+            limit: Some(8),
+            ..Default::default()
         })
         .await?;
 

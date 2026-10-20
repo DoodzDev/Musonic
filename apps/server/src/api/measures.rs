@@ -254,6 +254,11 @@ async fn set_quota(State(state): State<AppState>, auth: Auth, Json(q): Json<Quot
             Ok(())
         })
         .await?;
+    state.journal.log(
+        crate::journal::Entry::new("settings.quota")
+            .by_admin(&auth.user.username)
+            .detail(q.out_bytes),
+    );
     Ok(Json(json!({ "quotaOutBytes": q.out_bytes })))
 }
 

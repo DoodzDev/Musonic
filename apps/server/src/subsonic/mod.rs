@@ -331,13 +331,22 @@ async fn authenticate(state: &AppState, p: &Params, addr: &str) -> Result<User, 
             ));
         }
         return match users.check_api_key(key).await? {
-            Ok(u) => Ok(u),
+            Ok(u) => {
+                state.journal.signed_in(&u.username, p.get("c"), addr);
+                Ok(u)
+            }
             Err(AuthError::Suspended) => Err(suspended()),
-            Err(_) => Err(ApiError::new(Code::InvalidApiKey, "Invalid API key")),
+            Err(_) => {
+                state.journal.refused("login.fail", "", p.get("c"), addr);
+                Err(ApiError::new(Code::InvalidApiKey, "Invalid API key"))
+            }
         };
     }
     let username = p.require("u")?;
     if !state.limiter.allowed(addr, username) {
+        state
+            .journal
+            .refused("login.blocked", username, p.get("c"), addr);
         return Err(ApiError::new(
             Code::WrongCredentials,
             "Too many failed attempts, try again later",
@@ -360,6 +369,7 @@ async fn authenticate(state: &AppState, p: &Params, addr: &str) -> Result<User, 
     match result {
         Ok(user) => {
             state.limiter.succeeded(addr, username);
+            state.journal.signed_in(&user.username, p.get("c"), addr);
             Ok(user)
         }
         Err(AuthError::TokenAuthUnavailable) => Err(ApiError::new(
@@ -367,8 +377,16 @@ async fn authenticate(state: &AppState, p: &Params, addr: &str) -> Result<User, 
             "Token authentication is not available on this server: use apiKey",
         )),
         // The right password: not a guess, the limiter does not count it.
-        Err(AuthError::Suspended) => Err(suspended()),
+        Err(AuthError::Suspended) => {
+            state
+                .journal
+                .refused("login.suspended", username, p.get("c"), addr);
+            Err(suspended())
+        }
         Err(_) => {
+            state
+                .journal
+                .refused("login.fail", username, p.get("c"), addr);
             let tried = p.get("p").or(p.get("t")).unwrap_or_default();
             state.limiter.failed(addr, username, tried);
             Err(ApiError::new(

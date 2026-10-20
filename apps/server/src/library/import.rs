@@ -162,6 +162,8 @@ pub struct Importer {
     pub http: reqwest::Client,
     /// Tells the account that asked when its import is done or given up.
     pub events: Option<crate::events::Events>,
+    /// Imports done and given up, for the console.
+    pub journal: Option<crate::journal::Journal>,
 }
 
 impl Importer {
@@ -253,31 +255,45 @@ impl Importer {
         };
         let path = result.as_ref().ok().cloned().flatten().map(|(p, _)| p);
         self.record(track, attempts, result).await?;
-        if let (Some(state), Some(events)) = (state, &self.events) {
-            let t = track.to_owned();
-            let user: Option<String> = self
-                .db
-                .call(move |c| {
-                    Ok(c.query_row(
-                        "SELECT requested_by FROM import_job WHERE track_id = ?1",
-                        [&t],
-                        |r| r.get(0),
-                    )
-                    .optional()?
-                    .flatten())
-                })
-                .await?;
-            if let Some(user) = user {
-                events.emit(
-                    &user,
-                    None,
-                    Event::Import {
-                        id: track.to_owned(),
-                        state,
-                        path,
-                    },
-                );
-            }
+        let Some(state) = state else {
+            return Ok(());
+        };
+        let t = track.to_owned();
+        // Who asked (id and name), and the song.
+        let (user, name, song): (Option<String>, Option<String>, Option<String>) = self
+            .db
+            .call(move |c| {
+                Ok(c.query_row(
+                    "SELECT j.requested_by, u.username, t.title || ' — ' || t.artist_display
+                       FROM import_job j LEFT JOIN user u ON u.id = j.requested_by
+                       LEFT JOIN track t ON t.id = j.track_id
+                      WHERE j.track_id = ?1",
+                    [&t],
+                    |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+                )
+                .optional()?
+                .unwrap_or_default())
+            })
+            .await?;
+        if let Some(journal) = &self.journal {
+            let mut e = crate::journal::Entry::new(match state {
+                ImportState::Failed => "import.failed",
+                _ => "import.done",
+            })
+            .target(song.unwrap_or_else(|| track.to_owned()));
+            e.user = name;
+            journal.log(e);
+        }
+        if let (Some(user), Some(events)) = (user, &self.events) {
+            events.emit(
+                &user,
+                None,
+                Event::Import {
+                    id: track.to_owned(),
+                    state,
+                    path,
+                },
+            );
         }
         Ok(())
     }

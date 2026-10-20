@@ -90,22 +90,40 @@ pub trait AudioProvider: Send + Sync {
 pub struct CredentialsExpired(pub String);
 
 /// The last problem of each provider, for `/health` and the console.
-#[derive(Debug, Default)]
-pub struct ProviderHealth(Mutex<BTreeMap<&'static str, String>>);
+#[derive(Default)]
+pub struct ProviderHealth {
+    alerts: Mutex<BTreeMap<&'static str, String>>,
+    journal: Option<crate::journal::Journal>,
+}
 
 impl ProviderHealth {
+    /// Writes in the journal when a provider stops or starts working again.
+    pub fn with_journal(journal: crate::journal::Journal) -> Self {
+        Self {
+            alerts: Mutex::default(),
+            journal: Some(journal),
+        }
+    }
+
     /// Records how a provider just did: `None` = it worked.
     pub fn record(&self, provider: &'static str, error: Option<&anyhow::Error>) {
-        let Ok(mut all) = self.0.lock() else {
+        let Ok(mut all) = self.alerts.lock() else {
             return;
         };
         match error {
             None => {
-                all.remove(provider);
+                if all.remove(provider).is_some()
+                    && let Some(j) = &self.journal
+                {
+                    j.log(crate::journal::Entry::new("provider.ok").target(provider));
+                }
             }
             Some(e) if e.is::<CredentialsExpired>() => {
                 if !all.contains_key(provider) {
                     tracing::error!("provider {provider}: {e:#}; renew its credentials");
+                    if let Some(j) = &self.journal {
+                        j.log(crate::journal::Entry::new("provider.expired").target(provider));
+                    }
                 }
                 all.insert(provider, "credentials_expired".to_owned());
             }
@@ -115,6 +133,6 @@ impl ProviderHealth {
 
     /// Providers with an alert, and which.
     pub fn alerts(&self) -> BTreeMap<&'static str, String> {
-        self.0.lock().map(|a| a.clone()).unwrap_or_default()
+        self.alerts.lock().map(|a| a.clone()).unwrap_or_default()
     }
 }

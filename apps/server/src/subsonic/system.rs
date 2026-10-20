@@ -108,6 +108,12 @@ pub async fn create_user(ctx: &Ctx) -> Reply {
         .create(username, &password, admin)
         .await
         .map_err(|e| ApiError::new(Code::Generic, e.to_string()))?;
+    ctx.state.journal.log(
+        crate::journal::Entry::new("account.created")
+            .by_admin(&ctx.user.username)
+            .target(username)
+            .detail(if admin { "admin" } else { "user" }),
+    );
     Ok(Map::new())
 }
 
@@ -121,6 +127,11 @@ pub async fn delete_user(ctx: &Ctx) -> Reply {
         .delete(&user.id)
         .await
         .map_err(|e| ApiError::new(Code::Generic, e.to_string()))?;
+    ctx.state.journal.log(
+        crate::journal::Entry::new("account.deleted")
+            .by_admin(&ctx.user.username)
+            .target(&user.username),
+    );
     Ok(Map::new())
 }
 
@@ -136,6 +147,13 @@ pub async fn change_password(ctx: &Ctx) -> Reply {
         .set_password(&user.id, &password)
         .await
         .map_err(|e| ApiError::new(Code::Generic, e.to_string()))?;
+    ctx.state.journal.log(if user.id == ctx.user.id {
+        crate::journal::Entry::new("password.changed").user(&user.username)
+    } else {
+        crate::journal::Entry::new("password.set")
+            .by_admin(&ctx.user.username)
+            .target(&user.username)
+    });
     Ok(Map::new())
 }
 

@@ -26,7 +26,7 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      const r = await api<{ token: string; user: { is_admin: boolean } }>('/v1/auth/login', { method: 'POST', body: { username, password }, auth: false });
+      const r = await api<{ token: string; user: { is_admin: boolean } }>('/v1/auth/login', { method: 'POST', body: { username, password, client: 'Musonic Console' }, auth: false });
       session.set(r.token);
       onSignedIn();
       navigate(r.user.is_admin ? '/' : '/not-admin', { replace: true });

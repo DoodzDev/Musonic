@@ -1208,6 +1208,7 @@ async fn importing(
         library: None,
         http: reqwest::Client::new(),
         events: Some(lib.st.events.clone()),
+        journal: Some(lib.st.journal.clone()),
     });
     (lib, importer)
 }
@@ -1257,6 +1258,10 @@ async fn liked_online_songs_are_imported_into_the_library() {
     let h = health(&lib).await;
     assert_eq!(h["imports"]["done"], 1);
     assert_eq!(h["imports"]["pending"], 0);
+    let line = &lib.st.journal.read(Default::default()).await.unwrap()[0];
+    assert_eq!(line.code, "import.done");
+    assert_eq!(line.target.as_deref(), Some("One More Time — Daft Punk"));
+    assert!(line.user.is_some(), "who asked");
     // Nothing left to do; liking again does not import twice.
     lib.get("star?id=dz-track-1001").await;
     assert_eq!(importer.clone().run_due().await.unwrap(), 0);
@@ -1330,6 +1335,18 @@ async fn failed_imports_are_tried_again_then_given_up() {
         importer.clone().run_due().await.unwrap();
     }
     assert_eq!(health(&lib).await["imports"]["failed"], 1);
+    let lines = lib.st.journal.read(Default::default()).await.unwrap();
+    assert_eq!(
+        lines[0].code, "import.failed",
+        "written once, when given up"
+    );
+    assert_eq!(
+        lines
+            .iter()
+            .filter(|l| l.code.starts_with("import"))
+            .count(),
+        1
+    );
     // Liked again: a fresh start.
     lib.get("star?id=dz-track-1001").await;
     assert_eq!(health(&lib).await["imports"]["pending"], 1);

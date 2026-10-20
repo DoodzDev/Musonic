@@ -5,6 +5,7 @@
 //! | Route | |
 //! |---|---|
 //! | `GET /v1/events` | WebSocket of real-time events for the signed-in account (ADR-018); token also as `?token=`, device id as `?device=` |
+//! | `GET /v1/admin/journal`, `PUT /v1/admin/journal/settings` | « Activité » and administration journal of the console ([`journal`]) |
 //! | `POST /v1/admin/measures`, `PUT /v1/admin/traffic-quota` | « Données » page of the console: traffic, processor, memory, disk over time ([`measures`]) |
 //! | `GET /v1/admin/status` | Dashboard and event bar of the console (administrators): live figures, disk, library, now playing, alerts, releases |
 //! | `GET /v1/info` | What this server is and can do (no sign-in): clients tell Musonic Server from another Subsonic server with it |
@@ -35,6 +36,7 @@ use serde_json::{Value, json};
 use crate::{server::AppState, users::User};
 
 mod admin;
+mod journal;
 mod measures;
 mod status;
 
@@ -125,6 +127,7 @@ pub fn router() -> Router<AppState> {
         )
         .merge(admin::router())
         .merge(measures::router())
+        .merge(journal::router())
 }
 
 /// Version of the native API; raised when it changes in a way clients must know.
@@ -240,6 +243,9 @@ async fn info(State(state): State<AppState>) -> Reply {
 struct Credentials {
     username: String,
     password: String,
+    /// The application signing in (`Musonic Web`, `Console`…), for the journal.
+    #[serde(default)]
+    client: Option<String>,
 }
 
 async fn setup_needed(State(state): State<AppState>) -> Reply {
@@ -260,6 +266,12 @@ async fn setup(State(state): State<AppState>, Json(body): Json<Credentials>) -> 
         .create(&body.username, &body.password, true)
         .await
         .map_err(|e| ApiError::bad(e.to_string()))?;
+    state.journal.log(
+        crate::journal::Entry::new("account.created")
+            .user(&user.username)
+            .target(&user.username)
+            .detail("setup"),
+    );
     let token = state.users.create_session(&user.id).await?;
     Ok(Json(json!({ "token": token, "user": user })))
 }
@@ -271,7 +283,11 @@ async fn login(
     Json(body): Json<Credentials>,
 ) -> Reply {
     let from = crate::server::client_addr(&headers, peer.map(|p| p.0.0));
+    let client = body.client.as_deref();
     if !state.limiter.allowed(&from, &body.username) {
+        state
+            .journal
+            .refused("login.blocked", &body.username, client, &from);
         return Err(ApiError(
             StatusCode::TOO_MANY_REQUESTS,
             "too many failed attempts, try again later".into(),
@@ -284,15 +300,29 @@ async fn login(
     {
         Ok(user) => {
             state.limiter.succeeded(&from, &body.username);
+            state.journal.log(
+                crate::journal::Entry::new("login.ok")
+                    .user(&user.username)
+                    .ip(&from)
+                    .device(client),
+            );
             let token = state.users.create_session(&user.id).await?;
             Ok(Json(json!({ "token": token, "user": user })))
         }
-        Err(crate::users::AuthError::Suspended) => Err(ApiError(
-            StatusCode::FORBIDDEN,
-            "account suspended: ask the server's administrator".into(),
-        )),
+        Err(crate::users::AuthError::Suspended) => {
+            state
+                .journal
+                .refused("login.suspended", &body.username, client, &from);
+            Err(ApiError(
+                StatusCode::FORBIDDEN,
+                "account suspended: ask the server's administrator".into(),
+            ))
+        }
         Err(_) => {
             state.limiter.failed(&from, &body.username, &body.password);
+            state
+                .journal
+                .refused("login.fail", &body.username, client, &from);
             Err(ApiError(
                 StatusCode::UNAUTHORIZED,
                 "wrong username or password".into(),
@@ -337,6 +367,9 @@ async fn change_password(
         .set_password(&auth.user.id, &body.new)
         .await
         .map_err(|e| ApiError::bad(e.to_string()))?;
+    state
+        .journal
+        .log(crate::journal::Entry::new("password.changed").user(&auth.user.username));
     Ok(Json(json!({})))
 }
 
@@ -357,6 +390,11 @@ async fn create_key(State(state): State<AppState>, auth: Auth, Json(body): Json<
         .users
         .create_api_key(&auth.user.id, &body.name)
         .await?;
+    state.journal.log(
+        crate::journal::Entry::new("key.created")
+            .user(&auth.user.username)
+            .detail(body.name.trim()),
+    );
     Ok(Json(json!({ "key": key, "info": info })))
 }
 
@@ -364,6 +402,9 @@ async fn revoke_key(State(state): State<AppState>, auth: Auth, Path(id): Path<St
     if !state.users.revoke_api_key(&auth.user.id, &id).await? {
         return Err(ApiError(StatusCode::NOT_FOUND, "no such key".into()));
     }
+    state
+        .journal
+        .log(crate::journal::Entry::new("key.revoked").user(&auth.user.username));
     Ok(Json(json!({})))
 }
 
@@ -388,6 +429,12 @@ async fn create_user(
         .create(&body.username, &body.password, body.admin)
         .await
         .map_err(|e| ApiError::bad(e.to_string()))?;
+    state.journal.log(
+        crate::journal::Entry::new("account.created")
+            .by_admin(&auth.user.username)
+            .target(&user.username)
+            .detail(if user.is_admin { "admin" } else { "user" }),
+    );
     Ok(Json(json!(user)))
 }
 
@@ -395,8 +442,16 @@ async fn delete_user(State(state): State<AppState>, auth: Auth, Path(id): Path<S
     if !auth.user.is_admin {
         return Err(ApiError::forbidden());
     }
+    let name = state.users.get(&id).await?.map(|u| u.username);
     match state.users.delete(&id).await {
-        Ok(true) => Ok(Json(json!({}))),
+        Ok(true) => {
+            state.journal.log(
+                crate::journal::Entry::new("account.deleted")
+                    .by_admin(&auth.user.username)
+                    .target(name.unwrap_or(id)),
+            );
+            Ok(Json(json!({})))
+        }
         Ok(false) => Err(ApiError(StatusCode::NOT_FOUND, "no such user".into())),
         Err(e) => Err(ApiError::bad(e.to_string())),
     }

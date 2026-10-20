@@ -71,7 +71,6 @@ tr.click:hover td{background:var(--hover);cursor:pointer}
 .tag.ok{background:rgba(48,209,88,.14);color:var(--green)}
 .tag.bad{background:rgba(255,105,97,.14);color:var(--red)}
 .tag.wait{background:rgba(255,214,10,.12);color:var(--yellow)}
-.dotlive{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px}
 /* Forms */
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .field label{font-size:13px;color:var(--text2)}
@@ -97,11 +96,6 @@ tr.click:hover td{background:var(--hover);cursor:pointer}
 .ticker .sep{width:.5px;height:16px;background:var(--sep)}
 .ticker .alarm{display:flex;align-items:center;gap:8px;background:rgba(255,105,97,.14);color:var(--red);padding:3px 10px;border-radius:99px;text-decoration:none}
 .ticker .alarm.w{background:rgba(255,214,10,.12);color:var(--yellow)}
-.ticker .feed{flex:1;overflow:hidden;color:var(--text2);mask-image:linear-gradient(90deg,#000 85%,transparent)}
-.ticker .feed span{display:inline-block;animation:scroll 30s linear infinite}
-@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.pulse{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(48,209,88,.6);animation:pulse 2s infinite}
-@keyframes pulse{70%{box-shadow:0 0 0 6px rgba(48,209,88,0)}100%{box-shadow:0 0 0 0 rgba(48,209,88,0)}}
 .code{font:12px ui-monospace,Menlo,monospace;color:var(--text2)}
 .search{display:flex;align-items:center;gap:8px;background:var(--s2);border-radius:99px;padding:8px 14px;min-width:260px}
 .search input{background:none;border:0;outline:none;flex:1}
@@ -150,7 +144,6 @@ tr.click:hover td{background:var(--hover);cursor:pointer}
 .public .error-line{text-align:center}
 .nav a .ico{width:18px;height:18px;opacity:.9;flex:none}
 .soon{display:inline-block;font-size:11px;color:var(--text2);margin-left:auto}
-.pulse.off{background:var(--text2);animation:none;box-shadow:none}
 .alert>div:first-child{flex:1}
 a.tag{text-decoration:none}
 /* Charts (« Données »): validated palette, recessive grid, text in text colors. */
@@ -195,3 +188,34 @@ a.tag{text-decoration:none}
 .disk-legend .legend{margin:0}
 .disk-legend span:nth-child(3n){font-variant-numeric:tabular-nums;text-align:right}
 .chart.wide{grid-column:1 / -1}
+/* Journal (« Activité », administration journal) */
+.filters .search{min-width:min(320px,100%);flex:1;max-width:420px}
+.journal{padding:6px 18px 14px}
+.jday{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 4px;position:sticky;top:38px;background:var(--s1);padding:4px 0;z-index:1}
+.jday::first-letter{text-transform:uppercase}
+.jrow{display:grid;grid-template-columns:46px 18px 1fr auto;gap:10px;align-items:center;padding:7px 0;border-top:.5px solid var(--sep);font-size:14px}
+.jday+.jrow{border-top:0}
+.jtime{color:var(--text2);font-size:12.5px;font-variant-numeric:tabular-nums}
+.jico{color:var(--text3)}
+.jrow.problem .jico{color:var(--yellow)}
+.jtext{min-width:0}
+.jtag{margin-left:8px;font-size:11px;padding:1px 7px}
+.jmeta{color:var(--text2);font-size:12.5px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+.jend{text-align:center;margin:14px 0 0}
+@media (max-width:700px){.jrow{grid-template-columns:40px 18px 1fr}.jmeta{grid-column:3;text-align:left}}
+.ticker a.m{text-decoration:none;border-radius:6px;padding:2px 4px;margin:-2px -4px}
+.ticker a.m:hover{background:var(--hover);color:var(--text)}
+.ticker .m b{display:inline-block;text-align:left}
+.ticker .w-rate{min-width:5.4em}.ticker .m b.w-count{min-width:1.3em;text-align:right}.ticker .w-cpu{min-width:2.8em}.ticker .w-ram{min-width:4.2em}
+.anchor{scroll-margin-top:60px}
+/* Sober, Apple-like states: words, not badges or glowing dots. */
+.tag,.tag.accent,.tag.ok,.tag.bad,.tag.wait{display:inline;padding:0;border-radius:0;background:none;font-size:13px}
+.tag{color:var(--text2)}.tag.accent{color:var(--accent)}.tag.ok{color:var(--text2)}.tag.bad{color:var(--red)}.tag.wait{color:var(--text3)}
+.row .tag{margin-left:2px}
+.text-link{color:var(--accent);font-size:14px;font-weight:550;text-decoration:none;white-space:nowrap}
+.text-link:hover{text-decoration:underline}
+.jtag{margin-left:8px;font-size:12.5px;color:var(--text2)}
+.ticker .m.down{color:var(--red)}
+.ticker .alarm,.ticker .alarm.w{background:none;padding:0;gap:6px}
+.ticker .alarm.w{color:var(--yellow)}
+.ticker .alarm.first{margin-left:auto}
