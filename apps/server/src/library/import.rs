@@ -20,6 +20,7 @@ use tokio::sync::Notify;
 use super::{LibraryService, tags};
 use crate::{
     db::Db,
+    events::{Event, ImportState},
     model::{Quality, Track, TrackAlbum, TrackArtist},
     remote::{self, Remote},
 };
@@ -115,6 +116,8 @@ pub struct Importer {
     pub quality: Quality,
     pub library: Option<LibraryService>,
     pub http: reqwest::Client,
+    /// Tells the account that asked when its import is done or given up.
+    pub events: Option<crate::events::Events>,
 }
 
 impl Importer {
@@ -194,6 +197,48 @@ impl Importer {
     }
 
     async fn finish(
+        &self,
+        track: &str,
+        attempts: i64,
+        result: Result<Option<(String, &'static str)>>,
+    ) -> Result<()> {
+        let state = match &result {
+            Ok(_) => Some(ImportState::Done),
+            Err(_) if RETRIES.get(attempts as usize).is_none() => Some(ImportState::Failed),
+            Err(_) => None,
+        };
+        let path = result.as_ref().ok().cloned().flatten().map(|(p, _)| p);
+        self.record(track, attempts, result).await?;
+        if let (Some(state), Some(events)) = (state, &self.events) {
+            let t = track.to_owned();
+            let user: Option<String> = self
+                .db
+                .call(move |c| {
+                    Ok(c.query_row(
+                        "SELECT requested_by FROM import_job WHERE track_id = ?1",
+                        [&t],
+                        |r| r.get(0),
+                    )
+                    .optional()?
+                    .flatten())
+                })
+                .await?;
+            if let Some(user) = user {
+                events.emit(
+                    &user,
+                    None,
+                    Event::Import {
+                        id: track.to_owned(),
+                        state,
+                        path,
+                    },
+                );
+            }
+        }
+        Ok(())
+    }
+
+    async fn record(
         &self,
         track: &str,
         attempts: i64,

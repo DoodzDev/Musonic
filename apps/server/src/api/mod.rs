@@ -4,6 +4,8 @@
 //!
 //! | Route | |
 //! |---|---|
+//! | `GET /v1/events` | WebSocket of real-time events for the signed-in account (ADR-018); token also as `?token=`, device id as `?device=` |
+//! | `GET /v1/info` | What this server is and can do (no sign-in): clients tell Musonic Server from another Subsonic server with it |
 //! | `GET /v1/setup` | `{"needed": true}` until the first account exists |
 //! | `POST /v1/setup` | First account (administrator); only while there is none |
 //! | `POST /v1/auth/login` | `{username, password}` → `{token, user}` |
@@ -17,12 +19,15 @@ use std::net::SocketAddr;
 
 use axum::{
     Extension, Json, Router,
-    extract::{ConnectInfo, FromRequestParts, Path, State},
+    extract::{
+        ConnectInfo, FromRequestParts, Path, Query, State,
+        ws::{Message, WebSocket, WebSocketUpgrade},
+    },
     http::{HeaderMap, StatusCode, request::Parts},
     response::{IntoResponse, Response},
     routing::{delete, get, post, put},
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::{server::AppState, users::User};
@@ -62,31 +67,41 @@ pub struct Auth {
     token: String,
 }
 
+fn bearer(headers: &HeaderMap) -> Option<String> {
+    headers
+        .get("authorization")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("Bearer "))
+        .map(str::trim)
+        .filter(|t| !t.is_empty())
+        .map(str::to_owned)
+}
+
+/// The user of a session token or an API key.
+async fn user_of(state: &AppState, token: &str) -> Result<Option<User>, ApiError> {
+    Ok(if token.starts_with(crate::users::API_KEY_PREFIX) {
+        state.users.check_api_key(token).await?.ok()
+    } else {
+        state.users.check_session(token).await?
+    })
+}
+
 impl FromRequestParts<AppState> for Auth {
     type Rejection = ApiError;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
-        let token = parts
-            .headers
-            .get("authorization")
-            .and_then(|v| v.to_str().ok())
-            .and_then(|v| v.strip_prefix("Bearer "))
-            .map(str::trim)
-            .filter(|t| !t.is_empty())
-            .ok_or_else(ApiError::unauthorized)?
-            .to_owned();
-        let user = if token.starts_with(crate::users::API_KEY_PREFIX) {
-            state.users.check_api_key(&token).await?.ok()
-        } else {
-            state.users.check_session(&token).await?
-        };
-        user.map(|user| Auth { user, token })
+        let token = bearer(&parts.headers).ok_or_else(ApiError::unauthorized)?;
+        user_of(state, &token)
+            .await?
+            .map(|user| Auth { user, token })
             .ok_or_else(ApiError::unauthorized)
     }
 }
 
 pub fn router() -> Router<AppState> {
     Router::new()
+        .route("/v1/info", get(info))
+        .route("/v1/events", get(events))
         .route("/v1/setup", get(setup_needed).post(setup))
         .route("/v1/auth/login", post(login))
         .route("/v1/auth/logout", post(logout))
@@ -96,6 +111,115 @@ pub fn router() -> Router<AppState> {
         .route("/v1/me/api-keys/{id}", delete(revoke_key))
         .route("/v1/users", get(list_users).post(create_user))
         .route("/v1/users/{id}", delete(delete_user))
+}
+
+/// Version of the native API; raised when it changes in a way clients must know.
+pub const API_VERSION: u32 = 1;
+
+/// What this server can do, as listed by `/v1/info` (see ADR-018).
+pub fn features(state: &AppState) -> Vec<String> {
+    let mut f = vec!["events"];
+    if state.online.is_some() {
+        f.push("online");
+    }
+    if state.imports.is_some() {
+        f.push("imports");
+    }
+    f.into_iter().map(str::to_owned).collect()
+}
+
+/// `GET /v1/info`. Its TypeScript type is generated in `packages/core`.
+#[derive(Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct ServerInfo {
+    /// Always `musonic`.
+    pub server: String,
+    pub version: String,
+    /// Version of the native API.
+    pub api: u32,
+    /// `events`, `online`, `imports`…
+    pub features: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct EventsQuery {
+    token: Option<String>,
+    device: Option<String>,
+}
+
+/// Seconds between keep-alive pings (Cloudflare closes idle connections after 100 s).
+const EVENTS_PING: std::time::Duration = std::time::Duration::from_secs(30);
+
+async fn events(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(q): Query<EventsQuery>,
+    ws: WebSocketUpgrade,
+) -> Result<Response, ApiError> {
+    let token = bearer(&headers)
+        .or(q.token.filter(|t| !t.is_empty()))
+        .ok_or_else(ApiError::unauthorized)?;
+    let user = user_of(&state, &token)
+        .await?
+        .ok_or_else(ApiError::unauthorized)?;
+    let device = crate::events::device(&headers, q.device.as_deref());
+    Ok(ws.on_upgrade(move |socket| stream_events(socket, state, user, device)))
+}
+
+async fn stream_events(mut socket: WebSocket, state: AppState, user: User, device: Option<String>) {
+    use crate::events::{Event, EventMessage, UserRef};
+    use tokio::sync::broadcast::error::RecvError;
+    let send = |v: &Value| Message::Text(v.to_string().into());
+    let typed = |e: Event| EventMessage::new(None, e).to_json();
+    let mut rx = state.events.subscribe();
+    let hello = typed(Event::Hello {
+        user: UserRef {
+            id: user.id.clone(),
+            username: user.username.clone(),
+        },
+        device: device.clone(),
+        features: features(&state),
+    });
+    if socket.send(send(&hello)).await.is_err() {
+        return;
+    }
+    let mut ping = tokio::time::interval(EVENTS_PING);
+    ping.tick().await;
+    loop {
+        tokio::select! {
+            event = rx.recv() => {
+                let message = match event {
+                    Ok(e) if e.user_id == user.id => e.message,
+                    Ok(_) => continue,
+                    // Too slow: some events were missed, the device reloads.
+                    Err(RecvError::Lagged(_)) => std::sync::Arc::new(typed(Event::Resync)),
+                    Err(RecvError::Closed) => break,
+                };
+                if socket.send(send(&message)).await.is_err() {
+                    break;
+                }
+            }
+            _ = ping.tick() => {
+                if socket.send(send(&typed(Event::Ping))).await.is_err() {
+                    break;
+                }
+            }
+            incoming = socket.recv() => match incoming {
+                None | Some(Err(_)) | Some(Ok(Message::Close(_))) => break,
+                // Nothing to receive yet (Connect commands come with S8).
+                Some(Ok(_)) => {}
+            },
+        }
+    }
+}
+
+async fn info(State(state): State<AppState>) -> Reply {
+    Ok(Json(json!(ServerInfo {
+        server: "musonic".to_owned(),
+        version: env!("CARGO_PKG_VERSION").to_owned(),
+        api: API_VERSION,
+        features: features(&state),
+    })))
 }
 
 #[derive(Deserialize)]

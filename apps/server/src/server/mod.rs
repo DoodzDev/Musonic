@@ -45,6 +45,8 @@ pub struct AppState {
     pub provider_health: Arc<crate::providers::ProviderHealth>,
     /// Background imports, when a library and a provider whose files may be imported exist.
     pub imports: Option<crate::library::import::ImportService>,
+    /// Real-time events to the devices of each account.
+    pub events: crate::events::Events,
 }
 
 impl AppState {
@@ -62,6 +64,7 @@ impl AppState {
             sessions: Arc::default(),
             provider_health: Arc::default(),
             imports: None,
+            events: Default::default(),
         }
     }
 }

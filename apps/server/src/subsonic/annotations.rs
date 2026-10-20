@@ -10,7 +10,11 @@ use rusqlite::{Connection, OptionalExtension, Transaction, params};
 use serde_json::json;
 
 use super::{ApiError, Code, Ctx, Reply, model, one, online};
-use crate::{library::import, online::OnlineId};
+use crate::{
+    events::{Event, LikeItem},
+    library::import,
+    online::OnlineId,
+};
 
 fn now() -> i64 {
     SystemTime::now()
@@ -116,7 +120,7 @@ pub async fn star(ctx: &Ctx, starred: bool) -> Reply {
                     import::queue(&tx, track, Some(&user))?;
                 }
             }
-            for (kind, id) in items {
+            for (kind, id) in &items {
                 if starred {
                     // Liking again keeps the first date.
                     tx.prepare_cached(
@@ -135,10 +139,21 @@ pub async fn star(ctx: &Ctx, starred: bool) -> Reply {
                 }
             }
             tx.commit()?;
-            Ok(Ok(()))
+            Ok(Ok(items))
         })
         .await?;
-    result.map_err(|id| ApiError::new(Code::NotFound, format!("Item not found: {id}")))?;
+    let items =
+        result.map_err(|id| ApiError::new(Code::NotFound, format!("Item not found: {id}")))?;
+    ctx.emit(Event::Likes {
+        items: items
+            .into_iter()
+            .map(|(kind, id)| LikeItem {
+                kind: kind.to_owned(),
+                id,
+                starred,
+            })
+            .collect(),
+    });
     if import && let Some(imports) = &ctx.state.imports {
         imports.wake();
     }
@@ -156,24 +171,30 @@ pub async fn set_rating(ctx: &Ctx) -> Reply {
         .filter(|r| (0..=5).contains(r))
         .ok_or_else(|| ApiError::new(Code::Generic, "rating must be between 0 and 5"))?;
     let user = ctx.user.id.clone();
+    let item = id.clone();
     let found = ctx
         .state
         .db
         .call(move |c| {
             let Some(kind) = item_type(c, &id)? else {
-                return Ok(false);
+                return Ok(None);
             };
             c.prepare_cached(
                 "INSERT INTO annotation(user_id, item_type, item_id, rating) VALUES (?1, ?2, ?3, ?4)
                  ON CONFLICT(user_id, item_type, item_id) DO UPDATE SET rating = excluded.rating",
             )?
             .execute(params![user, kind, id, rating])?;
-            Ok(true)
+            Ok(Some(kind))
         })
         .await?;
-    if !found {
+    let Some(kind) = found else {
         return Err(ApiError::not_found("Item"));
-    }
+    };
+    ctx.emit(Event::Rating {
+        kind: kind.to_owned(),
+        id: item,
+        rating: rating as u8,
+    });
     Ok(Default::default())
 }
 
@@ -262,6 +283,7 @@ pub async fn scrobble(ctx: &Ctx) -> Reply {
         return Ok(Default::default());
     }
 
+    let played = ids.clone();
     let missing = ctx
         .state
         .db
@@ -294,6 +316,7 @@ pub async fn scrobble(ctx: &Ctx) -> Reply {
             format!("Song not found: {id}"),
         ));
     }
+    ctx.emit(Event::Play { ids: played });
     Ok(Default::default())
 }
 

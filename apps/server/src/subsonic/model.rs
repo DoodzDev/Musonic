@@ -166,7 +166,12 @@ pub fn song(r: &Row) -> rusqlite::Result<Value> {
     m.insert("duration".into(), json!((duration_ms + 500) / 1000));
     put(&mut m, "bpm", r.get::<_, Option<i64>>(10)?);
     m.insert("created".into(), json!(iso(r.get(11)?)));
-    put(&mut m, "path", r.get::<_, Option<String>>(12)?);
+    let path: Option<String> = r.get(12)?;
+    if path.is_none() {
+        // Known only online: clients show it as such (see ADR-018).
+        m.insert("online".into(), json!(true));
+    }
+    put(&mut m, "path", path);
     put(&mut m, "size", r.get::<_, Option<i64>>(13)?);
     m.insert("suffix".into(), json!(format));
     m.insert("contentType".into(), json!(mime(&format)));
@@ -216,7 +221,9 @@ fn album_select(tracks: &str) -> String {
                 (SELECT group_concat(g.name, char(30)) FROM album_genre ag JOIN genre g ON g.id = ag.genre_id
                   WHERE ag.album_id = al.id),
                 (SELECT group_concat(ar.id || char(31) || ar.name, char(30) ORDER BY aa.position)
-                   FROM album_artist aa JOIN artist ar ON ar.id = aa.artist_id WHERE aa.album_id = al.id)
+                   FROM album_artist aa JOIN artist ar ON ar.id = aa.artist_id WHERE aa.album_id = al.id),
+                EXISTS (SELECT 1 FROM track t2 JOIN track_file f2 ON f2.track_id = t2.id
+                         WHERE t2.album_id = al.id AND f2.missing = 0)
            FROM album al
            JOIN track t ON t.album_id = al.id AND {tracks}
            LEFT JOIN annotation an ON an.user_id = ?1 AND an.item_type = 'album' AND an.item_id = al.id"
@@ -298,6 +305,9 @@ pub fn album(r: &Row) -> rusqlite::Result<Value> {
                 .collect::<Vec<_>>()
         ),
     );
+    if !r.get::<_, bool>(16)? {
+        m.insert("online".into(), json!(true));
+    }
     m.insert("mediaType".into(), json!("album"));
     Ok(Value::Object(m))
 }
@@ -341,7 +351,8 @@ pub const ARTIST_SELECT: &str = "
 SELECT ar.id, ar.name, ar.sort_name, count(DISTINCT aa.album_id), an.starred_at, ar.image_url,
        (SELECT al2.id FROM album_artist aa2 JOIN album al2 ON al2.id = aa2.album_id
          WHERE aa2.artist_id = ar.id AND al2.cover_ref IS NOT NULL
-         ORDER BY al2.year DESC LIMIT 1)
+         ORDER BY al2.year DESC LIMIT 1),
+       1
   FROM artist ar
   JOIN album_artist aa ON aa.artist_id = ar.id
    AND EXISTS (SELECT 1 FROM track t JOIN track_file f ON f.track_id = t.id
@@ -362,6 +373,9 @@ pub fn artist(r: &Row) -> rusqlite::Result<Value> {
     if let Some(album) = r.get::<_, Option<String>>(6)? {
         m.insert("coverArt".into(), json!(album));
     }
+    if !r.get::<_, bool>(7)? {
+        m.insert("online".into(), json!(true));
+    }
     Ok(Value::Object(m))
 }
 
@@ -376,7 +390,10 @@ pub fn artists_playable(
         "SELECT ar.id, ar.name, ar.sort_name, count(DISTINCT aa.album_id), an.starred_at, ar.image_url,
                 (SELECT al2.id FROM album_artist aa2 JOIN album al2 ON al2.id = aa2.album_id
                   WHERE aa2.artist_id = ar.id AND coalesce(al2.cover_ref, al2.cover_url) IS NOT NULL
-                  ORDER BY al2.year DESC LIMIT 1)
+                  ORDER BY al2.year DESC LIMIT 1),
+                EXISTS (SELECT 1 FROM album_artist aa3 JOIN track t3 ON t3.album_id = aa3.album_id
+                          JOIN track_file f3 ON f3.track_id = t3.id
+                         WHERE aa3.artist_id = ar.id AND f3.missing = 0)
            FROM artist ar
            LEFT JOIN album_artist aa ON aa.artist_id = ar.id
            LEFT JOIN annotation an ON an.user_id = ?1 AND an.item_type = 'artist' AND an.item_id = ar.id

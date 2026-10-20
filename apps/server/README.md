@@ -13,6 +13,11 @@ the Musonic apps and for any Subsonic client.
   watches it for changes.
 - **Subsonic / OpenSubsonic API**: Musonic, Substreamer, Symfonium and other clients work as is.
 - **Native API** (`/v1`) used by the Musonic apps, and the Musonic web client served directly.
+  Its types are generated in TypeScript (`packages/core/src/server`).
+- **Real-time sync**: every device of an account hears at once what changed (likes,
+  playlists, plays, queue, imports) through `GET /v1/events` (WebSocket).
+- **Tells clients what it is** (`GET /v1/info`, OpenSubsonic extension `musonicServer`), so a
+  client can use its extras and still work with any other Subsonic server.
 - **Accounts**: administrators and users, passwords hashed with argon2, one revocable key per
   device.
 - **Online catalog** (Deezer's public API, metadata only): search and browse artists and albums

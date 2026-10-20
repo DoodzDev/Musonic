@@ -1207,6 +1207,7 @@ async fn importing(
         quality: crate::providers::Quality::Mp3_320,
         library: None,
         http: reqwest::Client::new(),
+        events: Some(lib.st.events.clone()),
     });
     (lib, importer)
 }
@@ -1469,4 +1470,166 @@ async fn a_moved_music_folder_keeps_its_tracks() {
     );
     let (_, _, body) = lib.raw(&format!("stream?id={id}&{AUTH}"), None).await;
     assert!(body.len() > 1000, "and its file plays");
+}
+
+#[tokio::test]
+async fn online_items_are_marked_and_the_server_tells_what_it_is() {
+    let (lib, importer) = importing("marked", None).await;
+    let local = lib.song_id("hoppipolla").await;
+    assert!(
+        lib.get(&format!("getSong?id={local}")).await["song"]
+            .get("online")
+            .is_none()
+    );
+    let r = lib.get("search3?query=one%20more").await;
+    assert_eq!(r["searchResult3"]["song"][0]["online"], true);
+    assert_eq!(r["searchResult3"]["album"][0]["online"], true);
+    assert_eq!(r["searchResult3"]["artist"][0]["online"], true);
+    lib.get("star?id=dz-track-1001&albumId=dz-album-302127&artistId=dz-artist-27")
+        .await;
+    let r = lib.get("getStarred2?").await;
+    assert_eq!(
+        r["starred2"]["song"][0]["online"], true,
+        "liked, not imported yet"
+    );
+    assert_eq!(r["starred2"]["album"][0]["online"], true);
+    // Daft Punk already has an album in the library (Get Lucky).
+    assert!(r["starred2"]["artist"][0].get("online").is_none());
+    importer.clone().run_due().await.unwrap();
+    rescan(&lib).await;
+    let r = lib.get("getStarred2?").await;
+    assert!(r["starred2"]["song"][0].get("online").is_none(), "imported");
+    assert!(r["starred2"]["album"][0].get("online").is_none());
+
+    // Detection: the OpenSubsonic extension and /v1/info, both without signing in.
+    let (_, _, body) = lib.raw("getOpenSubsonicExtensions?f=json", None).await;
+    let v: Value = serde_json::from_slice(&body).unwrap();
+    let names: Vec<&str> = v["subsonic-response"]["openSubsonicExtensions"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e["name"].as_str().unwrap())
+        .collect();
+    assert!(names.contains(&"musonicServer"));
+    let res = lib
+        .app
+        .clone()
+        .oneshot(Request::get("/v1/info").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    let info: Value =
+        serde_json::from_slice(&res.into_body().collect().await.unwrap().to_bytes()).unwrap();
+    assert_eq!(info["server"], "musonic");
+    assert_eq!(info["api"], 1);
+    let features: Vec<&str> = info["features"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|f| f.as_str().unwrap())
+        .collect();
+    assert!(
+        features.contains(&"online")
+            && features.contains(&"imports")
+            && features.contains(&"events")
+    );
+}
+
+// Real-time events ------------------------------------------------------------------------
+
+#[tokio::test]
+async fn changes_reach_the_accounts_devices_at_once() {
+    use futures_util::StreamExt;
+    use tokio_tungstenite::{connect_async, tungstenite::Message};
+    let lib = library("events").await;
+    let me = lib.st.users.list().await.unwrap()[0].id.clone();
+    let (_, key) = lib.st.users.create_api_key(&me, "laptop").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let app = lib.app.clone();
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+
+    let (mut ws, _) = connect_async(format!("ws://{addr}/v1/events?token={key}&device=laptop"))
+        .await
+        .unwrap();
+    let mut next = async || -> Value {
+        let msg = tokio::time::timeout(std::time::Duration::from_secs(5), ws.next())
+            .await
+            .expect("an event")
+            .unwrap()
+            .unwrap();
+        match msg {
+            Message::Text(t) => serde_json::from_str(&t).unwrap(),
+            other => panic!("unexpected {other:?}"),
+        }
+    };
+    let hello = next().await;
+    assert_eq!(hello["type"], "hello");
+    assert_eq!(hello["device"], "laptop");
+    assert_eq!(hello["user"]["username"], "Doodz");
+
+    // A like from the phone.
+    let id = lib.song_id("hoppipolla").await;
+    lib.get(&format!("star?id={id}&device=phone")).await;
+    let e = next().await;
+    assert_eq!(e["type"], "likes");
+    assert_eq!(e["by"], "phone");
+    assert_eq!(e["items"][0]["id"], id.as_str());
+    assert_eq!(e["items"][0]["starred"], true);
+
+    // Another account's changes are not sent here.
+    lib.st
+        .users
+        .create("Other", "other password", false)
+        .await
+        .unwrap();
+    lib.raw(
+        &format!("star?id={id}&u=Other&p=other%20password&f=json"),
+        None,
+    )
+    .await;
+    lib.get("createPlaylist?name=Mix").await;
+    let e = next().await;
+    assert_eq!(
+        e["type"], "playlist",
+        "the other account's like was skipped"
+    );
+    assert_eq!(e["action"], "created");
+    lib.get(&format!("setRating?id={id}&rating=3")).await;
+    assert_eq!(next().await["rating"], 3);
+    lib.get(&format!("scrobble?id={id}")).await;
+    assert_eq!(next().await["type"], "play");
+    lib.get(&format!("savePlayQueue?id={id}")).await;
+    assert_eq!(next().await["type"], "queue");
+
+    // Without a valid token: refused.
+    assert!(
+        connect_async(format!("ws://{addr}/v1/events?token=msk_nope"))
+            .await
+            .is_err()
+    );
+    assert!(
+        connect_async(format!("ws://{addr}/v1/events"))
+            .await
+            .is_err()
+    );
+}
+
+#[tokio::test]
+async fn the_account_is_told_when_its_import_is_done() {
+    let (lib, importer) = importing("import-event", None).await;
+    let me = lib.st.users.list().await.unwrap()[0].id.clone();
+    let mut rx = lib.st.events.subscribe();
+    lib.get("star?id=dz-track-1001").await;
+    assert_eq!(rx.recv().await.unwrap().message["type"], "likes");
+    importer.clone().run_due().await.unwrap();
+    let e = rx.recv().await.unwrap();
+    assert_eq!(e.user_id, me);
+    assert_eq!(e.message["type"], "import");
+    assert_eq!(e.message["state"], "done");
+    assert!(
+        e.message["path"]
+            .as_str()
+            .unwrap()
+            .ends_with("One More Time.mp3")
+    );
 }

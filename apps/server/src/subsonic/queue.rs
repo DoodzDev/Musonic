@@ -75,6 +75,7 @@ pub async fn save(ctx: &Ctx, by_index: bool) -> Reply {
             Ok(())
         })
         .await?;
+    ctx.emit(crate::events::Event::Queue {});
     Ok(Default::default())
 }
 

@@ -7,7 +7,10 @@ use serde_json::{Value, json};
 use rusqlite::{Connection, OptionalExtension, Transaction, params};
 
 use super::{ApiError, Code, Ctx, Reply, model, one, online};
-use crate::library::import;
+use crate::{
+    events::{Event, PlaylistAction},
+    library::import,
+};
 
 const PLAYLIST_SELECT: &str = "
 SELECT p.id, p.name, p.comment, p.public, p.created_at, p.updated_at, u.username,
@@ -291,6 +294,11 @@ pub async fn create_playlist(ctx: &Ctx) -> Reply {
     }
     let songs = online::resolve_tracks(ctx, list(ctx, "songId")).await?;
     let import = ctx.state.imports.is_some();
+    let action = if existing.is_some() {
+        PlaylistAction::Updated
+    } else {
+        PlaylistAction::Created
+    };
     let user = ctx.user.id.clone();
     let result = ctx
         .state
@@ -331,6 +339,10 @@ pub async fn create_playlist(ctx: &Ctx) -> Reply {
         .await?;
     let pl = result?.ok_or_else(|| ApiError::not_found("Playlist"))?;
     wake_imports(ctx);
+    ctx.emit(Event::Playlist {
+        id: pl["id"].as_str().unwrap_or_default().to_owned(),
+        action,
+    });
     Ok(one("playlist", pl))
 }
 
@@ -343,6 +355,7 @@ pub async fn update_playlist(ctx: &Ctx) -> Reply {
     let public = ctx.params.get("public").map(|v| v == "true");
     let add = online::resolve_tracks(ctx, list(ctx, "songIdToAdd")).await?;
     let import = ctx.state.imports.is_some();
+    let changed = id.clone();
     let remove: Vec<usize> = ctx
         .params
         .all("songIndexToRemove")
@@ -389,6 +402,10 @@ pub async fn update_playlist(ctx: &Ctx) -> Reply {
         .await?;
     result?;
     wake_imports(ctx);
+    ctx.emit(Event::Playlist {
+        id: changed,
+        action: PlaylistAction::Updated,
+    });
     Ok(Default::default())
 }
 
@@ -415,6 +432,7 @@ fn wake_imports(ctx: &Ctx) {
 
 pub async fn delete_playlist(ctx: &Ctx) -> Reply {
     let id = ctx.params.require("id")?.to_owned();
+    let deleted = id.clone();
     let user = ctx.user.id.clone();
     let result = ctx
         .state
@@ -431,6 +449,10 @@ pub async fn delete_playlist(ctx: &Ctx) -> Reply {
         })
         .await?;
     result?;
+    ctx.emit(Event::Playlist {
+        id: deleted,
+        action: PlaylistAction::Deleted,
+    });
     Ok(Default::default())
 }
 

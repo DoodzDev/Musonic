@@ -5,10 +5,12 @@ on:
     branches: [main]
     paths:
       - 'apps/server/**'
+      - 'packages/core/src/server/**'
       - '.github/workflows/server-ci.yml'
   pull_request:
     paths:
       - 'apps/server/**'
+      - 'packages/core/src/server/**'
       - '.github/workflows/server-ci.yml'
 
 concurrency:
@@ -32,3 +34,9 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --all-targets --locked -- -D warnings
       - run: cargo test --locked
+      # `cargo test` writes the TypeScript types of the native API (ADR-018): they must be
+      # committed as generated.
+      - name: TypeScript types are up to date
+        run: |
+          changes=$(git status --porcelain -- ../../packages/core/src/server/generated)
+          if [ -n "$changes" ]; then echo "$changes"; echo "Run cargo test and commit the generated types."; exit 1; fi

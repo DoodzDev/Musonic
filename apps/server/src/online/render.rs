@@ -72,6 +72,7 @@ pub fn song(t: &DzTrack, album: Option<&DzAlbum>) -> Value {
         "explicitStatus".into(),
         json!(if t.explicit_lyrics { "explicit" } else { "" }),
     );
+    m.insert("online".into(), json!(true));
     m.insert("type".into(), json!("music"));
     m.insert("mediaType".into(), json!("song"));
     Value::Object(m)
@@ -127,6 +128,7 @@ pub fn album(a: &DzAlbum, id: Option<&str>) -> Value {
         json!(a.record_type.as_deref() == Some("compile")),
     );
     m.insert("playCount".into(), json!(0));
+    m.insert("online".into(), json!(true));
     m.insert("mediaType".into(), json!("album"));
     Value::Object(m)
 }
@@ -143,6 +145,7 @@ pub fn artist(a: &DzArtist, id: Option<&str>) -> Value {
     if let Some(n) = a.nb_album {
         m.insert("albumCount".into(), json!(n));
     }
+    m.insert("online".into(), json!(true));
     Value::Object(m)
 }
 

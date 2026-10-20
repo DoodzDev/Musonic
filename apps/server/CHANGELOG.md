@@ -102,6 +102,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Daily database backup (consistent copy while running) in `data_dir/backups`, 14 days kept
   (`backup_days`).
 - `Dockerfile` (with ffmpeg) and `compose.example.yml`.
+- Clients can tell Musonic Server from another Subsonic server: OpenSubsonic extension
+  `musonicServer` and `GET /v1/info` (version, native API version, features), both without
+  signing in.
+- Real-time events: `GET /v1/events` (WebSocket, token in `Authorization: Bearer` or
+  `?token=`, device id in `?device=`) pushes to every device of an account what changed, from
+  any client: likes, ratings, playlists, plays, the saved queue, finished or given-up imports.
+  A keep-alive ping every 30 seconds; a device that falls behind is told to reload (`resync`).
+  The device that made a change is named in `by` when it says who it is (`X-Musonic-Device`
+  header or `device` parameter).
+- `online: true` on songs, albums and artists that have no file in the library (online
+  catalog, songs liked but not imported yet), for an "Online" badge in clients.
 - A music folder that moved (another disk, another Docker mount) is followed: tracks, likes and
   playlists stay, files are found in the new place.
 - `musonic_server::cli`: the command line, for binaries that add their own providers.

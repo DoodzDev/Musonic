@@ -8,6 +8,7 @@
 pub mod api;
 pub mod config;
 pub mod db;
+pub mod events;
 pub mod ids;
 pub mod library;
 pub mod matcher;
@@ -158,6 +159,7 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
                 quality,
                 library: state.library.clone(),
                 http: reqwest::Client::new(),
+                events: Some(state.events.clone()),
             }
             .start(),
         );

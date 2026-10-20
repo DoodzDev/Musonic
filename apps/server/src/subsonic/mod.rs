@@ -181,6 +181,14 @@ pub struct Ctx {
     pub headers: HeaderMap,
 }
 
+impl Ctx {
+    /// Tells the user's devices what changed (see [`crate::events`]).
+    pub fn emit(&self, event: crate::events::Event) {
+        let by = crate::events::device(&self.headers, self.params.get("device"));
+        self.state.events.emit(&self.user.id, by.as_deref(), event);
+    }
+}
+
 pub fn router() -> Router<AppState> {
     Router::new().route("/rest/{endpoint}", any(handle))
 }
