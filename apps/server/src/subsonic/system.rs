@@ -11,6 +11,7 @@ pub fn open_subsonic_extensions() -> Reply {
         json!([
             { "name": "apiKeyAuthentication", "versions": [1] },
             { "name": "formPost", "versions": [1] },
+            { "name": "indexBasedQueue", "versions": [1] },
         ]),
     ))
 }

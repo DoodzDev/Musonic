@@ -4,7 +4,8 @@ The music server of the Musonic ecosystem: your library, your accounts and your 
 the Musonic apps and for any Subsonic client.
 
 > **Status: in development (0.1.0).** Scanning, accounts, browsing, search, playback with
-> transcoding, covers and lyrics work; likes, playlists editing and play counts come next.
+> transcoding, covers, lyrics, likes, ratings, play counts, playlists and the saved play queue
+> work; online tracks and the import from Navidrome come next.
 > Use [Navidrome](https://www.navidrome.org/) in the meantime.
 
 ## What it will do

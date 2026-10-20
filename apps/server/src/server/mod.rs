@@ -33,6 +33,8 @@ pub struct AppState {
     pub setup_lock: Arc<tokio::sync::Mutex<()>>,
     /// Caches (resized covers…) live under it.
     pub data_dir: PathBuf,
+    /// What each user plays now (Subsonic `getNowPlaying`).
+    pub now_playing: Arc<crate::subsonic::NowPlaying>,
 }
 
 impl AppState {
@@ -44,6 +46,7 @@ impl AppState {
             data_dir,
             limiter: Arc::new(AuthLimiter::default()),
             setup_lock: Arc::new(tokio::sync::Mutex::new(())),
+            now_playing: Arc::default(),
         }
     }
 }

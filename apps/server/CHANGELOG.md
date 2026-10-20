@@ -58,4 +58,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Covers (`getCoverArt`): the album's image file or embedded picture, resized on request
   (JPEG) and cached on disk.
 - Lyrics: `getLyricsBySongId` (synced lines from `.lrc` files) and `getLyrics`.
+- Likes and ratings: `star` / `unstar` (songs, albums, artists, several at once; liking again
+  keeps the first date), `setRating`.
+- Plays: `scrobble` counts a play for the song, its album and its artists (with the client's
+  date when given), feeding the "frequent" / "recent" lists and top songs; `submission=false`
+  shows the song in `getNowPlaying` until it would have ended.
+- Playlists: `createPlaylist` (new, or every song replaced, which is how clients reorder),
+  `updatePlaylist` (name, comment, public, songs added and removed), `deletePlaylist`; only
+  the owner may change them. Positions sent by clients count the songs they see: a song whose
+  file is gone stays in place, untouched, and comes back with its file. Song counts and
+  durations count the songs shown.
+- Saved play queue: `savePlayQueue` / `getPlayQueue` and the OpenSubsonic `…ByIndex` variants
+  (`indexBasedQueue` extension), to resume on another device.
 - Tracks without an album artist tag: the album goes to the main artist ("A feat. B" → "A").

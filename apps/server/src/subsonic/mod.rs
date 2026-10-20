@@ -5,13 +5,17 @@
 //! token, see [`crate::users`]), or `apiKey` (OpenSubsonic). Answers are XML by default, JSON
 //! with `f=json`, JSONP with `f=jsonp` + `callback`.
 
+mod annotations;
 mod browse;
 mod media;
 mod model;
 mod playlists;
+mod queue;
 mod search;
 mod system;
 mod xml;
+
+pub use annotations::NowPlaying;
 
 use std::net::SocketAddr;
 
@@ -252,11 +256,22 @@ async fn handle(
         "getAlbumInfo" => browse::album_info(&ctx, "albumInfo").await,
         "getScanStatus" => browse::scan_status(&ctx).await,
         "startScan" => browse::start_scan(&ctx).await,
-        "getNowPlaying" => Ok(one("nowPlaying", json!({ "entry": [] }))),
+        "star" => annotations::star(&ctx, true).await,
+        "unstar" => annotations::star(&ctx, false).await,
+        "setRating" => annotations::set_rating(&ctx).await,
+        "scrobble" => annotations::scrobble(&ctx).await,
+        "getNowPlaying" => annotations::get_now_playing(&ctx).await,
+        "savePlayQueue" => queue::save(&ctx, false).await,
+        "savePlayQueueByIndex" => queue::save(&ctx, true).await,
+        "getPlayQueue" => queue::get(&ctx, false).await,
+        "getPlayQueueByIndex" => queue::get(&ctx, true).await,
         "search3" => search::search(&ctx, "searchResult3").await,
         "search2" => search::search(&ctx, "searchResult2").await,
         "getPlaylists" => playlists::get_playlists(&ctx).await,
         "getPlaylist" => playlists::get_playlist(&ctx).await,
+        "createPlaylist" => playlists::create_playlist(&ctx).await,
+        "updatePlaylist" => playlists::update_playlist(&ctx).await,
+        "deletePlaylist" => playlists::delete_playlist(&ctx).await,
         "getLyricsBySongId" => media::lyrics_by_song_id(&ctx).await,
         "getLyrics" => media::lyrics(&ctx).await,
         "getInternetRadioStations" => Ok(one(

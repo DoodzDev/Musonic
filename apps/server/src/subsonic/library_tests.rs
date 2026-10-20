@@ -117,6 +117,40 @@ impl Lib {
         )
     }
 
+    /// The Subsonic error code of a failing call.
+    async fn error(&self, query: &str) -> i64 {
+        let (_, _, body) = self.raw(&format!("{query}&{AUTH}"), None).await;
+        let v: Value = serde_json::from_slice(&body).unwrap();
+        let r = &v["subsonic-response"];
+        assert_eq!(r["status"], "failed", "{query}: {r}");
+        r["error"]["code"].as_i64().unwrap()
+    }
+
+    /// Marks the files of a track gone (or back).
+    async fn set_missing(&self, track: &str, missing: bool) {
+        let t = track.to_owned();
+        self.st
+            .db
+            .call(move |c| {
+                c.execute(
+                    "UPDATE track_file SET missing = ?2 WHERE track_id = ?1",
+                    rusqlite::params![t, missing],
+                )?;
+                Ok(())
+            })
+            .await
+            .unwrap();
+    }
+
+    async fn entries(&self, playlist: &str) -> Vec<String> {
+        self.get(&format!("getPlaylist?id={playlist}")).await["playlist"]["entry"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["id"].as_str().unwrap().to_owned())
+            .collect()
+    }
+
     async fn song_id(&self, title: &str) -> String {
         let r = self
             .get(&format!("search3?query={}", title.replace(' ', "%20")))
@@ -392,4 +426,204 @@ async fn covers_and_lyrics() {
             .unwrap()
             .is_empty()
     );
+}
+
+#[tokio::test]
+async fn likes_ratings_and_plays_are_saved() {
+    let lib = library("annotate").await;
+    let id = lib.song_id("hoppipolla").await;
+    let song = lib.get(&format!("getSong?id={id}")).await["song"].clone();
+    let (album, artist) = (
+        song["albumId"].as_str().unwrap().to_owned(),
+        song["artistId"].as_str().unwrap().to_owned(),
+    );
+
+    lib.get(&format!("star?id={id}&albumId={album}&artistId={artist}"))
+        .await;
+    let r = lib.get("getStarred2?").await;
+    assert_eq!(r["starred2"]["song"][0]["id"], id.as_str());
+    assert_eq!(r["starred2"]["album"][0]["id"], album.as_str());
+    assert_eq!(r["starred2"]["artist"][0]["id"], artist.as_str());
+    lib.get(&format!("unstar?id={id}")).await;
+    let r = lib.get("getStarred2?").await;
+    assert!(r["starred2"]["song"].as_array().unwrap().is_empty());
+    assert_eq!(r["starred2"]["album"].as_array().unwrap().len(), 1);
+    assert_eq!(lib.error("star?id=nope").await, 70);
+    assert_eq!(
+        lib.error(&format!("star?albumId={id}")).await,
+        70,
+        "a song is not an album"
+    );
+    assert_eq!(lib.error("star?").await, 10);
+
+    lib.get(&format!("setRating?id={id}&rating=4")).await;
+    assert_eq!(
+        lib.get(&format!("getSong?id={id}")).await["song"]["userRating"],
+        4
+    );
+    lib.get(&format!("setRating?id={id}&rating=0")).await;
+    assert!(lib.get(&format!("getSong?id={id}")).await["song"]["userRating"].is_null());
+    assert_eq!(lib.error(&format!("setRating?id={id}&rating=9")).await, 0);
+
+    // Two plays, the second one dated.
+    lib.get(&format!("scrobble.view?id={id}&submission=true"))
+        .await;
+    lib.get(&format!("scrobble?id={id}&time=1760905800000&c=web"))
+        .await;
+    let s = lib.get(&format!("getSong?id={id}")).await["song"].clone();
+    assert_eq!(s["playCount"], 2);
+    assert!(
+        s["played"].as_str().unwrap() > "2025-10-19T20:30:00Z",
+        "keeps the latest"
+    );
+    assert_eq!(
+        lib.get(&format!("getAlbum?id={album}")).await["album"]["playCount"],
+        2
+    );
+    let r = lib.get("getAlbumList2?type=frequent").await;
+    assert_eq!(r["albumList2"]["album"][0]["id"], album.as_str());
+    let r = lib
+        .get(&format!("getTopSongs?artist={}", "Sigur%20R%C3%B3s"))
+        .await;
+    assert_eq!(r["topSongs"]["song"][0]["id"], id.as_str());
+    assert_eq!(lib.error("scrobble?id=nope").await, 70);
+
+    assert!(
+        lib.get("getNowPlaying?").await["nowPlaying"]["entry"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    lib.get(&format!("scrobble?id={id}&submission=false&c=Musonic"))
+        .await;
+    let r = lib.get("getNowPlaying?").await;
+    let e = &r["nowPlaying"]["entry"][0];
+    assert_eq!(e["id"], id.as_str());
+    assert_eq!(e["username"], "Doodz");
+    assert_eq!(e["playerName"], "Musonic");
+    assert_eq!(e["minutesAgo"], 0);
+    assert_eq!(
+        lib.get(&format!("getSong?id={id}")).await["song"]["playCount"],
+        2,
+        "now playing is not a play"
+    );
+}
+
+#[tokio::test]
+async fn playlists_are_edited_by_the_positions_clients_see() {
+    let lib = library("edit").await;
+    let a = lib.song_id("hoppipolla").await;
+    let b = lib.song_id("takk").await;
+    let c = lib.song_id("lucky").await;
+
+    let r = lib
+        .get(&format!(
+            "createPlaylist?name=Road%20trip&songId={a}&songId={b}&songId={c}"
+        ))
+        .await;
+    let pl = r["playlist"]["id"].as_str().unwrap().to_owned();
+    assert_eq!(r["playlist"]["name"], "Road trip");
+    assert_eq!(r["playlist"]["entry"].as_array().unwrap().len(), 3);
+    assert_eq!(lib.error("createPlaylist?").await, 10);
+    assert_eq!(lib.error("createPlaylist?name=X&songId=nope").await, 70);
+
+    // b's file goes away: the client sees [a, c] and removes its 2nd song, c.
+    lib.set_missing(&b, true).await;
+    assert_eq!(lib.entries(&pl).await, [a.clone(), c.clone()]);
+    let r = lib.get(&format!("getPlaylist?id={pl}")).await;
+    assert_eq!(r["playlist"]["songCount"], 2, "counts what is shown");
+    lib.get(&format!(
+        "updatePlaylist?playlistId={pl}&songIndexToRemove=1&songIdToAdd={a}"
+    ))
+    .await;
+    lib.set_missing(&b, false).await;
+    assert_eq!(lib.entries(&pl).await, [a.clone(), b.clone(), a.clone()]);
+
+    // Reordering (all songs sent again) keeps the hidden one after its song.
+    lib.set_missing(&b, true).await;
+    lib.get(&format!(
+        "createPlaylist?playlistId={pl}&songId={c}&songId={a}"
+    ))
+    .await;
+    lib.set_missing(&b, false).await;
+    assert_eq!(lib.entries(&pl).await, [c.clone(), a.clone(), b.clone()]);
+
+    lib.get(&format!(
+        "updatePlaylist?playlistId={pl}&name=Summer&comment=Hot&public=true"
+    ))
+    .await;
+    let r = lib.get(&format!("getPlaylist?id={pl}")).await;
+    assert_eq!(r["playlist"]["name"], "Summer");
+    assert_eq!(r["playlist"]["comment"], "Hot");
+    assert_eq!(r["playlist"]["public"], true);
+
+    // Someone else sees a public playlist but cannot change it.
+    lib.st
+        .users
+        .create("Other", "other password", false)
+        .await
+        .unwrap();
+    let other = |q: &str| format!("{q}&u=Other&p=other%20password&f=json");
+    let (_, _, body) = lib
+        .raw(&other(&format!("deletePlaylist?id={pl}")), None)
+        .await;
+    let v: Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(v["subsonic-response"]["error"]["code"], 50);
+    let (_, _, body) = lib.raw(&other(&format!("getPlaylist?id={pl}")), None).await;
+    let v: Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(v["subsonic-response"]["status"], "ok");
+
+    lib.get(&format!("deletePlaylist?id={pl}")).await;
+    assert_eq!(lib.error(&format!("getPlaylist?id={pl}")).await, 70);
+    assert_eq!(
+        lib.error(&format!("updatePlaylist?playlistId={pl}&name=X"))
+            .await,
+        70
+    );
+}
+
+#[tokio::test]
+async fn play_queue_is_saved_and_restored() {
+    let lib = library("queue").await;
+    let a = lib.song_id("hoppipolla").await;
+    let b = lib.song_id("takk").await;
+    let c = lib.song_id("lucky").await;
+
+    assert!(lib.get("getPlayQueue?").await.get("playQueue").is_none());
+    lib.get(&format!(
+        "savePlayQueue?id={a}&id=nope&id={b}&id={c}&current={b}&position=1234&c=web"
+    ))
+    .await;
+    let r = lib.get("getPlayQueue?").await;
+    let q = &r["playQueue"];
+    assert_eq!(q["current"], b.as_str());
+    assert_eq!(q["position"], 1234);
+    assert_eq!(q["username"], "Doodz");
+    assert_eq!(q["changedBy"], "web");
+    assert_eq!(
+        q["entry"].as_array().unwrap().len(),
+        3,
+        "unknown ids left out"
+    );
+
+    lib.get(&format!(
+        "savePlayQueueByIndex?id={a}&id={b}&id={c}&currentIndex=2"
+    ))
+    .await;
+    assert_eq!(
+        lib.get("getPlayQueueByIndex?").await["playQueue"]["currentIndex"],
+        2
+    );
+    // The current song without a file: the next one shown.
+    lib.get(&format!(
+        "savePlayQueueByIndex?id={a}&id={b}&id={c}&currentIndex=1"
+    ))
+    .await;
+    lib.set_missing(&b, true).await;
+    let r = lib.get("getPlayQueue?").await;
+    assert_eq!(r["playQueue"]["current"], c.as_str());
+    assert_eq!(r["playQueue"]["entry"].as_array().unwrap().len(), 2);
+
+    lib.get("savePlayQueue?").await;
+    assert!(lib.get("getPlayQueue?").await.get("playQueue").is_none());
 }
