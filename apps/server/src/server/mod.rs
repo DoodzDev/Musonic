@@ -35,6 +35,8 @@ pub struct AppState {
     pub data_dir: PathBuf,
     /// What each user plays now (Subsonic `getNowPlaying`).
     pub now_playing: Arc<crate::subsonic::NowPlaying>,
+    /// Online catalog, when enabled.
+    pub online: Option<Arc<crate::online::Deezer>>,
 }
 
 impl AppState {
@@ -47,6 +49,7 @@ impl AppState {
             limiter: Arc::new(AuthLimiter::default()),
             setup_lock: Arc::new(tokio::sync::Mutex::new(())),
             now_playing: Arc::default(),
+            online: None,
         }
     }
 }

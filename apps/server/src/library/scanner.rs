@@ -448,7 +448,7 @@ fn upsert_folder(
     Ok(())
 }
 
-fn upsert_artist(tx: &Transaction, name: &str) -> Result<String> {
+pub(crate) fn upsert_artist(tx: &Transaction, name: &str) -> Result<String> {
     let id = ids::artist_id(name);
     tx.execute(
         "INSERT INTO artist(id, name, norm_name) VALUES (?1, ?2, ?3) ON CONFLICT(id) DO NOTHING",

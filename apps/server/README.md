@@ -15,8 +15,9 @@ the Musonic apps and for any Subsonic client.
 - **Native API** (`/v1`) used by the Musonic apps, and the Musonic web client served directly.
 - **Accounts**: administrators and users, passwords hashed with argon2, one revocable key per
   device.
-- **Online catalog**: search and browse artists and albums that are not in your library, and like
-  or add them to a playlist right away: every track has a single id, with or without a file.
+- **Online catalog** (Deezer's public API, metadata only): search and browse artists and albums
+  that are not in your library, and like or add them to a playlist right away: every track has a
+  single id, with or without a file, and keeps it once its file is imported.
 - **Audio providers**: a documented interface to plug sources of audio for tracks you do not have
   as files (see [docs/PROVIDERS.md](docs/PROVIDERS.md)).
 
@@ -37,6 +38,8 @@ cargo run --release
 | `music_dir` | `MUSONIC_MUSIC_DIR` | none |
 | `scan_interval_minutes` (0 = only on changes) | `MUSONIC_SCAN_INTERVAL_MINUTES` | `60` |
 | `legacy_auth`: Subsonic token sign-in (`t` + `s`) | `MUSONIC_LEGACY_AUTH` | `true` |
+| `online`: online catalog in search and pages | `MUSONIC_ONLINE` | `true` |
+| `deezer_api_url` | `MUSONIC_DEEZER_API_URL` | `https://api.deezer.com` |
 | Key encrypting the passwords kept for `legacy_auth` (64 hex) | `MUSONIC_SECRET_KEY` | `secret.key` in `data_dir`, created on first start |
 
 `musonic-server scan [--full]` scans the library once and prints a summary.

@@ -33,6 +33,12 @@ impl Db {
         Self::setup(Connection::open_in_memory()?)
     }
 
+    /// The connection itself, for synchronous tests.
+    #[cfg(test)]
+    pub fn lock(&self) -> std::sync::MutexGuard<'_, Connection> {
+        self.conn.lock().unwrap()
+    }
+
     fn setup(mut conn: Connection) -> Result<Self> {
         conn.execute_batch(
             "PRAGMA journal_mode = WAL;

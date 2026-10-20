@@ -70,4 +70,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   durations count the songs shown.
 - Saved play queue: `savePlayQueue` / `getPlayQueue` and the OpenSubsonic `…ByIndex` variants
   (`indexBasedQueue` extension), to resume on another device.
+- Online catalog, from Deezer's public API (no account, metadata only; `online`, on by
+  default): `search3` / `search2` add online songs, albums and artists after the library's
+  (first page, nothing shown twice); `getSong`, `getAlbum`, `getArtist` and `getCoverArt` open
+  online items (`dz-track-…`, `dz-album-…`, `dz-artist-…` ids). Answers are cached and requests
+  kept under the API's limit.
+- Online songs liked, rated, played, queued or added to a playlist are stored as library tracks
+  without a file, under a library id (or linked to the library track of the same recording:
+  ISRC, else title, artists and length). Their album and artist pages open, with their covers.
+  They show in likes, playlists and the queue, not in the library lists until their file is
+  imported; the imported file then joins the same track, which keeps its likes and playlists.
 - Tracks without an album artist tag: the album goes to the main artist ("A feat. B" → "A").

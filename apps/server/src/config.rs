@@ -20,6 +20,11 @@ pub struct Config {
     /// Accept the Subsonic token auth (`t` + `s`) used by many clients. It needs the password
     /// kept encrypted next to its hash; off = only password, API key and session sign-ins.
     pub legacy_auth: bool,
+    /// Online catalog (Deezer's public API): search results, albums and artists beyond the
+    /// library, liked or added to playlists right away.
+    pub online: bool,
+    /// Base URL of that API (tests point it elsewhere).
+    pub deezer_api_url: String,
 }
 
 impl Default for Config {
@@ -30,6 +35,8 @@ impl Default for Config {
             music_dir: None,
             scan_interval_minutes: 60,
             legacy_auth: true,
+            online: true,
+            deezer_api_url: crate::online::deezer::DEFAULT_URL.to_owned(),
         }
     }
 }
@@ -63,6 +70,12 @@ impl Config {
         if let Some(v) = env("MUSONIC_LEGACY_AUTH") {
             cfg.legacy_auth =
                 matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on");
+        }
+        if let Some(v) = env("MUSONIC_ONLINE") {
+            cfg.online = matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on");
+        }
+        if let Some(v) = env("MUSONIC_DEEZER_API_URL") {
+            cfg.deezer_api_url = v;
         }
         if let Some(v) = env("MUSONIC_SCAN_INTERVAL_MINUTES") {
             cfg.scan_interval_minutes = v.parse().context("MUSONIC_SCAN_INTERVAL_MINUTES")?;

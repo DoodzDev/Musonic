@@ -33,6 +33,7 @@ lofty = "0.22"
 md-5 = "0.10"
 notify = "8"
 rand = "0.8"
+reqwest = { version = "0.12", default-features = false, features = ["json", "gzip", "rustls-tls"] }
 rusqlite = { version = "0.37", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

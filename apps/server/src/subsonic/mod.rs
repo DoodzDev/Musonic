@@ -9,6 +9,7 @@ mod annotations;
 mod browse;
 mod media;
 mod model;
+mod online;
 mod playlists;
 mod queue;
 mod search;

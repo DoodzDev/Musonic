@@ -12,6 +12,7 @@ pub mod ids;
 pub mod library;
 pub mod matcher;
 pub mod model;
+pub mod online;
 pub mod providers;
 pub mod server;
 pub mod stream;
@@ -78,12 +79,11 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
              or with `musonic-server user add <name> --admin`"
         );
     }
-    let app = server::router(server::AppState::new(
-        db,
-        library,
-        users,
-        config.data_dir.clone(),
-    ));
+    let mut state = server::AppState::new(db, library, users, config.data_dir.clone());
+    if config.online {
+        state.online = Some(Arc::new(online::Deezer::new(&config.deezer_api_url)?));
+    }
+    let app = server::router(state);
     let listener = tokio::net::TcpListener::bind(config.bind)
         .await
         .with_context(|| format!("binding {}", config.bind))?;

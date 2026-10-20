@@ -1,10 +1,11 @@
 //! `search3` / `search2`: full-text search on titles and artists (accents and case ignored,
 //! each word matched as a prefix: "hopp sig" finds "Hoppípolla – Sigur Rós"). An empty query
-//! lists everything, which some clients use to sync the whole library.
+//! lists everything, which some clients use to sync the whole library. With the online
+//! catalog, results beyond the library follow the library's (see [`super::online`]).
 
 use serde_json::{Value, json};
 
-use super::{Ctx, Reply, model, one};
+use super::{Ctx, Reply, model, one, online};
 
 /// `"hopp" "sig"*`-style FTS5 query: each word quoted (no operator injection) and prefixed.
 fn fts_query(q: &str) -> Option<String> {
@@ -46,7 +47,8 @@ pub async fn search(ctx: &Ctx, key: &str) -> Reply {
         number(ctx, "songOffset", 0).max(0),
     );
     let user = ctx.user.id.clone();
-    let (artists, albums, songs) = ctx
+    let has_query = query.is_some();
+    let (mut artists, mut albums, mut songs) = ctx
         .state
         .db
         .call(move |c| {
@@ -69,7 +71,7 @@ pub async fn search(ctx: &Ctx, key: &str) -> Reply {
                     )?,
                     model::songs(
                         c,
-                        "t.rowid IN (SELECT rowid FROM track_fts WHERE track_fts MATCH ?4)",
+                        &format!("{} AND t.rowid IN (SELECT rowid FROM track_fts WHERE track_fts MATCH ?4)", model::HAS_FILE),
                         "t.title COLLATE NOCASE LIMIT ?2 OFFSET ?3",
                         &[&user, &sc, &so, q],
                     )?,
@@ -79,7 +81,7 @@ pub async fn search(ctx: &Ctx, key: &str) -> Reply {
                     model::albums(c, "1", "al.title COLLATE NOCASE", page, &[&user, &lc, &lo])?,
                     model::songs(
                         c,
-                        "1",
+                        model::HAS_FILE,
                         "t.title COLLATE NOCASE LIMIT ?2 OFFSET ?3",
                         &[&user, &sc, &so],
                     )?,
@@ -88,6 +90,19 @@ pub async fn search(ctx: &Ctx, key: &str) -> Reply {
             Ok((artists, albums, songs))
         })
         .await?;
+    // Online results after the library's, on the first page of each kind.
+    if has_query {
+        let counts = (
+            if ao == 0 { ac } else { 0 },
+            if lo == 0 { lc } else { 0 },
+            if so == 0 { sc } else { 0 },
+        );
+        let (more_artists, more_albums, more_songs) =
+            online::search_more(ctx, &raw, counts, (&artists, &albums, &songs)).await;
+        artists.extend(more_artists);
+        albums.extend(more_albums);
+        songs.extend(more_songs);
+    }
     Ok(one(
         key,
         json!({ "artist": artists, "album": albums, "song": songs }),

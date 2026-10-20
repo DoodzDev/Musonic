@@ -8,8 +8,9 @@ use serde_json::{Map, Value, json};
 use super::{
     ApiError, Code, Ctx, Reply,
     model::{self, sort_key},
-    one,
+    one, online,
 };
+use crate::online::OnlineId;
 
 const MAX_LIST: i64 = 500;
 
@@ -73,11 +74,16 @@ pub async fn get_indexes(ctx: &Ctx) -> Reply {
 
 pub async fn get_artist(ctx: &Ctx) -> Reply {
     let id = ctx.params.require("id")?.to_owned();
+    if let Some(OnlineId::Artist(n)) = OnlineId::parse(&id) {
+        return Ok(one("artist", online::get_artist(ctx, n, &id).await?));
+    }
     let user = ctx.user.id.clone();
+    let wanted = id.clone();
     let found = ctx
         .state
         .db
         .call(move |c| {
+            let id = wanted;
             let artist = model::artists(c, "ar.id = ?2", "ar.name", "", &[&user, &id])?;
             let Some(mut artist) = artist.into_iter().next() else {
                 return Ok(None);
@@ -93,18 +99,28 @@ pub async fn get_artist(ctx: &Ctx) -> Reply {
             Ok(Some(artist))
         })
         .await?;
-    found
-        .map(|a| one("artist", a))
-        .ok_or_else(|| ApiError::not_found("Artist"))
+    if let Some(a) = found {
+        return Ok(one("artist", a));
+    }
+    // An artist known only online (credited on a liked song, for instance).
+    match online::source_of(ctx, "artist", &id).await? {
+        Some(n) => Ok(one("artist", online::get_artist(ctx, n, &id).await?)),
+        None => Err(ApiError::not_found("Artist")),
+    }
 }
 
 pub async fn get_album(ctx: &Ctx) -> Reply {
     let id = ctx.params.require("id")?.to_owned();
+    if let Some(OnlineId::Album(n)) = OnlineId::parse(&id) {
+        return Ok(one("album", online::get_album(ctx, n, &id).await?));
+    }
     let user = ctx.user.id.clone();
+    let wanted = id.clone();
     let found = ctx
         .state
         .db
         .call(move |c| {
+            let id = wanted;
             let Some(mut album) = model::albums(c, "al.id = ?2", "al.id", "", &[&user, &id])?
                 .into_iter()
                 .next()
@@ -113,28 +129,40 @@ pub async fn get_album(ctx: &Ctx) -> Reply {
             };
             album["song"] = json!(model::songs(
                 c,
-                "t.album_id = ?2",
+                &format!("t.album_id = ?2 AND {}", model::PLAYABLE),
                 "coalesce(t.disc_number, 1), coalesce(t.track_number, 0), t.title",
                 &[&user, &id],
             )?);
             Ok(Some(album))
         })
         .await?;
-    found
-        .map(|a| one("album", a))
-        .ok_or_else(|| ApiError::not_found("Album"))
+    if let Some(a) = found {
+        return Ok(one("album", a));
+    }
+    match online::source_of(ctx, "album", &id).await? {
+        Some(n) => Ok(one("album", online::get_album(ctx, n, &id).await?)),
+        None => Err(ApiError::not_found("Album")),
+    }
 }
 
 pub async fn get_song(ctx: &Ctx) -> Reply {
     let id = ctx.params.require("id")?.to_owned();
+    if let Some(OnlineId::Track(n)) = OnlineId::parse(&id) {
+        return Ok(one("song", online::get_song(ctx, n).await?));
+    }
     let user = ctx.user.id.clone();
     let found = ctx
         .state
         .db
         .call(move |c| {
-            Ok(model::songs(c, "t.id = ?2", "t.id", &[&user, &id])?
-                .into_iter()
-                .next())
+            Ok(model::songs(
+                c,
+                &format!("t.id = ?2 AND {}", model::PLAYABLE),
+                "t.id",
+                &[&user, &id],
+            )?
+            .into_iter()
+            .next())
         })
         .await?;
     found
@@ -265,8 +293,8 @@ pub async fn random_songs(ctx: &Ctx) -> Reply {
         .state
         .db
         .call(move |c| {
-            let filter = "(?3 IS NULL OR t.id IN (SELECT tg.track_id FROM track_genre tg JOIN genre g ON g.id = tg.genre_id WHERE g.name = ?3 COLLATE NOCASE))
-                 AND (?4 IS NULL OR t.year >= ?4) AND (?5 IS NULL OR t.year <= ?5)";
+            let filter = &format!("{} AND (?3 IS NULL OR t.id IN (SELECT tg.track_id FROM track_genre tg JOIN genre g ON g.id = tg.genre_id WHERE g.name = ?3 COLLATE NOCASE))
+                 AND (?4 IS NULL OR t.year >= ?4) AND (?5 IS NULL OR t.year <= ?5)", model::HAS_FILE);
             Ok(model::songs(c, filter, "random() LIMIT ?2", &[&user, &size, &genre, &from, &to])?)
         })
         .await?;
@@ -284,7 +312,7 @@ pub async fn songs_by_genre(ctx: &Ctx) -> Reply {
         .call(move |c| {
             Ok(model::songs(
                 c,
-                "t.id IN (SELECT tg.track_id FROM track_genre tg JOIN genre g ON g.id = tg.genre_id WHERE g.name = ?2 COLLATE NOCASE)",
+                &format!("{} AND t.id IN (SELECT tg.track_id FROM track_genre tg JOIN genre g ON g.id = tg.genre_id WHERE g.name = ?2 COLLATE NOCASE)", model::HAS_FILE),
                 "t.artist_display COLLATE NOCASE, t.album_id, t.disc_number, t.track_number LIMIT ?3 OFFSET ?4",
                 &[&user, &genre, &size, &offset],
             )?)
@@ -300,7 +328,12 @@ pub async fn starred(ctx: &Ctx, key: &str) -> Reply {
         .state
         .db
         .call(move |c| {
-            let songs = model::songs(c, "a.starred_at IS NOT NULL", "a.starred_at DESC", &[&user])?;
+            let songs = model::songs(
+                c,
+                &format!("a.starred_at IS NOT NULL AND {}", model::PLAYABLE),
+                "a.starred_at DESC",
+                &[&user],
+            )?;
             let albums = model::albums(
                 c,
                 "an.starred_at IS NOT NULL",
@@ -335,8 +368,8 @@ pub async fn top_songs(ctx: &Ctx) -> Reply {
         .call(move |c| {
             Ok(model::songs(
                 c,
-                "t.id IN (SELECT ta.track_id FROM track_artist ta JOIN artist ar ON ar.id = ta.artist_id
-                          WHERE ar.name = ?2 COLLATE NOCASE AND ta.role = 'artist')",
+                &format!("{} AND t.id IN (SELECT ta.track_id FROM track_artist ta JOIN artist ar ON ar.id = ta.artist_id
+                          WHERE ar.name = ?2 COLLATE NOCASE AND ta.role = 'artist')", model::PLAYABLE),
                 "(SELECT coalesce(sum(play_count), 0) FROM annotation WHERE item_type = 'track' AND item_id = t.id) DESC,
                  coalesce(t.track_number, 99), t.created_at LIMIT ?3",
                 &[&user, &artist, &size],
@@ -356,7 +389,7 @@ pub async fn similar_songs(ctx: &Ctx, key: &str) -> Reply {
         .db
         .call(move |c| {
             // Seed artists and genres from whatever the id is.
-            let filter = "t.id <> ?2 AND (
+            let filter = &format!("{} AND t.id <> ?2 AND (
                   t.id IN (SELECT ta.track_id FROM track_artist ta WHERE ta.artist_id IN (
                       SELECT ?2 UNION SELECT artist_id FROM track_artist WHERE track_id = ?2
                       UNION SELECT artist_id FROM album_artist WHERE album_id = ?2))
@@ -364,7 +397,7 @@ pub async fn similar_songs(ctx: &Ctx, key: &str) -> Reply {
                       SELECT genre_id FROM track_genre WHERE track_id = ?2
                       UNION SELECT genre_id FROM album_genre WHERE album_id = ?2
                       UNION SELECT tg2.genre_id FROM track_genre tg2 JOIN track_artist ta2 ON ta2.track_id = tg2.track_id
-                            WHERE ta2.artist_id = ?2)))";
+                            WHERE ta2.artist_id = ?2)))", model::HAS_FILE);
             Ok(model::songs(c, filter, "random() LIMIT ?3", &[&user, &id, &size])?)
         })
         .await?;

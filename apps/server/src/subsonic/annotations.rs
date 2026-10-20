@@ -9,7 +9,7 @@ use std::{
 use rusqlite::{Connection, OptionalExtension, Transaction, params};
 use serde_json::json;
 
-use super::{ApiError, Code, Ctx, Reply, model, one};
+use super::{ApiError, Code, Ctx, Reply, model, one, online};
 
 fn now() -> i64 {
     SystemTime::now()
@@ -71,7 +71,15 @@ fn resolve(
 }
 
 pub async fn star(ctx: &Ctx, starred: bool) -> Reply {
-    let targets = targets(ctx)?;
+    let mut targets = targets(ctx)?;
+    // Online songs are stored first, then liked under their library id.
+    let ids = targets.iter().map(|(_, id)| id.clone()).collect();
+    for ((_, id), resolved) in targets
+        .iter_mut()
+        .zip(online::resolve_tracks(ctx, ids).await?)
+    {
+        *id = resolved;
+    }
     let user = ctx.user.id.clone();
     let result = ctx
         .state
@@ -110,6 +118,7 @@ pub async fn star(ctx: &Ctx, starred: bool) -> Reply {
 
 pub async fn set_rating(ctx: &Ctx) -> Reply {
     let id = ctx.params.require("id")?.to_owned();
+    let id = online::resolve_tracks(ctx, vec![id]).await?.remove(0);
     let rating: i64 = ctx
         .params
         .require("rating")?
@@ -189,6 +198,7 @@ pub async fn scrobble(ctx: &Ctx) -> Reply {
     if ids.is_empty() {
         return Err(ApiError::missing("id"));
     }
+    let ids = online::resolve_tracks(ctx, ids).await?;
     let times: Vec<Option<i64>> = ctx
         .params
         .all("time")
@@ -317,9 +327,14 @@ pub async fn get_now_playing(ctx: &Ctx) -> Reply {
         .call(move |c| {
             let mut out = HashMap::new();
             for id in ids {
-                if let Some(s) = model::songs(c, "t.id = ?2", "t.id", &[&user, &id])?
-                    .into_iter()
-                    .next()
+                if let Some(s) = model::songs(
+                    c,
+                    &format!("t.id = ?2 AND {}", model::PLAYABLE),
+                    "t.id",
+                    &[&user, &id],
+                )?
+                .into_iter()
+                .next()
                 {
                     out.insert(id, s);
                 }

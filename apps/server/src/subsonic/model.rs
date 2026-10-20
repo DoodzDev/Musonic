@@ -1,8 +1,9 @@
 //! Library rows as Subsonic / OpenSubsonic objects (songs, albums, artists), with the user's
 //! likes, ratings and plays.
 //!
-//! Only tracks with a file present are part of the library here; a track known only online
-//! shows up once imported.
+//! The library (lists, random songs, genres, local search) is the tracks with a file present
+//! ([`HAS_FILE`]). A track known only online ([`crate::online`]) shows where it was put: likes,
+//! playlists, queue, plays ([`PLAYABLE`]); it joins the library once imported.
 
 use rusqlite::{Connection, Row, ToSql};
 use serde_json::{Map, Value, json};
@@ -68,7 +69,23 @@ fn put(m: &mut Map<String, Value>, k: &str, v: Option<impl Into<Value>>) {
 
 // Songs -----------------------------------------------------------------------------------
 
-/// Song columns; `?1` is the user id. Join on `t` (track). Use with [`song`].
+/// A file of the track is present (filters on [`SONG_SELECT`]).
+pub const HAS_FILE: &str = "f.id IS NOT NULL";
+
+/// The track can be shown and played: a file is present, or an online source is known.
+pub const PLAYABLE: &str =
+    "(f.id IS NOT NULL OR EXISTS (SELECT 1 FROM track_source s WHERE s.track_id = t.id))";
+
+/// [`PLAYABLE`] for a track id column, outside [`SONG_SELECT`].
+pub fn playable(track_col: &str) -> String {
+    format!(
+        "(EXISTS (SELECT 1 FROM track_file f WHERE f.track_id = {track_col} AND f.missing = 0)
+          OR EXISTS (SELECT 1 FROM track_source s WHERE s.track_id = {track_col}))"
+    )
+}
+
+/// Song columns; `?1` is the user id. Join on `t` (track), `f` (its best file, if any). Use
+/// with [`song`] and a filter ([`HAS_FILE`] or [`PLAYABLE`]).
 pub const SONG_SELECT: &str = "
 SELECT t.id, t.title, t.artist_display, t.album_id, al.title, al.artist_display,
        t.track_number, t.disc_number, t.year, t.duration_ms, t.bpm, t.created_at,
@@ -81,9 +98,9 @@ SELECT t.id, t.title, t.artist_display, t.album_id, al.title, al.artist_display,
          WHERE ta.track_id = t.id AND ta.role = 'artist'),
        (SELECT group_concat(ar.id || char(31) || ar.name, char(30) ORDER BY aa.position)
           FROM album_artist aa JOIN artist ar ON ar.id = aa.artist_id WHERE aa.album_id = t.album_id),
-       t.isrc, al.cover_ref
+       t.isrc, al.cover_ref, coalesce(al.cover_url, t.cover_url)
   FROM track t
-  JOIN track_file f ON f.id = (SELECT id FROM track_file WHERE track_id = t.id AND missing = 0
+  LEFT JOIN track_file f ON f.id = (SELECT id FROM track_file WHERE track_id = t.id AND missing = 0
                                 ORDER BY coalesce(bit_rate, 0) DESC, id LIMIT 1)
   LEFT JOIN album al ON al.id = t.album_id
   LEFT JOIN annotation a ON a.user_id = ?1 AND a.item_type = 'track' AND a.item_id = t.id";
@@ -91,7 +108,10 @@ SELECT t.id, t.title, t.artist_display, t.album_id, al.title, al.artist_display,
 pub fn song(r: &Row) -> rusqlite::Result<Value> {
     let id: String = r.get(0)?;
     let album_id: Option<String> = r.get(3)?;
-    let format: String = r.get(14)?;
+    // No file: an online track, served as MP3 by a provider.
+    let format: String = r
+        .get::<_, Option<String>>(14)?
+        .unwrap_or_else(|| "mp3".to_owned());
     let genres: Vec<String> = r
         .get::<_, Option<String>>(23)?
         .unwrap_or_default()
@@ -101,7 +121,8 @@ pub fn song(r: &Row) -> rusqlite::Result<Value> {
         .collect();
     let artists = refs(r.get(24)?);
     let album_artists = refs(r.get(25)?);
-    let has_cover = r.get::<_, Option<String>>(27)?.is_some();
+    let has_cover =
+        r.get::<_, Option<String>>(27)?.is_some() || r.get::<_, Option<String>>(28)?.is_some();
     let mut m = Map::new();
     m.insert("id".into(), json!(id));
     m.insert("isDir".into(), json!(false));
@@ -140,9 +161,8 @@ pub fn song(r: &Row) -> rusqlite::Result<Value> {
     m.insert("duration".into(), json!((duration_ms + 500) / 1000));
     put(&mut m, "bpm", r.get::<_, Option<i64>>(10)?);
     m.insert("created".into(), json!(iso(r.get(11)?)));
-    let path: String = r.get(12)?;
-    m.insert("path".into(), json!(path));
-    m.insert("size".into(), json!(r.get::<_, i64>(13)?));
+    put(&mut m, "path", r.get::<_, Option<String>>(12)?);
+    put(&mut m, "size", r.get::<_, Option<i64>>(13)?);
     m.insert("suffix".into(), json!(format));
     m.insert("contentType".into(), json!(mime(&format)));
     put(&mut m, "bitRate", r.get::<_, Option<i64>>(15)?);
@@ -165,8 +185,8 @@ pub fn song(r: &Row) -> rusqlite::Result<Value> {
     Ok(Value::Object(m))
 }
 
-/// Songs matching `filter` (SQL after `WHERE`, may use `?1` = user and further parameters),
-/// ordered by `order`.
+/// Songs matching `filter` (SQL after `WHERE`, may use `?1` = user and further parameters;
+/// include [`HAS_FILE`] or [`PLAYABLE`]), ordered by `order`.
 pub fn songs(
     c: &Connection,
     filter: &str,

@@ -2,8 +2,8 @@
 //!
 //! Streams are the file itself (with HTTP ranges, so players can seek), or a transcoding by
 //! ffmpeg when the client asks for a lower bit rate or another format. Without ffmpeg the file
-//! is sent as is. Covers come from the album (image file or embedded picture), resized on
-//! request and cached on disk.
+//! is sent as is. Covers come from the album (image file or embedded picture), else online
+//! (albums and artists known only online), resized on request and cached on disk.
 
 use std::{
     io::Cursor,
@@ -23,7 +23,8 @@ use sha2::{Digest, Sha256};
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio_util::io::ReaderStream;
 
-use super::{ApiError, Ctx, Reply, model, one};
+use super::{ApiError, Ctx, Reply, model, one, online};
+use crate::online::OnlineId;
 
 /// The playable file of a track: absolute path, format, bit rate (kbit/s), size.
 struct AudioFile {
@@ -301,16 +302,28 @@ impl futures_util::Stream for ChildStream {
 
 // Covers ----------------------------------------------------------------------------------
 
-/// Where a cover id's picture is (`file:<abs path>` or `embedded:<abs path>`), and a version
-/// stamp for the cache.
-async fn cover_source(ctx: &Ctx, id: &str) -> Result<Option<(String, PathBuf, i64)>, ApiError> {
+/// Where a cover's picture is.
+enum Cover {
+    /// A file in the library (`file`: an image, `embedded`: inside an audio file), with a
+    /// version stamp for the cache.
+    Local {
+        kind: String,
+        path: PathBuf,
+        stamp: i64,
+    },
+    /// An online picture (albums and artists known only online).
+    Remote(String),
+}
+
+/// Where a cover id's picture is: a playlist (`pl-…`), an album, a track (its album's cover,
+/// else its own picture), an artist (`ar-…` or its id: their photo).
+async fn cover_source(ctx: &Ctx, id: &str) -> Result<Option<Cover>, ApiError> {
     let id = id.to_owned();
     let data_dir = ctx.state.data_dir.clone();
     Ok(ctx
         .state
         .db
         .call(move |c| {
-            // A playlist's own cover.
             if let Some(pl) = id.strip_prefix("pl-") {
                 let path: Option<String> = c
                     .query_row("SELECT cover_path FROM playlist WHERE id = ?1", [pl], |r| {
@@ -318,9 +331,12 @@ async fn cover_source(ctx: &Ctx, id: &str) -> Result<Option<(String, PathBuf, i6
                     })
                     .optional()?
                     .flatten();
-                return Ok(path.map(|p| ("file".to_owned(), data_dir.join(p), 0)));
+                return Ok(path.map(|p| Cover::Local {
+                    kind: "file".to_owned(),
+                    path: data_dir.join(p),
+                    stamp: 0,
+                }));
             }
-            // An album id, or a track id (its album's cover, else its own picture).
             let cover_ref: Option<(String, i64)> = c
                 .query_row(
                     "SELECT al.cover_ref, al.updated_at FROM album al
@@ -343,14 +359,29 @@ async fn cover_source(ctx: &Ctx, id: &str) -> Result<Option<(String, PathBuf, i6
                     .optional()?,
             };
             let Some((cover_ref, stamp)) = cover_ref else {
-                return Ok(None);
+                // Nothing in the library: the online picture, if any.
+                let artist = id.strip_prefix("ar-").unwrap_or(&id);
+                let url: Option<String> = c.query_row(
+                    "SELECT coalesce(
+                        (SELECT cover_url FROM album WHERE id = ?1),
+                        (SELECT coalesce(al.cover_url, t.cover_url) FROM track t
+                           LEFT JOIN album al ON al.id = t.album_id WHERE t.id = ?1),
+                        (SELECT image_url FROM artist WHERE id = ?2))",
+                    [&id, artist],
+                    |r| r.get(0),
+                )?;
+                return Ok(url.map(Cover::Remote));
             };
             let root: String =
                 c.query_row("SELECT path FROM library ORDER BY id LIMIT 1", [], |r| {
                     r.get(0)
                 })?;
             if let Some(rel) = cover_ref.strip_prefix("file:") {
-                return Ok(Some(("file".to_owned(), Path::new(&root).join(rel), stamp)));
+                return Ok(Some(Cover::Local {
+                    kind: "file".to_owned(),
+                    path: Path::new(&root).join(rel),
+                    stamp,
+                }));
             }
             if let Some(file_id) = cover_ref.strip_prefix("embedded:") {
                 let rel: Option<String> = c
@@ -360,9 +391,11 @@ async fn cover_source(ctx: &Ctx, id: &str) -> Result<Option<(String, PathBuf, i6
                         |r| r.get(0),
                     )
                     .optional()?;
-                return Ok(
-                    rel.map(|rel| ("embedded".to_owned(), Path::new(&root).join(rel), stamp))
-                );
+                return Ok(rel.map(|rel| Cover::Local {
+                    kind: "embedded".to_owned(),
+                    path: Path::new(&root).join(rel),
+                    stamp,
+                }));
             }
             Ok(None)
         })
@@ -431,20 +464,44 @@ pub async fn cover_art(ctx: &Ctx) -> Result<Response, ApiError> {
         .get("size")
         .and_then(|v| v.parse().ok())
         .filter(|s| *s > 0 && *s < 4096);
-    let Some((kind, path, stamp)) = cover_source(ctx, &id).await? else {
+    let source = match OnlineId::parse(&id) {
+        Some(item) => online::cover_url(ctx, item).await?.map(Cover::Remote),
+        None => cover_source(ctx, &id).await?,
+    };
+    let Some(source) = source else {
         return Ok(StatusCode::NOT_FOUND.into_response());
     };
-    let cache_dir = ctx.state.data_dir.join("cache").join("covers");
-    let bytes = tokio::task::spawn_blocking(move || -> anyhow::Result<Vec<u8>> {
-        let key = hex::encode(Sha256::digest(format!(
-            "{kind}\u{1f}{}\u{1f}{stamp}\u{1f}{size:?}",
-            path.display()
-        )));
-        let cached = cache_dir.join(&key[..2]).join(&key);
-        if let Ok(data) = std::fs::read(&cached) {
-            return Ok(data);
+    let key = hex::encode(Sha256::digest(match &source {
+        Cover::Local { kind, path, stamp } => {
+            format!("{kind}\u{1f}{}\u{1f}{stamp}\u{1f}{size:?}", path.display())
         }
-        let original = read_picture(&kind, &path)?;
+        Cover::Remote(url) => format!("url\u{1f}{url}\u{1f}{size:?}"),
+    }));
+    let cached = ctx
+        .state
+        .data_dir
+        .join("cache")
+        .join("covers")
+        .join(&key[..2])
+        .join(&key);
+    // None: already cached.
+    let original = match source {
+        _ if cached.is_file() => None,
+        Cover::Local { kind, path, .. } => Some(
+            tokio::task::spawn_blocking(move || read_picture(&kind, &path))
+                .await
+                .map_err(anyhow::Error::from)?,
+        ),
+        Cover::Remote(url) => Some(match ctx.state.online.as_deref() {
+            Some(dz) => dz.picture(&url).await,
+            None => Err(anyhow::anyhow!("online catalog disabled")),
+        }),
+    };
+    let bytes = tokio::task::spawn_blocking(move || -> anyhow::Result<Vec<u8>> {
+        let Some(original) = original else {
+            return Ok(std::fs::read(&cached)?);
+        };
+        let original = original?;
         let data = match size {
             Some(s) => resize(&original, s).unwrap_or(original),
             None => original,

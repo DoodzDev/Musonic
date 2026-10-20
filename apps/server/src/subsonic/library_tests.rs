@@ -9,8 +9,14 @@ use http_body_util::BodyExt;
 use serde_json::Value;
 use tower::ServiceExt;
 
+use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+};
+
 use crate::{
     library::Scanner,
+    online::Deezer,
     server::{AppState, router, tests::state},
     testing::{SONG, Song, temp_dir, write_song},
 };
@@ -31,6 +37,10 @@ impl Drop for Lib {
 }
 
 async fn library(name: &str) -> Lib {
+    library_with(name, None).await
+}
+
+async fn library_with(name: &str, online: Option<Arc<Deezer>>) -> Lib {
     let root = temp_dir(&format!("lib-{name}"));
     write_song(
         &root,
@@ -68,6 +78,7 @@ async fn library(name: &str) -> Lib {
     .unwrap();
     let mut st = state();
     st.data_dir = temp_dir(&format!("data-{name}"));
+    st.online = online;
     st.users
         .create("Doodz", "correct horse", true)
         .await
@@ -626,4 +637,300 @@ async fn play_queue_is_saved_and_restored() {
 
     lib.get("savePlayQueue?").await;
     assert!(lib.get("getPlayQueue?").await.get("playQueue").is_none());
+}
+
+// Online catalog -------------------------------------------------------------------------
+
+/// A local stand-in for Deezer's public API; counts the requests it answers.
+async fn fake_deezer() -> (Arc<Deezer>, Arc<AtomicUsize>) {
+    use axum::{extract::Path as P, routing::get};
+    use serde_json::json;
+    let hits = Arc::new(AtomicUsize::new(0));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let artist =
+        json!({ "id": 27, "name": "Daft Punk", "picture_xl": format!("{base}/img/27.png") });
+    let album = json!({ "id": 302127, "title": "Discovery", "cover_xl": format!("{base}/img/302127.png"),
+                        "release_date": "2001-03-07", "artist": artist.clone() });
+    let track = |id: u64, title: &str, pos: i64| {
+        json!({ "id": id, "title": title, "duration": 320, "track_position": pos, "disk_number": 1,
+                "isrc": format!("GBDUW00000{id}"), "artist": artist.clone(), "album": album.clone() })
+    };
+    let one = track(1001, "One More Time", 1);
+    let two = track(1002, "Aerodynamic", 2);
+    let hoppipolla = json!({ "id": 2001, "title": "Hoppípolla", "duration": 268,
+        "artist": { "id": 9, "name": "Sigur Rós" }, "album": { "id": 9001, "title": "Takk..." } });
+    let full_album = {
+        let mut a = album.clone();
+        a["tracks"] = json!({ "data": [one.clone(), two.clone()] });
+        a["genres"] = json!({ "data": [{ "name": "Electro" }] });
+        a
+    };
+    let h = hits.clone();
+    let app = axum::Router::new()
+        .route(
+            "/search/track",
+            get({
+                let (one, hoppipolla) = (one.clone(), hoppipolla.clone());
+                move || async move { axum::Json(json!({ "data": [one, hoppipolla] })) }
+            }),
+        )
+        .route(
+            "/search/album",
+            get({
+                let album = album.clone();
+                move || async move { axum::Json(json!({ "data": [album] })) }
+            }),
+        )
+        .route(
+            "/search/artist",
+            get({
+                let artist = artist.clone();
+                move || async move { axum::Json(json!({ "data": [artist] })) }
+            }),
+        )
+        .route(
+            "/track/{id}",
+            get(move |P(id): P<u64>| {
+                let found = [one.clone(), two.clone()]
+                    .into_iter()
+                    .find(|t| t["id"] == id);
+                async move {
+                    axum::Json(found.unwrap_or_else(
+                        || json!({ "error": { "code": 800, "message": "no data" } }),
+                    ))
+                }
+            }),
+        )
+        .route(
+            "/album/{id}",
+            get(move || async move { axum::Json(full_album) }),
+        )
+        .route(
+            "/artist/{id}",
+            get({
+                let artist = artist.clone();
+                move || async move { axum::Json(artist) }
+            }),
+        )
+        .route(
+            "/artist/{id}/albums",
+            get(move || async move {
+                let mut a = album.clone();
+                a.as_object_mut().unwrap().remove("artist");
+                axum::Json(json!({ "data": [a] }))
+            }),
+        )
+        .route("/img/{name}", get(|| async { crate::testing::png() }))
+        .layer(axum::middleware::from_fn(
+            move |req, next: axum::middleware::Next| {
+                h.fetch_add(1, Ordering::SeqCst);
+                async move { next.run(req).await }
+            },
+        ));
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    (Arc::new(Deezer::new(&base).unwrap()), hits)
+}
+
+#[tokio::test]
+async fn online_search_and_pages() {
+    let (dz, hits) = fake_deezer().await;
+    let lib = library_with("online-browse", Some(dz)).await;
+
+    let r = lib.get("search3?query=one%20more").await;
+    let res = &r["searchResult3"];
+    assert_eq!(res["song"][0]["id"], "dz-track-1001");
+    assert_eq!(res["song"][0]["albumId"], "dz-album-302127");
+    assert_eq!(res["album"][0]["id"], "dz-album-302127");
+    assert_eq!(res["artist"][0]["id"], "dz-artist-27");
+    // A song of the library is not shown twice.
+    let r = lib.get("search3?query=hoppipolla").await;
+    let titles: Vec<&str> = r["searchResult3"]["song"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|s| s["id"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        titles.len(),
+        2,
+        "{titles:?}: the local one, then One More Time"
+    );
+    assert!(!titles[0].starts_with("dz-"));
+    // Later pages: the library only.
+    let r = lib.get("search3?query=one%20more&songOffset=20").await;
+    assert!(r["searchResult3"]["song"].as_array().unwrap().is_empty());
+
+    let r = lib.get("getSong?id=dz-track-1001").await;
+    assert_eq!(r["song"]["title"], "One More Time");
+    let r = lib.get("getAlbum?id=dz-album-302127").await;
+    assert_eq!(r["album"]["name"], "Discovery");
+    assert_eq!(r["album"]["song"].as_array().unwrap().len(), 2);
+    assert_eq!(r["album"]["song"][1]["track"], 2);
+    let r = lib.get("getArtist?id=dz-artist-27").await;
+    assert_eq!(r["artist"]["album"][0]["artistId"], "dz-artist-27");
+
+    let before = hits.load(Ordering::SeqCst);
+    lib.get("getAlbum?id=dz-album-302127").await;
+    assert_eq!(hits.load(Ordering::SeqCst), before, "answers are cached");
+
+    let (status, _, body) = lib
+        .raw(
+            &format!("getCoverArt?id=dz-album-302127&size=1&{AUTH}"),
+            None,
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(!body.is_empty());
+    assert_eq!(lib.error("getSong?id=dz-track-9").await, 70);
+    assert!(
+        lib.get("getAlbumList2?type=newest").await["albumList2"]["album"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|a| a["name"] != "Discovery"),
+        "browsing stores nothing"
+    );
+}
+
+#[tokio::test]
+async fn online_songs_are_liked_and_added_at_once() {
+    let (dz, _) = fake_deezer().await;
+    let lib = library_with("online-use", Some(dz)).await;
+
+    lib.get("star?id=dz-track-1001").await;
+    let r = lib.get("getStarred2?").await;
+    let song = r["starred2"]["song"][0].clone();
+    let id = song["id"].as_str().unwrap().to_owned();
+    assert!(!id.starts_with("dz-"), "stored under a library id: {id}");
+    assert_eq!(song["title"], "One More Time");
+    assert!(song["starred"].is_string());
+    // Liking it again finds the same track.
+    lib.get("star?id=dz-track-1001").await;
+    assert_eq!(
+        lib.get("getStarred2?").await["starred2"]["song"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    // Its album and artist open (online pages under the library ids), with its cover.
+    let album = song["albumId"].as_str().unwrap();
+    let r = lib.get(&format!("getAlbum?id={album}")).await;
+    assert_eq!(r["album"]["id"], album);
+    assert_eq!(
+        r["album"]["song"][0]["id"],
+        id.as_str(),
+        "the stored song shows as such"
+    );
+    assert_eq!(r["album"]["song"][1]["id"], "dz-track-1002");
+    let artist = song["artistId"].as_str().unwrap();
+    assert_eq!(
+        lib.get(&format!("getArtist?id={artist}")).await["artist"]["name"],
+        "Daft Punk"
+    );
+    let (status, _, _) = lib
+        .raw(
+            &format!(
+                "getCoverArt?id={}&{AUTH}",
+                song["coverArt"].as_str().unwrap()
+            ),
+            None,
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK);
+
+    // Added to a playlist, played, queued: same id.
+    let r = lib
+        .get("createPlaylist?name=Online&songId=dz-track-1002&songId=dz-track-1001")
+        .await;
+    let entries = r["playlist"]["entry"].as_array().unwrap();
+    assert_eq!(entries.len(), 2);
+    assert_eq!(entries[1]["id"], id.as_str());
+    assert_eq!(r["playlist"]["songCount"], 2);
+    lib.get("scrobble?id=dz-track-1001").await;
+    assert_eq!(
+        lib.get(&format!("getSong?id={id}")).await["song"]["playCount"],
+        1
+    );
+    lib.get("savePlayQueue?id=dz-track-1001&current=dz-track-1001")
+        .await;
+    assert_eq!(
+        lib.get("getPlayQueue?").await["playQueue"]["current"],
+        id.as_str()
+    );
+
+    // Not part of the library lists until imported.
+    let r = lib.get("getRandomSongs?size=50").await;
+    assert!(
+        r["randomSongs"]["song"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|s| s["title"] != "One More Time")
+    );
+    assert_eq!(lib.error("star?id=dz-track-9").await, 70);
+}
+
+#[tokio::test]
+async fn without_the_online_catalog_online_ids_are_unknown() {
+    let lib = library("offline").await;
+    assert_eq!(lib.error("star?id=dz-track-1001").await, 70);
+    assert_eq!(lib.error("getAlbum?id=dz-album-1").await, 70);
+    let r = lib.get("search3?query=hoppipolla").await;
+    assert_eq!(r["searchResult3"]["song"].as_array().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn an_online_song_keeps_its_likes_and_playlists_once_imported() {
+    let (dz, _) = fake_deezer().await;
+    let lib = library_with("online-import", Some(dz)).await;
+    lib.get("star?id=dz-track-1001").await;
+    let r = lib
+        .get("createPlaylist?name=Mix&songId=dz-track-1001")
+        .await;
+    let pl = r["playlist"]["id"].as_str().unwrap().to_owned();
+    let id = lib.get("getStarred2?").await["starred2"]["song"][0]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+
+    // The file arrives with the tags the import writes.
+    write_song(
+        &lib.root,
+        "Musonic/Daft Punk/Discovery/01 - One More Time.wav",
+        &Song {
+            title: "One More Time",
+            artist: "Daft Punk",
+            album: "Discovery",
+            track: 1,
+            genre: "Electro",
+            ..SONG
+        },
+    );
+    Scanner::new(lib.st.db.clone(), lib.root.clone())
+        .await
+        .unwrap()
+        .scan(false)
+        .await
+        .unwrap();
+
+    let song = lib.get("getStarred2?").await["starred2"]["song"][0].clone();
+    assert_eq!(song["id"], id.as_str(), "same track, still liked");
+    assert!(
+        song["path"]
+            .as_str()
+            .unwrap()
+            .ends_with("One More Time.wav")
+    );
+    assert_eq!(lib.entries(&pl).await, std::slice::from_ref(&id));
+    let r = lib.get("getRandomSongs?size=50").await;
+    assert!(
+        r["randomSongs"]["song"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|s| s["id"] == id.as_str()),
+        "now part of the library"
+    );
 }

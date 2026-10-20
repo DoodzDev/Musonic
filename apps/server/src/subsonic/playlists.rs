@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 
 use rusqlite::{Connection, OptionalExtension, Transaction, params};
 
-use super::{ApiError, Code, Ctx, Reply, model, one};
+use super::{ApiError, Code, Ctx, Reply, model, one, online};
 
 const PLAYLIST_SELECT: &str = "
 SELECT p.id, p.name, p.comment, p.public, p.created_at, p.updated_at, u.username,
@@ -18,7 +18,8 @@ SELECT p.id, p.name, p.comment, p.public, p.created_at, p.updated_at, u.username
   JOIN user u ON u.id = p.owner_id
   LEFT JOIN playlist_track pt ON pt.playlist_id = p.id
   LEFT JOIN track t ON t.id = pt.track_id
-  LEFT JOIN (SELECT track_id, 1 AS visible FROM track_file WHERE missing = 0 GROUP BY track_id) f
+  LEFT JOIN (SELECT track_id, 1 AS visible FROM track_file WHERE missing = 0
+             UNION SELECT track_id, 1 FROM track_source) f
          ON f.track_id = t.id";
 
 fn playlist(r: &rusqlite::Row) -> rusqlite::Result<Value> {
@@ -61,8 +62,8 @@ fn load(c: &Connection, id: &str, user: &str) -> rusqlite::Result<Option<Value>>
     let Some(mut pl) = st.query_map([id, user], playlist)?.next().transpose()? else {
         return Ok(None);
     };
-    // In playlist order, a track listed twice shown twice; a track without a file present is
-    // left out.
+    // In playlist order, a track listed twice shown twice; a track that cannot be played (no
+    // file present, no online source) is left out.
     let order: Vec<String> = c
         .prepare_cached(
             "SELECT track_id FROM playlist_track WHERE playlist_id = ?1 ORDER BY position",
@@ -71,7 +72,10 @@ fn load(c: &Connection, id: &str, user: &str) -> rusqlite::Result<Option<Value>>
         .collect::<rusqlite::Result<_>>()?;
     let songs: HashMap<String, Value> = model::songs(
         c,
-        "t.id IN (SELECT track_id FROM playlist_track WHERE playlist_id = ?2)",
+        &format!(
+            "t.id IN (SELECT track_id FROM playlist_track WHERE playlist_id = ?2) AND {}",
+            model::PLAYABLE
+        ),
         "t.id",
         &[&user, &id],
     )?
@@ -98,8 +102,8 @@ pub async fn get_playlist(ctx: &Ctx) -> Reply {
 
 // Editing ---------------------------------------------------------------------------------
 //
-// Clients only see the tracks with a file present (see `load`), so the positions they send
-// count those alone. Hidden tracks (file gone, or known only online) are kept where they were.
+// Clients only see the playable tracks (see `load`), so the positions they send count those
+// alone. Hidden tracks (file gone, no online source) are kept where they were.
 
 #[derive(Debug, Clone, PartialEq)]
 struct Entry {
@@ -109,11 +113,11 @@ struct Entry {
 }
 
 fn entries(tx: &Transaction, playlist: &str) -> rusqlite::Result<Vec<Entry>> {
-    tx.prepare_cached(
-        "SELECT pt.track_id, pt.added_at,
-                EXISTS (SELECT 1 FROM track_file f WHERE f.track_id = pt.track_id AND f.missing = 0)
+    tx.prepare_cached(&format!(
+        "SELECT pt.track_id, pt.added_at, {}
            FROM playlist_track pt WHERE pt.playlist_id = ?1 ORDER BY pt.position",
-    )?
+        model::playable("pt.track_id")
+    ))?
     .query_map([playlist], |r| {
         Ok(Entry {
             track_id: r.get(0)?,
@@ -201,10 +205,10 @@ fn songs_to_add(
     tx: &Transaction,
     ids: &[String],
 ) -> rusqlite::Result<Result<Vec<(String, bool)>, String>> {
-    let mut st = tx.prepare_cached(
-        "SELECT EXISTS (SELECT 1 FROM track_file f WHERE f.track_id = t.id AND f.missing = 0)
-           FROM track t WHERE t.id = ?1",
-    )?;
+    let mut st = tx.prepare_cached(&format!(
+        "SELECT {} FROM track t WHERE t.id = ?1",
+        model::playable("t.id")
+    ))?;
     let mut out = Vec::with_capacity(ids.len());
     for id in ids {
         match st.query_row([id], |r| r.get::<_, bool>(0)).optional()? {
@@ -284,7 +288,7 @@ pub async fn create_playlist(ctx: &Ctx) -> Reply {
     if existing.is_none() && name.is_none() {
         return Err(ApiError::missing("name"));
     }
-    let songs = list(ctx, "songId");
+    let songs = online::resolve_tracks(ctx, list(ctx, "songId")).await?;
     let user = ctx.user.id.clone();
     let result = ctx
         .state
@@ -333,7 +337,7 @@ pub async fn update_playlist(ctx: &Ctx) -> Reply {
     let name = ctx.params.get("name").map(str::to_owned);
     let comment = ctx.params.get("comment").map(str::to_owned);
     let public = ctx.params.get("public").map(|v| v == "true");
-    let add = list(ctx, "songIdToAdd");
+    let add = online::resolve_tracks(ctx, list(ctx, "songIdToAdd")).await?;
     let remove: Vec<usize> = ctx
         .params
         .all("songIndexToRemove")

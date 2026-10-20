@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use rusqlite::{OptionalExtension, params};
 use serde_json::{Value, json};
 
-use super::{Ctx, Reply, model, one};
+use super::{Ctx, Reply, model, one, online};
 
 /// Saves the queue; no `id` clears it. Unknown tracks are left out.
 pub async fn save(ctx: &Ctx, by_index: bool) -> Reply {
@@ -23,6 +23,8 @@ pub async fn save(ctx: &Ctx, by_index: bool) -> Reply {
         let current = ctx.params.get("current");
         current.and_then(|c| ids.iter().position(|id| id == c))
     };
+    // Online songs of the queue are stored (it is a use, like a play).
+    let ids = online::resolve_tracks(ctx, ids).await?;
     let position_ms: i64 = ctx
         .params
         .get("position")
@@ -107,7 +109,10 @@ pub async fn get(ctx: &Ctx, by_index: bool) -> Reply {
                 .collect::<rusqlite::Result<_>>()?;
             let songs: HashMap<String, Value> = model::songs(
                 c,
-                "t.id IN (SELECT track_id FROM play_queue_item WHERE user_id = ?1)",
+                &format!(
+                    "t.id IN (SELECT track_id FROM play_queue_item WHERE user_id = ?1) AND {}",
+                    model::PLAYABLE
+                ),
                 "t.id",
                 &[&user],
             )?
