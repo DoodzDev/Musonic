@@ -40,6 +40,9 @@ cargo run --release
 | `legacy_auth`: Subsonic token sign-in (`t` + `s`) | `MUSONIC_LEGACY_AUTH` | `true` |
 | `online`: online catalog in search and pages | `MUSONIC_ONLINE` | `true` |
 | `deezer_api_url` | `MUSONIC_DEEZER_API_URL` | `https://api.deezer.com` |
+| `online_previews`: 30-second previews of online songs no provider has | `MUSONIC_ONLINE_PREVIEWS` | `true` |
+| `subsonic_provider_url`, `subsonic_provider_user`: Subsonic server to relay audio from | `MUSONIC_SUBSONIC_PROVIDER_URL`, `…_USER` | none |
+| Its password (environment only) | `MUSONIC_SUBSONIC_PROVIDER_PASSWORD` | none |
 | Key encrypting the passwords kept for `legacy_auth` (64 hex) | `MUSONIC_SECRET_KEY` | `secret.key` in `data_dir`, created on first start |
 
 `musonic-server scan [--full]` scans the library once and prints a summary.

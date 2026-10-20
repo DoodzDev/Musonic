@@ -10,7 +10,10 @@
 //! [`conformance::check`]. See `docs/PROVIDERS.md`.
 
 pub mod conformance;
+mod http;
 mod memory;
+mod preview;
+mod subsonic;
 
 use std::sync::Arc;
 
@@ -19,6 +22,8 @@ use async_trait::async_trait;
 use bytes::Bytes;
 
 pub use memory::MemoryProvider;
+pub use preview::DeezerPreview;
+pub use subsonic::SubsonicProvider;
 
 pub use crate::model::{AudioFormat, Quality};
 

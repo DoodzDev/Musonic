@@ -2,13 +2,16 @@
 //!
 //! Streams are the file itself (with HTTP ranges, so players can seek), or a transcoding by
 //! ffmpeg when the client asks for a lower bit rate or another format. Without ffmpeg the file
-//! is sent as is. Covers come from the album (image file or embedded picture), else online
+//! is sent as is. A track without a file is streamed from the first audio provider that has it
+//! (see [`crate::providers`]), through the shared segment cache, with ranges too. Covers come from the album (image file or embedded picture), else online
 //! (albums and artists known only online), resized on request and cached on disk.
 
 use std::{
+    collections::HashMap,
     io::Cursor,
     path::{Path, PathBuf},
     process::Stdio,
+    sync::Arc,
 };
 
 use axum::{
@@ -23,8 +26,12 @@ use sha2::{Digest, Sha256};
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio_util::io::ReaderStream;
 
-use super::{ApiError, Ctx, Reply, model, one, online};
-use crate::online::OnlineId;
+use super::{ApiError, Code, Ctx, Reply, model, one, online};
+use crate::{
+    online::OnlineId,
+    providers::{Quality, TrackQuery},
+    stream::{AudioSession, SEGMENT_SIZE},
+};
 
 /// The playable file of a track: absolute path, format, bit rate (kbit/s), size.
 struct AudioFile {
@@ -219,7 +226,13 @@ fn ffmpeg_bin() -> String {
 
 pub async fn stream(ctx: &Ctx, download: bool) -> Result<Response, ApiError> {
     let id = ctx.params.require("id")?.to_owned();
-    let file = audio_file(ctx, &id).await?;
+    // Playing an online song is a use: it is stored first (see `crate::online`).
+    let id = online::resolve_tracks(ctx, vec![id]).await?.remove(0);
+    let file = match audio_file(ctx, &id).await {
+        Ok(f) => f,
+        Err(e) if e.code == Code::NotFound => return remote_stream(ctx, &id, download).await,
+        Err(e) => return Err(e),
+    };
     if download {
         let name = file
             .path
@@ -281,6 +294,163 @@ pub async fn stream(ctx: &Ctx, download: bool) -> Result<Response, ApiError> {
         None,
     )
     .await)
+}
+
+// Tracks without a file -------------------------------------------------------------------
+
+/// What the providers get to find a track, and its ids per catalog.
+async fn track_query(
+    ctx: &Ctx,
+    id: &str,
+) -> Result<Option<(TrackQuery, HashMap<String, String>)>, ApiError> {
+    let id = id.to_owned();
+    Ok(ctx
+        .state
+        .db
+        .call(move |c| {
+            let Some(mut q) = c
+                .query_row(
+                    "SELECT t.title, t.duration_ms, t.isrc, al.title FROM track t
+                       LEFT JOIN album al ON al.id = t.album_id WHERE t.id = ?1",
+                    [&id],
+                    |r| {
+                        Ok(TrackQuery {
+                            provider_id: None,
+                            title: r.get(0)?,
+                            duration: r.get::<_, i64>(1)? / 1000,
+                            isrc: r.get(2)?,
+                            album: r.get(3)?,
+                            artists: Vec::new(),
+                        })
+                    },
+                )
+                .optional()?
+            else {
+                return Ok(None);
+            };
+            q.artists = c
+                .prepare_cached(
+                    "SELECT ar.name FROM track_artist ta JOIN artist ar ON ar.id = ta.artist_id
+                      WHERE ta.track_id = ?1 AND ta.role = 'artist' ORDER BY ta.position",
+                )?
+                .query_map([&id], |r| r.get(0))?
+                .collect::<rusqlite::Result<_>>()?;
+            let sources = c
+                .prepare_cached(
+                    "SELECT provider, provider_id FROM track_source WHERE track_id = ?1",
+                )?
+                .query_map([&id], |r| Ok((r.get(0)?, r.get(1)?)))?
+                .collect::<rusqlite::Result<_>>()?;
+            Ok(Some((q, sources)))
+        })
+        .await?)
+}
+
+/// Quality asked of providers: lower on a limited bit rate (mobile data).
+fn wanted_quality(max_bit_rate: i64) -> Quality {
+    match max_bit_rate {
+        1..=192 => Quality::Mp3_128,
+        _ => Quality::Mp3_320,
+    }
+}
+
+/// The track's stream from the first provider that has it, shared with other listeners.
+async fn open_remote(
+    ctx: &Ctx,
+    id: &str,
+    wanted: Quality,
+) -> Result<Option<Arc<AudioSession>>, ApiError> {
+    if ctx.state.providers.is_empty() {
+        return Ok(None);
+    }
+    let Some((query, sources)) = track_query(ctx, id).await? else {
+        return Ok(None);
+    };
+    let providers = ctx.state.providers.clone();
+    let tmp = ctx.state.data_dir.join("tmp").join("streams");
+    let key = format!("{id}\u{1f}{wanted:?}");
+    let canonical = id.to_owned();
+    Ok(ctx
+        .state
+        .sessions
+        .get_or_open(&key, || async move {
+            for p in providers.iter() {
+                let mut q = query.clone();
+                q.provider_id = p.namespace().and_then(|ns| sources.get(ns)).cloned();
+                match p.open(&q, wanted).await {
+                    Ok(Some(audio)) => {
+                        tracing::debug!(track = %canonical, provider = p.id(), "stream opened");
+                        return AudioSession::create(&canonical, audio, &tmp).map(Some);
+                    }
+                    Ok(None) => {}
+                    Err(e) => tracing::warn!(provider = p.id(), "cannot open {}: {e:#}", q.title),
+                }
+            }
+            Ok(None)
+        })
+        .await?)
+}
+
+/// Serves a provider's stream, with HTTP ranges like a file.
+async fn remote_stream(ctx: &Ctx, id: &str, download: bool) -> Result<Response, ApiError> {
+    let max: i64 = ctx
+        .params
+        .get("maxBitRate")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0);
+    let Some(session) = open_remote(ctx, id, wanted_quality(max)).await? else {
+        return Err(ApiError::not_found("Song"));
+    };
+    let size = session.size;
+    let mime = session.format.mime();
+    let range = ctx
+        .headers
+        .get(header::RANGE)
+        .and_then(|v| v.to_str().ok())
+        .map(|v| parse_range(v, size));
+    let (start, end, partial) = match range {
+        Some(None) => {
+            return Ok((
+                StatusCode::RANGE_NOT_SATISFIABLE,
+                [(header::CONTENT_RANGE, format!("bytes */{size}"))],
+            )
+                .into_response());
+        }
+        Some(Some((start, end))) => (start, end, true),
+        None => (0, size - 1, false),
+    };
+    let body = futures_util::stream::unfold(start, move |pos| {
+        let session = session.clone();
+        async move {
+            if pos > end {
+                return None;
+            }
+            let len = (end + 1 - pos).min(SEGMENT_SIZE - pos % SEGMENT_SIZE);
+            match session.read(pos, len).await {
+                Ok(data) => Some((Ok(data), pos + len)),
+                Err(e) => Some((Err(std::io::Error::other(e)), end + 1)),
+            }
+        }
+    });
+    let mut res = Response::new(Body::from_stream(body));
+    if partial {
+        *res.status_mut() = StatusCode::PARTIAL_CONTENT;
+        res.headers_mut().insert(
+            header::CONTENT_RANGE,
+            HeaderValue::from_str(&format!("bytes {start}-{end}/{size}")).expect("ascii"),
+        );
+    }
+    let h = res.headers_mut();
+    h.insert(header::CONTENT_LENGTH, (end - start + 1).into());
+    h.insert(header::ACCEPT_RANGES, HeaderValue::from_static("bytes"));
+    h.insert(header::CONTENT_TYPE, HeaderValue::from_static(mime));
+    if download {
+        h.insert(
+            header::CONTENT_DISPOSITION,
+            HeaderValue::from_static("attachment"),
+        );
+    }
+    Ok(res)
 }
 
 /// Keeps the ffmpeg process alive exactly as long as its output is being read.

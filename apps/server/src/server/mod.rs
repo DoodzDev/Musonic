@@ -37,6 +37,10 @@ pub struct AppState {
     pub now_playing: Arc<crate::subsonic::NowPlaying>,
     /// Online catalog, when enabled.
     pub online: Option<Arc<crate::online::Deezer>>,
+    /// Where audio comes from for tracks without a file, tried in order.
+    pub providers: Arc<Vec<Arc<dyn crate::providers::AudioProvider>>>,
+    /// Their streams, cached on disk and shared by every listener.
+    pub sessions: Arc<crate::stream::SessionManager>,
 }
 
 impl AppState {
@@ -50,6 +54,8 @@ impl AppState {
             setup_lock: Arc::new(tokio::sync::Mutex::new(())),
             now_playing: Arc::default(),
             online: None,
+            providers: Arc::default(),
+            sessions: Arc::default(),
         }
     }
 }

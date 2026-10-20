@@ -25,6 +25,12 @@ pub struct Config {
     pub online: bool,
     /// Base URL of that API (tests point it elsewhere).
     pub deezer_api_url: String,
+    /// Play the 30-second preview of an online track no provider has.
+    pub online_previews: bool,
+    /// Another Subsonic server to relay audio from (an OctoFiesta, a Navidrome…). Its password
+    /// comes from `MUSONIC_SUBSONIC_PROVIDER_PASSWORD` only.
+    pub subsonic_provider_url: Option<String>,
+    pub subsonic_provider_user: Option<String>,
 }
 
 impl Default for Config {
@@ -37,6 +43,9 @@ impl Default for Config {
             legacy_auth: true,
             online: true,
             deezer_api_url: crate::online::deezer::DEFAULT_URL.to_owned(),
+            online_previews: true,
+            subsonic_provider_url: None,
+            subsonic_provider_user: None,
         }
     }
 }
@@ -76,6 +85,16 @@ impl Config {
         }
         if let Some(v) = env("MUSONIC_DEEZER_API_URL") {
             cfg.deezer_api_url = v;
+        }
+        if let Some(v) = env("MUSONIC_ONLINE_PREVIEWS") {
+            cfg.online_previews =
+                matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on");
+        }
+        if let Some(v) = env("MUSONIC_SUBSONIC_PROVIDER_URL") {
+            cfg.subsonic_provider_url = Some(v);
+        }
+        if let Some(v) = env("MUSONIC_SUBSONIC_PROVIDER_USER") {
+            cfg.subsonic_provider_user = Some(v);
         }
         if let Some(v) = env("MUSONIC_SCAN_INTERVAL_MINUTES") {
             cfg.scan_interval_minutes = v.parse().context("MUSONIC_SCAN_INTERVAL_MINUTES")?;

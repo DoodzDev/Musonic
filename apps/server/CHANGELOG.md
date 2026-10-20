@@ -80,4 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ISRC, else title, artists and length). Their album and artist pages open, with their covers.
   They show in likes, playlists and the queue, not in the library lists until their file is
   imported; the imported file then joins the same track, which keeps its likes and playlists.
+- Songs without a file play from audio providers, tried in order, through the shared segment
+  cache (seeking works, several listeners share one stream, idle streams are freed). Included:
+  a relay to another Subsonic server (an OctoFiesta, a Navidrome: found by ISRC, else title,
+  artists and length) and, last, the 30-second online preview.
 - Tracks without an album artist tag: the album goes to the main artist ("A feat. B" → "A").

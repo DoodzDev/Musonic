@@ -9,7 +9,7 @@ use bytes::Bytes;
 
 use super::{AudioFormat, AudioProvider, Quality, RangeFetcher, RemoteAudio, TrackQuery};
 
-struct BytesFetcher(Bytes);
+pub(crate) struct BytesFetcher(pub(crate) Bytes);
 
 #[async_trait]
 impl RangeFetcher for BytesFetcher {

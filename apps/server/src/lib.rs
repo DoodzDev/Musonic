@@ -83,6 +83,20 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
     if config.online {
         state.online = Some(Arc::new(online::Deezer::new(&config.deezer_api_url)?));
     }
+    state.providers = Arc::new(providers(&config, ext, state.online.clone())?);
+    tracing::info!(
+        providers = ?state.providers.iter().map(|p| p.id()).collect::<Vec<_>>(),
+        "audio providers"
+    );
+    // Streams nobody listens to any more free their disk space.
+    let sessions = state.sessions.clone();
+    tokio::spawn(async move {
+        let mut every = tokio::time::interval(Duration::from_secs(300));
+        loop {
+            every.tick().await;
+            sessions.evict_idle().await;
+        }
+    });
     let app = server::router(state);
     let listener = tokio::net::TcpListener::bind(config.bind)
         .await
@@ -97,6 +111,31 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
     })
     .await?;
     Ok(())
+}
+
+/// Providers in the order they are tried: the binary's own, the configured Subsonic server,
+/// then online previews.
+fn providers(
+    config: &Config,
+    ext: Extensions,
+    online: Option<Arc<online::Deezer>>,
+) -> Result<Vec<Arc<dyn AudioProvider>>> {
+    let mut all = ext.providers;
+    if let Some(url) = &config.subsonic_provider_url {
+        let user = config
+            .subsonic_provider_user
+            .as_deref()
+            .context("subsonic_provider_url needs subsonic_provider_user")?;
+        let password = std::env::var("MUSONIC_SUBSONIC_PROVIDER_PASSWORD")
+            .context("subsonic_provider_url needs MUSONIC_SUBSONIC_PROVIDER_PASSWORD")?;
+        all.push(Arc::new(providers::SubsonicProvider::new(
+            url, user, &password,
+        )?));
+    }
+    if let Some(dz) = online.filter(|_| config.online_previews) {
+        all.push(Arc::new(providers::DeezerPreview::new(dz)));
+    }
+    Ok(all)
 }
 
 /// One scan of the library, then exit (`musonic-server scan [--full]`).

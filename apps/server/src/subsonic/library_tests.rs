@@ -654,7 +654,8 @@ async fn fake_deezer() -> (Arc<Deezer>, Arc<AtomicUsize>) {
                         "release_date": "2001-03-07", "artist": artist.clone() });
     let track = |id: u64, title: &str, pos: i64| {
         json!({ "id": id, "title": title, "duration": 320, "track_position": pos, "disk_number": 1,
-                "isrc": format!("GBDUW00000{id}"), "artist": artist.clone(), "album": album.clone() })
+                "isrc": format!("GBDUW00000{id}"), "artist": artist.clone(), "album": album.clone(),
+                "preview": format!("{base}/preview/{id}.mp3") })
     };
     let one = track(1001, "One More Time", 1);
     let two = track(1002, "Aerodynamic", 2);
@@ -722,6 +723,8 @@ async fn fake_deezer() -> (Arc<Deezer>, Arc<AtomicUsize>) {
             }),
         )
         .route("/img/{name}", get(|| async { crate::testing::png() }))
+        // No ranges here: the whole preview is read once.
+        .route("/preview/{name}", get(|| async { audio(40_000, 7) }))
         .layer(axum::middleware::from_fn(
             move |req, next: axum::middleware::Next| {
                 h.fetch_add(1, Ordering::SeqCst);
@@ -933,4 +936,206 @@ async fn an_online_song_keeps_its_likes_and_playlists_once_imported() {
             .any(|s| s["id"] == id.as_str()),
         "now part of the library"
     );
+}
+
+// Tracks without a file ------------------------------------------------------------------
+
+/// `len` bytes that differ at every offset (to catch any misplaced range).
+fn audio(len: usize, seed: u8) -> Vec<u8> {
+    (0..len).map(|i| (i % 251) as u8 ^ seed).collect()
+}
+
+/// A track known only through a provider of the "memory" catalog.
+async fn remote_track(lib: &Lib, provider_id: &str) -> String {
+    let p = provider_id.to_owned();
+    lib.st
+        .db
+        .call(move |c| {
+            c.execute(
+                "INSERT INTO track(id, title, norm_title, duration_ms) VALUES ('remote', 'Remote', 'remote', 200000)",
+                [],
+            )?;
+            c.execute(
+                "INSERT INTO track_source(provider, provider_id, track_id) VALUES ('memory', ?1, 'remote')",
+                [&p],
+            )?;
+            Ok(())
+        })
+        .await
+        .unwrap();
+    "remote".into()
+}
+
+async fn get_range(
+    lib: &Lib,
+    id: &str,
+    range: Option<&str>,
+) -> (StatusCode, axum::http::HeaderMap, Vec<u8>) {
+    lib.raw(&format!("stream?id={id}&{AUTH}"), range).await
+}
+
+#[tokio::test]
+async fn songs_without_a_file_play_from_providers_with_ranges() {
+    use crate::providers::{AudioFormat, MemoryProvider, Quality};
+    let data = audio(2 * 1024 * 1024 + 300, 1);
+    let mut lib = library("remote-stream").await;
+    lib.st.providers = Arc::new(vec![Arc::new(MemoryProvider::default().with(
+        "m1",
+        data.clone(),
+        AudioFormat::Mp3,
+        Quality::Mp3_128,
+    ))]);
+    lib.app = router(lib.st.clone());
+    let id = remote_track(&lib, "m1").await;
+
+    let (status, headers, body) = get_range(&lib, &id, None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(headers[header::CONTENT_TYPE], "audio/mpeg");
+    assert_eq!(body, data);
+    // Across the first segment boundary, then the end.
+    let (status, headers, body) = get_range(&lib, &id, Some("bytes=1048570-1048590")).await;
+    assert_eq!(status, StatusCode::PARTIAL_CONTENT);
+    assert_eq!(
+        headers[header::CONTENT_RANGE],
+        format!("bytes 1048570-1048590/{}", data.len()).as_str()
+    );
+    assert_eq!(body, data[1048570..=1048590]);
+    let (_, _, body) = get_range(&lib, &id, Some("bytes=-10")).await;
+    assert_eq!(body, data[data.len() - 10..]);
+    let (status, _, _) = get_range(&lib, &id, Some("bytes=99999999-")).await;
+    assert_eq!(status, StatusCode::RANGE_NOT_SATISFIABLE);
+    assert_eq!(lib.st.sessions.count().await, 1, "one shared stream");
+
+    // A track no provider has.
+    lib.st.providers = Arc::default();
+    lib.app = router(lib.st.clone());
+    lib.st
+        .db
+        .call(|c| {
+            c.execute(
+                "INSERT INTO track(id, title, norm_title) VALUES ('nowhere', 'Nowhere', 'nowhere')",
+                [],
+            )?;
+            Ok(())
+        })
+        .await
+        .unwrap();
+    let (_, _, body) = get_range(&lib, "nowhere", None).await;
+    let v: Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(v["subsonic-response"]["error"]["code"], 70);
+}
+
+#[tokio::test]
+async fn online_songs_play_their_preview_when_nothing_else_has_them() {
+    let (dz, _) = fake_deezer().await;
+    let mut lib = library_with("preview", Some(dz.clone())).await;
+    lib.st.providers = Arc::new(vec![Arc::new(crate::providers::DeezerPreview::new(dz))]);
+    lib.app = router(lib.st.clone());
+    let (status, _, body) = get_range(&lib, "dz-track-1001", None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body, audio(40_000, 7));
+    let (status, _, body) = get_range(&lib, "dz-track-1001", Some("bytes=100-199")).await;
+    assert_eq!(status, StatusCode::PARTIAL_CONTENT);
+    assert_eq!(body, audio(40_000, 7)[100..200]);
+    // Playing it stored it: it is now a library track.
+    let r = lib.get("search3?query=one%20more").await;
+    assert!(
+        !r["searchResult3"]["song"][0]["id"]
+            .as_str()
+            .unwrap()
+            .starts_with("dz-")
+    );
+}
+
+/// A Subsonic server holding one song, answering ranges like Navidrome.
+async fn fake_subsonic() -> String {
+    use axum::{extract::Query, http::HeaderMap, response::IntoResponse, routing::get};
+    use serde_json::json;
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let data = audio(1_500_000, 3);
+    let app = axum::Router::new()
+        .route(
+            "/rest/search3",
+            get(|Query(q): Query<std::collections::HashMap<String, String>>| async move {
+                let ok = q.get("u").map(String::as_str) == Some("relay") && q.contains_key("t");
+                axum::Json(json!({ "subsonic-response": { "status": if ok { "ok" } else { "failed" },
+                    "searchResult3": { "song": [
+                        { "id": "ext-deezer-song-1002", "title": "Aerodynamic", "artist": "Daft Punk",
+                          "duration": 321, "suffix": "mp3", "bitRate": 320 }
+                    ] } } }))
+            }),
+        )
+        .route(
+            "/rest/stream",
+            get(move |Query(q): Query<std::collections::HashMap<String, String>>, headers: HeaderMap| {
+                let data = data.clone();
+                async move {
+                    if q.get("id").map(String::as_str) != Some("ext-deezer-song-1002") {
+                        return axum::Json(json!({ "subsonic-response": { "status": "failed" } })).into_response();
+                    }
+                    let size = data.len();
+                    let range = headers
+                        .get("range")
+                        .and_then(|v| v.to_str().ok())
+                        .and_then(|v| v.strip_prefix("bytes="))
+                        .and_then(|v| v.split_once('-'))
+                        .and_then(|(a, b)| Some((a.parse::<usize>().ok()?, b.parse::<usize>().ok()?)));
+                    match range {
+                        Some((a, b)) => (
+                            StatusCode::PARTIAL_CONTENT,
+                            [("content-range", format!("bytes {a}-{b}/{size}")), ("content-type", "audio/mpeg".into())],
+                            data[a..=b].to_vec(),
+                        )
+                            .into_response(),
+                        None => ([("content-type", "audio/mpeg")], data).into_response(),
+                    }
+                }
+            }),
+        );
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    base
+}
+
+#[tokio::test]
+async fn the_subsonic_relay_passes_the_conformance_checks() {
+    use crate::providers::{SubsonicProvider, TrackQuery, conformance};
+    let p = SubsonicProvider::new(&fake_subsonic().await, "relay", "secret").unwrap();
+    let known = TrackQuery {
+        title: "Aerodynamic".into(),
+        artists: vec!["Daft Punk".into()],
+        duration: 320,
+        ..Default::default()
+    };
+    let unknown = TrackQuery {
+        title: "Robot Rock".into(),
+        artists: vec!["Daft Punk".into()],
+        ..Default::default()
+    };
+    let report = conformance::check(&p, &known, &unknown).await.unwrap();
+    assert!(report.passed(), "{report}");
+}
+
+#[tokio::test]
+async fn online_songs_play_from_the_subsonic_relay_before_previews() {
+    let (dz, _) = fake_deezer().await;
+    let mut lib = library_with("relay", Some(dz.clone())).await;
+    lib.st.providers = Arc::new(vec![
+        Arc::new(
+            crate::providers::SubsonicProvider::new(&fake_subsonic().await, "relay", "secret")
+                .unwrap(),
+        ),
+        Arc::new(crate::providers::DeezerPreview::new(dz)),
+    ]);
+    lib.app = router(lib.st.clone());
+    let (status, _, body) = get_range(&lib, "dz-track-1002", Some("bytes=0-9")).await;
+    assert_eq!(status, StatusCode::PARTIAL_CONTENT);
+    assert_eq!(
+        body,
+        audio(1_500_000, 3)[..10],
+        "the full song, not the preview"
+    );
+    // One More Time is not on the relay: its preview.
+    let (_, _, body) = get_range(&lib, "dz-track-1001", None).await;
+    assert_eq!(body.len(), 40_000);
 }

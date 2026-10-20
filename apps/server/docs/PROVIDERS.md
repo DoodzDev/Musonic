@@ -59,10 +59,25 @@ musonic_server::run(config, ext).await
 The default binary (`src/main.rs`) ships the providers of this repository. `MemoryProvider`
 (`src/providers/memory.rs`) is the smallest complete example.
 
-## Providers planned in this repository
+## How the server uses them
+A track without a file present is played from the first provider, in order, that opens it. Its
+stream goes through the segment cache: several listeners share it, players can seek, and it is
+freed after 10 minutes without listeners. A provider that fails is logged and skipped.
+
+Order: the providers of the binary, then the configured Subsonic server, then online previews.
+
+## Providers in this repository
+- **Subsonic relay** (`SubsonicProvider`): another Subsonic-compatible server (an OctoFiesta in
+  front of Navidrome, a Navidrome…). The track is found there by search (ISRC when both know it,
+  else title, artists and length) and its file relayed as is. Settings:
+  `subsonic_provider_url`, `subsonic_provider_user` and the password in the
+  `MUSONIC_SUBSONIC_PROVIDER_PASSWORD` environment variable.
+- **Online previews** (`DeezerPreview`): the 30-second preview of an online track, from Deezer's
+  public API, when no other provider has the track (`online_previews`, on by default).
+- **Memory** (`MemoryProvider`): files held in memory, for tests and as an example.
+
+## Planned
 - **Import folder**: any audio file dropped in a watched folder is tagged, filed and added to the
   library.
-- **Direct URL**: a file served over HTTP(S) with range requests.
-- **Subsonic upstream**: another Subsonic-compatible server used as a source.
 
 Use only sources you have the right to use.
