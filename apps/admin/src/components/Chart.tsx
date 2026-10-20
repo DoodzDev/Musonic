@@ -31,6 +31,8 @@ interface Props {
   /** Fixed top of the scale (100 for a percentage). */
   max?: number;
   height?: number;
+  /** Across the whole grid. */
+  wide?: boolean;
 }
 
 const LEFT = 56, RIGHT = 8, TOP = 10, BOTTOM = 24;
@@ -48,7 +50,7 @@ function column(x: number, y: number, w: number, h: number, round: boolean): str
   return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
 }
 
-export function Chart({ title, aside, kind, labels, titles, series, format, max, height = 200 }: Props) {
+export function Chart({ title, aside, kind, labels, titles, series, format, max, height = 200, wide }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(600);
   const [hover, setHover] = useState<number | null>(null);
@@ -74,7 +76,7 @@ export function Chart({ title, aside, kind, labels, titles, series, format, max,
   const empty = totals.every((v, i) => v === 0 && series.every((s) => s.values[i] == null));
 
   return (
-    <div className="card chart">
+    <div className={'card chart' + (wide ? ' wide' : '')}>
       <div className="spread">
         <h2 style={{ margin: 0 }}>{title}</h2>
         <div className="row">
@@ -139,7 +141,14 @@ export function Chart({ title, aside, kind, labels, titles, series, format, max,
                     if (v == null) return;
                     d += `${d && s.values[i - 1] != null ? 'L' : 'M'}${cx(i)},${y(v)}`;
                   });
-                  return <path key={s.label} d={d} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />;
+                  // A measure alone (no neighbour to join) is a dot, else it would not show.
+                  const alone = s.values.map((v, i) => v != null && s.values[i - 1] == null && s.values[i + 1] == null);
+                  return (
+                    <g key={s.label}>
+                      <path d={d} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+                      {alone.map((a, i) => (a ? <circle key={i} cx={cx(i)} cy={y(s.values[i] ?? 0)} r={3} fill={s.color} /> : null))}
+                    </g>
+                  );
                 })}
             {kind === 'line' && hover !== null &&
               series.map((s) => (s.values[hover] == null ? null : <circle key={s.label} cx={cx(hover)} cy={y(s.values[hover])} r={4} fill={s.color} className="marker" />))}

@@ -9,7 +9,7 @@
  * @license CC-BY-NC-4.0
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Icon } from '@musonic/icons';
 import type { AdminStatus, Measure, Measures } from '@musonic/core';
 import { api } from '../api.ts';
@@ -64,6 +64,32 @@ function QuotaModal({ current, onClose, onSaved }: { current: number; onClose: (
   );
 }
 
+/** The whole disk in one bar: Musonic's music, its imports, everything else, what is free. */
+function DiskBar({ total, free, library, imported }: { total: number; free: number; library: number; imported: number }) {
+  const used = total - free;
+  const others = Math.max(0, used - library - imported);
+  const w = (v: number) => `${(v / total) * 100}%`;
+  const parts: [string, string, number][] = [
+    [t.data.diskMusic, MUSONIC, library],
+    [t.data.diskImports, 'var(--accent-2)', imported],
+    [t.data.diskOthers, OTHERS, others],
+  ];
+  return (
+    <>
+      <div className="spread small"><span><b>{t.data.diskUsed}</b> · {t.dashboard.of(bytes(used), bytes(total))}</span><span className="muted">{pct(used, total)} %</span></div>
+      <div className="bar diskbar mt-s" role="img" aria-label={t.dashboard.of(bytes(used), bytes(total))}>
+        {parts.map(([label, color, v]) => (v > 0 ? <i key={label} style={{ width: w(v), background: color }} /> : null))}
+      </div>
+      <div className="disk-legend">
+        {parts.map(([label, color, v]) => (
+          <Fragment key={label}><span className="legend" style={{ background: color }} /><span>{label}</span><span className="muted">{bytes(v)} · {pct(v, total)} %</span></Fragment>
+        ))}
+        <span className="legend" style={{ background: 'var(--s2)' }} /><span>{t.data.diskFree}</span><span className="muted">{bytes(free)} · {pct(free, total)} %</span>
+      </div>
+    </>
+  );
+}
+
 function DiskDetail({ s, rows, ends }: { s: AdminStatus | null | undefined; rows: Measure[]; ends: number[] }) {
   const d = s?.disk;
   // The trend: how much the disk took between the first and the last measure of the period.
@@ -79,18 +105,15 @@ function DiskDetail({ s, rows, ends }: { s: AdminStatus | null | undefined; rows
   return (
     <div className="card">
       <h2>{t.data.diskDetail}</h2>
-      {d ? (
-        <>
-          <div className="spread small"><span><b>{t.data.diskUsed}</b> · {t.dashboard.of(bytes(d.totalBytes - d.freeBytes), bytes(d.totalBytes))}</span><span className="muted">{t.data.free(bytes(d.freeBytes))}</span></div>
-          <div className="bar mt-s"><i style={{ width: `${((d.totalBytes - d.freeBytes) / d.totalBytes) * 100}%`, background: OTHERS }} /></div>
-        </>
+      {d && s ? (
+        <DiskBar total={d.totalBytes} free={d.freeBytes} library={s.library.bytes - s.library.importedBytes} imported={s.library.importedBytes} />
+      ) : d ? (
+        <DiskBar total={d.totalBytes} free={d.freeBytes} library={0} imported={0} />
       ) : (
         <p className="muted small">{t.dashboard.diskUnknown}</p>
       )}
       {s && (
         <dl className="kv mt">
-          <dt>{t.dashboard.musicLabel}</dt><dd>{bytes(s.library.bytes)}{d ? ` · ${t.dashboard.ofDisk(pct(s.library.bytes, d.totalBytes))}` : ''}</dd>
-          <dt>{t.data.imports}</dt><dd>{bytes(s.library.importedBytes)}</dd>
           <dt>{t.dashboard.database}</dt><dd>{bytes(s.folders.databaseBytes)}</dd>
           <dt>{t.dashboard.backups}</dt><dd>{s.folders.backups} · {bytes(s.folders.backupsBytes)}{s.folders.lastBackupAt ? t.dashboard.lastBackup(relative(s.folders.lastBackupAt).toLowerCase()) : ''}</dd>
           <dt>{t.dashboard.caches}</dt><dd>{bytes(s.folders.cacheBytes)}</dd>
@@ -164,23 +187,26 @@ export function DataPage() {
         )}
       </div>
 
-      {month && traffic0 && (
-        <div className="card">
-          <div className="spread">
-            <div>
-              <h2 style={{ margin: 0 }}>{t.data.monthSent}</h2>
-              <p className="muted small" style={{ margin: '2px 0 0' }}>{traffic0.partial ? t.data.measuredSince(date(traffic0.from)) : t.data.monthReset}</p>
+      <div className="grid g2">
+        <DiskDetail s={status} rows={rows} ends={ends} />
+        {month && traffic0 && (
+          <div className="card">
+            <div className="spread">
+              <div>
+                <h2 style={{ margin: 0 }}>{t.data.monthSent}</h2>
+                <p className="muted small" style={{ margin: '2px 0 0' }}>{traffic0.partial ? t.data.measuredSince(date(traffic0.from)) : t.data.monthReset}</p>
+              </div>
+              <button type="button" className="btn ghost sm" onClick={() => setEditing(true)}><Icon name="pencil" size={14} /> {t.data.quotaEdit}</button>
             </div>
-            <button type="button" className="btn ghost sm" onClick={() => setEditing(true)}><Icon name="pencil" size={14} /> {t.data.quotaEdit}</button>
+            <div className="hero mt-s">
+              <b>{bytes(traffic0.sent)}</b>
+              <span className="muted">{traffic0.quota > 0 ? t.data.quotaOf(bytes(traffic0.quota), pct(traffic0.sent, traffic0.quota)) : t.data.noQuota}</span>
+            </div>
+            <QuotaMeter m={month} />
+            {!month.hostVisible && <p className="note mt-s">{t.data.hostHidden}</p>}
           </div>
-          <div className="hero mt-s">
-            <b>{bytes(traffic0.sent)}</b>
-            <span className="muted">{traffic0.quota > 0 ? t.data.quotaOf(bytes(traffic0.quota), pct(traffic0.sent, traffic0.quota)) : t.data.noQuota}</span>
-          </div>
-          <QuotaMeter m={month} />
-          {!month.hostVisible && <p className="note mt-s">{t.data.hostHidden}</p>}
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="filters mt">
         <Seg value={period} options={[['day', t.data.periods.day], ['week', t.data.periods.week], ['month', t.data.periods.month], ['year', t.data.periods.year]]} onChange={choose} />
@@ -217,13 +243,12 @@ export function DataPage() {
           series={[{ label: t.data.memory, color: MUSONIC, values: rows.map((r) => r.memoryMax ?? null) }]}
         />
         <Chart
-          title={t.data.diskChart} kind="line" labels={labels} titles={titles} format={bytes}
+          title={t.data.diskChart} wide kind="line" labels={labels} titles={titles} format={bytes}
           series={[
             { label: t.data.diskUsed, color: OTHERS, values: rows.map((r) => r.diskUsed ?? null) },
             { label: t.dashboard.musicLabel, color: MUSONIC, values: rows.map((r) => r.musicBytes ?? null) },
           ]}
         />
-        <DiskDetail s={status} rows={rows} ends={ends} />
       </div>
       <p className="muted small mt">{t.data.howMeasured}</p>
 

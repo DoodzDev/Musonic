@@ -18,10 +18,11 @@ import { StatusProvider } from '../status.tsx';
 import { useStatus } from '../useStatus.ts';
 
 const n = t.nav;
-const NAV: { title?: string; items: [string, string, IconName][] }[] = [
-  { items: [['/', n.dashboard, 'home']] },
-  { title: n.people, items: [['/accounts', n.accounts, 'person'], ['/security', n.security, 'lock']] },
-  { title: n.music, items: [['/library', n.library, 'library'], ['/imports', n.imports, 'download'], ['/playback', n.playback, 'play']] },
+/** Path, label, icon, and its filled form for the current place (when the artwork has one). */
+const NAV: { title?: string; items: [string, string, IconName, IconName?][] }[] = [
+  { items: [['/', n.dashboard, 'home', 'home-filled']] },
+  { title: n.people, items: [['/accounts', n.accounts, 'person', 'person-filled'], ['/security', n.security, 'lock']] },
+  { title: n.music, items: [['/library', n.library, 'library', 'library-filled'], ['/imports', n.imports, 'download'], ['/playback', n.playback, 'play']] },
   { title: n.server, items: [['/data', n.data, 'grid'], ['/settings', n.settings, 'faders'], ['/activity', n.activity, 'clock'], ['/journal', n.journal, 'list']] },
 ];
 
@@ -52,11 +53,15 @@ function Frame({ me, onSignOut, children }: { me: Me; onSignOut: () => void; chi
           {NAV.map((group, i) => (
             <div key={i}>
               {group.title && <div className="nav-title">{group.title}</div>}
-              {group.items.map(([to, label, icon]) => (
+              {group.items.map(([to, label, icon, filled]) => (
                 <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => (isActive ? 'on' : '')}>
-                  <Icon name={icon} size={18} className="ico" />
-                  {label}
-                  {to === '/' && alarms.length > 0 && <span className="count">{alarms.length}</span>}
+                  {({ isActive }) => (
+                    <>
+                      <Icon name={isActive && filled ? filled : icon} size={18} className="ico" />
+                      {label}
+                      {to === '/' && alarms.length > 0 && <span className="count">{alarms.length}</span>}
+                    </>
+                  )}
                 </NavLink>
               ))}
             </div>

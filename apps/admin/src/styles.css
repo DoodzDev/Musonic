@@ -180,3 +180,18 @@ a.tag{text-decoration:none}
 .chart-tip .tip-total{border-top:.5px solid var(--sep);margin-top:4px;padding-top:4px}
 .chart-table{max-height:240px;overflow:auto;margin-top:10px;font-size:13px}
 .chart-table td{padding:7px 12px;font-variant-numeric:tabular-nums}
+.nav a.on .ico{color:var(--accent);opacity:1}
+/* Scroll bars: the thin orange line of Musonic Web. */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-button{display:none;width:0;height:0}
+::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}
+::-webkit-scrollbar-track{margin:8px 0}
+::-webkit-scrollbar-thumb{border:1.5px solid transparent;border-radius:10px;background:rgba(255,107,53,.75) padding-box}
+::-webkit-scrollbar-thumb:hover,::-webkit-scrollbar-thumb:active{background-color:var(--accent)}
+@supports (-moz-appearance:none){*{scrollbar-width:thin;scrollbar-color:rgba(255,107,53,.75) transparent}}
+.diskbar{height:12px;gap:2px}
+.diskbar i{min-width:0}
+.disk-legend{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;font-size:13px;margin-top:12px;align-items:center}
+.disk-legend .legend{margin:0}
+.disk-legend span:nth-child(3n){font-variant-numeric:tabular-nums;text-align:right}
+.chart.wide{grid-column:1 / -1}
