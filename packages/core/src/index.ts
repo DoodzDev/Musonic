@@ -2,7 +2,7 @@
  * @file index.ts
  * @description Public entry point of @musonic/core.
  * @author DoodzProg
- * @version 0.5.0
+ * @version 0.6.0
  * @license CC-BY-NC-4.0
  */
 
@@ -15,3 +15,4 @@ export * from './home/random.ts';
 export * from './home/home.ts';
 export * from './releases/releases.ts';
 export * from './lyrics/lrclib.ts';
+export * from './playback/listenTracker.ts';

@@ -4,10 +4,11 @@
  *   previous, seek, volume), shared by the player bar, the full-screen player
  *   and the floating mini player. Publishes the playback position (lyrics),
  *   obeys seek requests, handles the keyboard shortcuts and the system media
- *   controls (media keys, desktop media widget). Components read the controls
+ *   controls (media keys, desktop media widget), reports plays to the server
+ *   (useScrobbler). Components read the controls
  *   with `useTransport` (transport.ts).
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -16,6 +17,7 @@ import { useApp } from '../context/AppContext.tsx';
 import { usePlayer } from './PlayerContext.tsx';
 import { onSeekRequest, publishPosition } from './position.ts';
 import { handleShortcut, TransportContext, type Transport } from './transport.ts';
+import { useScrobbler } from './useScrobbler.ts';
 
 const VOLUME_KEY = 'musonic.volume';
 
@@ -38,6 +40,7 @@ export function AudioEngine({ children }: { children: ReactNode }) {
   const [muted, setMuted] = useState(false);
   const [failed, setFailed] = useState(false);
   const entry = song?.entryId;
+  const scrobbler = useScrobbler(song, entry);
 
   // Load and start the track whenever the current queue entry changes.
   useEffect(() => {
@@ -156,10 +159,23 @@ export function AudioEngine({ children }: { children: ReactNode }) {
         ref={audioRef}
         preload="auto"
         onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onTimeUpdate={(e) => publishPosition(e.currentTarget.currentTime)}
-        onDurationChange={(e) => Number.isFinite(e.currentTarget.duration) && setDuration(e.currentTarget.duration)}
+        onPause={() => {
+          setPlaying(false);
+          scrobbler.interrupt();
+        }}
+        onSeeking={() => scrobbler.interrupt()}
+        onTimeUpdate={(e) => {
+          publishPosition(e.currentTarget.currentTime);
+          if (!e.currentTarget.paused) scrobbler.progress(e.currentTarget.currentTime);
+        }}
+        onDurationChange={(e) => {
+          const seconds = e.currentTarget.duration;
+          if (!Number.isFinite(seconds)) return;
+          setDuration(seconds);
+          scrobbler.setDuration(seconds);
+        }}
         onEnded={() => {
+          scrobbler.ended();
           if (player.trackEnded()) restart();
         }}
         onError={() => song && setFailed(true)}

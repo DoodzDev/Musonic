@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Plays are now counted.** The web client never told the server what you listened to, so "Recently played", "Most played" and the top songs stayed empty. A track counts once you have really listened to half of it (or 4 minutes, tracks under 30 s never count): skipping to the end does not count. The track also shows as "now playing" while it plays, and the home picks up the new plays on your next visit.
 - Liking an online track, or adding it to a playlist, now works: the track is first imported into your library (a message tells you while it downloads), then liked or added under its library id. Before, the server could not find it and nothing happened.
 
 ## [1.0.0] - 2026-10-19

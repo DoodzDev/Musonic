@@ -2,7 +2,7 @@
  * @file client.ts
  * @description Minimal Subsonic API client (JSON format, token authentication).
  * @author DoodzProg
- * @version 0.4.1
+ * @version 0.5.0
  * @license CC-BY-NC-4.0
  */
 
@@ -237,6 +237,14 @@ export class SubsonicClient {
 
   async unstar(ids: { songs?: readonly string[]; albums?: readonly string[]; artists?: readonly string[] }, signal?: AbortSignal): Promise<void> {
     await this.request('unstar', { id: ids.songs, albumId: ids.albums, artistId: ids.artists }, signal);
+  }
+
+  /**
+   * Reports a play (`submission`, with its date in ms) or what is playing now
+   * (`submission: false`, shown by `getNowPlaying`).
+   */
+  async scrobble(id: string, options: { submission: boolean; time?: number }, signal?: AbortSignal): Promise<void> {
+    await this.request('scrobble', { id, submission: options.submission, time: options.time }, signal);
   }
 
   /** Synced lyrics when the server has them (OpenSubsonic), else the plain text. */
