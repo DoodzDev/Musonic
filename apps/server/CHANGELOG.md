@@ -84,4 +84,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cache (seeking works, several listeners share one stream, idle streams are freed). Included:
   a relay to another Subsonic server (an OctoFiesta, a Navidrome: found by ISRC, else title,
   artists and length) and, last, the 30-second online preview.
+- Imports: an online song liked, part of a liked album or added to a playlist is downloaded in
+  the background from a provider whose files may be imported (never a preview), tagged, filed
+  in `<music folder>/Musonic/Album Artist/Album/NN - Title.ext` and scanned: it joins the same
+  track, which keeps its likes and playlists. Failed imports are tried again (5 min, 30 min,
+  2 h, 12 h), then given up until asked again. Settings: `import`, `import_dir`,
+  `import_quality`. `/health` counts them.
+- Online albums and artists can be liked whole (`albumId` / `artistId` with `dz-…` ids): a
+  liked album's songs are imported; liked albums and artists known only online show in the
+  likes.
+- Providers can say their credentials expired: `/health` then shows `"status": "warning"` and
+  the provider in `alerts`.
 - Tracks without an album artist tag: the album goes to the main artist ("A feat. B" → "A").

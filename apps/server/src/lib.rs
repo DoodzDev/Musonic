@@ -14,6 +14,7 @@ pub mod matcher;
 pub mod model;
 pub mod online;
 pub mod providers;
+pub mod remote;
 pub mod server;
 pub mod stream;
 pub mod subsonic;
@@ -38,6 +39,40 @@ use crate::{
 #[derive(Default)]
 pub struct Extensions {
     pub providers: Vec<Arc<dyn AudioProvider>>,
+}
+
+/// The command line of a server binary, `extensions` giving its own providers:
+/// `<binary>` serves; `<binary> scan [--full]` scans the library once and prints what it did;
+/// `<binary> user add <name> [--admin]` creates an account (password from `MUSONIC_PASSWORD`
+/// or typed in).
+pub async fn cli(extensions: impl FnOnce(&Config) -> Result<Extensions>) -> Result<()> {
+    init_tracing();
+    let config = Config::load()?;
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    match args.first().map(String::as_str) {
+        Some("scan") => {
+            let full = args.iter().any(|a| a == "--full");
+            let stats = scan_once(config, full).await?;
+            println!("{}", serde_json::to_string_pretty(&stats)?);
+            Ok(())
+        }
+        Some("user") if args.get(1).map(String::as_str) == Some("add") => {
+            let name = args
+                .get(2)
+                .filter(|n| !n.starts_with("--"))
+                .ok_or_else(|| anyhow::anyhow!("usage: user add <name> [--admin]"))?;
+            add_user(config, name, args.iter().any(|a| a == "--admin")).await
+        }
+        Some(other) => {
+            anyhow::bail!(
+                "unknown command {other:?} (expected: scan [--full], user add <name> [--admin])"
+            )
+        }
+        None => {
+            let ext = extensions(&config)?;
+            run(config, ext).await
+        }
+    }
 }
 
 pub fn init_tracing() {
@@ -89,6 +124,24 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
         "audio providers"
     );
     // Streams nobody listens to any more free their disk space.
+    if let (true, Some(root)) = (config.import, &config.music_dir)
+        && state.providers.iter().any(|p| p.imports())
+    {
+        let quality = model::Quality::parse(&config.import_quality)
+            .with_context(|| format!("import_quality: {}", config.import_quality))?;
+        state.imports = Some(
+            library::import::Importer {
+                db: state.db.clone(),
+                remote: state.remote(),
+                root: root.clone(),
+                dir: config.import_dir.clone(),
+                quality,
+                library: state.library.clone(),
+                http: reqwest::Client::new(),
+            }
+            .start(),
+        );
+    }
     let sessions = state.sessions.clone();
     tokio::spawn(async move {
         let mut every = tokio::time::interval(Duration::from_secs(300));

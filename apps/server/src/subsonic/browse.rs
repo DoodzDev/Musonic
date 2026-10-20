@@ -334,18 +334,17 @@ pub async fn starred(ctx: &Ctx, key: &str) -> Reply {
                 "a.starred_at DESC",
                 &[&user],
             )?;
-            let albums = model::albums(
+            // Also liked albums and artists known only online.
+            let albums = model::albums_playable(
                 c,
                 "an.starred_at IS NOT NULL",
                 "an.starred_at DESC",
-                "",
                 &[&user],
             )?;
-            let artists = model::artists(
+            let artists = model::artists_playable(
                 c,
                 "an.starred_at IS NOT NULL",
                 "an.starred_at DESC",
-                "",
                 &[&user],
             )?;
             Ok((songs, albums, artists))

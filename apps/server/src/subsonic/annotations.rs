@@ -10,6 +10,7 @@ use rusqlite::{Connection, OptionalExtension, Transaction, params};
 use serde_json::json;
 
 use super::{ApiError, Code, Ctx, Reply, model, one, online};
+use crate::{library::import, online::OnlineId};
 
 fn now() -> i64 {
     SystemTime::now()
@@ -72,7 +73,22 @@ fn resolve(
 
 pub async fn star(ctx: &Ctx, starred: bool) -> Reply {
     let mut targets = targets(ctx)?;
-    // Online songs are stored first, then liked under their library id.
+    // Online items are stored first, then liked under their library id. A liked online
+    // album's songs are imported too.
+    let mut album_tracks: Vec<String> = Vec::new();
+    for (kind, id) in targets.iter_mut() {
+        match OnlineId::parse(id) {
+            Some(OnlineId::Album(n)) if kind.is_none_or(|k| k == "album") => {
+                let (album, tracks) = online::resolve_album(ctx, n).await?;
+                *id = album;
+                album_tracks.extend(tracks);
+            }
+            Some(OnlineId::Artist(n)) if kind.is_none_or(|k| k == "artist") => {
+                *id = online::resolve_artist(ctx, n).await?;
+            }
+            _ => {}
+        }
+    }
     let ids = targets.iter().map(|(_, id)| id.clone()).collect();
     for ((_, id), resolved) in targets
         .iter_mut()
@@ -80,6 +96,7 @@ pub async fn star(ctx: &Ctx, starred: bool) -> Reply {
     {
         *id = resolved;
     }
+    let import = starred && ctx.state.imports.is_some();
     let user = ctx.user.id.clone();
     let result = ctx
         .state
@@ -90,6 +107,15 @@ pub async fn star(ctx: &Ctx, starred: bool) -> Reply {
                 Ok(items) => items,
                 Err(id) => return Ok(Err(id)),
             };
+            if import {
+                let tracks = items
+                    .iter()
+                    .filter(|(k, _)| *k == "track")
+                    .map(|(_, id)| id);
+                for track in tracks.chain(album_tracks.iter()) {
+                    import::queue(&tx, track, Some(&user))?;
+                }
+            }
             for (kind, id) in items {
                 if starred {
                     // Liking again keeps the first date.
@@ -113,6 +139,9 @@ pub async fn star(ctx: &Ctx, starred: bool) -> Reply {
         })
         .await?;
     result.map_err(|id| ApiError::new(Code::NotFound, format!("Item not found: {id}")))?;
+    if import && let Some(imports) = &ctx.state.imports {
+        imports.wake();
+    }
     Ok(Default::default())
 }
 

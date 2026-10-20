@@ -23,6 +23,19 @@ pub trait AudioProvider: Send + Sync {
   - `Ok(Some(audio))`: the file's exact `size`, `format`, `quality` and a `RangeFetcher`.
   - `Ok(None)`: the provider does not have this track; the server tries the next provider.
   - `Err(..)`: something failed (network, authentication…); the server logs it and moves on.
+    Return `CredentialsExpired` when the provider's account or key no longer works: the server
+    shows an alert (`/health`: `"status": "warning"`, `alerts`) until it works again.
+- **`imports`** (default `true`): whether its files may be imported into the library. A
+  provider of previews or excerpts returns `false`.
+
+### Imports
+A track without a file that is liked, part of a liked album, or added to a playlist is imported:
+downloaded whole from the first provider that may import it, tagged (title, artists, album,
+album artist, disc, number, date, ISRC, cover), saved as
+`<music folder>/<import_dir>/Album Artist/Album/NN - Title.ext`, then scanned. The scan attaches
+the file to the same track, which keeps its likes and playlists. A failed import is tried again
+after 5 minutes, 30 minutes, 2 hours and 12 hours, then given up until the track is liked or
+added again.
 
 ```rust
 #[async_trait]

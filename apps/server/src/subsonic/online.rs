@@ -3,6 +3,7 @@
 
 use std::collections::{HashMap, HashSet};
 
+use rusqlite::OptionalExtension;
 use serde_json::{Value, json};
 
 use super::{ApiError, Code, Ctx, model};
@@ -95,6 +96,74 @@ pub async fn resolve_tracks(ctx: &Ctx, ids: Vec<String>) -> Result<Vec<String>, 
             _ => id,
         })
         .collect())
+}
+
+/// An online album stored in the library (its songs stored as tracks without a file): the
+/// album's library id and its tracks' ids.
+pub async fn resolve_album(ctx: &Ctx, n: u64) -> Result<(String, Vec<String>), ApiError> {
+    let a = catalog(ctx)?
+        .album(n)
+        .await
+        .map_err(unavailable)?
+        .ok_or_else(|| ApiError::not_found("Album"))?;
+    let ids = a
+        .tracks
+        .data
+        .iter()
+        .map(|t| crate::online::track_id(t.id))
+        .collect();
+    let tracks = resolve_tracks(ctx, ids).await?;
+    let first = tracks.first().cloned();
+    let album: Option<String> = ctx
+        .state
+        .db
+        .call(move |c| {
+            if let Some(id) = store::known_album(c, n)? {
+                return Ok(Some(id));
+            }
+            // An album the songs were linked to in the library.
+            Ok(match first {
+                Some(t) => c
+                    .query_row("SELECT album_id FROM track WHERE id = ?1", [&t], |r| {
+                        r.get(0)
+                    })
+                    .optional()?
+                    .flatten(),
+                None => None,
+            })
+        })
+        .await?;
+    let album = album.ok_or_else(|| ApiError::not_found("Album"))?;
+    Ok((album, tracks))
+}
+
+/// An online artist stored in the library: their library id.
+pub async fn resolve_artist(ctx: &Ctx, n: u64) -> Result<String, ApiError> {
+    let a = catalog(ctx)?
+        .artist(n)
+        .await
+        .map_err(unavailable)?
+        .ok_or_else(|| ApiError::not_found("Artist"))?;
+    Ok(ctx
+        .state
+        .db
+        .call(move |c| {
+            let tx = c.transaction()?;
+            let id = crate::library::scanner::upsert_artist(&tx, &a.name)?;
+            tx.execute(
+                "INSERT OR IGNORE INTO artist_source(provider, provider_id, artist_id) VALUES (?1, ?2, ?3)",
+                rusqlite::params![crate::online::DEEZER, n.to_string(), id],
+            )?;
+            if let Some(pic) = &a.picture_xl {
+                tx.execute(
+                    "UPDATE artist SET image_url = ?2 WHERE id = ?1 AND image_url IS NULL",
+                    rusqlite::params![id, pic],
+                )?;
+            }
+            tx.commit()?;
+            Ok(id)
+        })
+        .await?)
 }
 
 /// Online tracks as songs: the library's song when the track is known, else the online one.

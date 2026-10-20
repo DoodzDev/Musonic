@@ -200,20 +200,28 @@ pub fn songs(
 
 // Albums ----------------------------------------------------------------------------------
 
-/// Album columns (only albums with at least one file present); `?1` is the user id.
-pub const ALBUM_SELECT: &str = "
-SELECT al.id, al.title, al.artist_display, al.year, al.created_at, al.cover_ref, al.release_date,
-       al.compilation,
-       count(t.id), sum(t.duration_ms),
-       an.starred_at, an.rating, an.play_count, an.last_played_at,
-       (SELECT group_concat(g.name, char(30)) FROM album_genre ag JOIN genre g ON g.id = ag.genre_id
-         WHERE ag.album_id = al.id),
-       (SELECT group_concat(ar.id || char(31) || ar.name, char(30) ORDER BY aa.position)
-          FROM album_artist aa JOIN artist ar ON ar.id = aa.artist_id WHERE aa.album_id = al.id)
-  FROM album al
-  JOIN track t ON t.album_id = al.id
-   AND EXISTS (SELECT 1 FROM track_file f WHERE f.track_id = t.id AND f.missing = 0)
-  LEFT JOIN annotation an ON an.user_id = ?1 AND an.item_type = 'album' AND an.item_id = al.id";
+/// Album columns, counting the tracks that match `tracks` (SQL on `t`); albums without any
+/// such track are left out. `?1` is the user id.
+fn album_select(tracks: &str) -> String {
+    format!(
+        "SELECT al.id, al.title, al.artist_display, al.year, al.created_at,
+                coalesce(al.cover_ref, al.cover_url), al.release_date, al.compilation,
+                count(t.id), sum(t.duration_ms),
+                an.starred_at, an.rating, an.play_count, an.last_played_at,
+                (SELECT group_concat(g.name, char(30)) FROM album_genre ag JOIN genre g ON g.id = ag.genre_id
+                  WHERE ag.album_id = al.id),
+                (SELECT group_concat(ar.id || char(31) || ar.name, char(30) ORDER BY aa.position)
+                   FROM album_artist aa JOIN artist ar ON ar.id = aa.artist_id WHERE aa.album_id = al.id)
+           FROM album al
+           JOIN track t ON t.album_id = al.id AND {tracks}
+           LEFT JOIN annotation an ON an.user_id = ?1 AND an.item_type = 'album' AND an.item_id = al.id"
+    )
+}
+
+/// Albums of the library: at least one file present.
+pub fn album_select_library() -> String {
+    album_select("EXISTS (SELECT 1 FROM track_file f WHERE f.track_id = t.id AND f.missing = 0)")
+}
 
 pub fn album(r: &Row) -> rusqlite::Result<Value> {
     let id: String = r.get(0)?;
@@ -289,8 +297,8 @@ pub fn album(r: &Row) -> rusqlite::Result<Value> {
     Ok(Value::Object(m))
 }
 
-/// Albums matching `filter` (SQL on `al`, `an`), ordered by `order`, with `LIMIT`/`OFFSET`
-/// given as further parameters when wanted (`page` = "LIMIT ?n OFFSET ?m").
+/// Albums of the library matching `filter` (SQL on `al`, `an`), ordered by `order`, with
+/// `LIMIT`/`OFFSET` given as further parameters when wanted (`page` = "LIMIT ?n OFFSET ?m").
 pub fn albums(
     c: &Connection,
     filter: &str,
@@ -298,7 +306,25 @@ pub fn albums(
     page: &str,
     params: &[&dyn ToSql],
 ) -> rusqlite::Result<Vec<Value>> {
-    let sql = format!("{ALBUM_SELECT} WHERE {filter} GROUP BY al.id ORDER BY {order} {page}");
+    let sql = format!(
+        "{} WHERE {filter} GROUP BY al.id ORDER BY {order} {page}",
+        album_select_library()
+    );
+    let mut st = c.prepare_cached(&sql)?;
+    st.query_map(params, album)?.collect()
+}
+
+/// Like [`albums`], also with albums known only online (liked ones, for instance).
+pub fn albums_playable(
+    c: &Connection,
+    filter: &str,
+    order: &str,
+    params: &[&dyn ToSql],
+) -> rusqlite::Result<Vec<Value>> {
+    let sql = format!(
+        "{} WHERE {filter} GROUP BY al.id ORDER BY {order}",
+        album_select(&playable("t.id"))
+    );
     let mut st = c.prepare_cached(&sql)?;
     st.query_map(params, album)?.collect()
 }
@@ -332,6 +358,27 @@ pub fn artist(r: &Row) -> rusqlite::Result<Value> {
         m.insert("coverArt".into(), json!(album));
     }
     Ok(Value::Object(m))
+}
+
+/// Artists, also those known only online (liked ones, for instance); `?1` is the user id.
+pub fn artists_playable(
+    c: &Connection,
+    filter: &str,
+    order: &str,
+    params: &[&dyn ToSql],
+) -> rusqlite::Result<Vec<Value>> {
+    let sql = format!(
+        "SELECT ar.id, ar.name, ar.sort_name, count(DISTINCT aa.album_id), an.starred_at, ar.image_url,
+                (SELECT al2.id FROM album_artist aa2 JOIN album al2 ON al2.id = aa2.album_id
+                  WHERE aa2.artist_id = ar.id AND coalesce(al2.cover_ref, al2.cover_url) IS NOT NULL
+                  ORDER BY al2.year DESC LIMIT 1)
+           FROM artist ar
+           LEFT JOIN album_artist aa ON aa.artist_id = ar.id
+           LEFT JOIN annotation an ON an.user_id = ?1 AND an.item_type = 'artist' AND an.item_id = ar.id
+          WHERE {filter} GROUP BY ar.id ORDER BY {order}"
+    );
+    let mut st = c.prepare_cached(&sql)?;
+    st.query_map(params, artist)?.collect()
 }
 
 pub fn artists(

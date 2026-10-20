@@ -1139,3 +1139,207 @@ async fn online_songs_play_from_the_subsonic_relay_before_previews() {
     let (_, _, body) = get_range(&lib, "dz-track-1001", None).await;
     assert_eq!(body.len(), 40_000);
 }
+
+// Imports ---------------------------------------------------------------------------------
+
+/// Serves a WAV file for any Deezer track, or fails as told.
+struct DeezerFiles {
+    fail: Option<&'static str>,
+}
+
+#[async_trait::async_trait]
+impl crate::providers::AudioProvider for DeezerFiles {
+    fn id(&self) -> &'static str {
+        "deezer-files"
+    }
+
+    fn namespace(&self) -> Option<&'static str> {
+        Some("deezer")
+    }
+
+    async fn open(
+        &self,
+        track: &crate::providers::TrackQuery,
+        _wanted: crate::providers::Quality,
+    ) -> anyhow::Result<Option<crate::providers::RemoteAudio>> {
+        match self.fail {
+            Some("expired") => Err(crate::providers::CredentialsExpired("ARL".into()).into()),
+            Some(_) => Ok(None),
+            None if track.provider_id.is_some() => {
+                crate::providers::MemoryProvider::default()
+                    .with(
+                        "x",
+                        crate::testing::wav(),
+                        crate::providers::AudioFormat::Mp3,
+                        crate::providers::Quality::Mp3_320,
+                    )
+                    .open(
+                        &crate::providers::TrackQuery {
+                            provider_id: Some("x".into()),
+                            ..Default::default()
+                        },
+                        crate::providers::Quality::Flac,
+                    )
+                    .await
+            }
+            None => Ok(None),
+        }
+    }
+}
+
+async fn importing(
+    name: &str,
+    fail: Option<&'static str>,
+) -> (Lib, Arc<crate::library::import::Importer>) {
+    let (dz, _) = fake_deezer().await;
+    let mut lib = library_with(name, Some(dz.clone())).await;
+    lib.st.providers = Arc::new(vec![
+        Arc::new(DeezerFiles { fail }),
+        Arc::new(crate::providers::DeezerPreview::new(dz)),
+    ]);
+    lib.st.imports = Some(crate::library::import::ImportService::idle());
+    lib.app = router(lib.st.clone());
+    let importer = Arc::new(crate::library::import::Importer {
+        db: lib.st.db.clone(),
+        remote: lib.st.remote(),
+        root: lib.root.clone(),
+        dir: "Musonic".into(),
+        quality: crate::providers::Quality::Mp3_320,
+        library: None,
+        http: reqwest::Client::new(),
+    });
+    (lib, importer)
+}
+
+async fn rescan(lib: &Lib) {
+    Scanner::new(lib.st.db.clone(), lib.root.clone())
+        .await
+        .unwrap()
+        .scan(false)
+        .await
+        .unwrap();
+}
+
+async fn health(lib: &Lib) -> Value {
+    let res = lib
+        .app
+        .clone()
+        .oneshot(Request::get("/health").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    serde_json::from_slice(&res.into_body().collect().await.unwrap().to_bytes()).unwrap()
+}
+
+#[tokio::test]
+async fn liked_online_songs_are_imported_into_the_library() {
+    let (lib, importer) = importing("import", None).await;
+    lib.get("star?id=dz-track-1001").await;
+    let id = lib.get("getStarred2?").await["starred2"]["song"][0]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    assert_eq!(health(&lib).await["imports"]["pending"], 1);
+
+    assert_eq!(importer.clone().run_due().await.unwrap(), 1);
+    let file = lib
+        .root
+        .join("Musonic/Daft Punk/Discovery/01 - One More Time.mp3");
+    assert!(file.is_file(), "filed by album artist and album");
+    assert!(!file.with_extension("mp3.part").exists());
+    rescan(&lib).await;
+    let song = lib.get(&format!("getSong?id={id}")).await["song"].clone();
+    assert_eq!(
+        song["path"],
+        "Musonic/Daft Punk/Discovery/01 - One More Time.mp3"
+    );
+    assert!(song["starred"].is_string(), "same track, still liked");
+    let h = health(&lib).await;
+    assert_eq!(h["imports"]["done"], 1);
+    assert_eq!(h["imports"]["pending"], 0);
+    // Nothing left to do; liking again does not import twice.
+    lib.get("star?id=dz-track-1001").await;
+    assert_eq!(importer.clone().run_due().await.unwrap(), 0);
+
+    // Added to a playlist: imported as well.
+    lib.get("createPlaylist?name=Mix&songId=dz-track-1002")
+        .await;
+    assert_eq!(importer.clone().run_due().await.unwrap(), 1);
+    assert!(
+        lib.root
+            .join("Musonic/Daft Punk/Discovery/02 - Aerodynamic.mp3")
+            .is_file()
+    );
+}
+
+#[tokio::test]
+async fn online_albums_and_artists_are_liked_whole() {
+    let (lib, importer) = importing("import-album", None).await;
+    lib.get("star?albumId=dz-album-302127&artistId=dz-artist-27")
+        .await;
+    let r = lib.get("getStarred2?").await;
+    let album = r["starred2"]["album"][0].clone();
+    assert!(!album["id"].as_str().unwrap().starts_with("dz-"));
+    assert_eq!(album["name"], "Discovery");
+    assert_eq!(album["coverArt"], album["id"], "its online cover");
+    assert_eq!(r["starred2"]["artist"][0]["name"], "Daft Punk");
+    assert!(
+        r["starred2"]["song"].as_array().unwrap().is_empty(),
+        "the album, not its songs"
+    );
+    // Its songs are imported.
+    assert_eq!(importer.clone().run_due().await.unwrap(), 2);
+    rescan(&lib).await;
+    let r = lib
+        .get(&format!("getAlbum?id={}", album["id"].as_str().unwrap()))
+        .await;
+    assert_eq!(r["album"]["song"].as_array().unwrap().len(), 2);
+    assert!(r["album"]["song"][0]["path"].is_string());
+}
+
+#[tokio::test]
+async fn failed_imports_are_tried_again_then_given_up() {
+    let (lib, importer) = importing("import-fail", Some("none")).await;
+    lib.get("star?id=dz-track-1001").await;
+    // The preview is never imported: no provider has it.
+    assert_eq!(importer.clone().run_due().await.unwrap(), 1);
+    let (state, attempts, error): (String, i64, String) = lib
+        .st
+        .db
+        .call(|c| {
+            Ok(c.query_row(
+                "SELECT state, attempts, last_error FROM import_job",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )?)
+        })
+        .await
+        .unwrap();
+    assert_eq!((state.as_str(), attempts), ("pending", 1));
+    assert!(error.contains("no provider"));
+    assert_eq!(importer.clone().run_due().await.unwrap(), 0, "not due yet");
+    for _ in 0..4 {
+        lib.st
+            .db
+            .call(|c| {
+                c.execute("UPDATE import_job SET next_try_at = 0", [])?;
+                Ok(())
+            })
+            .await
+            .unwrap();
+        importer.clone().run_due().await.unwrap();
+    }
+    assert_eq!(health(&lib).await["imports"]["failed"], 1);
+    // Liked again: a fresh start.
+    lib.get("star?id=dz-track-1001").await;
+    assert_eq!(health(&lib).await["imports"]["pending"], 1);
+}
+
+#[tokio::test]
+async fn expired_credentials_show_as_an_alert() {
+    let (lib, importer) = importing("import-expired", Some("expired")).await;
+    lib.get("star?id=dz-track-1001").await;
+    importer.clone().run_due().await.unwrap();
+    let h = health(&lib).await;
+    assert_eq!(h["status"], "warning");
+    assert_eq!(h["alerts"]["deezer-files"], "credentials_expired");
+}

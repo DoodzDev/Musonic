@@ -15,7 +15,10 @@ mod memory;
 mod preview;
 mod subsonic;
 
-use std::sync::Arc;
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Mutex},
+};
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -71,6 +74,47 @@ pub trait AudioProvider: Send + Sync {
     }
 
     /// Opens the best quality available up to `wanted`. `Ok(None)` = this provider does not
-    /// have the track (the server tries the next one); `Err` = it failed.
+    /// have the track (the server tries the next one); `Err` = it failed. A provider whose
+    /// account or key no longer works returns [`CredentialsExpired`].
     async fn open(&self, track: &TrackQuery, wanted: Quality) -> Result<Option<RemoteAudio>>;
+
+    /// Whether its files may be imported into the library (not a preview, for instance).
+    fn imports(&self) -> bool {
+        true
+    }
+}
+
+/// A provider's account or key no longer works: the server shows it as an alert.
+#[derive(Debug, thiserror::Error)]
+#[error("credentials expired: {0}")]
+pub struct CredentialsExpired(pub String);
+
+/// The last problem of each provider, for `/health` and the console.
+#[derive(Debug, Default)]
+pub struct ProviderHealth(Mutex<BTreeMap<&'static str, String>>);
+
+impl ProviderHealth {
+    /// Records how a provider just did: `None` = it worked.
+    pub fn record(&self, provider: &'static str, error: Option<&anyhow::Error>) {
+        let Ok(mut all) = self.0.lock() else {
+            return;
+        };
+        match error {
+            None => {
+                all.remove(provider);
+            }
+            Some(e) if e.is::<CredentialsExpired>() => {
+                if !all.contains_key(provider) {
+                    tracing::error!("provider {provider}: {e:#}; renew its credentials");
+                }
+                all.insert(provider, "credentials_expired".to_owned());
+            }
+            Some(_) => {}
+        }
+    }
+
+    /// Providers with an alert, and which.
+    pub fn alerts(&self) -> BTreeMap<&'static str, String> {
+        self.0.lock().map(|a| a.clone()).unwrap_or_default()
+    }
 }

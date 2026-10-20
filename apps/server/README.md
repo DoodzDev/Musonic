@@ -4,8 +4,8 @@ The music server of the Musonic ecosystem: your library, your accounts and your 
 the Musonic apps and for any Subsonic client.
 
 > **Status: in development (0.1.0).** Scanning, accounts, browsing, search, playback with
-> transcoding, covers, lyrics, likes, ratings, play counts, playlists and the saved play queue
-> work; online tracks and the import from Navidrome come next.
+> transcoding, covers, lyrics, likes, ratings, play counts, playlists, the saved play queue,
+> the online catalog and imports work; the import from Navidrome comes next.
 > Use [Navidrome](https://www.navidrome.org/) in the meantime.
 
 ## What it will do
@@ -43,6 +43,9 @@ cargo run --release
 | `online_previews`: 30-second previews of online songs no provider has | `MUSONIC_ONLINE_PREVIEWS` | `true` |
 | `subsonic_provider_url`, `subsonic_provider_user`: Subsonic server to relay audio from | `MUSONIC_SUBSONIC_PROVIDER_URL`, `…_USER` | none |
 | Its password (environment only) | `MUSONIC_SUBSONIC_PROVIDER_PASSWORD` | none |
+| `import`: import online songs when liked or added to a playlist | `MUSONIC_IMPORT` | `true` |
+| `import_dir`: folder of the imports, inside the music folder | `MUSONIC_IMPORT_DIR` | `Musonic` |
+| `import_quality`: `mp3_128`, `mp3_320` or `flac` | `MUSONIC_IMPORT_QUALITY` | `mp3_320` |
 | Key encrypting the passwords kept for `legacy_auth` (64 hex) | `MUSONIC_SECRET_KEY` | `secret.key` in `data_dir`, created on first start |
 
 `musonic-server scan [--full]` scans the library once and prints a summary.

@@ -7,11 +7,9 @@
 //! (albums and artists known only online), resized on request and cached on disk.
 
 use std::{
-    collections::HashMap,
     io::Cursor,
     path::{Path, PathBuf},
     process::Stdio,
-    sync::Arc,
 };
 
 use axum::{
@@ -27,11 +25,7 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio_util::io::ReaderStream;
 
 use super::{ApiError, Code, Ctx, Reply, model, one, online};
-use crate::{
-    online::OnlineId,
-    providers::{Quality, TrackQuery},
-    stream::{AudioSession, SEGMENT_SIZE},
-};
+use crate::{online::OnlineId, stream::SEGMENT_SIZE};
 
 /// The playable file of a track: absolute path, format, bit rate (kbit/s), size.
 struct AudioFile {
@@ -298,99 +292,6 @@ pub async fn stream(ctx: &Ctx, download: bool) -> Result<Response, ApiError> {
 
 // Tracks without a file -------------------------------------------------------------------
 
-/// What the providers get to find a track, and its ids per catalog.
-async fn track_query(
-    ctx: &Ctx,
-    id: &str,
-) -> Result<Option<(TrackQuery, HashMap<String, String>)>, ApiError> {
-    let id = id.to_owned();
-    Ok(ctx
-        .state
-        .db
-        .call(move |c| {
-            let Some(mut q) = c
-                .query_row(
-                    "SELECT t.title, t.duration_ms, t.isrc, al.title FROM track t
-                       LEFT JOIN album al ON al.id = t.album_id WHERE t.id = ?1",
-                    [&id],
-                    |r| {
-                        Ok(TrackQuery {
-                            provider_id: None,
-                            title: r.get(0)?,
-                            duration: r.get::<_, i64>(1)? / 1000,
-                            isrc: r.get(2)?,
-                            album: r.get(3)?,
-                            artists: Vec::new(),
-                        })
-                    },
-                )
-                .optional()?
-            else {
-                return Ok(None);
-            };
-            q.artists = c
-                .prepare_cached(
-                    "SELECT ar.name FROM track_artist ta JOIN artist ar ON ar.id = ta.artist_id
-                      WHERE ta.track_id = ?1 AND ta.role = 'artist' ORDER BY ta.position",
-                )?
-                .query_map([&id], |r| r.get(0))?
-                .collect::<rusqlite::Result<_>>()?;
-            let sources = c
-                .prepare_cached(
-                    "SELECT provider, provider_id FROM track_source WHERE track_id = ?1",
-                )?
-                .query_map([&id], |r| Ok((r.get(0)?, r.get(1)?)))?
-                .collect::<rusqlite::Result<_>>()?;
-            Ok(Some((q, sources)))
-        })
-        .await?)
-}
-
-/// Quality asked of providers: lower on a limited bit rate (mobile data).
-fn wanted_quality(max_bit_rate: i64) -> Quality {
-    match max_bit_rate {
-        1..=192 => Quality::Mp3_128,
-        _ => Quality::Mp3_320,
-    }
-}
-
-/// The track's stream from the first provider that has it, shared with other listeners.
-async fn open_remote(
-    ctx: &Ctx,
-    id: &str,
-    wanted: Quality,
-) -> Result<Option<Arc<AudioSession>>, ApiError> {
-    if ctx.state.providers.is_empty() {
-        return Ok(None);
-    }
-    let Some((query, sources)) = track_query(ctx, id).await? else {
-        return Ok(None);
-    };
-    let providers = ctx.state.providers.clone();
-    let tmp = ctx.state.data_dir.join("tmp").join("streams");
-    let key = format!("{id}\u{1f}{wanted:?}");
-    let canonical = id.to_owned();
-    Ok(ctx
-        .state
-        .sessions
-        .get_or_open(&key, || async move {
-            for p in providers.iter() {
-                let mut q = query.clone();
-                q.provider_id = p.namespace().and_then(|ns| sources.get(ns)).cloned();
-                match p.open(&q, wanted).await {
-                    Ok(Some(audio)) => {
-                        tracing::debug!(track = %canonical, provider = p.id(), "stream opened");
-                        return AudioSession::create(&canonical, audio, &tmp).map(Some);
-                    }
-                    Ok(None) => {}
-                    Err(e) => tracing::warn!(provider = p.id(), "cannot open {}: {e:#}", q.title),
-                }
-            }
-            Ok(None)
-        })
-        .await?)
-}
-
 /// Serves a provider's stream, with HTTP ranges like a file.
 async fn remote_stream(ctx: &Ctx, id: &str, download: bool) -> Result<Response, ApiError> {
     let max: i64 = ctx
@@ -398,7 +299,14 @@ async fn remote_stream(ctx: &Ctx, id: &str, download: bool) -> Result<Response, 
         .get("maxBitRate")
         .and_then(|v| v.parse().ok())
         .unwrap_or(0);
-    let Some(session) = open_remote(ctx, id, wanted_quality(max)).await? else {
+    let opened = crate::remote::open(
+        &ctx.state.remote(),
+        id,
+        crate::remote::wanted_quality(max),
+        false,
+    )
+    .await?;
+    let Some((session, _)) = opened else {
         return Err(ApiError::not_found("Song"));
     };
     let size = session.size;

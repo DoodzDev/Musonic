@@ -74,10 +74,14 @@ pub fn tag_file(path: &Path, track: &Track, cover: Option<Vec<u8>>) -> Result<()
         .guess_file_type()?
         .read()
         .context("reading audio file")?;
-    let tag_type = tagged.primary_tag_type();
+    let mut tag_type = tagged.primary_tag_type();
     drop(tagged);
     // Remove whatever tag the source file had.
     let _ = tag_type.remove_from_path(path);
+    // WAV: ID3v2 (its own RIFF INFO has no album artist, needed to file the track).
+    if tag_type == lofty::tag::TagType::RiffInfo {
+        tag_type = lofty::tag::TagType::Id3v2;
+    }
 
     let mut tag = Tag::new(tag_type);
     tag.set_title(track.title.clone());

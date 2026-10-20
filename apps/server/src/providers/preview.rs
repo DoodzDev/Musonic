@@ -45,4 +45,8 @@ impl AudioProvider for DeezerPreview {
         }
         open_url(&self.http, &url, AudioFormat::Mp3, Quality::Mp3_128).await
     }
+
+    fn imports(&self) -> bool {
+        false
+    }
 }

@@ -31,6 +31,13 @@ pub struct Config {
     /// comes from `MUSONIC_SUBSONIC_PROVIDER_PASSWORD` only.
     pub subsonic_provider_url: Option<String>,
     pub subsonic_provider_user: Option<String>,
+    /// Import online tracks into the library when liked or added to a playlist.
+    pub import: bool,
+    /// Folder of the imports, inside the music folder.
+    pub import_dir: String,
+    /// Quality of imported files: `mp3_128`, `mp3_320` or `flac` (the best a provider has, up
+    /// to it).
+    pub import_quality: String,
 }
 
 impl Default for Config {
@@ -46,6 +53,9 @@ impl Default for Config {
             online_previews: true,
             subsonic_provider_url: None,
             subsonic_provider_user: None,
+            import: true,
+            import_dir: "Musonic".to_owned(),
+            import_quality: "mp3_320".to_owned(),
         }
     }
 }
@@ -89,6 +99,15 @@ impl Config {
         if let Some(v) = env("MUSONIC_ONLINE_PREVIEWS") {
             cfg.online_previews =
                 matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on");
+        }
+        if let Some(v) = env("MUSONIC_IMPORT") {
+            cfg.import = matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on");
+        }
+        if let Some(v) = env("MUSONIC_IMPORT_DIR") {
+            cfg.import_dir = v;
+        }
+        if let Some(v) = env("MUSONIC_IMPORT_QUALITY") {
+            cfg.import_quality = v;
         }
         if let Some(v) = env("MUSONIC_SUBSONIC_PROVIDER_URL") {
             cfg.subsonic_provider_url = Some(v);

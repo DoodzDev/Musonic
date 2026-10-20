@@ -15,6 +15,10 @@ pub const MIGRATIONS: &[(&str, &str)] = &[
         "0002_album_cover",
         include_str!("../../migrations/0002_album_cover.sql"),
     ),
+    (
+        "0003_imports",
+        include_str!("../../migrations/0003_imports.sql"),
+    ),
 ];
 
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;

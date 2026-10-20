@@ -41,6 +41,10 @@ pub struct AppState {
     pub providers: Arc<Vec<Arc<dyn crate::providers::AudioProvider>>>,
     /// Their streams, cached on disk and shared by every listener.
     pub sessions: Arc<crate::stream::SessionManager>,
+    /// Their last problems (expired credentials…).
+    pub provider_health: Arc<crate::providers::ProviderHealth>,
+    /// Background imports, when a library and a provider whose files may be imported exist.
+    pub imports: Option<crate::library::import::ImportService>,
 }
 
 impl AppState {
@@ -56,6 +60,21 @@ impl AppState {
             online: None,
             providers: Arc::default(),
             sessions: Arc::default(),
+            provider_health: Arc::default(),
+            imports: None,
+        }
+    }
+}
+
+impl AppState {
+    /// What opening provider streams needs.
+    pub fn remote(&self) -> crate::remote::Remote {
+        crate::remote::Remote {
+            db: self.db.clone(),
+            providers: self.providers.clone(),
+            sessions: self.sessions.clone(),
+            health: self.provider_health.clone(),
+            tmp: self.data_dir.join("tmp").join("streams"),
         }
     }
 }
@@ -119,11 +138,20 @@ async fn home() -> Html<&'static str> {
 
 async fn health(State(state): State<AppState>) -> Json<Value> {
     let schema = state.db.version().await.ok();
+    let imports = state
+        .db
+        .call(|c| Ok(crate::library::import::counts(c)?))
+        .await
+        .ok();
+    let alerts = state.provider_health.alerts();
     Json(json!({
-        "status": if schema.is_some() { "ok" } else { "degraded" },
+        "status": if schema.is_none() { "degraded" } else if alerts.is_empty() { "ok" } else { "warning" },
         "version": env!("CARGO_PKG_VERSION"),
         "schema": schema,
         "scan": state.library.as_ref().map(LibraryService::status),
+        "providers": state.providers.iter().map(|p| p.id()).collect::<Vec<_>>(),
+        "alerts": alerts,
+        "imports": imports,
     }))
 }
 

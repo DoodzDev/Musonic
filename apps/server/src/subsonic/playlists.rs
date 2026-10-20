@@ -7,6 +7,7 @@ use serde_json::{Value, json};
 use rusqlite::{Connection, OptionalExtension, Transaction, params};
 
 use super::{ApiError, Code, Ctx, Reply, model, one, online};
+use crate::library::import;
 
 const PLAYLIST_SELECT: &str = "
 SELECT p.id, p.name, p.comment, p.public, p.created_at, p.updated_at, u.username,
@@ -289,6 +290,7 @@ pub async fn create_playlist(ctx: &Ctx) -> Reply {
         return Err(ApiError::missing("name"));
     }
     let songs = online::resolve_tracks(ctx, list(ctx, "songId")).await?;
+    let import = ctx.state.imports.is_some();
     let user = ctx.user.id.clone();
     let result = ctx
         .state
@@ -319,6 +321,7 @@ pub async fn create_playlist(ctx: &Ctx) -> Reply {
                 Ok(new) => new,
                 Err(song) => return Ok(Err(EditError::UnknownSong(song))),
             };
+            queue_imports(&tx, import, &new, &user)?;
             let entries = replace_visible(&entries(&tx, &id)?, new, now());
             save_entries(&tx, &id, &entries)?;
             let pl = load(&tx, &id, &user)?;
@@ -327,6 +330,7 @@ pub async fn create_playlist(ctx: &Ctx) -> Reply {
         })
         .await?;
     let pl = result?.ok_or_else(|| ApiError::not_found("Playlist"))?;
+    wake_imports(ctx);
     Ok(one("playlist", pl))
 }
 
@@ -338,6 +342,7 @@ pub async fn update_playlist(ctx: &Ctx) -> Reply {
     let comment = ctx.params.get("comment").map(str::to_owned);
     let public = ctx.params.get("public").map(|v| v == "true");
     let add = online::resolve_tracks(ctx, list(ctx, "songIdToAdd")).await?;
+    let import = ctx.state.imports.is_some();
     let remove: Vec<usize> = ctx
         .params
         .all("songIndexToRemove")
@@ -357,6 +362,7 @@ pub async fn update_playlist(ctx: &Ctx) -> Reply {
                 Ok(new) => new,
                 Err(song) => return Ok(Err(EditError::UnknownSong(song))),
             };
+            queue_imports(&tx, import, &new, &user)?;
             if let Some(name) = name.filter(|n| !n.is_empty()) {
                 tx.prepare_cached("UPDATE playlist SET name = ?2 WHERE id = ?1")?
                     .execute([&id, &name])?;
@@ -382,7 +388,29 @@ pub async fn update_playlist(ctx: &Ctx) -> Reply {
         })
         .await?;
     result?;
+    wake_imports(ctx);
     Ok(Default::default())
+}
+
+/// Songs put in a playlist are imported when they have no file (see `library::import`).
+fn queue_imports(
+    tx: &Transaction,
+    enabled: bool,
+    songs: &[(String, bool)],
+    user: &str,
+) -> rusqlite::Result<()> {
+    if enabled {
+        for (track, _) in songs {
+            import::queue(tx, track, Some(user))?;
+        }
+    }
+    Ok(())
+}
+
+fn wake_imports(ctx: &Ctx) {
+    if let Some(imports) = &ctx.state.imports {
+        imports.wake();
+    }
 }
 
 pub async fn delete_playlist(ctx: &Ctx) -> Reply {
