@@ -113,6 +113,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   header or `device` parameter).
 - `online: true` on songs, albums and artists that have no file in the library (online
   catalog, songs liked but not imported yet), for an "Online" badge in clients.
+- Failed sign-ins count each different wrong password once: an app that keeps retrying a
+  password changed since no longer locks its user out of the new one.
 - A music folder that moved (another disk, another Docker mount) is followed: tracks, likes and
   playlists stay, files are found in the new place.
 - `musonic_server::cli`: the command line, for binaries that add their own providers.

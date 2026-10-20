@@ -274,7 +274,7 @@ async fn login(
             Ok(Json(json!({ "token": token, "user": user })))
         }
         Err(_) => {
-            state.limiter.failed(&from, &body.username);
+            state.limiter.failed(&from, &body.username, &body.password);
             Err(ApiError(
                 StatusCode::UNAUTHORIZED,
                 "wrong username or password".into(),

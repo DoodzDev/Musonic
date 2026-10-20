@@ -341,7 +341,8 @@ async fn authenticate(state: &AppState, p: &Params, addr: &str) -> Result<User, 
             "Token authentication is not available on this server: use apiKey",
         )),
         Err(_) => {
-            state.limiter.failed(addr, username);
+            let tried = p.get("p").or(p.get("t")).unwrap_or_default();
+            state.limiter.failed(addr, username, tried);
             Err(ApiError::new(
                 Code::WrongCredentials,
                 "Wrong username or password",

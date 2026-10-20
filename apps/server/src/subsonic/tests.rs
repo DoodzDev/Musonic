@@ -85,8 +85,15 @@ async fn mobile_client_password_login() {
 #[tokio::test]
 async fn too_many_failures_lock_the_account_for_that_address() {
     let (app, _) = setup().await;
-    for _ in 0..10 {
-        let r = get(&app, "/rest/ping?u=Doodz&p=nope&f=json").await;
+    // An app retrying an old password: not guessing, never locked.
+    for _ in 0..20 {
+        get(&app, "/rest/ping?u=Doodz&p=old%20password&f=json").await;
+    }
+    let r = get(&app, "/rest/ping?u=Doodz&p=correct%20horse&f=json").await;
+    assert_eq!(r["status"], "ok", "the new password still works");
+    // Ten different guesses: locked.
+    for i in 0..10 {
+        let r = get(&app, &format!("/rest/ping?u=Doodz&p=guess{i}&f=json")).await;
         assert_eq!(r["error"]["code"], 40);
     }
     let r = get(&app, "/rest/ping?u=Doodz&p=correct%20horse&f=json").await;
