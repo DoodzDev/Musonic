@@ -4,7 +4,7 @@
  *   generated from the server's Rust code (`apps/server`, `cargo test`; see ADR-018).
  *   Never edit `generated/` by hand.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -25,3 +25,14 @@ export type { PasswordReset } from './generated/PasswordReset.ts';
 export type { ResetRequest } from './generated/ResetRequest.ts';
 export type { LinkInfo } from './generated/LinkInfo.ts';
 export type { LinkState } from './generated/LinkState.ts';
+export type { AdminStatus } from './generated/AdminStatus.ts';
+export type { Live } from './generated/Live.ts';
+export type { Disk } from './generated/Disk.ts';
+export type { Library } from './generated/Library.ts';
+export type { Folders } from './generated/Folders.ts';
+export type { Playing } from './generated/Playing.ts';
+export type { Imports } from './generated/Imports.ts';
+export type { Alert } from './generated/Alert.ts';
+export type { Activity } from './generated/Activity.ts';
+export type { Releases } from './generated/Releases.ts';
+export type { Release } from './generated/Release.ts';

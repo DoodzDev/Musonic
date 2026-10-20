@@ -2,6 +2,10 @@
 
 export type Invitation = { id: string, note: string, isAdmin: boolean, createdBy: string | null, createdAt: number, expiresAt: number, 
 /**
- * Username of the account created with it.
+ * Username of the account created with it (kept after that account is deleted).
  */
-usedBy: string | null, usedAt: number | null, revokedAt: number | null, };
+usedBy: string | null, 
+/**
+ * The account created with it was deleted since.
+ */
+accountDeleted: boolean, usedAt: number | null, revokedAt: number | null, };

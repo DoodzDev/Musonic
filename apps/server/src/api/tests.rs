@@ -276,7 +276,7 @@ async fn sign_in(app: &Router, user: &str, password: &str) -> StatusCode {
 
 #[tokio::test]
 async fn invitations_create_accounts_without_the_admin_seeing_a_password() {
-    let (app, _, admin) = admin_app().await;
+    let (app, st, admin) = admin_app().await;
     let (s, r) = call(
         &app,
         "POST",
@@ -325,6 +325,35 @@ async fn invitations_create_accounts_without_the_admin_seeing_a_password() {
     assert_eq!(s, StatusCode::BAD_REQUEST);
     let (_, list) = call(&app, "GET", "/v1/invitations", Some(&admin), None).await;
     assert_eq!(list[0]["usedBy"], "Lea");
+    assert_eq!(list[0]["accountDeleted"], false);
+    // Lea's account deleted: the invitation still says who used it.
+    let (_, users) = call(&app, "GET", "/v1/users", Some(&admin), None).await;
+    let lea_id = users
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|u| u["username"] == "Lea")
+        .unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    call(
+        &app,
+        "DELETE",
+        &format!("/v1/users/{lea_id}"),
+        Some(&admin),
+        None,
+    )
+    .await;
+    let (_, list) = call(&app, "GET", "/v1/invitations", Some(&admin), None).await;
+    assert_eq!(list[0]["usedBy"], "Lea");
+    assert_eq!(list[0]["accountDeleted"], true);
+    assert_eq!(
+        call(&app, "GET", &format!("/v1/invite/{token}"), None, None)
+            .await
+            .1["state"],
+        "used"
+    );
 
     // Revoked, unknown, out of range, not for users.
     let (_, r) = call(
@@ -364,12 +393,16 @@ async fn invitations_create_accounts_without_the_admin_seeing_a_password() {
     )
     .await;
     assert_eq!(s, StatusCode::BAD_REQUEST, "at least a minute");
+    st.users
+        .create("Sam", "his own choice", false)
+        .await
+        .unwrap();
     let (_, lea) = call(
         &app,
         "POST",
         "/v1/auth/login",
         None,
-        Some(json!({"username": "Lea", "password": "her own choice"})),
+        Some(json!({"username": "Sam", "password": "his own choice"})),
     )
     .await;
     let lea = lea["token"].as_str().unwrap().to_owned();
@@ -565,4 +598,38 @@ async fn roles_suspension_and_rights() {
     )
     .await;
     assert_eq!(s, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn the_dashboard_status_is_for_administrators() {
+    let (app, st, admin) = admin_app().await;
+    let (s, r) = call(&app, "GET", "/v1/admin/status", Some(&admin), None).await;
+    assert_eq!(s, StatusCode::OK, "{r}");
+    assert_eq!(r["version"], env!("CARGO_PKG_VERSION"));
+    assert_eq!(r["library"]["accounts"], 1);
+    assert_eq!(r["imports"]["failed"], 0);
+    assert!(r["alerts"].as_array().unwrap().is_empty());
+    assert_eq!(r["recent"][0]["kind"], "account");
+    assert_eq!(r["recent"][0]["who"], "Doodz");
+    st.users
+        .create("Hugo", "his password", false)
+        .await
+        .unwrap();
+    let (_, hugo) = call(
+        &app,
+        "POST",
+        "/v1/auth/login",
+        None,
+        Some(json!({"username": "Hugo", "password": "his password"})),
+    )
+    .await;
+    let (s, _) = call(
+        &app,
+        "GET",
+        "/v1/admin/status",
+        hugo["token"].as_str(),
+        None,
+    )
+    .await;
+    assert_eq!(s, StatusCode::FORBIDDEN);
 }

@@ -1124,6 +1124,7 @@ dependencies = [
  "hex",
  "http-body-util",
  "image",
+ "libc",
  "lofty",
  "md-5",
  "notify",

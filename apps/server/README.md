@@ -52,6 +52,7 @@ cargo run --release
 | `import_dir`: folder of the imports, inside the music folder | `MUSONIC_IMPORT_DIR` | `Musonic` |
 | `import_quality`: `mp3_128`, `mp3_320` or `flac` | `MUSONIC_IMPORT_QUALITY` | `mp3_320` |
 | `backup_days`: daily database backups kept in `data_dir/backups` (0 = none) | `MUSONIC_BACKUP_DAYS` | `14` |
+| `update_check`: look for newer releases on GitHub | `MUSONIC_UPDATE_CHECK` | `true` |
 | Key encrypting the passwords kept for `legacy_auth` (64 hex) | `MUSONIC_SECRET_KEY` | `secret.key` in `data_dir`, created on first start |
 
 `musonic-server scan [--full]` scans the library once and prints a summary.

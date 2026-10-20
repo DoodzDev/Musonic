@@ -19,6 +19,7 @@ import { ErrorLine } from '../components/ui.tsx';
 import { InviteModal } from '../components/InviteModal.tsx';
 
 function invitationState(i: Invitation): [string, string] {
+  if (i.accountDeleted) return ['', `Utilisée par ${i.usedBy ?? '?'} · compte supprimé`];
   if (i.usedBy) return ['ok', `Utilisée par ${i.usedBy}`];
   if (i.revokedAt) return ['bad', 'Annulée'];
   if (i.expiresAt * 1000 < Date.now()) return ['bad', 'Expirée'];

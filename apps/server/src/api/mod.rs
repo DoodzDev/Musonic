@@ -5,6 +5,7 @@
 //! | Route | |
 //! |---|---|
 //! | `GET /v1/events` | WebSocket of real-time events for the signed-in account (ADR-018); token also as `?token=`, device id as `?device=` |
+//! | `GET /v1/admin/status` | Dashboard and event bar of the console (administrators): live figures, disk, library, now playing, alerts, releases |
 //! | `GET /v1/info` | What this server is and can do (no sign-in): clients tell Musonic Server from another Subsonic server with it |
 //! | `GET /v1/setup` | `{"needed": true}` until the first account exists |
 //! | `POST /v1/setup` | First account (administrator); only while there is none |
@@ -33,6 +34,7 @@ use serde_json::{Value, json};
 use crate::{server::AppState, users::User};
 
 mod admin;
+mod status;
 
 pub struct ApiError(StatusCode, String);
 
@@ -103,6 +105,7 @@ impl FromRequestParts<AppState> for Auth {
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/v1/info", get(info))
+        .route("/v1/admin/status", get(status::status))
         .route("/v1/events", get(events))
         .route("/v1/setup", get(setup_needed).post(setup))
         .route("/v1/auth/login", post(login))

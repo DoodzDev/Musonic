@@ -1,23 +1,19 @@
 /**
  * @file Layout.tsx
  * @description Frame of the console: the menu on the left, the event bar at the top (live
- *   figures and alarms; filled in by lot C2), the page.
+ *   rates, listeners, imports, CPU and memory, alarms), the page.
  * @author DoodzProg
  * @version 0.1.0
  * @license CC-BY-NC-4.0
  */
 
-import { useEffect, useState, type ReactNode } from 'react';
-import { NavLink } from 'react-router';
+import type { ReactNode } from 'react';
+import { Link, NavLink } from 'react-router';
 import { Icon, type IconName } from '@musonic/icons';
 import type { Me } from '../App.tsx';
-
-interface Health {
-  status: string;
-  version: string;
-  alerts: Record<string, string>;
-  imports?: { pending: number; running: number; failed: number };
-}
+import { bytes, rate, uptime } from '../format.ts';
+import { StatusProvider } from '../status.tsx';
+import { useStatus } from '../useStatus.ts';
 
 const NAV: { title?: string; items: [string, string, IconName][] }[] = [
   { items: [['/', 'Tableau de bord', 'home']] },
@@ -27,14 +23,17 @@ const NAV: { title?: string; items: [string, string, IconName][] }[] = [
 ];
 
 export function Layout({ me, onSignOut, children }: { me: Me; onSignOut: () => void; children: ReactNode }) {
-  const [health, setHealth] = useState<Health | null>(null);
-  useEffect(() => {
-    const load = () => fetch('/health').then((r) => r.json()).then(setHealth).catch(() => setHealth(null));
-    load();
-    const t = setInterval(load, 15000);
-    return () => clearInterval(t);
-  }, []);
-  const alerts = Object.entries(health?.alerts ?? {});
+  return (
+    <StatusProvider>
+      <Frame me={me} onSignOut={onSignOut}>{children}</Frame>
+    </StatusProvider>
+  );
+}
+
+function Frame({ me, onSignOut, children }: { me: Me; onSignOut: () => void; children: ReactNode }) {
+  const status = useStatus();
+  const live = status?.live;
+  const alarms = status?.alerts ?? [];
 
   return (
     <div className="app">
@@ -43,7 +42,7 @@ export function Layout({ me, onSignOut, children }: { me: Me; onSignOut: () => v
           <Icon name="logo" size={30} />
           <div>
             <b>Musonic Server</b>
-            <small>{location.host} · {health?.version ?? '…'}</small>
+            <small>{location.host} · {status?.version ?? '…'}</small>
           </div>
         </div>
         <nav className="nav">
@@ -54,6 +53,7 @@ export function Layout({ me, onSignOut, children }: { me: Me; onSignOut: () => v
                 <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => (isActive ? 'on' : '')}>
                   <Icon name={icon} size={18} className="ico" />
                   {label}
+                  {to === '/' && alarms.length > 0 && <span className="count">{alarms.length}</span>}
                 </NavLink>
               ))}
             </div>
@@ -71,25 +71,22 @@ export function Layout({ me, onSignOut, children }: { me: Me; onSignOut: () => v
         </div>
       </aside>
       <main className="main">
-        <div className="ticker">
-          <span className="m">
-            <span className={health?.status === 'degraded' || !health ? '' : 'pulse'} />
-            {health ? 'En ligne' : 'Hors ligne'}
-          </span>
-          {health?.imports && (
+        <div className="ticker" role="status" aria-label="État du serveur en direct">
+          <span className="m"><span className={status ? 'pulse' : 'pulse off'} />{status ? `En ligne · ${uptime(live?.uptimeSecs ?? 0)}` : status === null ? 'Hors ligne' : '…'}</span>
+          {live && (
             <>
               <span className="sep" />
-              <span className="m">
-                <Icon name="download" size={14} /> <b>{health.imports.running + health.imports.pending}</b> import(s) en cours
-              </span>
+              <span className="m"><Icon name="download-arrow" size={14} /> Réception <b>{rate(live.rxBytesPerSec)}</b></span>
+              <span className="m"><Icon name="upload-arrow" size={14} /> Envoi <b>{rate(live.txBytesPerSec)}</b></span>
+              <span className="m"><Icon name="now-playing" size={14} /> <b>{status.nowPlaying.length}</b> à l'écoute</span>
+              <span className="m"><Icon name="download" size={14} /> <b>{status.imports.running + status.imports.pending}</b> import(s)</span>
+              <span className="m">CPU <b>{Math.round(live.cpuPercent)} %</b> · RAM <b>{bytes(live.memoryBytes)}</b></span>
             </>
           )}
-          {alerts.map(([provider, what]) => (
-            <span key={provider} className="alarm">
-              <Icon name="cloud" size={14} /> {provider} : {what === 'credentials_expired' ? 'identifiants expirés' : what}
-            </span>
+          {alarms.length > 0 && <span className="sep" />}
+          {alarms.map((a) => (
+            <Link key={a.kind + a.title} to="/" className={'alarm' + (a.level === 'error' ? '' : ' w')} title={a.detail}>{a.title}</Link>
           ))}
-          {(health?.imports?.failed ?? 0) > 0 && <span className="alarm w">{health!.imports!.failed} import(s) en échec</span>}
         </div>
         <div className="page">{children}</div>
       </main>

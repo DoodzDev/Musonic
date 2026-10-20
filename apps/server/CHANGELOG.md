@@ -113,6 +113,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   header or `device` parameter).
 - `online: true` on songs, albums and artists that have no file in the library (online
   catalog, songs liked but not imported yet), for an "Online" badge in clients.
+- Console dashboard and event bar: `GET /v1/admin/status` (administrators) gives live CPU,
+  memory and network rates, disk space (server and music, imports apart), the library's
+  figures, database / backups / caches sizes, who is listening, imports, recent activity,
+  alerts (expired provider credentials, given-up imports, disk almost full, no backup for two
+  days, newer server released) and the latest releases of the server and of Musonic Web,
+  looked up on GitHub every 6 hours (`update_check`).
+- Invitations keep the name of the account they created, also once it is deleted.
+- A suspended account signing in with its own credentials is told so (Subsonic error 50,
+  native API 403), instead of "wrong password".
 - Administration console, served at the server's address (`admin_dir`, see `apps/admin`).
 - Account management (administrators): accounts listed with their devices and imports; role
   (always at least one active administrator), suspension (no sign-in at all, nothing

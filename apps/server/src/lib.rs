@@ -12,6 +12,7 @@ pub mod events;
 pub mod ids;
 pub mod library;
 pub mod matcher;
+pub mod metrics;
 pub mod model;
 pub mod online;
 pub mod providers;
@@ -137,6 +138,12 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
     }
     let mut state = server::AppState::new(db, library, users, config.data_dir.clone());
     state.admin_dir = admin_dir(&config);
+    state.music_dir = config.music_dir.clone();
+    state.import_dir = config.import_dir.clone();
+    state.metrics = Some(metrics::Metrics::start(
+        config.data_dir.clone(),
+        config.update_check,
+    ));
     match &state.admin_dir {
         Some(d) => tracing::info!("administration console: {}", d.display()),
         None => tracing::info!("no administration console installed"),

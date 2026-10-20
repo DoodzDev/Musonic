@@ -43,6 +43,8 @@ pub struct Config {
     /// The built administration console. Default: `admin` next to the binary, else
     /// `/usr/share/musonic/admin`.
     pub admin_dir: Option<PathBuf>,
+    /// Look on GitHub for newer releases of the server and of Musonic Web (every 6 hours).
+    pub update_check: bool,
 }
 
 impl Default for Config {
@@ -63,6 +65,7 @@ impl Default for Config {
             import_quality: "mp3_320".to_owned(),
             backup_days: 14,
             admin_dir: None,
+            update_check: true,
         }
     }
 }
@@ -115,6 +118,10 @@ impl Config {
         }
         if let Some(v) = env("MUSONIC_IMPORT_QUALITY") {
             cfg.import_quality = v;
+        }
+        if let Some(v) = env("MUSONIC_UPDATE_CHECK") {
+            cfg.update_check =
+                matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on");
         }
         if let Some(v) = env("MUSONIC_ADMIN_DIR") {
             cfg.admin_dir = Some(v.into());

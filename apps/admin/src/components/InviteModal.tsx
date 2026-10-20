@@ -39,7 +39,11 @@ export function InviteModal({ onClose, onCreated }: { onClose: () => void; onCre
         </>
       ) : (
         <>
-          <div className="field"><label htmlFor="note">Note (pour vous)</label><input id="note" className="input" placeholder="Ex. Cousine" value={note} onChange={(e) => setNote(e.target.value)} /></div>
+          <div className="field">
+            <label htmlFor="note"><b>Note</b> (seulement pour vous)</label>
+            <input id="note" className="input" placeholder="Ex. « Invitation pour ma cousine Léa »" value={note} onChange={(e) => setNote(e.target.value)} />
+            <span className="muted small">Pour retrouver cette invitation dans la liste. Ce n'est pas le nom du compte : la personne choisira elle-même son nom et son mot de passe.</span>
+          </div>
           <div className="field"><label>Rôle</label><Seg value={role} options={[['user', 'Utilisateur'], ['admin', 'Administrateur']]} onChange={setRole} /></div>
           <div className="field"><label>Valable</label><Duration seconds={seconds} onChange={setSeconds} /></div>
           <ErrorLine error={error} />

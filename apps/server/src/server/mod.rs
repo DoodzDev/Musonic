@@ -49,6 +49,11 @@ pub struct AppState {
     pub events: crate::events::Events,
     /// The built administration console (`index.html` and its files), when installed.
     pub admin_dir: Option<PathBuf>,
+    pub music_dir: Option<PathBuf>,
+    /// Folder of the imports, inside the music folder.
+    pub import_dir: String,
+    /// Live measures for the console.
+    pub metrics: Option<Arc<crate::metrics::Metrics>>,
 }
 
 impl AppState {
@@ -68,6 +73,9 @@ impl AppState {
             imports: None,
             events: Default::default(),
             admin_dir: None,
+            music_dir: None,
+            import_dir: "Musonic".to_owned(),
+            metrics: None,
         }
     }
 }

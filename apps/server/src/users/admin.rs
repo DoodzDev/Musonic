@@ -110,8 +110,10 @@ pub struct Invitation {
     pub created_at: i64,
     #[ts(type = "number")]
     pub expires_at: i64,
-    /// Username of the account created with it.
+    /// Username of the account created with it (kept after that account is deleted).
     pub used_by: Option<String>,
+    /// The account created with it was deleted since.
+    pub account_deleted: bool,
     #[ts(type = "number | null")]
     pub used_at: Option<i64>,
     #[ts(type = "number | null")]
@@ -180,8 +182,9 @@ fn other_admins(c: &Connection, except: &str) -> rusqlite::Result<i64> {
 }
 
 const INVITATION_SELECT: &str = "
-SELECT i.id, i.note, i.is_admin, c.username, i.created_at, i.expires_at, u.username, i.used_at,
-       i.revoked_at
+SELECT i.id, i.note, i.is_admin, c.username, i.created_at, i.expires_at,
+       coalesce(u.username, i.used_by_name), i.used_at, i.revoked_at,
+       i.used_at IS NOT NULL AND u.id IS NULL
   FROM invitation i
   LEFT JOIN user c ON c.id = i.created_by
   LEFT JOIN user u ON u.id = i.used_by";
@@ -197,6 +200,7 @@ fn row_invitation(r: &rusqlite::Row) -> rusqlite::Result<Invitation> {
         used_by: r.get(6)?,
         used_at: r.get(7)?,
         revoked_at: r.get(8)?,
+        account_deleted: r.get(9)?,
     })
 }
 
@@ -408,14 +412,14 @@ impl Users {
             bail!("this invitation cannot be used ({state:?})");
         };
         let user = self.create(username, password, inv.is_admin).await?;
-        let (inv_id, user_id) = (inv.id.clone(), user.id.clone());
+        let (inv_id, user_id, username) = (inv.id.clone(), user.id.clone(), user.username.clone());
         let claimed = self
             .db
             .call(move |c| {
                 Ok(c.execute(
-                    "UPDATE invitation SET used_by = ?2, used_at = unixepoch()
+                    "UPDATE invitation SET used_by = ?2, used_by_name = ?3, used_at = unixepoch()
                       WHERE id = ?1 AND used_at IS NULL AND revoked_at IS NULL",
-                    params![inv_id, user_id],
+                    params![inv_id, user_id, username],
                 )? > 0)
             })
             .await?;

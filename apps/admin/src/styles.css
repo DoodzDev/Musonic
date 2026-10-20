@@ -149,3 +149,6 @@ tr.click:hover td{background:var(--hover);cursor:pointer}
 .public .error-line{text-align:center}
 .nav a .ico{width:18px;height:18px;opacity:.9;flex:none}
 .soon{display:inline-block;font-size:11px;color:var(--text2);margin-left:auto}
+.pulse.off{background:var(--text2);animation:none;box-shadow:none}
+.alert>div:first-child{flex:1}
+a.tag{text-decoration:none}
