@@ -7,7 +7,7 @@
 mod migrations;
 
 use std::{
-    path::Path,
+    path::{Path, PathBuf},
     sync::{Arc, Mutex},
 };
 
@@ -72,5 +72,55 @@ impl Db {
     pub async fn version(&self) -> Result<u32> {
         self.call(|c| Ok(c.pragma_query_value(None, "user_version", |r| r.get(0))?))
             .await
+    }
+
+    /// A consistent copy of the whole database at `dest` (safe while the server runs).
+    pub async fn backup_to(&self, dest: &Path) -> Result<()> {
+        let dest = dest.to_owned();
+        if dest.exists() {
+            std::fs::remove_file(&dest)?;
+        }
+        self.call(move |c| {
+            c.execute("VACUUM INTO ?1", [dest.to_string_lossy()])
+                .context("database backup")?;
+            Ok(())
+        })
+        .await
+    }
+
+    /// Today's backup in `dir` (`musonic-YYYY-MM-DD.db`), keeping `days` of them.
+    pub async fn daily_backup(&self, dir: &Path, days: u64) -> Result<PathBuf> {
+        std::fs::create_dir_all(dir)?;
+        let day = crate::subsonic::iso_date(
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)?
+                .as_secs() as i64,
+        );
+        let dest = dir.join(format!("musonic-{day}.db"));
+        let tmp = dir.join(format!(".musonic-{day}.db.part"));
+        self.backup_to(&tmp).await?;
+        std::fs::rename(&tmp, &dest)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = std::fs::set_permissions(&dest, std::fs::Permissions::from_mode(0o600));
+        }
+        // Older ones: names sort by date.
+        let mut all: Vec<PathBuf> = std::fs::read_dir(dir)?
+            .filter_map(|e| e.ok().map(|e| e.path()))
+            .filter(|p| {
+                p.file_name()
+                    .and_then(|n| n.to_str())
+                    .is_some_and(|n| n.starts_with("musonic-") && n.ends_with(".db"))
+            })
+            .collect();
+        all.sort();
+        let keep = days.max(1) as usize;
+        if all.len() > keep {
+            for old in &all[..all.len() - keep] {
+                let _ = std::fs::remove_file(old);
+            }
+        }
+        Ok(dest)
     }
 }

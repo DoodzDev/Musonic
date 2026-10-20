@@ -44,7 +44,9 @@ pub struct Extensions {
 /// The command line of a server binary, `extensions` giving its own providers:
 /// `<binary>` serves; `<binary> scan [--full]` scans the library once and prints what it did;
 /// `<binary> user add <name> [--admin]` creates an account (password from `MUSONIC_PASSWORD`
-/// or typed in).
+/// or typed in); `<binary> import-navidrome <navidrome.db> [--replace-playlists] [--new-ids]`
+/// imports playlists, likes and plays from a copy of a Navidrome database (see
+/// [`library::navidrome`]).
 pub async fn cli(extensions: impl FnOnce(&Config) -> Result<Extensions>) -> Result<()> {
     init_tracing();
     let config = Config::load()?;
@@ -63,9 +65,27 @@ pub async fn cli(extensions: impl FnOnce(&Config) -> Result<Extensions>) -> Resu
                 .ok_or_else(|| anyhow::anyhow!("usage: user add <name> [--admin]"))?;
             add_user(config, name, args.iter().any(|a| a == "--admin")).await
         }
+        Some("import-navidrome") => {
+            let path = args
+                .get(1)
+                .filter(|p| !p.starts_with("--"))
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "usage: import-navidrome <navidrome.db> [--replace-playlists] [--new-ids]"
+                    )
+                })?;
+            let opts = library::navidrome::NavidromeOptions {
+                keep_ids: !args.iter().any(|a| a == "--new-ids"),
+                replace_playlists: args.iter().any(|a| a == "--replace-playlists"),
+            };
+            let report = import_navidrome(config, path.into(), opts).await?;
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            Ok(())
+        }
         Some(other) => {
             anyhow::bail!(
-                "unknown command {other:?} (expected: scan [--full], user add <name> [--admin])"
+                "unknown command {other:?} (expected: scan [--full], user add <name> [--admin], \
+                 import-navidrome <navidrome.db>)"
             )
         }
         None => {
@@ -142,6 +162,23 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
             .start(),
         );
     }
+    if config.backup_days > 0 {
+        let (db, dir, days) = (
+            state.db.clone(),
+            config.data_dir.join("backups"),
+            config.backup_days,
+        );
+        tokio::spawn(async move {
+            let mut every = tokio::time::interval(Duration::from_secs(24 * 3600));
+            loop {
+                every.tick().await;
+                match db.daily_backup(&dir, days).await {
+                    Ok(p) => tracing::info!("database backed up to {}", p.display()),
+                    Err(e) => tracing::error!("database backup: {e:#}"),
+                }
+            }
+        });
+    }
     let sessions = state.sessions.clone();
     tokio::spawn(async move {
         let mut every = tokio::time::interval(Duration::from_secs(300));
@@ -189,6 +226,19 @@ fn providers(
         all.push(Arc::new(providers::DeezerPreview::new(dz)));
     }
     Ok(all)
+}
+
+/// Imports from a copy of a Navidrome database (scan the library first: tracks are matched by
+/// their files).
+pub async fn import_navidrome(
+    config: Config,
+    path: std::path::PathBuf,
+    opts: library::navidrome::NavidromeOptions,
+) -> Result<library::navidrome::NavidromeReport> {
+    std::fs::create_dir_all(&config.data_dir)?;
+    let db = Db::open(&config.data_dir.join("musonic.db"))?;
+    db.call(move |c| library::navidrome::import(c, &path, opts))
+        .await
 }
 
 /// One scan of the library, then exit (`musonic-server scan [--full]`).

@@ -38,6 +38,8 @@ pub struct Config {
     /// Quality of imported files: `mp3_128`, `mp3_320` or `flac` (the best a provider has, up
     /// to it).
     pub import_quality: String,
+    /// Daily database backups kept in `<data_dir>/backups` (0 = none).
+    pub backup_days: u64,
 }
 
 impl Default for Config {
@@ -56,6 +58,7 @@ impl Default for Config {
             import: true,
             import_dir: "Musonic".to_owned(),
             import_quality: "mp3_320".to_owned(),
+            backup_days: 14,
         }
     }
 }
@@ -108,6 +111,9 @@ impl Config {
         }
         if let Some(v) = env("MUSONIC_IMPORT_QUALITY") {
             cfg.import_quality = v;
+        }
+        if let Some(v) = env("MUSONIC_BACKUP_DAYS") {
+            cfg.backup_days = v.parse().context("MUSONIC_BACKUP_DAYS")?;
         }
         if let Some(v) = env("MUSONIC_SUBSONIC_PROVIDER_URL") {
             cfg.subsonic_provider_url = Some(v);

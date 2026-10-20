@@ -1343,3 +1343,112 @@ async fn expired_credentials_show_as_an_alert() {
     assert_eq!(h["status"], "warning");
     assert_eq!(h["alerts"]["deezer-files"], "credentials_expired");
 }
+
+// Import from Navidrome -------------------------------------------------------------------
+
+/// A Navidrome database with the tables and columns the import reads.
+fn fake_navidrome(dir: &std::path::Path) -> std::path::PathBuf {
+    let path = dir.join("navidrome.db");
+    let c = rusqlite::Connection::open(&path).unwrap();
+    c.execute_batch(
+        "CREATE TABLE user(id TEXT, user_name TEXT, password TEXT);
+         CREATE TABLE media_file(id TEXT, path TEXT, album_id TEXT);
+         CREATE TABLE artist(id TEXT, name TEXT);
+         CREATE TABLE annotation(user_id TEXT, item_id TEXT, item_type TEXT, play_count INT,
+                                 play_date TEXT, rating INT, starred INT, starred_at TEXT);
+         CREATE TABLE playlist(id TEXT, name TEXT, comment TEXT, public INT, created_at TEXT,
+                               updated_at TEXT, owner_id TEXT);
+         CREATE TABLE playlist_tracks(id INT, playlist_id TEXT, media_file_id TEXT);
+         CREATE TABLE scrobbles(media_file_id TEXT, user_id TEXT, submission_time INT);
+         INSERT INTO user VALUES ('u1', 'doodz', 'secret'), ('u2', 'Hugo', 'secret');
+         -- Hoppípolla written in another Unicode form and case.
+         INSERT INTO media_file VALUES
+           ('nd1', 'sigur ro' || char(769) || 's/Takk/03 - Hoppi' || char(769) || 'polla.WAV', 'ndA'),
+           ('nd2', 'Sigur Rós/Takk/01 - Takk.wav', 'ndA'),
+           ('nd3', 'Daft Punk/RAM/08 - Get Lucky.wav', 'ndB'),
+           ('nd4', 'Gone/Gone/01 - Gone.mp3', 'ndC');
+         INSERT INTO artist VALUES ('ndX', 'Sigur Rós');
+         INSERT INTO annotation VALUES
+           ('u1', 'nd1', 'media_file', 5, '2026-10-12 05:45:23.157569791+00:00', 4, 1,
+            '2026-05-20 13:22:06.682938858+00:00'),
+           ('u1', 'ndA', 'album', 3, '2026-10-01 10:00:00+00:00', 0, 0, NULL),
+           ('u1', 'ndX', 'artist', 7, NULL, 0, 1, '2026-06-01 08:00:00+00:00'),
+           ('u2', 'nd3', 'media_file', 9, NULL, 0, 1, '2026-06-01 08:00:00+00:00');
+         INSERT INTO playlist VALUES
+           ('p1', 'Road trip', 'Summer', 1, '2026-04-20 23:56:58.462228638+00:00',
+            '2026-04-21 10:00:00+00:00', 'u1'),
+           ('p2', 'Hugo''s', '', 0, '2026-04-20 23:56:58+00:00', '2026-04-20 23:56:58+00:00', 'u2');
+         INSERT INTO playlist_tracks VALUES (1, 'p1', 'nd3'), (2, 'p1', 'nd4'), (3, 'p1', 'nd1'), (1, 'p2', 'nd2');
+         INSERT INTO scrobbles VALUES ('nd1', 'u1', 1760000000), ('nd1', 'u1', 1760000500), ('nd3', 'u2', 1760000000);",
+    )
+    .unwrap();
+    path
+}
+
+#[tokio::test]
+async fn navidrome_playlists_likes_and_plays_are_imported_with_their_ids() {
+    use crate::library::navidrome::{NavidromeOptions, import};
+    let lib = library("navidrome").await;
+    let nd = fake_navidrome(&lib.st.data_dir);
+    let run = |opts| {
+        let p = nd.clone();
+        lib.st.db.call(move |c| import(c, &p, opts))
+    };
+    let r = run(NavidromeOptions::default()).await.unwrap();
+    assert_eq!(r.users, ["doodz"]);
+    assert_eq!(r.users_skipped, ["Hugo"]);
+    assert_eq!((r.files_matched, r.files_not_found), (3, 1));
+    assert_eq!(r.ids_kept, 3);
+    assert_eq!(
+        (r.playlists, r.playlist_entries, r.playlist_entries_missing),
+        (1, 2, 1)
+    );
+    assert_eq!(r.plays, 2);
+
+    // The track answers under its Navidrome id, liked, rated, counted.
+    let s = lib.get("getSong?id=nd1").await["song"].clone();
+    assert_eq!(s["title"], "Hoppípolla");
+    assert_eq!(s["userRating"], 4);
+    assert_eq!(s["playCount"], 5);
+    assert!(
+        s["starred"]
+            .as_str()
+            .unwrap()
+            .starts_with("2026-05-20T13:22:06")
+    );
+    assert!(
+        s["played"]
+            .as_str()
+            .unwrap()
+            .starts_with("2026-10-12T05:45")
+    );
+    let r = lib.get("getPlaylist?id=p1").await;
+    assert_eq!(r["playlist"]["name"], "Road trip");
+    assert_eq!(r["playlist"]["comment"], "Summer");
+    assert_eq!(r["playlist"]["public"], true);
+    assert_eq!(lib.entries("p1").await, ["nd3", "nd1"]);
+    let album = s["albumId"].as_str().unwrap();
+    assert_eq!(
+        lib.get(&format!("getAlbum?id={album}")).await["album"]["playCount"],
+        3
+    );
+    assert_eq!(
+        lib.get("getStarred2?").await["starred2"]["artist"][0]["name"],
+        "Sigur Rós"
+    );
+
+    // Again: nothing doubled. A rescan keeps the ids.
+    let r = run(NavidromeOptions::default()).await.unwrap();
+    assert_eq!(
+        (r.playlists, r.playlists_already_there, r.plays, r.ids_kept),
+        (0, 1, 0, 0)
+    );
+    assert_eq!(lib.entries("p1").await, ["nd3", "nd1"]);
+    Scanner::new(lib.st.db.clone(), lib.root.clone())
+        .await
+        .unwrap()
+        .scan(true)
+        .await
+        .unwrap();
+    assert_eq!(lib.get("getSong?id=nd1").await["song"]["playCount"], 5);
+}

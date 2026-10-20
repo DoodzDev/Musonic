@@ -195,4 +195,43 @@ mod tests {
             .unwrap();
         assert_eq!(st.query_map([], |r| r.get::<_, i64>(0)).unwrap().count(), 1);
     }
+
+    #[tokio::test]
+    async fn daily_backups_are_complete_and_rotated() {
+        let db = Db::memory().unwrap();
+        db.call(|c| {
+            c.execute("INSERT INTO property(key, value) VALUES ('k', 'v')", [])?;
+            Ok(())
+        })
+        .await
+        .unwrap();
+        let dir = crate::testing::temp_dir("backups");
+        for old in [
+            "musonic-2026-01-01.db",
+            "musonic-2026-01-02.db",
+            "notes.txt",
+        ] {
+            std::fs::write(dir.join(old), "x").unwrap();
+        }
+        let path = db.daily_backup(&dir, 2).await.unwrap();
+        let copy = Connection::open(&path).unwrap();
+        let v: String = copy
+            .query_row("SELECT value FROM property WHERE key = 'k'", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        assert_eq!(v, "v");
+        let mut left: Vec<String> = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().into_string().unwrap())
+            .collect();
+        left.sort();
+        assert_eq!(left.len(), 3, "{left:?}");
+        assert!(left.contains(&"musonic-2026-01-02.db".to_owned()));
+        assert!(
+            left.contains(&"notes.txt".to_owned()),
+            "other files are left alone"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

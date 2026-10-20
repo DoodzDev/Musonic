@@ -17,6 +17,7 @@ mod system;
 mod xml;
 
 pub use annotations::NowPlaying;
+pub use model::iso_date;
 
 use std::net::SocketAddr;
 

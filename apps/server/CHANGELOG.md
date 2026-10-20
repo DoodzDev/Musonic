@@ -93,6 +93,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Online albums and artists can be liked whole (`albumId` / `artistId` with `dz-…` ids): a
   liked album's songs are imported; liked albums and artists known only online show in the
   likes.
+- `musonic-server import-navidrome <copy of navidrome.db>`: playlists, likes, ratings, play
+  counts and plays of the accounts that exist here (same user name), tracks matched by their
+  file (then ignoring case and accents); tracks and playlists keep their Navidrome ids
+  (`--new-ids` otherwise), albums and artists get ids from their tags. Safe to run again
+  (`--replace-playlists` to import playlists again). Tested on a real library: 15 playlists,
+  432 entries, 2 858 plays, in about a second.
+- Daily database backup (consistent copy while running) in `data_dir/backups`, 14 days kept
+  (`backup_days`).
+- `Dockerfile` (with ffmpeg) and `compose.example.yml`.
+- `musonic_server::cli`: the command line, for binaries that add their own providers.
 - Providers can say their credentials expired: `/health` then shows `"status": "warning"` and
   the provider in `alerts`.
 - Tracks without an album artist tag: the album goes to the main artist ("A feat. B" → "A").

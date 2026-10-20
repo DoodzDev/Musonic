@@ -46,9 +46,28 @@ cargo run --release
 | `import`: import online songs when liked or added to a playlist | `MUSONIC_IMPORT` | `true` |
 | `import_dir`: folder of the imports, inside the music folder | `MUSONIC_IMPORT_DIR` | `Musonic` |
 | `import_quality`: `mp3_128`, `mp3_320` or `flac` | `MUSONIC_IMPORT_QUALITY` | `mp3_320` |
+| `backup_days`: daily database backups kept in `data_dir/backups` (0 = none) | `MUSONIC_BACKUP_DAYS` | `14` |
 | Key encrypting the passwords kept for `legacy_auth` (64 hex) | `MUSONIC_SECRET_KEY` | `secret.key` in `data_dir`, created on first start |
 
 `musonic-server scan [--full]` scans the library once and prints a summary.
+
+### Docker
+`Dockerfile` builds the server with ffmpeg; `compose.example.yml` runs it (data and music
+folders, limits, logs, healthcheck).
+
+### Coming from Navidrome
+With the same music folder, and the accounts created here under the same names:
+
+```sh
+sqlite3 -readonly /path/to/navidrome.db ".backup navidrome-copy.db"   # a consistent copy
+musonic-server scan
+musonic-server import-navidrome navidrome-copy.db
+```
+
+Playlists, likes, ratings, play counts and plays come over (passwords never do). Tracks are
+matched by their file and keep their Navidrome ids, as do playlists, so what clients saved
+(downloads, caches) keeps working; `--new-ids` gives them new ones instead. Running it again
+adds nothing twice; `--replace-playlists` imports the playlists again.
 
 ### First start
 Create the administrator account, either from a client (`POST /v1/setup`, allowed only while

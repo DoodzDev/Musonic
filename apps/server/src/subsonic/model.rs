@@ -8,6 +8,11 @@
 use rusqlite::{Connection, Row, ToSql};
 use serde_json::{Map, Value, json};
 
+/// Unix seconds as a UTC date (`2026-10-19`).
+pub fn iso_date(secs: i64) -> String {
+    iso(secs)[..10].to_owned()
+}
+
 /// Unix seconds as ISO 8601 UTC (`2026-10-19T20:30:00Z`).
 pub fn iso(secs: i64) -> String {
     let days = secs.div_euclid(86_400);

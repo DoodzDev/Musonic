@@ -1,0 +1,26 @@
+# Musonic Server with Docker Compose. Copy next to your data, adjust the paths, then:
+#   docker compose up -d
+#   docker compose exec musonic-server musonic-server user add <name> --admin
+services:
+  musonic-server:
+    build: .                     # or an image you built: image: musonic-server
+    container_name: musonic-server
+    restart: unless-stopped
+    user: "1000:1000"            # the owner of your music and data folders
+    ports:
+      - "127.0.0.1:4533:4533"    # put a reverse proxy (HTTPS) in front
+    volumes:
+      - ./data:/data             # database, caches, daily backups
+      - /path/to/music:/music    # read-only (:ro) if you do not want imports
+    environment:
+      RUST_LOG: info
+      # MUSONIC_ONLINE: "false"  # no online catalog
+    mem_limit: 512m
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
