@@ -23,6 +23,9 @@ the Musonic apps and for any Subsonic client.
 - **Online catalog** (Deezer's public API, metadata only): search and browse artists and albums
   that are not in your library, and like or add them to a playlist right away: every track has a
   single id, with or without a file, and keeps it once its file is imported.
+- **Playlist imports**: any account pastes the address of a Deezer playlist (or of another
+  service whose playlist source the binary plugs in) and gets it as a Musonic playlist, with a
+  report of the songs not found (see [Importing playlists](#importing-playlists)).
 - **Audio providers**: a documented interface to plug sources of audio for tracks you do not have
   as files (see [docs/PROVIDERS.md](docs/PROVIDERS.md)).
 
@@ -95,6 +98,31 @@ Clients sign in with a username and password, or better with a per-device API ke
 needed to check sign-ins and nothing reversible is stored; with it (default, needed by many
 Subsonic clients), the password is also kept encrypted with a key outside the database.
 Keep `data_dir` private and backed up.
+
+### Importing playlists
+`/v1/playlist-imports` (Musonic Web: Library → Import). Each song is looked for in the library
+first (ISRC, else title, artists and length), then in the online catalog; songs already in the
+library are never downloaded again. The report sorts every song into:
+
+- **found**: the same recording, in the library or online;
+- **uncertain**: a close stand-in (another recording of the same work, another length), kept
+  in the playlist and listed so you can check it;
+- **not found**: listed with the reason; « look for the missing songs again » retries them.
+
+Measured on real playlists (2026-10-21):
+
+| Playlist | Found | Uncertain | Not found |
+|---|---|---|---|
+| Pop / hits (3 Spotify playlists, 250 songs) | 98 % | 2 % | 0 % |
+| Deezer chart (100 songs) | 100 % | 0 % | 0 % |
+| Electro swing (33 songs) | 94 % | 0 % | 6 % |
+| Classical music (100 songs, French titles) | 73 % | 16 % | 11 % |
+
+In short: **nearly every song** of a pop, rock or electronic playlist is found; for **classical
+music**, about **9 songs out of 10** are found or replaced by another recording of the same work,
+the rest being titled too differently on the online catalog. A song found online is then
+imported as a file like any song put in a playlist; a few can still fail at that step (a song
+the provider cannot deliver), which the console's Imports page shows.
 
 ## Development
 ```sh

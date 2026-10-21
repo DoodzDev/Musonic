@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="250" height="88" viewBox="0 0 250 88" role="img" aria-label="Try Musonic on the web">
+  <rect x="0.75" y="0.75" width="248.5" height="86.5" rx="18" fill="#121212" stroke="#3E3E3E" stroke-width="1.5"/>
+  <g transform="translate(18 24)" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linejoin="round">
+    <rect x="0" y="0" width="44" height="38" rx="7"/>
+    <line x1="0" y1="11" x2="44" y2="11"/>
+    <circle cx="7" cy="5.5" r="0.6" fill="#FFFFFF"/>
+    <circle cx="13" cy="5.5" r="0.6" fill="#FFFFFF"/>
+    <circle cx="19" cy="5.5" r="0.6" fill="#FFFFFF"/>
+    <path d="M18 19 L29 25 L18 31 Z" fill="#FF6B35" stroke="#FF6B35" stroke-width="1.6"/>
+  </g>
+  <text x="76" y="38" font-family="Inter, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" letter-spacing="1.2" fill="#B3B3B3">TRY IT ON THE</text>
+  <text x="76" y="68" font-family="Inter, Roboto, Helvetica, Arial, sans-serif" font-size="30" font-weight="700" fill="#FFFFFF">Web</text>
+  <text x="152" y="66" font-family="Inter, Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="500" fill="#B3B3B3">no install</text>
+</svg>
