@@ -8,10 +8,10 @@
 
 import { t } from '../i18n/index.ts';
 
-export function SoonPage({ title, lot }: { title: string; lot: string }) {
+export function SoonPage({ title, lot }: { title: string; lot?: string }) {
   return (
     <>
-      <div className="head"><div><h1>{title}</h1><p className="sub">{t.common.soon(lot)}</p></div></div>
+      <div className="head"><div><h1>{title}</h1><p className="sub">{lot ? t.common.soon(lot) : t.common.later}</p></div></div>
       <div className="card empty">{t.common.notBuilt}</div>
     </>
   );

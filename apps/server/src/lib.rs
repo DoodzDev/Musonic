@@ -12,6 +12,7 @@ pub mod events;
 pub mod ids;
 pub mod journal;
 pub mod library;
+pub mod logs;
 pub mod matcher;
 pub mod metrics;
 pub mod model;
@@ -19,9 +20,11 @@ pub mod online;
 pub mod providers;
 pub mod remote;
 pub mod server;
+pub mod settings;
 pub mod stream;
 pub mod subsonic;
 pub mod users;
+pub mod webapp;
 
 #[cfg(test)]
 mod testing;
@@ -99,19 +102,34 @@ pub async fn cli(extensions: impl FnOnce(&Config) -> Result<Extensions>) -> Resu
 }
 
 pub fn init_tracing() {
-    tracing_subscriber::fmt()
-        .with_env_filter(
+    use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+    tracing_subscriber::registry()
+        .with(
             // lofty warns about every file it estimates the duration of.
             tracing_subscriber::EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| "info,lofty=error".into()),
         )
+        .with(tracing_subscriber::fmt::layer())
+        // The last lines, for the console.
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_ansi(false)
+                .with_writer(logs::Memory),
+        )
         .init();
 }
 
-pub async fn run(config: Config, ext: Extensions) -> Result<()> {
+pub async fn run(mut config: Config, ext: Extensions) -> Result<()> {
     std::fs::create_dir_all(&config.data_dir)
         .with_context(|| format!("creating {}", config.data_dir.display()))?;
     let db = Db::open(&config.data_dir.join("musonic.db"))?;
+    // Settings changed in the console go over the configuration.
+    config = db
+        .call(move |c| {
+            settings::apply(c, &mut config)?;
+            Ok(config)
+        })
+        .await?;
     tracing::info!(
         version = env!("CARGO_PKG_VERSION"),
         schema = db::SCHEMA_VERSION,
@@ -148,6 +166,7 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
     state.provider_health = Arc::new(providers::ProviderHealth::with_journal(
         state.journal.clone(),
     ));
+    state.settings_now = Arc::new(settings::of(&config));
     state.admin_dir = admin_dir(&config);
     state.music_dir = config.music_dir.clone();
     state.import_dir = config.import_dir.clone();
@@ -166,6 +185,11 @@ pub async fn run(config: Config, ext: Extensions) -> Result<()> {
         state.online = Some(Arc::new(online::Deezer::new(&config.deezer_api_url)?));
     }
     state.providers = Arc::new(providers(&config, ext, state.online.clone())?);
+    // Credentials set in the console (checked online: in the background).
+    {
+        let state = state.clone();
+        tokio::spawn(async move { api::restore_credentials(&state).await });
+    }
     tracing::info!(
         providers = ?state.providers.iter().map(|p| p.id()).collect::<Vec<_>>(),
         "audio providers"

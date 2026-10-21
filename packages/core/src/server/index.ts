@@ -4,7 +4,7 @@
  *   generated from the server's Rust code (`apps/server`, `cargo test`; see ADR-018).
  *   Never edit `generated/` by hand.
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.4.0
  * @license CC-BY-NC-4.0
  */
 
@@ -42,3 +42,20 @@ export type { JournalQuery } from './generated/JournalQuery.ts';
 export type { JournalSize } from './generated/JournalSize.ts';
 export type { Releases } from './generated/Releases.ts';
 export type { Release } from './generated/Release.ts';
+export type { Backup } from './generated/Backup.ts';
+export type { Blocked } from './generated/Blocked.ts';
+export type { Device } from './generated/Device.ts';
+export type { Devices } from './generated/Devices.ts';
+export type { ImportJob } from './generated/ImportJob.ts';
+export type { ImportList } from './generated/ImportList.ts';
+export type { LibraryOverview } from './generated/LibraryOverview.ts';
+export type { LogLine } from './generated/LogLine.ts';
+export type { ProviderInfo } from './generated/ProviderInfo.ts';
+export type { SettingValue } from './generated/SettingValue.ts';
+export type { Settings } from './generated/Settings.ts';
+export type { SignIn } from './generated/SignIn.ts';
+export type { TrackDetail } from './generated/TrackDetail.ts';
+export type { TrackFile } from './generated/TrackFile.ts';
+export type { TrackPage } from './generated/TrackPage.ts';
+export type { TrackRow } from './generated/TrackRow.ts';
+export type { WebApp } from './generated/WebApp.ts';

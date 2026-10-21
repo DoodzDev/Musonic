@@ -82,6 +82,16 @@ pub trait AudioProvider: Send + Sync {
     fn imports(&self) -> bool {
         true
     }
+
+    /// The secret it signs in with (`ARL`…), when the console may change it.
+    fn credential(&self) -> Option<&'static str> {
+        None
+    }
+
+    /// Replaces that secret, after checking it works. Never logged nor shown again.
+    async fn set_credential(&self, _value: &str) -> Result<()> {
+        anyhow::bail!("this provider has no credential to change")
+    }
 }
 
 /// A provider's account or key no longer works: the server shows it as an alert.
@@ -128,6 +138,13 @@ impl ProviderHealth {
                 all.insert(provider, "credentials_expired".to_owned());
             }
             Some(_) => {}
+        }
+    }
+
+    /// Forgets a provider's alert (its credentials were just changed).
+    pub fn clear(&self, provider: &str) {
+        if let Ok(mut all) = self.alerts.lock() {
+            all.retain(|p, _| *p != provider);
         }
     }
 

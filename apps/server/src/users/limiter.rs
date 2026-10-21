@@ -68,6 +68,53 @@ impl AuthLimiter {
             .unwrap_or_else(|e| e.into_inner())
             .remove(&Self::key(addr, username));
     }
+    /// Address and account pairs refused now, with how many different secrets they tried and
+    /// until when (Unix seconds).
+    pub fn blocked(&self) -> Vec<Blocked> {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or_default();
+        let map = self.failures.lock().unwrap_or_else(|e| e.into_inner());
+        let mut out: Vec<Blocked> = map
+            .iter()
+            .filter(|(_, (tried, since))| {
+                since.elapsed() < WINDOW && tried.len() >= MAX_FAILURES as usize
+            })
+            .filter_map(|(key, (tried, since))| {
+                let (addr, username) = key.split_once('\u{1f}')?;
+                Some(Blocked {
+                    addr: addr.to_owned(),
+                    username: username.to_owned(),
+                    tries: tried.len() as u32,
+                    until: now + (WINDOW.saturating_sub(since.elapsed())).as_secs() as i64,
+                })
+            })
+            .collect();
+        out.sort_by_key(|b| std::cmp::Reverse(b.until));
+        out
+    }
+
+    /// Lets this address try this account again.
+    pub fn unblock(&self, addr: &str, username: &str) -> bool {
+        self.failures
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(&Self::key(addr, username))
+            .is_some()
+    }
+}
+
+#[derive(Debug, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct Blocked {
+    pub addr: String,
+    /// The account tried (lower case).
+    pub username: String,
+    pub tries: u32,
+    #[ts(type = "number")]
+    pub until: i64,
 }
 
 #[cfg(test)]
@@ -84,8 +131,14 @@ mod tests {
         assert!(!l.allowed("1.2.3.4", "doodz"), "same account, any case");
         assert!(l.allowed("5.6.7.8", "doodz"), "other address");
         assert!(l.allowed("1.2.3.4", "other"), "other account");
-        l.succeeded("1.2.3.4", "doodz");
+        let b = l.blocked();
+        assert_eq!(
+            (b.len(), b[0].addr.as_str(), b[0].username.as_str()),
+            (1, "1.2.3.4", "doodz")
+        );
+        assert!(l.unblock("1.2.3.4", "DOODZ"));
         assert!(l.allowed("1.2.3.4", "doodz"));
+        assert!(l.blocked().is_empty());
     }
 
     #[test]

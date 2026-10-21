@@ -1743,3 +1743,210 @@ async fn rights_and_quotas_are_applied_to_users() {
         "the file"
     );
 }
+
+// The administration console (tranches C4 to C7) ------------------------------------------
+
+/// Calls `/v1…` as the administrator: (status, JSON or raw bytes as a string).
+async fn console(lib: &Lib, method: &str, uri: &str, body: Option<Value>) -> (StatusCode, Value) {
+    let admin = lib
+        .st
+        .users
+        .check_password("Doodz", "correct horse")
+        .await
+        .unwrap()
+        .unwrap();
+    let token = lib.st.users.create_session(&admin.id).await.unwrap();
+    let mut req = Request::builder()
+        .method(method)
+        .uri(uri)
+        .header(header::AUTHORIZATION, format!("Bearer {token}"));
+    if body.is_some() {
+        req = req.header(header::CONTENT_TYPE, "application/json");
+    }
+    let res = lib
+        .app
+        .clone()
+        .oneshot(
+            req.body(body.map_or(Body::empty(), |b| Body::from(b.to_string())))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let status = res.status();
+    let bytes = res.into_body().collect().await.unwrap().to_bytes();
+    let value = serde_json::from_slice(&bytes).unwrap_or_else(|_| {
+        Value::String(String::from_utf8_lossy(&bytes[..bytes.len().min(16)]).into())
+    });
+    (status, value)
+}
+
+#[tokio::test]
+async fn the_console_looks_after_the_library() {
+    let mut lib = library("console-library").await;
+    lib.st.music_dir = Some(lib.root.clone());
+    lib.app = router(lib.st.clone());
+
+    let (s, o) = console(&lib, "GET", "/v1/admin/library", None).await;
+    assert_eq!(s, StatusCode::OK, "{o}");
+    assert_eq!(o["tracks"], 3);
+    assert_eq!(o["missing"], 0);
+    assert_eq!(o["noCover"], 2, "only Hoppípolla has a picture");
+    let (_, page) = console(&lib, "GET", "/v1/admin/library/tracks?q=Lucky", None).await;
+    assert_eq!(page["total"], 1);
+    assert_eq!(page["tracks"][0]["source"], "file");
+    let id = page["tracks"][0]["id"].as_str().unwrap().to_owned();
+    let (_, page) = console(&lib, "GET", "/v1/admin/library/tracks?filter=nocover", None).await;
+    assert_eq!(page["total"], 2);
+
+    let (s, d) = console(&lib, "GET", &format!("/v1/admin/library/tracks/{id}"), None).await;
+    assert_eq!(s, StatusCode::OK, "{d}");
+    assert_eq!(d["files"][0]["format"], "wav");
+    assert_eq!(d["genres"][0], "Electro");
+    let file = d["files"][0]["id"].as_str().unwrap().to_owned();
+
+    // Listening: the token in the address, ranges allowed.
+    let admin = lib
+        .st
+        .users
+        .check_password("Doodz", "correct horse")
+        .await
+        .unwrap()
+        .unwrap();
+    let token = lib.st.users.create_session(&admin.id).await.unwrap();
+    let res = lib
+        .app
+        .clone()
+        .oneshot(
+            Request::get(format!("/v1/admin/library/files/{file}?token={token}"))
+                .header(header::RANGE, "bytes=0-3")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::PARTIAL_CONTENT);
+    let res = lib
+        .app
+        .clone()
+        .oneshot(
+            Request::get(format!("/v1/admin/library/files/{file}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+
+    std::fs::remove_file(lib.root.join("Daft Punk/RAM/08 - Get Lucky.wav")).unwrap();
+    rescan(&lib).await;
+    let (_, o) = console(&lib, "GET", "/v1/admin/library", None).await;
+    assert_eq!(o["missing"], 1);
+    let (_, page) = console(&lib, "GET", "/v1/admin/library/tracks?filter=missing", None).await;
+    assert_eq!(page["tracks"][0]["source"], "missing");
+}
+
+#[tokio::test]
+async fn the_console_manages_imports_settings_and_backups() {
+    let lib = library("console-system").await;
+    let (_, page) = console(&lib, "GET", "/v1/admin/library/tracks?q=Takk", None).await;
+    let track = page["tracks"][0]["id"].as_str().unwrap().to_owned();
+    let t = track.clone();
+    lib.st
+        .db
+        .call(move |c| {
+            c.execute(
+                "INSERT INTO import_job(track_id, state, attempts, last_error) VALUES (?1, 'failed', 5, 'gone')",
+                [&t],
+            )?;
+            Ok(())
+        })
+        .await
+        .unwrap();
+    let (s, l) = console(&lib, "GET", "/v1/admin/imports?state=failed", None).await;
+    assert_eq!(s, StatusCode::OK, "{l}");
+    assert_eq!(l["total"], 1);
+    assert_eq!(l["jobs"][0]["lastError"], "gone");
+    assert_eq!(l["counts"]["failed"], 1);
+    let (_, r) = console(&lib, "POST", "/v1/admin/imports/retry-failed", None).await;
+    assert_eq!(r["retried"], 1);
+    let (_, l) = console(&lib, "GET", "/v1/admin/imports", None).await;
+    assert_eq!(l["jobs"][0]["state"], "pending");
+    let (s, _) = console(&lib, "DELETE", &format!("/v1/admin/imports/{track}"), None).await;
+    assert_eq!(s, StatusCode::OK);
+    let (_, l) = console(&lib, "GET", "/v1/admin/imports", None).await;
+    assert_eq!(l["total"], 0);
+    let (s, p) = console(&lib, "GET", "/v1/admin/providers", None).await;
+    assert_eq!(s, StatusCode::OK, "{p}");
+
+    // Settings: saved now, applied at the next start.
+    let (_, before) = console(&lib, "GET", "/v1/admin/settings", None).await;
+    assert_eq!(before["restartNeeded"], false);
+    let (s, after) = console(
+        &lib,
+        "PUT",
+        "/v1/admin/settings",
+        Some(serde_json::json!({"key": "import_quality", "value": "flac"})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK, "{after}");
+    assert_eq!(after["restartNeeded"], true);
+    let (s, _) = console(
+        &lib,
+        "PUT",
+        "/v1/admin/settings",
+        Some(serde_json::json!({"key": "bind", "value": "0.0.0.0:80"})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::BAD_REQUEST);
+
+    // Backups: one now, listed, downloaded.
+    let (s, b) = console(&lib, "POST", "/v1/admin/backups", None).await;
+    assert_eq!(s, StatusCode::OK, "{b}");
+    let name = b["name"].as_str().unwrap().to_owned();
+    let (_, all) = console(&lib, "GET", "/v1/admin/backups", None).await;
+    assert_eq!(all["backups"][0]["name"], name.as_str());
+    let (s, file) = console(&lib, "GET", &format!("/v1/admin/backups/{name}"), None).await;
+    assert_eq!(s, StatusCode::OK);
+    assert_eq!(file, "SQLite format 3\0");
+    let (s, _) = console(&lib, "GET", "/v1/admin/backups/..%2Fmusonic.db", None).await;
+    assert_eq!(s, StatusCode::NOT_FOUND);
+
+    let (s, _) = console(&lib, "GET", "/v1/admin/logs?level=warn", None).await;
+    assert_eq!(s, StatusCode::OK);
+    std::fs::create_dir_all(lib.st.data_dir.join("cache/covers")).unwrap();
+    std::fs::write(lib.st.data_dir.join("cache/covers/a.jpg"), [0u8; 100]).unwrap();
+    let (_, c) = console(&lib, "POST", "/v1/admin/caches/clear", None).await;
+    assert_eq!(c["freed"], 100);
+
+    // Devices and the sign-in limiter.
+    let admin = lib
+        .st
+        .users
+        .check_password("Doodz", "correct horse")
+        .await
+        .unwrap()
+        .unwrap();
+    lib.st
+        .users
+        .create_api_key(&admin.id, "Pixel")
+        .await
+        .unwrap();
+    let (_, d) = console(&lib, "GET", "/v1/admin/devices", None).await;
+    assert_eq!(d["devices"][0]["name"], "Pixel");
+    for i in 0..10 {
+        lib.st
+            .limiter
+            .failed("9.9.9.9", "Hugo", &format!("guess {i}"));
+    }
+    let (_, b) = console(&lib, "GET", "/v1/admin/blocked", None).await;
+    assert_eq!(b[0]["addr"], "9.9.9.9");
+    let (s, _) = console(
+        &lib,
+        "DELETE",
+        "/v1/admin/blocked?addr=9.9.9.9&username=hugo",
+        None,
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK);
+    assert!(lib.st.limiter.allowed("9.9.9.9", "Hugo"));
+}

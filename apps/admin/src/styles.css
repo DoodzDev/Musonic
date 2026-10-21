@@ -83,7 +83,8 @@ tr.click:hover td{background:var(--hover);cursor:pointer}
 .toggle::after{content:"";position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.15s}
 .toggle.on{background:var(--green)}.toggle.on::after{left:20px}
 .seg{display:inline-flex;background:var(--s2);border-radius:99px;padding:3px;gap:2px}
-.seg button{padding:5px 12px;border-radius:99px;font-size:13px;color:var(--text3)}
+.seg button{padding:5px 12px;border-radius:99px;font-size:13px;color:var(--text3);white-space:nowrap}
+.seg{flex:none}
 .seg button.on{background:var(--fill);color:var(--text)}
 .bar{height:8px;border-radius:99px;background:var(--s2);overflow:hidden;display:flex}
 .bar i{display:block;height:100%;background:var(--accent);min-width:3px}
@@ -102,6 +103,9 @@ tr.click:hover td{background:var(--hover);cursor:pointer}
 .tabs{display:flex;gap:4px;border-bottom:.5px solid var(--sep);margin-bottom:18px}
 .tabs button{padding:9px 14px;color:var(--text2);border-bottom:2px solid transparent}
 .tabs button.on{color:var(--text);border-bottom-color:var(--accent)}
+.tabs{overflow-x:auto;scrollbar-width:none}.tabs button{white-space:nowrap;flex:none}
+.card:has(>table){overflow-x:auto}
+.grid>*{min-width:0}.log>div{overflow-wrap:anywhere}
 .cover{width:40px;height:40px;border-radius:6px;background:linear-gradient(135deg,#2c2c2e,#3a3a3c);flex:none}
 .cover.lg{width:150px;height:150px;border-radius:var(--r-md)}
 .list-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:.5px solid var(--sep)}
@@ -133,7 +137,7 @@ tr.click:hover td{background:var(--hover);cursor:pointer}
   .app{grid-template-columns:1fr}.side{position:static;height:auto}
   .g4,.g3,.g2{grid-template-columns:1fr 1fr}.main{padding:20px 16px 60px}
 }
-@media (max-width:560px){.g4,.g3,.g2{grid-template-columns:1fr}.kv{grid-template-columns:1fr}}
+@media (max-width:560px){.g4,.g3,.g2{grid-template-columns:1fr}.kv{grid-template-columns:1fr}.hide-s{display:none}.setting,.alert{flex-wrap:wrap}.alert .btn{margin-left:0}.spread{flex-wrap:wrap}.search{min-width:0;width:100%}.head .row{flex-wrap:wrap}}
 
 .page{display:block}
 .error-line{color:var(--red);font-size:14px;margin:8px 0 0}

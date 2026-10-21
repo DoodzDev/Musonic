@@ -445,6 +445,15 @@ fn parse_net_dev(dev: &str, host: bool) -> (u64, u64) {
         })
 }
 
+/// Bytes of a file, or of a folder and everything in it.
+pub fn size_of(path: &Path) -> u64 {
+    if path.is_dir() {
+        dir_size(path)
+    } else {
+        std::fs::metadata(path).map(|m| m.len()).unwrap_or(0)
+    }
+}
+
 fn dir_size(dir: &Path) -> u64 {
     let Ok(entries) = std::fs::read_dir(dir) else {
         return 0;
@@ -490,7 +499,7 @@ fn folders(data: &Path) -> Folders {
 }
 
 /// `1.2.10` > `1.2.9`.
-fn version_key(v: &str) -> Vec<u64> {
+pub(crate) fn version_key(v: &str) -> Vec<u64> {
     v.split(['.', '-'])
         .map(|p| p.parse().unwrap_or(0))
         .collect()

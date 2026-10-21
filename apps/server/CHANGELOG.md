@@ -133,6 +133,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Rights and quotas** of users who are not administrators, all allowed and unlimited by
   default: importing online songs, the online catalog, downloads, public playlists; imports
   per day and per month, total size of their imports, highest streaming bit rate.
+- Console « Imports » (`/v1/admin/imports`, `/v1/admin/providers`): the import queue with its
+  counts, retry one or every failed import, remove one; audio providers with their state; a
+  provider's credential (the Deezer ARL) changed from the console, checked by the provider
+  before it replaces the old one, kept in the database and never shown again.
+- Console « Bibliothèque » (`/v1/admin/library…`): scan now (quick or full), the songs with
+  their file, the songs with a missing file, without a cover, twice in the library, online
+  without a file; one song's tags, files, sources, likes and plays; its file to listen to.
+- Console « Appareils et sécurité » (`/v1/admin/devices`, `/v1/admin/blocked`): device keys
+  of every account, last sign-ins, addresses refused by the limiter now, unblock one.
+- Console « Réglages et maintenance »: settings changed from the console (imports, quality,
+  online catalog and previews, scan interval, backups kept, legacy Subsonic sign-in, update
+  check), applied at the next start; restart from the console; backups listed, made now,
+  downloaded; the last 2,000 log lines; caches emptied; Musonic Web installed at `/app` from
+  its latest release (`Musonic-Web-app.zip`).
 - Failed sign-ins count each different wrong password once: an app that keeps retrying a
   password changed since no longer locks its user out of the new one.
 - A music folder that moved (another disk, another Docker mount) is followed: tracks, likes and

@@ -56,6 +56,8 @@ pub struct AppState {
     pub metrics: Option<Arc<crate::metrics::Metrics>>,
     /// What happened, for the console (`events.db`).
     pub journal: crate::journal::Journal,
+    /// The console's settings the server runs with ([`crate::settings`]).
+    pub settings_now: Arc<std::collections::BTreeMap<String, serde_json::Value>>,
 }
 
 impl AppState {
@@ -79,6 +81,7 @@ impl AppState {
             import_dir: "Musonic".to_owned(),
             metrics: None,
             journal: crate::journal::Journal::memory(),
+            settings_now: Arc::new(crate::settings::of(&crate::config::Config::default())),
         }
     }
 }
@@ -117,7 +120,14 @@ pub fn router(state: AppState) -> Router {
         .admin_dir
         .clone()
         .filter(|d| d.join("index.html").is_file());
+    // Musonic Web, when installed from the console (read at each request: no restart needed).
+    let web = crate::webapp::dir(&state.data_dir);
     let app = Router::new()
+        .nest_service(
+            "/app",
+            tower_http::services::ServeDir::new(&web)
+                .fallback(tower_http::services::ServeFile::new(web.join("index.html"))),
+        )
         .route("/health", get(health))
         .merge(subsonic::router())
         .merge(api::router());

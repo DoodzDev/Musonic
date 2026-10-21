@@ -3,7 +3,7 @@
  * @description The server's journal as the console shows it: the sentence of each coded line
  *   (in the console's language), its icon, the filters of the « Activité » page.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -18,7 +18,7 @@ export const KINDS = {
   login: 'login',
   accounts: 'account,invite,reset,password,key',
   imports: 'import',
-  server: 'server,backup,provider,settings',
+  server: 'server,backup,provider,settings,library,caches,webapp',
   problems: 'login.fail,login.blocked,login.suspended,import.failed,backup.failed,provider.expired',
 } as const;
 export type Kind = keyof typeof KINDS;
@@ -33,10 +33,25 @@ export function isProblem(e: JournalEntry): boolean {
 /** The sentence of a line. */
 export function describe(e: JournalEntry): string {
   let d = e.detail ?? '';
-  if (e.code === 'backup.done' || e.code === 'settings.journal') d = bytes(Number(d));
+  let target = e.target ?? '';
+  if (e.code === 'backup.done' || e.code === 'settings.journal' || e.code === 'caches.cleared') d = bytes(Number(d));
   if (e.code === 'settings.quota') d = d === '0' ? t.journal.unlimited : bytes(Number(d));
+  if (e.code === 'settings.changed') {
+    d = settingValue(target, d);
+    target = t.settings.names[target] ?? target;
+  }
   const text = t.journal.codes[e.code];
-  return text ? text(e.user ?? '', e.target ?? '', d) : t.journal.unknown(e.code);
+  return text ? text(e.user ?? '', target, d) : t.journal.unknown(e.code);
+}
+
+/** A server setting's value as people read it ("MP3 320", "6 heures", "activé"). */
+export function settingValue(key: string, value: string): string {
+  if (value === 'true') return t.journal.on;
+  if (value === 'false') return t.journal.off;
+  if (key === 'import_quality') return t.imports.qualities[value] ?? value;
+  if (key === 'scan_interval_minutes') return t.library.every[Number(value)] ?? t.library.everyMinutes(Number(value));
+  if (key === 'backup_days') return Number(value) ? t.settings.days(Number(value)) : t.settings.keepOff;
+  return value;
 }
 
 export function icon(e: JournalEntry): IconName {
@@ -61,6 +76,10 @@ export function icon(e: JournalEntry): IconName {
       return 'cloud';
     case 'settings':
       return 'faders';
+    case 'library':
+      return 'library';
+    case 'webapp':
+      return 'globe';
     default:
       return 'computer';
   }

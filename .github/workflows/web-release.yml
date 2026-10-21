@@ -1,7 +1,8 @@
 name: Web Release
 
 # A `web-vX.Y.Z` tag builds the web client for self-hosting and publishes the
-# release "Musonic Web X.Y.Z" with Musonic-Web.zip, its notes taken from
+# release "Musonic Web X.Y.Z" with Musonic-Web.zip (served at a site's root) and
+# Musonic-Web-app.zip (installed by Musonic Server's console, served at /app/), its notes taken from
 # apps/web/CHANGELOG.md. The online version is published by pages.yml.
 on:
   push:
@@ -38,11 +39,22 @@ jobs:
           cd apps/web/dist
           zip -r ../../../Musonic-Web.zip .
 
+      - name: Package for Musonic Server (/app)
+        env:
+          MUSONIC_WEB_BASE: /app/
+        run: |
+          rm -rf apps/web/dist
+          npm run build --workspace apps/web
+          cd apps/web/dist
+          zip -r ../../../Musonic-Web-app.zip .
+
       - name: Upload zip artifact
         uses: actions/upload-artifact@v4
         with:
           name: musonic-web-${{ github.sha }}
-          path: Musonic-Web.zip
+          path: |
+            Musonic-Web.zip
+            Musonic-Web-app.zip
           retention-days: 30
 
       - name: Read version and notes
@@ -66,6 +78,8 @@ jobs:
           body_path: release-notes.md
           # "Latest" stays the mobile release: the site and README download links rely on it.
           make_latest: false
-          files: Musonic-Web.zip
+          files: |
+            Musonic-Web.zip
+            Musonic-Web-app.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
