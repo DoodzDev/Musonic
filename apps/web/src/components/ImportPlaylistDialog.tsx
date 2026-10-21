@@ -2,8 +2,8 @@
  * @file ImportPlaylistDialog.tsx
  * @description Imports a Spotify or Deezer playlist into Musonic (ADR-020): the address is read
  *   (name, cover, songs), the import runs on the server while its progress shows, then the
- *   report lists what was not found. A Spotify playlist of more than 100 songs is completed by
- *   pasting the links copied from the Spotify app. Musonic Server only.
+ *   report lists what was not found. A Spotify playlist of more than 100 songs is completed with
+ *   the address of a second playlist holding the rest (or pasted song links). Musonic Server only.
  * @author DoodzProg
  * @version 0.1.0
  * @license CC-BY-NC-4.0
@@ -158,11 +158,25 @@ function Report({ id, onClose }: { id: string; onClose: () => void }) {
     if (state === 'done') cache.invalidate(keys.playlists);
   }, [state, cache]);
 
+  const retry = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await v1(session, `/v1/playlist-imports/${encodeURIComponent(id)}/retry`, { method: 'POST' });
+      setDetail(null);
+      load();
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const complete = async () => {
     setBusy(true);
     setError(null);
     try {
-      await v1(session, '/v1/playlist-imports', { method: 'POST', body: { text: paste, into: id } });
+      await v1(session, '/v1/playlist-imports', { method: 'POST', body: { ...requestOf(paste), into: id } });
       setPaste('');
       setDetail(null);
       load();
@@ -220,13 +234,13 @@ function Report({ id, onClose }: { id: string; onClose: () => void }) {
       {partial && (
         <div className="import-paste">
           <p>
-            <strong>{t.partial(imp.total, imp.sourceTotal ?? 0)}</strong> {t.pasteHow}
+            <strong>{t.partial(imp.total, imp.sourceTotal ?? 0)}</strong> {t.pasteHow((imp.sourceTotal ?? 0) - imp.total)}
           </p>
           {imp.appLink && <a className="btn-tinted import-open" href={imp.appLink}>{t.openSpotify}</a>}
           <label className="field-label">
             <span>{t.pasteLabel}</span>
             <span className="field field-area">
-              <textarea value={paste} onChange={(e) => setPaste(e.target.value)} rows={3} placeholder={t.pastePlaceholder} spellCheck={false} />
+              <textarea value={paste} onChange={(e) => setPaste(e.target.value)} rows={2} placeholder={t.pastePlaceholder} spellCheck={false} />
             </span>
           </label>
           <div className="dialog-actions">
@@ -236,6 +250,9 @@ function Report({ id, onClose }: { id: string; onClose: () => void }) {
       )}
       {error && <p className="import-error">{error}</p>}
       <div className="dialog-actions">
+        {imp.missing > 0 && (
+          <button type="button" className="btn-quiet" disabled={busy} onClick={() => void retry()}>{t.retry}</button>
+        )}
         {imp.playlistId && (
           <button
             type="button"

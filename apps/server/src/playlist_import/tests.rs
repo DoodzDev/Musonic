@@ -131,10 +131,13 @@ impl PlaylistSource for Links {
         url.starts_with("fake:")
     }
     async fn playlist(&self, url: &str) -> Result<SourcePlaylist, SourceError> {
-        if url != "fake:playlist:1" {
-            return Err(SourceError::NotFound);
-        }
-        let tracks = ["1", "2"]
+        // Playlist 1: the first two of four songs; playlist 2: the rest (and one already there).
+        let songs: &[&str] = match url {
+            "fake:playlist:1" => &["1", "2"],
+            "fake:playlist:2" => &["2", "3"],
+            _ => return Err(SourceError::NotFound),
+        };
+        let tracks = songs
             .iter()
             .map(|n| SourceTrack {
                 link: Some(format!("fake:track:{n}")),
@@ -282,14 +285,20 @@ async fn a_deezer_playlist_is_made_in_the_account() {
 #[tokio::test]
 async fn pasted_links_complete_a_partial_playlist() {
     let (app, st, token) = setup().await;
-    // A library song for « One More Time », without a file.
-    st.db
-        .lock()
-        .execute(
+    // A library song for « One More Time », without a file but known online.
+    {
+        let c = st.db.lock();
+        c.execute(
             "INSERT INTO track(id, title, norm_title, norm_artists, duration_ms) VALUES ('lib', 'One More Time', 'one more time', 'daft punk', 320000)",
             [],
         )
         .unwrap();
+        c.execute(
+            "INSERT INTO track_source(provider, provider_id, track_id) VALUES ('other', 'x', 'lib')",
+            [],
+        )
+        .unwrap();
+    }
     let (_, i) = call(
         &app,
         "POST",
@@ -335,4 +344,85 @@ async fn pasted_links_complete_a_partial_playlist() {
     assert_eq!(statuses, ["online", "online", "missing", "missing"], "{d}");
     assert_eq!(d["import"]["playlistId"], pl.as_str(), "the same playlist");
     assert_eq!(playlist_songs(&st, &pl), ["Midnight City", "One More Time"]);
+}
+
+#[tokio::test]
+async fn another_playlist_completes_an_import() {
+    let (app, st, token) = setup().await;
+    let (_, i) = call(
+        &app,
+        "POST",
+        "/v1/playlist-imports",
+        &token,
+        Some(json!({"url": "fake:playlist:1"})),
+    )
+    .await;
+    let id = i["id"].as_str().unwrap().to_owned();
+    let d = wait_done(&app, &token, &id).await;
+    let pl = d["import"]["playlistId"].as_str().unwrap().to_owned();
+    let (s, _) = call(
+        &app,
+        "POST",
+        "/v1/playlist-imports",
+        &token,
+        Some(json!({"url": "fake:playlist:2", "into": id})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK);
+    let d = wait_done(&app, &token, &id).await;
+    let titles: Vec<&str> = d["tracks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|t| t["title"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        titles,
+        [
+            "Midnight City",
+            "One More Time (Radio Edit)",
+            "Song nobody has"
+        ],
+        "song 2 not twice"
+    );
+    assert_eq!(d["import"]["playlistId"], pl.as_str(), "the same playlist");
+    assert_eq!(
+        playlist_songs(&st, &pl).len(),
+        1,
+        "only Midnight City is found online here"
+    );
+}
+
+#[tokio::test]
+async fn songs_not_found_can_be_looked_for_again() {
+    let (app, _st, token) = setup().await;
+    let (_, i) = call(
+        &app,
+        "POST",
+        "/v1/playlist-imports",
+        &token,
+        Some(json!({"text": "fake:track:1 fake:track:3"})),
+    )
+    .await;
+    let id = i["id"].as_str().unwrap().to_owned();
+    let d = wait_done(&app, &token, &id).await;
+    assert_eq!(d["import"]["missing"], 1);
+    let (s, r) = call(
+        &app,
+        "POST",
+        &format!("/v1/playlist-imports/{id}/retry"),
+        &token,
+        None,
+    )
+    .await;
+    assert_eq!((s, r["retried"].as_u64()), (StatusCode::OK, Some(1)));
+    let d = wait_done(&app, &token, &id).await;
+    assert_eq!(
+        (
+            d["import"]["missing"].as_u64(),
+            d["import"]["online"].as_u64()
+        ),
+        (Some(1), Some(1)),
+        "still not found, the other kept"
+    );
 }

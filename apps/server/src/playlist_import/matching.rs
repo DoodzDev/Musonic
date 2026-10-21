@@ -18,6 +18,9 @@ const SURE_MS: i64 = 5_000;
 const LIBRARY_MS: i64 = 3_000;
 /// Online: same title and artists, but lengths this far apart: probably another version.
 const UNCERTAIN_MS: i64 = 20_000;
+/// Same work, another recording (classical music: the same piece by another orchestra lasts
+/// a minute more or less): still a stand-in, shown as uncertain.
+const OTHER_RECORDING_MS: i64 = 90_000;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Found {
@@ -67,15 +70,21 @@ fn close(a: Option<i64>, b: i64, within: i64) -> bool {
     a.is_none_or(|a| b <= 0 || (a - b).abs() <= within)
 }
 
-/// The library track that is this song, preferring one with a file.
+/// Tracks clients show: a file, or an online source (see `subsonic::model::PLAYABLE`).
+const SHOWN: &str = "(EXISTS (SELECT 1 FROM track_file f WHERE f.track_id = t.id AND f.missing = 0)
+      OR EXISTS (SELECT 1 FROM track_source s WHERE s.track_id = t.id))";
+
+/// The library track that is this song, preferring one with a file. Tracks clients do not show
+/// (no file and no online source, e.g. left by an old import) are skipped: the song is then
+/// looked for online, which links its source to that same track.
 pub fn in_library(c: &Connection, t: &SourceTrack) -> rusqlite::Result<Option<String>> {
     if let Some(isrc) = t.isrc.as_deref().filter(|i| !i.is_empty()) {
         let hit: Option<String> = c
-            .prepare_cached(
-                "SELECT t.id FROM track t WHERE t.isrc = ?1
+            .prepare_cached(&format!(
+                "SELECT t.id FROM track t WHERE t.isrc = ?1 AND {SHOWN}
                   ORDER BY EXISTS (SELECT 1 FROM track_file f WHERE f.track_id = t.id AND f.missing = 0) DESC
-                  LIMIT 1",
-            )?
+                  LIMIT 1"
+            ))?
             .query_row([isrc], |r| r.get(0))
             .optional()?;
         if hit.is_some() {
@@ -87,13 +96,14 @@ pub fn in_library(c: &Connection, t: &SourceTrack) -> rusqlite::Result<Option<St
     if full.is_empty() {
         return Ok(None);
     }
-    let mut st = c.prepare_cached(
+    let mut st = c.prepare_cached(&format!(
         "SELECT t.id, t.title, t.norm_artists, t.duration_ms,
                 EXISTS (SELECT 1 FROM track_file f WHERE f.track_id = t.id AND f.missing = 0)
            FROM track t
-          WHERE t.norm_title = ?1 OR t.norm_title = ?2 OR (?2 <> '' AND t.norm_title LIKE ?2 || ' %')
-          LIMIT 200",
-    )?;
+          WHERE (t.norm_title = ?1 OR t.norm_title = ?2 OR (?2 <> '' AND t.norm_title LIKE ?2 || ' %'))
+            AND {SHOWN}
+          LIMIT 200"
+    ))?;
     let rows = st.query_map([&full, &core], |r| {
         Ok((
             r.get::<_, String>(0)?,
@@ -128,24 +138,158 @@ pub fn in_library(c: &Connection, t: &SourceTrack) -> rusqlite::Result<Option<St
     Ok(best.map(|(_, _, id)| id))
 }
 
-/// The best Deezer search result for this song, and whether it is surely the same.
+/// Words of a title made from another one (arrangements, covers, karaoke…).
+const DERIVED: &[&str] = &[
+    "apres",
+    "after",
+    "arr",
+    "arranged",
+    "arrangement",
+    "cover",
+    "covers",
+    "karaoke",
+    "tribute",
+    "inspired",
+    "originally",
+    "famous",
+    "lullaby",
+    "rendition",
+    "style",
+    "medley",
+];
+
+/// Words that say little about a title (in the languages playlists use most).
+const FILLER: &[&str] = &[
+    "the",
+    "a",
+    "an",
+    "of",
+    "in",
+    "and",
+    "for",
+    "from",
+    "with",
+    "feat",
+    "ft",
+    "remastered",
+    "remaster",
+    "version",
+    "edit",
+    "radio",
+    "live",
+    "le",
+    "la",
+    "les",
+    "de",
+    "des",
+    "du",
+    "en",
+    "et",
+    "un",
+    "une",
+    "der",
+    "die",
+    "das",
+    "und",
+    "von",
+    "il",
+    "el",
+    "y",
+    "op",
+    "no",
+    "nr",
+    "n",
+    "major",
+    "minor",
+    "majeur",
+    "mineur",
+];
+
+/// The words of a title worth comparing (numbers kept: « No. 40 », « Op. 9 » tell works apart).
+fn words(title: &str) -> Vec<String> {
+    let mut out: Vec<String> = normalize(title)
+        .split_whitespace()
+        .filter(|w| !FILLER.contains(w) && (w.len() > 1 || w.chars().all(|c| c.is_ascii_digit())))
+        // Years (« Remastered 2011 ») are not the title.
+        .filter(|w| {
+            !(w.len() == 4 && w.starts_with(['1', '2']) && w.chars().all(|c| c.is_ascii_digit()))
+        })
+        .map(str::to_owned)
+        .collect();
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// Part of the source title's words found in the result's title (0 to 1).
+fn covered(source: &[String], result: &str) -> f64 {
+    if source.is_empty() {
+        return 0.0;
+    }
+    let theirs = words(result);
+    let n = source
+        .iter()
+        .filter(|w| {
+            theirs
+                .iter()
+                .any(|t| t == *w || (w.len() > 4 && crate::matcher::similar(t, w)))
+        })
+        .count();
+    n as f64 / source.len() as f64
+}
+
+/// The song's artists are the result's, or one of them (a composer) is named in its title.
+fn same_artists(want: &[String], r: &DzTrack) -> bool {
+    let theirs = normalize_artists(r.artists().iter().map(|a| a.name.as_str()));
+    if want.is_empty() || artists_overlap(want, &theirs) {
+        return true;
+    }
+    let title = normalize(&r.title);
+    want.iter().any(|a| {
+        a.split_whitespace()
+            .last()
+            .is_some_and(|last| last.len() >= 4 && title.split_whitespace().any(|w| w == last))
+    })
+}
+
+/// The best Deezer search result for this song, and whether it is surely the same. Not sure
+/// (« uncertain »): another recording of the same work or song, close enough to stand in.
 pub fn pick(results: &[DzTrack], t: &SourceTrack) -> Option<(DzTrack, bool)> {
     let want = normalize_artists(t.artists.iter().map(String::as_str));
     let exact = normalize(&t.title);
-    let mut best: Option<((bool, bool, i64), &DzTrack)> = None;
+    let source = words(&t.title);
+    let mut best: Option<((bool, i64, i64), &DzTrack)> = None;
+    let split = |s: &str| normalize(&s.replace(['\'', '’'], " "));
+    let source_all = split(&t.title);
     for r in results.iter().filter(|r| r.id > 0) {
-        if !same_title(&r.title, &t.title) {
+        // Another piece made from it (« Études d'après la 5ème symphonie », a karaoke…).
+        let theirs = split(&r.title);
+        if DERIVED.iter().any(|d| {
+            theirs.split_whitespace().any(|w| w == *d)
+                && !source_all.split_whitespace().any(|w| w == *d)
+        }) {
             continue;
         }
-        let theirs = normalize_artists(r.artists().iter().map(|a| a.name.as_str()));
-        if !want.is_empty() && !artists_overlap(&want, &theirs) {
-            continue;
-        }
+        let same = same_title(&r.title, &t.title);
+        let cover = covered(&source, &r.title);
+        let artists = same_artists(&want, r);
         let gap = t.duration_ms.map_or(0, |d| (d - r.duration * 1000).abs());
-        if gap > UNCERTAIN_MS {
+        let sure = artists && ((same && gap <= SURE_MS) || (cover >= 0.8 && gap <= 3_000));
+        let close = (artists && (same || cover >= 0.6) && gap <= UNCERTAIN_MS)
+            || (artists && (same || cover >= 0.75) && gap <= OTHER_RECORDING_MS)
+            // The same work by the same composer, whatever its length (a whole symphony for one
+            // movement, a suite for a piece): a stand-in, uncertain.
+            || (artists && cover >= 0.85)
+            || (same && gap <= SURE_MS)
+            || (cover >= 0.8 && gap <= 3_000);
+        if !sure && !close {
             continue;
         }
-        let key = (gap <= SURE_MS, normalize(&r.title) == exact, -gap);
+        let score = ((cover * 100.0) as i64)
+            + i64::from(same) * 50
+            + i64::from(normalize(&r.title) == exact) * 20
+            + i64::from(artists) * 40;
+        let key = (sure, score, -gap);
         if best.as_ref().is_none_or(|(k, _)| key > *k) {
             best = Some((key, r));
         }
@@ -153,36 +297,75 @@ pub fn pick(results: &[DzTrack], t: &SourceTrack) -> Option<(DzTrack, bool)> {
     best.map(|((sure, _, _), r)| (r.clone(), sure))
 }
 
-/// Looks the song up in the online catalog.
-async fn search(dz: &Deezer, t: &SourceTrack) -> Result<Option<(DzTrack, bool)>> {
-    let core = core_title(&t.title);
-    let title = if core.is_empty() {
-        normalize(&t.title)
-    } else {
-        core
-    };
-    let mut queries = Vec::new();
-    if let Some(artist) = t
-        .artists
-        .first()
-        .map(|a| normalize(a))
-        .filter(|a| !a.is_empty())
-    {
-        queries.push(format!("artist:\"{artist}\" track:\"{title}\""));
-        queries.push(format!("{artist} {title}"));
-    } else {
-        queries.push(title);
-    }
-    let mut uncertain = None;
-    for q in queries {
-        let results = dz.search_tracks(&q, 15).await?;
-        match pick(&results, t) {
-            Some((r, true)) => return Ok(Some((r, true))),
-            Some(found) if uncertain.is_none() => uncertain = Some(found),
-            _ => {}
+/// A title to search with: without « (feat. …) », « [Live] » nor « - Remastered 2011 »-like
+/// endings, but keeping « Peer Gynt – Dans l'antre du roi de la montagne » whole.
+fn query_title(title: &str) -> String {
+    const VERSION: &[&str] = &[
+        "remaster", "version", "edit", "live", "mix", "mono", "stereo", "from", "bonus", "single",
+        "acoustic",
+    ];
+    let mut t = title.to_owned();
+    for (open, close) in [('(', ')'), ('[', ']')] {
+        while let (Some(a), Some(b)) = (t.find(open), t.find(close)) {
+            if b <= a {
+                break;
+            }
+            t.replace_range(a..=b, " ");
         }
     }
-    Ok(uncertain)
+    let parts: Vec<String> = t
+        .split(" - ")
+        .enumerate()
+        .filter(|(i, p)| *i == 0 || !VERSION.iter().any(|v| p.to_lowercase().contains(v)))
+        .map(|(_, p)| p.to_owned())
+        .collect();
+    // « l'antre » searched as « l antre », not « lantre ».
+    normalize(
+        &parts
+            .join(" ")
+            .replace(['\'', '’', ':', ',', '.', '"', '/', '–', '—'], " "),
+    )
+}
+
+/// What to search for: each credited artist (main one first, then the others: for classical
+/// music the performers, who are Deezer's artists) with the title, then the title alone.
+fn queries(t: &SourceTrack) -> Vec<String> {
+    let core = query_title(&t.title);
+    let mut title: Vec<&str> = core.split_whitespace().collect();
+    if title.is_empty() {
+        return Vec::new();
+    }
+    title.truncate(10);
+    let title = title.join(" ");
+    let mut out: Vec<String> = Vec::new();
+    for a in t
+        .artists
+        .iter()
+        .map(|a| normalize(a))
+        .filter(|a| !a.is_empty())
+        .take(3)
+    {
+        out.push(format!("{a} {title}"));
+    }
+    out.push(title);
+    out.dedup();
+    out
+}
+
+/// Looks the song up in the online catalog.
+pub async fn search(dz: &Deezer, t: &SourceTrack) -> Result<Option<(DzTrack, bool)>> {
+    let mut seen: Vec<DzTrack> = Vec::new();
+    for q in queries(t) {
+        for r in dz.search_tracks(&q, 15).await? {
+            if !seen.iter().any(|s| s.id == r.id) {
+                seen.push(r);
+            }
+        }
+        if let Some((r, true)) = pick(&seen, t) {
+            return Ok(Some((r, true)));
+        }
+    }
+    Ok(pick(&seen, t))
 }
 
 /// Finds one song. `source`: the service it comes from (`deezer` songs carry their catalog id).
@@ -301,12 +484,60 @@ mod tests {
         .unwrap();
         assert_eq!((t.id, sure), (1, false));
         assert!(pick(&results, &song("Robot Rock", &["Daft Punk"], None)).is_none());
+        // Another recording a minute longer: a stand-in, uncertain.
+        let (_, sure) = pick(
+            &results[..1],
+            &song("Get Lucky", &["Daft Punk"], Some(300_000)),
+        )
+        .unwrap();
+        assert!(!sure);
+        // Much longer: still the same song, a stand-in; another artist's song of that name: nothing.
+        let (_, sure) = pick(
+            &results[..1],
+            &song("Get Lucky", &["Daft Punk"], Some(400_000)),
+        )
+        .unwrap();
+        assert!(!sure);
         assert!(
             pick(
                 &results[..1],
-                &song("Get Lucky", &["Daft Punk"], Some(300_000))
+                &song("Get Lucky", &["Justice"], Some(400_000))
             )
             .is_none()
+        );
+        // Classical music: Deezer's artist is the performer, the composer is in the title.
+        let mut grieg = dz(
+            5,
+            "Grieg: Peer Gynt Suite No. 1, Op. 46: IV. In the Hall of the Mountain King",
+            "Berliner Philharmoniker",
+            150,
+        );
+        grieg.contributors = Vec::new();
+        let (t, sure) = pick(
+            std::slice::from_ref(&grieg),
+            &song(
+                "Peer Gynt Suite No. 1, Op. 46: IV. In the Hall of the Mountain King",
+                &["Edvard Grieg", "Herbert von Karajan"],
+                Some(151_000),
+            ),
+        )
+        .unwrap();
+        assert_eq!((t.id, sure), (5, true));
+    }
+
+    #[test]
+    fn search_titles_keep_the_piece() {
+        assert_eq!(
+            query_title("Peer Gynt – Dans l'antre du roi de la montagne"),
+            "peer gynt dans l antre du roi de la montagne"
+        );
+        assert_eq!(
+            query_title("Under Pressure - Remastered 2011"),
+            "under pressure"
+        );
+        assert_eq!(
+            query_title("expectations (feat. Chappell Roan)"),
+            "expectations"
         );
     }
 
@@ -318,6 +549,12 @@ mod tests {
             c.execute(
                 "INSERT INTO track(id, title, norm_title, norm_artists, duration_ms, isrc) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
                 rusqlite::params![id, title, normalize(title), artists, ms, isrc],
+            )
+            .unwrap();
+            // Shown in clients: known online.
+            c.execute(
+                "INSERT INTO track_source(provider, provider_id, track_id) VALUES ('deezer', ?1, ?1)",
+                [id],
             )
             .unwrap();
         };
@@ -359,6 +596,16 @@ mod tests {
             in_library(&c, &song("One More Time", &["Daft Punk"], Some(200_000))).unwrap(),
             None
         );
+        // A track no client shows (no file, no online source) is not a match.
+        c.execute(
+            "INSERT INTO track(id, title, norm_title, norm_artists, duration_ms) VALUES ('ghost', 'Aerodynamic', 'aerodynamic', 'daft punk', 212000)",
+            [],
+        )
+        .unwrap();
+        assert_eq!(
+            in_library(&c, &song("Aerodynamic", &["Daft Punk"], Some(212_000))).unwrap(),
+            None
+        );
     }
 }
 
@@ -393,5 +640,51 @@ mod live {
             let r = search(&dz, &t).await.unwrap();
             println!("{title}: {:?}", r.map(|(t, s)| (t.id, t.title, s)));
         }
+    }
+}
+
+#[cfg(test)]
+mod derived {
+    use super::*;
+    use crate::online::deezer::DzArtist;
+
+    #[test]
+    fn pieces_made_from_another_are_not_it() {
+        let r = |id: u64, title: &str, artist: &str, secs: i64| DzTrack {
+            id,
+            title: title.into(),
+            duration: secs,
+            artist: Some(DzArtist {
+                id: id + 1000,
+                name: artist.into(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let song = SourceTrack {
+            title: "5ème symphonie".into(),
+            artists: vec!["Ludwig van Beethoven".into()],
+            duration_ms: Some(420_000),
+            ..Default::default()
+        };
+        let etude = r(
+            1,
+            "17 Etudes de concert: No. 10, d'après la 5ème symphonie de Beethoven",
+            "Christophe Sturzenegger",
+            300,
+        );
+        assert!(pick(std::slice::from_ref(&etude), &song).is_none());
+        let real = r(
+            2,
+            "Beethoven: 5ème symphonie",
+            "Wiener Philharmoniker",
+            1900,
+        );
+        let (t, sure) = pick(&[etude, real], &song).unwrap();
+        assert_eq!(
+            (t.id, sure),
+            (2, false),
+            "the work itself, another length: uncertain"
+        );
     }
 }

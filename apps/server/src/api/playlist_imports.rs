@@ -6,6 +6,7 @@
 //! | `POST /v1/playlist-imports` | `{url}` or `{text}`, `name`, `into` (an import to complete): starts an import |
 //! | `GET /v1/playlist-imports` | The account's imports, newest first |
 //! | `GET /v1/playlist-imports/{id}` · `DELETE` | One import with its songs · forget it (the playlist stays) |
+//! | `POST /v1/playlist-imports/{id}/retry` | Looks for the songs not found again |
 
 use std::sync::Arc;
 
@@ -34,6 +35,7 @@ pub fn router() -> Router<AppState> {
         .route("/v1/playlist-imports/preview", post(preview))
         .route("/v1/playlist-imports", get(list).post(start))
         .route("/v1/playlist-imports/{id}", get(one).delete(remove))
+        .route("/v1/playlist-imports/{id}/retry", post(retry))
 }
 
 #[derive(Deserialize, Default, TS)]
@@ -369,6 +371,8 @@ async fn start(
     }
 
     let into = body.into;
+    // Completing with another playlist's address adds its songs; pasted links are the whole list.
+    let append = url.is_some();
     let id = state
         .db
         .call(move |c| {
@@ -388,6 +392,35 @@ async fn start(
                     };
                     if old_source != source {
                         return Ok(Err(ApiError::bad("links of another service")));
+                    }
+                    if append {
+                        let links: Vec<Option<String>> = tx
+                            .prepare("SELECT link FROM playlist_import_track WHERE import_id = ?1")?
+                            .query_map([&into], |r| r.get(0))?
+                            .collect::<rusqlite::Result<_>>()?;
+                        let mut next: i64 = tx.query_row(
+                            "SELECT coalesce(max(position) + 1, 0) FROM playlist_import_track WHERE import_id = ?1",
+                            [&into],
+                            |r| r.get(0),
+                        )?;
+                        let mut ins = tx.prepare_cached(
+                            "INSERT INTO playlist_import_track(import_id, position, title, artists, album, duration_ms, isrc, link, source_id)
+                             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                        )?;
+                        for r in &rows {
+                            let already = r.5.as_ref().is_some_and(|l| links.iter().flatten().any(|k| same_link(k, l)));
+                            if !already {
+                                ins.execute(params![into, next, r.0, r.1, r.2, r.3, r.4, r.5, r.6])?;
+                                next += 1;
+                            }
+                        }
+                        drop(ins);
+                        tx.execute(
+                            "UPDATE playlist_import SET state = 'pending', error = NULL, updated_at = unixepoch() WHERE id = ?1",
+                            [&into],
+                        )?;
+                        tx.commit()?;
+                        return Ok(Ok(into));
                     }
                     let known: Vec<Known> = tx
                         .prepare(
@@ -556,6 +589,44 @@ async fn one(State(state): State<AppState>, auth: Auth, Path(id): Path<String>) 
         .await?
         .ok_or_else(|| ApiError(StatusCode::NOT_FOUND, "no such import".into()))?;
     Ok(Json(json!(d)))
+}
+
+/// The songs not found are looked for again (the search improves, a service was down…).
+async fn retry(State(state): State<AppState>, auth: Auth, Path(id): Path<String>) -> Reply {
+    let (user, iid) = (auth.user.id.clone(), id.clone());
+    let n = state
+        .db
+        .call(move |c| {
+            let tx = c.transaction()?;
+            let mine = tx
+                .query_row(
+                    "SELECT 1 FROM playlist_import WHERE id = ?1 AND user_id = ?2 AND state IN ('done', 'failed')",
+                    [&iid, &user],
+                    |_| Ok(()),
+                )
+                .optional()?
+                .is_some();
+            if !mine {
+                return Ok(None);
+            }
+            let n = tx.execute(
+                "UPDATE playlist_import_track SET status = 'pending', reason = NULL, track_id = NULL
+                  WHERE import_id = ?1 AND status = 'missing' AND title <> ''",
+                [&iid],
+            )?;
+            if n > 0 {
+                tx.execute(
+                    "UPDATE playlist_import SET state = 'pending', error = NULL, updated_at = unixepoch() WHERE id = ?1",
+                    [&iid],
+                )?;
+            }
+            tx.commit()?;
+            Ok(Some(n))
+        })
+        .await?
+        .ok_or_else(|| ApiError(StatusCode::NOT_FOUND, "no such import, or not done".into()))?;
+    state.playlist_imports.wake();
+    Ok(Json(json!({ "retried": n })))
 }
 
 async fn remove(State(state): State<AppState>, auth: Auth, Path(id): Path<String>) -> Reply {

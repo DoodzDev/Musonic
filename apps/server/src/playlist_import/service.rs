@@ -23,7 +23,7 @@ use crate::{
 /// Song links read from their service at once.
 const LINKS_AT_ONCE: usize = 50;
 /// Tries for one song when the online catalog does not answer.
-const TRIES: u32 = 3;
+const TRIES: u32 = 5;
 /// Progress sent to the devices at most this often.
 const PROGRESS_EVERY: Duration = Duration::from_secs(1);
 
@@ -328,7 +328,8 @@ async fn run(state: &AppState, id: &str) -> Result<()> {
                 Err(e) if tries + 1 < TRIES => {
                     tries += 1;
                     tracing::debug!("playlist import {id}: {e:#}, trying again");
-                    tokio::time::sleep(Duration::from_secs(5 * u64::from(tries))).await;
+                    // Deezer refuses for a while when asked too much: 5, 10, 20, 40 s.
+                    tokio::time::sleep(Duration::from_secs(5 << (tries - 1))).await;
                 }
                 Err(e) => {
                     tracing::warn!("playlist import {id}: « {} »: {e:#}", p.song.title);

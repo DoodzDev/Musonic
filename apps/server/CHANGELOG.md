@@ -152,12 +152,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Playlist imports** (ADR-020, any account): `/v1/playlist-imports` reads a Deezer playlist
   (public API, every song) or a playlist of another service plugged in by a binary
   (`Extensions::playlist_sources`), or pasted song links; each song is looked for in the
-  library (ISRC, else title, artists and length), then in the online catalog (same title, an
+  library (ISRC, else title, artists and length; tracks no client shows are skipped), then in
+  the online catalog (same title, an
   artist in common, length within 5 s; within 20 s it is kept as « uncertain »); the playlist
   is made in the account at the end, songs without a file imported as usual (rights and
   quotas apply). Runs in the background, one import at a time, goes on after a restart;
   progress on `/v1/events` (`playlistImport`); a report per import (found, uncertain, missing
-  and why). Pasted links can complete an import: songs already found are kept.
+  and why). Another playlist's address completes an import (its songs are added, no
+  duplicates); pasted links replace the list, songs already found are kept. Online search
+  tries each credited artist (classical music: Deezer's artist is the performer), compares
+  the titles' words, and takes another recording of the same work as « uncertain » (any
+  length when the title and composer match well), never a piece made from it (« d'après… »,
+  arrangements, covers, karaoke).
+  `POST /v1/playlist-imports/{id}/retry` looks for the songs not found again; a service that
+  refuses for a while is asked again up to 5 times (5 to 40 s apart).
 - `/v1/auth/login` also takes the Subsonic token and its salt instead of the password (for
   clients that keep only those, like Musonic Web), under the legacy sign-in setting.
 - Artist names match whatever their spaces: « JAŸ-Z » is « JAY Z ».
