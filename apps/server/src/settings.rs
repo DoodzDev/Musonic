@@ -35,6 +35,8 @@ const SETTINGS: &[(&str, Kind)] = &[
     ("backup_days", Kind::Int(0, 365)),
     ("legacy_auth", Kind::Bool),
     ("update_check", Kind::Bool),
+    ("max_bit_rate", Kind::Int(0, 320)),
+    ("transcode_format", Kind::Choice(&["mp3", "opus", "aac"])),
 ];
 
 /// A setting as the console shows it.
@@ -68,6 +70,8 @@ pub fn of(cfg: &Config) -> BTreeMap<String, Value> {
         ("backup_days", json!(cfg.backup_days)),
         ("legacy_auth", json!(cfg.legacy_auth)),
         ("update_check", json!(cfg.update_check)),
+        ("max_bit_rate", json!(cfg.max_bit_rate)),
+        ("transcode_format", json!(cfg.transcode_format)),
     ]
     .into_iter()
     .map(|(k, v)| (k.to_owned(), v))
@@ -144,6 +148,12 @@ pub fn apply(c: &Connection, cfg: &mut Config) -> Result<()> {
             "backup_days" => cfg.backup_days = v.as_u64().unwrap_or(cfg.backup_days),
             "legacy_auth" => cfg.legacy_auth = v.as_bool().unwrap_or(cfg.legacy_auth),
             "update_check" => cfg.update_check = v.as_bool().unwrap_or(cfg.update_check),
+            "max_bit_rate" => cfg.max_bit_rate = v.as_u64().map_or(cfg.max_bit_rate, |n| n as u32),
+            "transcode_format" => {
+                if let Some(s) = v.as_str() {
+                    cfg.transcode_format = s.to_owned();
+                }
+            }
             _ => {}
         }
     }

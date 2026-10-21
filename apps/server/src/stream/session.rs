@@ -256,6 +256,21 @@ impl SessionManager {
         before - map.len()
     }
 
+    /// Drops every session nobody reads now (their files go with them): the console's « empty
+    /// the cache ».
+    pub async fn clear_unused(&self) -> usize {
+        let mut map = self.sessions.lock().await;
+        let before = map.len();
+        map.retain(|_, cell| match cell.get() {
+            Some(s) => {
+                (s.downloading.load(Ordering::Acquire) && !s.is_complete())
+                    || Arc::strong_count(s) > 1
+            }
+            None => true,
+        });
+        before - map.len()
+    }
+
     pub async fn count(&self) -> usize {
         self.sessions.lock().await.len()
     }

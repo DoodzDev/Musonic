@@ -45,6 +45,11 @@ pub struct Config {
     pub admin_dir: Option<PathBuf>,
     /// Look on GitHub for newer releases of the server and of Musonic Web (every 6 hours).
     pub update_check: bool,
+    /// Highest streaming bit rate for every account, kbit/s (0 = no limit); an account's own
+    /// limit wins when lower.
+    pub max_bit_rate: u32,
+    /// Format of the streams made smaller when a client asks no format: `mp3`, `opus`, `aac`.
+    pub transcode_format: String,
     /// The machine's `/proc/net/dev` when the server runs in a container (mount it read-only
     /// there), to count the traffic of the whole machine and not only the server's.
     pub host_net_dev: Option<PathBuf>,
@@ -69,6 +74,8 @@ impl Default for Config {
             backup_days: 14,
             admin_dir: None,
             update_check: true,
+            max_bit_rate: 0,
+            transcode_format: "mp3".to_owned(),
             host_net_dev: Some("/host/net/dev".into()),
         }
     }
@@ -141,6 +148,12 @@ impl Config {
         }
         if let Some(v) = env("MUSONIC_SUBSONIC_PROVIDER_USER") {
             cfg.subsonic_provider_user = Some(v);
+        }
+        if let Some(v) = env("MUSONIC_MAX_BIT_RATE") {
+            cfg.max_bit_rate = v.parse().context("MUSONIC_MAX_BIT_RATE")?;
+        }
+        if let Some(v) = env("MUSONIC_TRANSCODE_FORMAT") {
+            cfg.transcode_format = v.to_ascii_lowercase();
         }
         if let Some(v) = env("MUSONIC_SCAN_INTERVAL_MINUTES") {
             cfg.scan_interval_minutes = v.parse().context("MUSONIC_SCAN_INTERVAL_MINUTES")?;

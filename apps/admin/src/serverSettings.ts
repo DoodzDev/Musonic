@@ -19,7 +19,9 @@ export type SettingKey =
   | 'scan_interval_minutes'
   | 'backup_days'
   | 'legacy_auth'
-  | 'update_check';
+  | 'update_check'
+  | 'max_bit_rate'
+  | 'transcode_format';
 
 export function useServerSettings() {
   const [settings, setSettings] = useState<Settings | null>(null);

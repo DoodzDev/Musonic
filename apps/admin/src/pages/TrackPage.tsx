@@ -16,7 +16,7 @@ import { bytes, date } from '../format.ts';
 import { t } from '../i18n/index.ts';
 import { ErrorLine } from '../components/ui.tsx';
 import { ListenButton } from '../components/Listen.tsx';
-import { useListen } from '../listen.ts';
+import { coverUrl } from '../listen.ts';
 
 function duration(ms: number): string {
   const s = Math.round(ms / 1000);
@@ -41,7 +41,6 @@ export function TrackPage() {
   const { id = '' } = useParams();
   const [d, setD] = useState<TrackDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const listen = useListen();
   useEffect(() => {
     api<TrackDetail>(`/v1/admin/library/tracks/${encodeURIComponent(id)}`).then(setD).catch((e: Error) => setError(e.message));
   }, [id]);
@@ -57,8 +56,11 @@ export function TrackPage() {
       {d && (
         <>
           <div className="head mt-s">
-            <div><h1>{d.title}</h1><p className="sub">{sub}{position ? ` · ${position}` : ''} · {duration(d.durationMs)}</p></div>
-            {first && <ListenButton fileId={first.id} playing={listen.playing} onToggle={listen.toggle} label={t.track.listen} primary />}
+            <div className="row" style={{ alignItems: 'flex-end', gap: 22 }}>
+              <img className="cover lg" src={coverUrl(d.id, 300)} alt="" onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
+              <div><h1>{d.title}</h1><p className="sub">{sub}{position ? ` · ${position}` : ''} · {duration(d.durationMs)}</p></div>
+            </div>
+            {first && <ListenButton item={{ fileId: first.id, trackId: d.id, title: d.title, artist: d.artist }} label={t.track.listen} primary />}
           </div>
 
           <div className="card">
@@ -75,7 +77,7 @@ export function TrackPage() {
                     {f.missing && <> · <span className="tag bad">{t.track.missing}</span></>}
                   </div>
                 </div>
-                {!f.missing && <div style={{ marginLeft: 'auto' }}><ListenButton fileId={f.id} playing={listen.playing} onToggle={listen.toggle} /></div>}
+                {!f.missing && <div style={{ marginLeft: 'auto' }}><ListenButton item={{ fileId: f.id, trackId: d.id, title: d.title, artist: d.artist }} /></div>}
               </div>
             ))}
             {d.files.length === 0 && <p className="muted small">{t.track.noFile}</p>}

@@ -19,7 +19,7 @@ import { t } from '../i18n/index.ts';
 import { useServerSettings } from '../serverSettings.ts';
 import { ErrorLine } from '../components/ui.tsx';
 import { ListenButton } from '../components/Listen.tsx';
-import { useListen } from '../listen.ts';
+import { coverUrl } from '../listen.ts';
 import { RestartNote } from '../components/Restart.tsx';
 
 type Filter = 'all' | 'missing' | 'duplicates' | 'nocover' | 'online';
@@ -56,7 +56,6 @@ export function LibraryPage() {
   const [page, setPage] = useState<TrackPage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const settings = useServerSettings();
-  const listen = useListen();
   const navigate = useNavigate();
 
   const loadOverview = useCallback(() => {
@@ -127,11 +126,11 @@ export function LibraryPage() {
               const [kind, label] = sourceTag(r);
               return (
                 <tr key={r.id} className="click" onClick={() => navigate(`/library/${r.id}`)}>
-                  <td><b>{r.title}</b><div className="muted small">{r.artist}</div></td>
+                  <td><div className="row"><img className="cover" src={coverUrl(r.id, 80)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} /><div><b>{r.title}</b><div className="muted small">{r.artist}</div></div></div></td>
                   <td className="hide-s">{r.album ?? '—'}</td>
                   <td className="small hide-s">{formatOf(r.format, r.bitRate)}</td>
                   <td><span className={`tag ${kind}`}>{label}</span></td>
-                  <td style={{ textAlign: 'right' }}>{r.fileId && r.source === 'file' && <ListenButton fileId={r.fileId} playing={listen.playing} onToggle={listen.toggle} />}</td>
+                  <td style={{ textAlign: 'right' }}>{r.fileId && r.source === 'file' && <ListenButton item={{ fileId: r.fileId, trackId: r.id, title: r.title, artist: r.artist }} />}</td>
                 </tr>
               );
             })}

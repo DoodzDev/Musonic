@@ -8,6 +8,7 @@
 //! | `GET /v1/admin/library/tracks` | Songs (`q`, `filter`: `missing`, `nocover`, `duplicates`, `online`; `offset`, `limit`) |
 //! | `GET /v1/admin/library/tracks/{id}` | One song: tags, files, sources, likes and plays |
 //! | `GET /v1/admin/library/files/{id}?token=` | The file itself (to listen), ranges allowed |
+//! | `GET /v1/admin/library/covers/{id}?token=&size=` | A song's or album's picture |
 
 use std::{collections::HashMap, path::PathBuf};
 
@@ -33,6 +34,7 @@ pub fn router() -> Router<AppState> {
         .route("/v1/admin/library/tracks", get(tracks))
         .route("/v1/admin/library/tracks/{id}", get(track))
         .route("/v1/admin/library/files/{id}", get(file))
+        .route("/v1/admin/library/covers/{id}", get(cover))
 }
 
 fn admin(auth: &Auth) -> Result<(), ApiError> {
@@ -444,6 +446,32 @@ async fn track(State(state): State<AppState>, auth: Auth, Path(id): Path<String>
 #[derive(Deserialize)]
 struct TokenQuery {
     token: Option<String>,
+    size: Option<u32>,
+}
+
+/// An administrator signed in through `?token=` (an `<img>` or `<audio>` cannot send a header).
+async fn admin_by_token(state: &AppState, token: Option<String>) -> Result<(), ApiError> {
+    let user = super::user_of(state, &token.unwrap_or_default())
+        .await?
+        .ok_or_else(ApiError::unauthorized)?;
+    if user.is_admin {
+        Ok(())
+    } else {
+        Err(ApiError::forbidden())
+    }
+}
+
+/// The picture of a song or album, as clients get it (`getCoverArt`).
+async fn cover(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Query(q): Query<TokenQuery>,
+) -> Result<Response, ApiError> {
+    admin_by_token(&state, q.token).await?;
+    let size = q.size.filter(|s| *s > 0 && *s < 4096);
+    crate::subsonic::media::library_cover(&state, &id, size)
+        .await
+        .map_err(|_| ApiError(StatusCode::NOT_FOUND, "no picture".into()))
 }
 
 /// The file, for the console's player (an `<audio>` cannot send a header: token in the address).
@@ -453,13 +481,7 @@ async fn file(
     Query(q): Query<TokenQuery>,
     req: Request,
 ) -> Result<Response, ApiError> {
-    let token = q.token.unwrap_or_default();
-    let user = super::user_of(&state, &token)
-        .await?
-        .ok_or_else(ApiError::unauthorized)?;
-    if !user.is_admin {
-        return Err(ApiError::forbidden());
-    }
+    admin_by_token(&state, q.token).await?;
     let Some(root) = state.music_dir.clone() else {
         return Err(ApiError(StatusCode::NOT_FOUND, "no music folder".into()));
     };

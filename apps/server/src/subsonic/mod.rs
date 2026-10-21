@@ -7,7 +7,7 @@
 
 mod annotations;
 mod browse;
-mod media;
+pub(crate) mod media;
 mod model;
 mod online;
 mod playlists;
@@ -201,7 +201,19 @@ impl Ctx {
             .get("maxBitRate")
             .and_then(|v| v.parse().ok())
             .unwrap_or(0);
-        match self.limits().await.max_bit_rate.map(i64::from) {
+        // The account's limit, and the server's for everyone (settings): the lower one.
+        let server = self
+            .state
+            .settings_now
+            .get("max_bit_rate")
+            .and_then(serde_json::Value::as_i64)
+            .filter(|n| *n > 0);
+        let account = self.limits().await.max_bit_rate.map(i64::from);
+        let cap = match (account, server) {
+            (Some(a), Some(s)) => Some(a.min(s)),
+            (a, s) => a.or(s),
+        };
+        match cap {
             Some(cap) if wanted <= 0 || wanted > cap => cap,
             _ => wanted,
         }

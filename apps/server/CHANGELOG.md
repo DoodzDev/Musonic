@@ -166,6 +166,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   arrangements, covers, karaoke).
   `POST /v1/playlist-imports/{id}/retry` looks for the songs not found again; a service that
   refuses for a while is asked again up to 5 times (5 to 40 s apart).
+- Console « Lecture » (`GET /v1/admin/playback`): ffmpeg present or not, with its version; the
+  highest bit rate for every account (`max_bit_rate`, an account's own limit wins when lower)
+  and the format of smaller streams (`transcode_format`: mp3, opus, aac), both settings; the
+  caches of online songs and of pictures, emptied one by one (`caches/clear?kind=`).
+- `GET /v1/admin/library/covers/{id}?token=&size=`: a song's picture for the console (same
+  pictures and cache as `getCoverArt`).
 - `/v1/auth/login` also takes the Subsonic token and its salt instead of the password (for
   clients that keep only those, like Musonic Web), under the legacy sign-in setting.
 - Artist names match whatever their spaces: « JAŸ-Z » is « JAY Z ».

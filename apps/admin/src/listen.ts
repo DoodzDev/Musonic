@@ -1,49 +1,53 @@
 /**
  * @file listen.ts
- * @description The page's player to listen to a library file and check it: which file plays,
- *   play or stop one. Not a music player.
+ * @description The console's player, to listen to a library file and check it: one for the
+ *   Library (it keeps playing from the song list to a song's page, stops when leaving it),
+ *   shown at the bottom.
+ *   Not a music player: play, pause and choose where to listen, nothing else.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext } from 'react';
 import { session } from './api.ts';
 
+/** A file to listen to, and what to show while it plays. */
+export interface ListenItem {
+  fileId: string;
+  /** Its song, for the picture. */
+  trackId: string;
+  title: string;
+  artist: string;
+}
+
+export interface Listen {
+  item: ListenItem | null;
+  playing: boolean;
+  /** Seconds. */
+  time: number;
+  duration: number;
+  /** Plays `item`, or pauses / resumes it when it is the one loaded. */
+  toggle: (item: ListenItem) => void;
+  playPause: () => void;
+  seek: (seconds: number) => void;
+  close: () => void;
+}
+
+export const ListenContext = createContext<Listen | null>(null);
+
+export function useListen(): Listen {
+  const value = useContext(ListenContext);
+  if (!value) throw new Error('useListen outside ListenProvider');
+  return value;
+}
+
 /** The file's address (an `<audio>` cannot send a header: the session goes in it). */
-function fileUrl(fileId: string): string {
+export function fileUrl(fileId: string): string {
   return `/v1/admin/library/files/${encodeURIComponent(fileId)}?token=${encodeURIComponent(session.token ?? '')}`;
 }
 
-/** The page's player: which file plays, and a way to play or stop one. */
-export function useListen() {
-  const audio = useRef<HTMLAudioElement | null>(null);
-  const [playing, setPlaying] = useState<string | null>(null);
-  useEffect(() => {
-    const a = new Audio();
-    a.preload = 'none';
-    const stop = () => setPlaying(null);
-    a.addEventListener('ended', stop);
-    a.addEventListener('error', stop);
-    audio.current = a;
-    return () => {
-      a.pause();
-      a.removeAttribute('src');
-      a.removeEventListener('ended', stop);
-      a.removeEventListener('error', stop);
-    };
-  }, []);
-  const toggle = (fileId: string) => {
-    const a = audio.current;
-    if (!a) return;
-    if (playing === fileId) {
-      a.pause();
-      setPlaying(null);
-      return;
-    }
-    a.src = fileUrl(fileId);
-    void a.play().catch(() => setPlaying(null));
-    setPlaying(fileId);
-  };
-  return { playing, toggle };
+/** A song's (or album's) picture, `size` pixels wide. */
+export function coverUrl(id: string, size: number): string {
+  return `/v1/admin/library/covers/${encodeURIComponent(id)}?size=${size}&token=${encodeURIComponent(session.token ?? '')}`;
 }

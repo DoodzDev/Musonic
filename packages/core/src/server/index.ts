@@ -4,7 +4,7 @@
  *   generated from the server's Rust code (`apps/server`, `cargo test`; see ADR-018).
  *   Never edit `generated/` by hand.
  * @author DoodzProg
- * @version 1.5.0
+ * @version 1.6.0
  * @license CC-BY-NC-4.0
  */
 
@@ -64,3 +64,4 @@ export type { PlaylistPreview } from './generated/PlaylistPreview.ts';
 export type { PlaylistImport } from './generated/PlaylistImport.ts';
 export type { PlaylistImportTrack } from './generated/PlaylistImportTrack.ts';
 export type { PlaylistImportDetail } from './generated/PlaylistImportDetail.ts';
+export type { Playback } from './generated/Playback.ts';

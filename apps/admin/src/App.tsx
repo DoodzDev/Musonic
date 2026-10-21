@@ -15,17 +15,17 @@ import { AccountPage } from './pages/AccountPage.tsx';
 import { AccountsPage } from './pages/AccountsPage.tsx';
 import { DashboardPage } from './pages/DashboardPage.tsx';
 import { DataPage } from './pages/DataPage.tsx';
+import { PlaybackPage } from './pages/PlaybackPage.tsx';
 import { ImportsPage } from './pages/ImportsPage.tsx';
 import { InvitePage } from './pages/InvitePage.tsx';
 import { ActivityPage, AdminJournalPage } from './pages/JournalPage.tsx';
 import { LibraryPage } from './pages/LibraryPage.tsx';
+import { LibraryShell } from './components/Listen.tsx';
 import { LoginPage, NotAdminPage } from './pages/LoginPage.tsx';
 import { ResetPage } from './pages/ResetPage.tsx';
 import { SecurityPage } from './pages/SecurityPage.tsx';
 import { SettingsPage } from './pages/SettingsPage.tsx';
-import { SoonPage } from './pages/SoonPage.tsx';
 import { TrackPage } from './pages/TrackPage.tsx';
-import { t } from './i18n/index.ts';
 
 export interface Me {
   id: string;
@@ -66,10 +66,12 @@ export default function App() {
       <Route path="/accounts" element={gate(<AccountsPage />)} />
       <Route path="/accounts/:id" element={gate(<AccountPage me={me ?? null} />)} />
       <Route path="/security" element={gate(<SecurityPage />)} />
-      <Route path="/library" element={gate(<LibraryPage />)} />
-      <Route path="/library/:id" element={gate(<TrackPage />)} />
+      <Route path="/library" element={gate(<LibraryShell />)}>
+        <Route index element={<LibraryPage />} />
+        <Route path=":id" element={<TrackPage />} />
+      </Route>
       <Route path="/imports" element={gate(<ImportsPage />)} />
-      <Route path="/playback" element={gate(<SoonPage title={t.nav.playback} />)} />
+      <Route path="/playback" element={gate(<PlaybackPage />)} />
       <Route path="/data" element={gate(<DataPage />)} />
       <Route path="/settings" element={gate(<SettingsPage />)} />
       <Route path="/activity" element={gate(<ActivityPage />)} />

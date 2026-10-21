@@ -7,7 +7,8 @@
 //! | `GET /v1/admin/backups` · `POST /v1/admin/backups` | Database backups · one now |
 //! | `GET /v1/admin/backups/{name}` | Download one |
 //! | `GET /v1/admin/logs` | Last lines of the technical logs (`level`, `after`) |
-//! | `POST /v1/admin/caches/clear` | Empties the picture cache |
+//! | `POST /v1/admin/caches/clear?kind=` | Empties a cache: `covers`, `streams` (online songs), or both |
+//! | `GET /v1/admin/playback` | ffmpeg (transcoding), the caches' sizes |
 //! | `GET /v1/admin/webapp` · `POST /v1/admin/webapp/install` | Musonic Web hosted at `/app`: versions · install the latest |
 
 use std::time::Duration;
@@ -35,6 +36,7 @@ pub fn router() -> Router<AppState> {
         .route("/v1/admin/backups/{name}", get(download_backup))
         .route("/v1/admin/logs", get(logs))
         .route("/v1/admin/caches/clear", post(clear_caches))
+        .route("/v1/admin/playback", get(playback))
         .route("/v1/admin/webapp", get(webapp))
         .route("/v1/admin/webapp/install", post(install_webapp))
 }
@@ -230,10 +232,40 @@ async fn logs(auth: Auth, Query(q): Query<LogQuery>) -> Reply {
     ))))
 }
 
-async fn clear_caches(State(state): State<AppState>, auth: Auth) -> Reply {
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct CacheQuery {
+    /// `covers`, `streams`; both when missing.
+    kind: Option<String>,
+}
+
+fn streams_dir(state: &AppState) -> std::path::PathBuf {
+    state.data_dir.join("tmp").join("streams")
+}
+
+async fn clear_caches(
+    State(state): State<AppState>,
+    auth: Auth,
+    Query(q): Query<CacheQuery>,
+) -> Reply {
     admin(&auth)?;
+    let kind = q.kind.unwrap_or_default();
+    let mut freed = 0u64;
+    if kind != "covers" {
+        let before = crate::metrics::size_of(&streams_dir(&state));
+        state.sessions.clear_unused().await;
+        freed += before.saturating_sub(crate::metrics::size_of(&streams_dir(&state)));
+    }
+    if kind == "streams" {
+        state.journal.log(
+            Entry::new("caches.cleared")
+                .by_admin(&auth.user.username)
+                .detail(freed),
+        );
+        return Ok(Json(json!({ "freed": freed })));
+    }
     let dir = state.data_dir.join("cache");
-    let freed = tokio::task::spawn_blocking(move || {
+    freed += tokio::task::spawn_blocking(move || {
         let mut freed = 0u64;
         if let Ok(entries) = std::fs::read_dir(&dir) {
             for e in entries.filter_map(Result::ok) {
@@ -256,6 +288,59 @@ async fn clear_caches(State(state): State<AppState>, auth: Auth) -> Reply {
             .detail(freed),
     );
     Ok(Json(json!({ "freed": freed })))
+}
+
+#[derive(Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct Playback {
+    /// `ffmpeg -version`'s first line, `None` when it cannot run (no transcoding then).
+    pub ffmpeg: Option<String>,
+    #[ts(type = "number")]
+    pub covers_bytes: u64,
+    /// Online songs being played or kept a few minutes.
+    #[ts(type = "number")]
+    pub streams_bytes: u64,
+    pub streams: u32,
+}
+
+/// ffmpeg's version, asked once.
+async fn ffmpeg_version() -> Option<String> {
+    static VERSION: tokio::sync::OnceCell<Option<String>> = tokio::sync::OnceCell::const_new();
+    VERSION
+        .get_or_init(|| async {
+            let bin = std::env::var("MUSONIC_FFMPEG").unwrap_or_else(|_| "ffmpeg".into());
+            let out = tokio::process::Command::new(bin)
+                .arg("-version")
+                .output()
+                .await
+                .ok()?;
+            let text = String::from_utf8_lossy(&out.stdout);
+            out.status
+                .success()
+                .then(|| text.lines().next().unwrap_or_default().to_owned())
+        })
+        .await
+        .clone()
+}
+
+async fn playback(State(state): State<AppState>, auth: Auth) -> Reply {
+    admin(&auth)?;
+    let (covers, streams) = (state.data_dir.join("cache"), streams_dir(&state));
+    let (covers_bytes, streams_bytes) = tokio::task::spawn_blocking(move || {
+        (
+            crate::metrics::size_of(&covers),
+            crate::metrics::size_of(&streams),
+        )
+    })
+    .await
+    .map_err(anyhow::Error::from)?;
+    Ok(Json(json!(Playback {
+        ffmpeg: ffmpeg_version().await,
+        covers_bytes,
+        streams_bytes,
+        streams: state.sessions.count().await as u32,
+    })))
 }
 
 async fn webapp(State(state): State<AppState>, auth: Auth) -> Reply {

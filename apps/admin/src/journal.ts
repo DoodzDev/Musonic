@@ -50,6 +50,8 @@ export function settingValue(key: string, value: string): string {
   if (value === 'false') return t.journal.off;
   if (key === 'import_quality') return t.imports.qualities[value] ?? value;
   if (key === 'scan_interval_minutes') return t.library.every[Number(value)] ?? t.library.everyMinutes(Number(value));
+  if (key === 'max_bit_rate') return Number(value) ? `${value} kbit/s` : t.common.noLimit.toLowerCase();
+  if (key === 'transcode_format') return value.toUpperCase();
   if (key === 'backup_days') return Number(value) ? t.settings.days(Number(value)) : t.settings.keepOff;
   return value;
 }

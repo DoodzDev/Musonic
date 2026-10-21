@@ -15,7 +15,6 @@ import { api, ApiError, session } from '../api.ts';
 import { bytes, date, relative } from '../format.ts';
 import { LANGS, lang, setLang, t, type Lang } from '../i18n/index.ts';
 import { useServerSettings } from '../serverSettings.ts';
-import { useStatus } from '../useStatus.ts';
 import { ErrorLine, Seg, Toggle } from '../components/ui.tsx';
 import { RestartButton, RestartNote } from '../components/Restart.tsx';
 
@@ -160,27 +159,14 @@ function BackupsCard({ days, onDays }: { days: number | undefined; onDays: (d: n
 }
 
 function MaintenanceCard({ updateCheck, onUpdateCheck }: { updateCheck: boolean | undefined; onUpdateCheck: (on: boolean) => void }) {
-  const status = useStatus();
-  const [freed, setFreed] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const clear = () => {
-    setError(null);
-    api<{ freed: number }>('/v1/admin/caches/clear', { method: 'POST' })
-      .then((r) => setFreed(r.freed))
-      .catch((e: Error) => setError(e.message));
-  };
   return (
     <div className="card">
       <h2>{t.settings.maintenance}</h2>
       <div className="setting"><div><b>{t.settings.restartTitle}</b><p>{t.settings.restartHelp}</p></div><RestartButton label={t.settings.restart} /></div>
-      <div className="setting">
-        <div><b>{t.settings.caches}</b><p>{t.settings.cachesHelp}</p>{(freed !== null || status) && <p>{freed !== null ? t.settings.cleared(bytes(freed)) : t.settings.cachesSize(bytes(status?.folders.cacheBytes ?? 0))}</p>}</div>
-        <button className="btn sm" onClick={clear}><Icon name="trash" size={14} /> {t.settings.clear}</button>
-      </div>
       {updateCheck !== undefined && (
         <div className="setting"><div><b>{t.settings.updates[0]}</b><p>{t.settings.updates[1]}</p></div><Toggle label={t.settings.updates[0]} on={updateCheck} onChange={onUpdateCheck} /></div>
       )}
-      <ErrorLine error={error} />
+      <p className="muted small mt-s">{t.settings.cachesMoved}</p>
     </div>
   );
 }

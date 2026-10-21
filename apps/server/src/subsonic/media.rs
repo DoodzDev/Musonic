@@ -25,7 +25,7 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio_util::io::ReaderStream;
 
 use super::{ApiError, Code, Ctx, Reply, model, one, online};
-use crate::{online::OnlineId, stream::SEGMENT_SIZE};
+use crate::{online::OnlineId, server::AppState, stream::SEGMENT_SIZE};
 
 /// The playable file of a track: absolute path, format, bit rate (kbit/s), size.
 struct AudioFile {
@@ -148,8 +148,10 @@ async fn send_file(
 }
 
 /// What the client asked: `format` (`raw` = never transcode), `maxBitRate` (kbit/s, 0 = no limit).
+/// `fallback`: the format used when only the bit rate is too high (server setting).
 fn transcode_target(
     format: Option<&str>,
+    fallback: &'static str,
     max_bit_rate: i64,
     file_format: &str,
     file_bit_rate: Option<i64>,
@@ -167,7 +169,7 @@ fn transcode_target(
     if !other_format && !too_big {
         return None;
     }
-    let target = wanted.unwrap_or("mp3");
+    let target = wanted.unwrap_or(fallback);
     let default = match target {
         "opus" => 128,
         "aac" => 256,
@@ -214,6 +216,20 @@ fn ffmpeg_args(path: &Path, target: &str, kbps: i64, offset: i64) -> Vec<String>
     args
 }
 
+/// The server's transcoding format (settings), MP3 when unset.
+fn fallback_format(ctx: &Ctx) -> &'static str {
+    match ctx
+        .state
+        .settings_now
+        .get("transcode_format")
+        .and_then(Value::as_str)
+    {
+        Some("opus") => "opus",
+        Some("aac") => "aac",
+        _ => "mp3",
+    }
+}
+
 fn ffmpeg_bin() -> String {
     std::env::var("MUSONIC_FFMPEG").unwrap_or_else(|_| "ffmpeg".into())
 }
@@ -251,9 +267,13 @@ pub async fn stream(ctx: &Ctx, download: bool) -> Result<Response, ApiError> {
         .get("timeOffset")
         .and_then(|v| v.parse().ok())
         .unwrap_or(0);
-    if let Some((target, kbps)) =
-        transcode_target(ctx.params.get("format"), max, &file.format, file.bit_rate)
-    {
+    if let Some((target, kbps)) = transcode_target(
+        ctx.params.get("format"),
+        fallback_format(ctx),
+        max,
+        &file.format,
+        file.bit_rate,
+    ) {
         let spawned = tokio::process::Command::new(ffmpeg_bin())
             .args(ffmpeg_args(&file.path, target, kbps, offset))
             .stdin(Stdio::null())
@@ -396,11 +416,10 @@ enum Cover {
 
 /// Where a cover id's picture is: a playlist (`pl-…`), an album, a track (its album's cover,
 /// else its own picture), an artist (`ar-…` or its id: their photo).
-async fn cover_source(ctx: &Ctx, id: &str) -> Result<Option<Cover>, ApiError> {
+async fn cover_source(state: &AppState, id: &str) -> Result<Option<Cover>, ApiError> {
     let id = id.to_owned();
-    let data_dir = ctx.state.data_dir.clone();
-    Ok(ctx
-        .state
+    let data_dir = state.data_dir.clone();
+    Ok(state
         .db
         .call(move |c| {
             if let Some(pl) = id.strip_prefix("pl-") {
@@ -545,8 +564,28 @@ pub async fn cover_art(ctx: &Ctx) -> Result<Response, ApiError> {
         .filter(|s| *s > 0 && *s < 4096);
     let source = match OnlineId::parse(&id) {
         Some(item) => online::cover_url(ctx, item).await?.map(Cover::Remote),
-        None => cover_source(ctx, &id).await?,
+        None => cover_source(&ctx.state, &id).await?,
     };
+    cover_response(&ctx.state, &id, source, size).await
+}
+
+/// A library picture (album, track, artist, playlist id) for the console: the same pictures
+/// and cache as `getCoverArt`.
+pub async fn library_cover(
+    state: &AppState,
+    id: &str,
+    size: Option<u32>,
+) -> Result<Response, ApiError> {
+    let source = cover_source(state, id).await?;
+    cover_response(state, id, source, size).await
+}
+
+async fn cover_response(
+    state: &AppState,
+    id: &str,
+    source: Option<Cover>,
+    size: Option<u32>,
+) -> Result<Response, ApiError> {
     let Some(source) = source else {
         return Ok(StatusCode::NOT_FOUND.into_response());
     };
@@ -556,8 +595,7 @@ pub async fn cover_art(ctx: &Ctx) -> Result<Response, ApiError> {
         }
         Cover::Remote(url) => format!("url\u{1f}{url}\u{1f}{size:?}"),
     }));
-    let cached = ctx
-        .state
+    let cached = state
         .data_dir
         .join("cache")
         .join("covers")
@@ -571,7 +609,7 @@ pub async fn cover_art(ctx: &Ctx) -> Result<Response, ApiError> {
                 .await
                 .map_err(anyhow::Error::from)?,
         ),
-        Cover::Remote(url) => Some(match ctx.state.online.as_deref() {
+        Cover::Remote(url) => Some(match state.online.as_deref() {
             Some(dz) => dz.picture(&url).await,
             None => Err(anyhow::anyhow!("online catalog disabled")),
         }),
@@ -744,24 +782,35 @@ mod tests {
     #[test]
     fn transcoding_decisions() {
         // Original quality asked, or file already small enough: no transcoding.
-        assert_eq!(transcode_target(None, 0, "mp3", Some(320)), None);
-        assert_eq!(transcode_target(None, 192, "mp3", Some(128)), None);
-        assert_eq!(transcode_target(Some("raw"), 96, "flac", Some(900)), None);
+        assert_eq!(transcode_target(None, "mp3", 0, "mp3", Some(320)), None);
+        assert_eq!(transcode_target(None, "mp3", 192, "mp3", Some(128)), None);
+        assert_eq!(
+            transcode_target(Some("raw"), "mp3", 96, "flac", Some(900)),
+            None
+        );
         // Mobile data at 192 kbit/s.
         assert_eq!(
-            transcode_target(None, 192, "flac", Some(900)),
+            transcode_target(None, "mp3", 192, "flac", Some(900)),
             Some(("mp3", 192))
         );
         assert_eq!(
-            transcode_target(None, 192, "mp3", Some(320)),
+            transcode_target(None, "mp3", 192, "mp3", Some(320)),
             Some(("mp3", 192))
         );
         // Another format asked.
         assert_eq!(
-            transcode_target(Some("opus"), 0, "mp3", Some(320)),
+            transcode_target(Some("opus"), "mp3", 0, "mp3", Some(320)),
             Some(("opus", 128))
         );
-        assert_eq!(transcode_target(Some("mp3"), 0, "mp3", Some(320)), None);
+        assert_eq!(
+            transcode_target(Some("mp3"), "mp3", 0, "mp3", Some(320)),
+            None
+        );
+        // The server's format when only the bit rate is too high.
+        assert_eq!(
+            transcode_target(None, "opus", 128, "flac", Some(900)),
+            Some(("opus", 128))
+        );
     }
 
     #[test]
