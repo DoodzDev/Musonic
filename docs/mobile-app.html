@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!--
+    Musonic — website, mobile app
+    Built on the design of the Musonic app (Design v2 tokens).
+    @author  DoodzProg
+    @version 3.0.0
+    @license CC-BY-NC-4.0
+    @see     https://github.com/DoodzProg/Musonic
+  -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>try{var l=localStorage.getItem('musonic-lang')}catch(e){}document.documentElement.lang=l==='fr'||l==='en'?l:(navigator.language||'').toLowerCase().indexOf('fr')===0?'fr':'en'</script>
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Musonic for Android and iOS: synced lyrics, Magic Mixes, offline downloads, Android Auto. Free and open source." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://doodzprog.github.io/Musonic/mobile-app.html" />
+  <meta property="og:title" content="Musonic" />
+  <meta property="og:description" content="Your music, your server, beautifully played." />
+  <meta property="og:image" content="https://doodzprog.github.io/Musonic/assets/img/screenshots/player.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="https://doodzprog.github.io/Musonic/mobile-app.html" />
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <title>Mobile app · Musonic</title>
+</head>
+<body>
+
+  <a class="skip" href="#main"><span data-l="en">Skip to content</span><span data-l="fr">Aller au contenu</span></a>
+
+  <header class="bar">
+    <div class="wrap bar__inner">
+      <a href="./" class="brand" aria-label="Musonic">
+        <img src="assets/img/logo.svg" alt="" width="30" height="30" />
+        <span>Musonic</span>
+      </a>
+      <nav class="bar__links" aria-label="Pages">
+        <a href="./"><span data-l="en">Home</span><span data-l="fr">Accueil</span></a>
+        <a href="mobile-app.html" aria-current="page"><span data-l="en">Mobile app</span><span data-l="fr">Application mobile</span></a>
+        <a href="web.html">Web</a>
+        <a href="server.html"><span data-l="en">Server</span><span data-l="fr">Serveur</span></a>
+      </nav>
+      <div class="bar__end">
+        <div class="segmented" role="group" aria-label="Language">
+          <button type="button" data-lang="en" aria-pressed="true">EN</button>
+          <button type="button" data-lang="fr" aria-pressed="false">FR</button>
+        </div>
+        <a class="round" href="https://github.com/DoodzProg/Musonic" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <section class="hero wrap">
+      <div class="hero__text">
+        <p class="eyebrow"><span data-l="en">Mobile app · Android and iOS</span><span data-l="fr">Application mobile · Android et iOS</span></p>
+        <h1><span data-l="en">Your library, in your pocket.</span><span data-l="fr">Votre bibliothèque, dans votre poche.</span></h1>
+        <p class="lead">
+          <span data-l="en">A calm, fast player for the music on your own server. Synced lyrics, mixes made from what you love, downloads for when there is no signal, and your car's screen.</span>
+          <span data-l="fr">Un lecteur sobre et rapide pour la musique de votre propre serveur. Paroles synchronisées, mix faits de ce que vous aimez, téléchargements pour quand il n'y a pas de réseau, et l'écran de votre voiture.</span>
+        </p>
+        <div class="actions">
+          <a class="button button--accent" href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.apk">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.59l3.3-3.3a1 1 0 1 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.42L11 13.6V4a1 1 0 0 1 1-1Zm-7 15a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/></svg>
+            <span data-l="en">Download for Android</span><span data-l="fr">Télécharger pour Android</span>
+          </a>
+          <a class="button" href="#install-ios"><span data-l="en">Install on iOS</span><span data-l="fr">Installer sur iOS</span></a>
+        </div>
+        <p class="note"><span data-l="en">Version</span><span data-l="fr">Version</span> <span class="js-version"></span> · <span data-l="en">Android 7+ · iOS 15.1+ · free and open source</span><span data-l="fr">Android 7+ · iOS 15.1+ · gratuit et open source</span></p>
+      </div>
+      <div class="hero__phones" aria-hidden="true">
+        <figure class="phone phone--back"><img src="assets/img/screenshots/lyrics.jpg" alt="" /></figure>
+        <figure class="phone phone--front"><img src="assets/img/screenshots/home.jpg" alt="" /></figure>
+      </div>
+    </section>
+
+    <div class="wrap doc">
+      <nav class="toc" aria-label="Contents">
+        <p><span data-l="en">On this page</span><span data-l="fr">Sur cette page</span></p>
+        <a href="#install"><span data-l="en">1. Install</span><span data-l="fr">1. Installer</span></a>
+        <a href="#connect"><span data-l="en">2. Connect your server</span><span data-l="fr">2. Se connecter</span></a>
+        <a href="#playback"><span data-l="en">3. Playback</span><span data-l="fr">3. Lecture</span></a>
+        <a href="#discovery"><span data-l="en">4. Discovery</span><span data-l="fr">4. Découverte</span></a>
+        <a href="#library"><span data-l="en">5. Library</span><span data-l="fr">5. Bibliothèque</span></a>
+        <a href="#offline"><span data-l="en">6. Offline and data</span><span data-l="fr">6. Hors ligne et données</span></a>
+        <a href="#auto">7. Android Auto</a>
+        <a href="#everyone"><span data-l="en">8. Languages and accessibility</span><span data-l="fr">8. Langues et accessibilité</span></a>
+        <a href="#privacy"><span data-l="en">9. Privacy</span><span data-l="fr">9. Vie privée</span></a>
+        <a href="#screens"><span data-l="en">10. Screenshots</span><span data-l="fr">10. Captures</span></a>
+        <a href="#limits"><span data-l="en">11. Known limits</span><span data-l="fr">11. Limites connues</span></a>
+      </nav>
+
+      <div class="doc__body">
+
+        <section id="install">
+          <h2><span class="num">1</span><span data-l="en">Install</span><span data-l="fr">Installer</span></h2>
+          <p data-l="en">Musonic is not on the app stores: it is installed from this project's releases, for free. The app tells you when a new version is out.</p>
+          <p data-l="fr">Musonic n'est pas dans les magasins d'applications : il s'installe depuis les versions publiées de ce projet, gratuitement. L'app vous prévient quand une nouvelle version sort.</p>
+
+          <h3 id="install-android">Android <span class="badge soon">7.0+</span></h3>
+          <ol class="list" data-l="en">
+            <li>On your phone, download <a href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.apk"><code>Musonic.apk</code></a>.</li>
+            <li>Open it. Android asks once to allow installs from your browser or file manager: allow it.</li>
+            <li>Tap <strong>Install</strong>, then open Musonic.</li>
+          </ol>
+          <ol class="list" data-l="fr">
+            <li>Sur votre téléphone, téléchargez <a href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.apk"><code>Musonic.apk</code></a>.</li>
+            <li>Ouvrez-le. Android demande une fois d'autoriser les installations depuis votre navigateur ou votre gestionnaire de fichiers : autorisez.</li>
+            <li>Touchez <strong>Installer</strong>, puis ouvrez Musonic.</li>
+          </ol>
+
+          <h3 id="install-ios">iOS <span class="badge soon">15.1+</span></h3>
+          <p data-l="en">The iOS app is an unsigned <code>.ipa</code>, installed with a sideloading tool from a computer. No App Store release is planned.</p>
+          <p data-l="fr">L'app iOS est un fichier <code>.ipa</code> non signé, à installer avec un outil de « sideload » depuis un ordinateur. Aucune sortie sur l'App Store n'est prévue.</p>
+          <ol class="list" data-l="en">
+            <li>Install <a href="https://altstore.io" target="_blank" rel="noopener noreferrer">AltStore</a> or <a href="https://sideloadly.io" target="_blank" rel="noopener noreferrer">Sideloadly</a> on your computer and follow its setup.</li>
+            <li>Download <a href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.ipa"><code>Musonic.ipa</code></a>.</li>
+            <li>Connect your iPhone, then open the <code>.ipa</code> with the tool to install it.</li>
+            <li>With a free account, the app must be signed again every 7 days: AltStore does it on its own when it runs.</li>
+          </ol>
+          <ol class="list" data-l="fr">
+            <li>Installez <a href="https://altstore.io" target="_blank" rel="noopener noreferrer">AltStore</a> ou <a href="https://sideloadly.io" target="_blank" rel="noopener noreferrer">Sideloadly</a> sur votre ordinateur et suivez sa mise en place.</li>
+            <li>Téléchargez <a href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.ipa"><code>Musonic.ipa</code></a>.</li>
+            <li>Branchez votre iPhone, puis ouvrez le <code>.ipa</code> avec l'outil pour l'installer.</li>
+            <li>Avec un compte gratuit, l'app doit être re-signée tous les 7 jours : AltStore le fait tout seul quand il tourne.</li>
+          </ol>
+        </section>
+
+        <section id="connect">
+          <h2><span class="num">2</span><span data-l="en">Connect your server</span><span data-l="fr">Se connecter à votre serveur</span></h2>
+          <p data-l="en">On first launch, enter your server's address (for example <code>https://music.example.com</code>), your username and your password. Musonic says clearly what went wrong: wrong password, server not found, not a music server. More accounts can be added later from your profile.</p>
+          <p data-l="fr">Au premier lancement, entrez l'adresse de votre serveur (par exemple <code>https://music.example.com</code>), votre identifiant et votre mot de passe. Musonic dit clairement ce qui ne va pas : mot de passe faux, serveur introuvable, pas un serveur de musique. D'autres comptes peuvent être ajoutés ensuite depuis votre profil.</p>
+          <div class="table-wrap"><table class="table">
+            <thead><tr><th><span data-l="en">Server</span><span data-l="fr">Serveur</span></th><th><span data-l="en">What you get</span><span data-l="fr">Ce que vous avez</span></th></tr></thead>
+            <tbody>
+              <tr><td><a href="server.html">Musonic Server</a></td><td><span data-l="en">Everything: online catalogue, imports, real-time sync between your devices.</span><span data-l="fr">Tout : catalogue en ligne, imports, synchro en temps réel entre vos appareils.</span></td></tr>
+              <tr><td><span data-l="en">Navidrome, or any Subsonic server</span><span data-l="fr">Navidrome, ou tout serveur Subsonic</span></td><td><span data-l="en">Your library, playlists, likes, lyrics and recommendations.</span><span data-l="fr">Votre bibliothèque, vos playlists, vos likes, les paroles et les recommandations.</span></td></tr>
+            </tbody>
+          </table></div>
+          <p class="callout" data-l="en">Use an <strong>https://</strong> address: your password is then encrypted on the way.</p>
+          <p class="callout" data-l="fr">Utilisez une adresse en <strong>https://</strong> : votre mot de passe est alors chiffré pendant le trajet.</p>
+        </section>
+
+        <section id="playback">
+          <h2><span class="num">3</span><span data-l="en">Playback</span><span data-l="fr">Lecture</span></h2>
+          <ul class="group">
+            <li class="row row--text"><p class="row__title"><span data-l="en">Full-screen player</span><span data-l="fr">Lecteur plein écran</span></p><p class="row__desc"><span data-l="en">A softly blurred cover in the background, the real quality of the file (FLAC, MP3 320…), swipe down to close.</span><span data-l="fr">La pochette doucement floutée en fond, la vraie qualité du fichier (FLAC, MP3 320…), glisser vers le bas pour fermer.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">Synced lyrics</span><span data-l="fr">Paroles synchronisées</span></p><p class="row__desc"><span data-l="en">Line by line inside the player; tap a line to jump to it. From your server, else from LRCLIB.</span><span data-l="fr">Ligne par ligne dans le lecteur ; touchez une ligne pour y aller. Depuis votre serveur, sinon depuis LRCLIB.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">A queue you control</span><span data-l="fr">Une file d'attente à vous</span></p><p class="row__desc"><span data-l="en">What you added comes first, then the album or playlist. Shuffle, repeat, autoplay, select several songs, drag to reorder. Restored where you left it.</span><span data-l="fr">Ce que vous avez ajouté passe d'abord, puis l'album ou la playlist. Aléatoire, répétition, lecture auto, sélection de plusieurs titres, glisser pour réordonner. Reprise là où vous en étiez.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">Shuffle Magic</span><span data-l="fr">Aléatoire Magique</span></p><p class="row__desc"><span data-l="en">Your songs, with related tracks found online in between.</span><span data-l="fr">Vos titres, avec des morceaux proches trouvés en ligne entre eux.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">Smart Previous, crossfade</span><span data-l="fr">Précédent intelligent, fondu enchaîné</span></p><p class="row__desc"><span data-l="en">Previous restarts the song after 3 seconds, or always goes back: your choice. Songs can fade into each other.</span><span data-l="fr">Précédent redémarre le titre après 3 secondes, ou revient toujours en arrière : à vous de choisir. Les titres peuvent s'enchaîner en fondu.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">Lock screen and notification</span><span data-l="fr">Écran verrouillé et notification</span></p><p class="row__desc"><span data-l="en">Play, pause and skip without opening the app, from headphones too.</span><span data-l="fr">Lecture, pause et titre suivant sans ouvrir l'app, depuis les écouteurs aussi.</span></p></li>
+          </ul>
+          <p class="callout"><span data-l="en"><strong>Coming soon:</strong> a sleep timer, and Musonic Connect (see and control what plays on your other devices).</span><span data-l="fr"><strong>Bientôt :</strong> un minuteur de veille, et Musonic Connect (voir et piloter ce qui joue sur vos autres appareils).</span></p>
+        </section>
+
+        <section id="discovery">
+          <h2><span class="num">4</span><span data-l="en">Discovery</span><span data-l="fr">Découverte</span></h2>
+          <ul class="group">
+            <li class="row row--text"><p class="row__title"><span data-l="en">A home that knows you</span><span data-l="fr">Un accueil qui vous connaît</span></p><p class="row__desc"><span data-l="en">Quick access, recently played, picks for you and artists to discover, built from what you play.</span><span data-l="fr">Accès rapide, écoutés récemment, sélections pour vous et artistes à découvrir, construits à partir de ce que vous écoutez.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">Magic Mixes</span><span data-l="fr">Mix Magiques</span></p><p class="row__desc"><span data-l="en">One mix per genre you love: your songs plus about 3 discoveries in 10, marked « Online ».</span><span data-l="fr">Un mix par genre que vous aimez : vos titres plus environ 3 découvertes sur 10, marquées « En ligne ».</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">One search</span><span data-l="fr">Une seule recherche</span></p><p class="row__desc"><span data-l="en">Your library and the online catalogue together, with a top result, artists, albums, songs and genres to browse.</span><span data-l="fr">Votre bibliothèque et le catalogue en ligne ensemble, avec un meilleur résultat, des artistes, albums, titres et des genres à parcourir.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">Artist pages</span><span data-l="fr">Pages artiste</span></p><p class="row__desc"><span data-l="en">Photo, popular songs, albums and similar artists.</span><span data-l="fr">Photo, titres populaires, albums et artistes similaires.</span></p></li>
+          </ul>
+        </section>
+
+        <section id="library">
+          <h2><span class="num">5</span><span data-l="en">Library</span><span data-l="fr">Bibliothèque</span></h2>
+          <ul class="list" data-l="en">
+            <li>Playlists, albums, artists and downloads, as a list or a grid, sorted your way, with pins.</li>
+            <li><strong>Liked Songs</strong> and <strong>My Music</strong>: your whole library, jump to any letter.</li>
+            <li>Create, rename and reorder playlists, give them a cover of your own.</li>
+          </ul>
+          <ul class="list" data-l="fr">
+            <li>Playlists, albums, artistes et téléchargements, en liste ou en grille, triés à votre façon, avec des épingles.</li>
+            <li><strong>Titres likés</strong> et <strong>Ma Musique</strong> : toute votre bibliothèque, saut direct à une lettre.</li>
+            <li>Créez, renommez et réordonnez vos playlists, donnez-leur votre propre pochette.</li>
+          </ul>
+        </section>
+
+        <section id="offline">
+          <h2><span class="num">6</span><span data-l="en">Offline and data</span><span data-l="fr">Hors ligne et données</span></h2>
+          <ul class="list" data-l="en">
+            <li><strong>Download</strong> playlists, albums or single songs, and play them with no connection. Downloads keep the original file.</li>
+            <li>Downloads wait for <strong>Wi-Fi</strong> by default; on mobile data, Musonic asks first.</li>
+            <li><strong>Streaming quality</strong> set separately for Wi-Fi and mobile data: Original, 320, 192 or 128 kbit/s.</li>
+            <li>An optional storage limit, an automatic offline mode when the server cannot be reached, and reconnection as soon as it answers.</li>
+          </ul>
+          <ul class="list" data-l="fr">
+            <li><strong>Téléchargez</strong> playlists, albums ou titres seuls, et écoutez-les sans connexion. Les téléchargements gardent le fichier d'origine.</li>
+            <li>Les téléchargements attendent le <strong>Wi-Fi</strong> par défaut ; en données mobiles, Musonic demande d'abord.</li>
+            <li><strong>Qualité de streaming</strong> réglée séparément en Wi-Fi et en données mobiles : Original, 320, 192 ou 128 kbit/s.</li>
+            <li>Une limite de stockage au choix, un mode hors ligne automatique quand le serveur ne répond pas, et la reconnexion dès qu'il revient.</li>
+          </ul>
+        </section>
+
+        <section id="auto">
+          <h2><span class="num">7</span>Android Auto <span class="badge soon">beta</span></h2>
+          <p data-l="en">Browse your playlists, albums, artists and downloads on your car's screen, play, and use Shuffle, Repeat and Like. Musonic starts on its own when the car asks for it, even when the app is closed.</p>
+          <p data-l="fr">Parcourez vos playlists, albums, artistes et téléchargements sur l'écran de la voiture, lancez la lecture, et utilisez Aléatoire, Répétition et J'aime. Musonic se lance tout seul quand la voiture le demande, même app fermée.</p>
+          <ol class="list" data-l="en">
+            <li>Musonic is not on the Play Store, so Android Auto must accept apps from elsewhere: open Android Auto's settings, tap <strong>Version</strong> ten times to unlock the developer settings.</li>
+            <li>In the developer settings (⋮ menu), turn on <strong>Unknown sources</strong>.</li>
+            <li>Connect your phone to the car: Musonic is in the list of music apps.</li>
+          </ol>
+          <ol class="list" data-l="fr">
+            <li>Musonic n'est pas sur le Play Store : Android Auto doit accepter les apps venues d'ailleurs. Ouvrez les réglages d'Android Auto, touchez dix fois <strong>Version</strong> pour débloquer les paramètres développeur.</li>
+            <li>Dans les paramètres développeur (menu ⋮), activez <strong>Sources inconnues</strong>.</li>
+            <li>Branchez votre téléphone à la voiture : Musonic est dans la liste des apps de musique.</li>
+          </ol>
+        </section>
+
+        <section id="everyone">
+          <h2><span class="num">8</span><span data-l="en">Languages and accessibility</span><span data-l="fr">Langues et accessibilité</span></h2>
+          <ul class="list" data-l="en">
+            <li>English and French, or the phone's language.</li>
+            <li>Basic and Advanced settings: the essentials first, the rest one tap away.</li>
+            <li>Labels for TalkBack, readable at large text sizes, a landscape layout on every screen.</li>
+          </ul>
+          <ul class="list" data-l="fr">
+            <li>Anglais et français, ou la langue du téléphone.</li>
+            <li>Réglages Basiques et Avancés : l'essentiel d'abord, le reste à un geste.</li>
+            <li>Libellés pour TalkBack, lisible en grands caractères, une mise en page paysage sur chaque écran.</li>
+          </ul>
+        </section>
+
+        <section id="privacy">
+          <h2><span class="num">9</span><span data-l="en">Privacy</span><span data-l="fr">Vie privée</span></h2>
+          <ul class="list" data-l="en">
+            <li>Your server's address and password stay on your phone and are only sent to your own server.</li>
+            <li>For artist photos, recommendations and lyrics, Musonic sends <strong>artist and song names only</strong> to the public Deezer API and LRCLIB. No account, no identifier, no listening history.</li>
+            <li>No analytics, no crash reporting, no ads. The only other request checks this project's releases for updates.</li>
+          </ul>
+          <ul class="list" data-l="fr">
+            <li>L'adresse de votre serveur et votre mot de passe restent sur votre téléphone et ne partent que vers votre propre serveur.</li>
+            <li>Pour les photos d'artistes, les recommandations et les paroles, Musonic n'envoie <strong>que des noms d'artistes et de titres</strong> à l'API publique de Deezer et à LRCLIB. Sans compte, sans identifiant, sans historique d'écoute.</li>
+            <li>Pas de statistiques, pas de rapports de plantage, pas de pub. La seule autre requête vérifie les nouvelles versions de ce projet.</li>
+          </ul>
+        </section>
+
+        <section id="screens">
+          <h2><span class="num">10</span><span data-l="en">Screenshots</span><span data-l="fr">Captures</span></h2>
+          <div class="segmented segmented--wide" role="group" aria-label="Orientation" style="margin-top:8px">
+            <button type="button" data-shots="portrait" aria-pressed="true"><span data-l="en">Portrait</span><span data-l="fr">Portrait</span></button>
+            <button type="button" data-shots="landscape" aria-pressed="false"><span data-l="en">Landscape</span><span data-l="fr">Paysage</span></button>
+          </div>
+          <div class="shots" data-set="portrait" tabindex="0" aria-label="Portrait screenshots">
+            <figure><img src="assets/img/screenshots/home.jpg" alt="Home" loading="lazy" /><figcaption><span data-l="en">Home</span><span data-l="fr">Accueil</span></figcaption></figure>
+            <figure><img src="assets/img/screenshots/player.jpg" alt="Player" loading="lazy" /><figcaption><span data-l="en">Player</span><span data-l="fr">Lecteur</span></figcaption></figure>
+            <figure><img src="assets/img/screenshots/lyrics.jpg" alt="Synced lyrics" loading="lazy" /><figcaption><span data-l="en">Synced lyrics</span><span data-l="fr">Paroles</span></figcaption></figure>
+            <figure><img src="assets/img/screenshots/queue.jpg" alt="Queue" loading="lazy" /><figcaption><span data-l="en">Queue</span><span data-l="fr">File d'attente</span></figcaption></figure>
+            <figure><img src="assets/img/screenshots/magic_mix.jpg" alt="Magic Mix" loading="lazy" /><figcaption><span data-l="en">Magic Mix</span><span data-l="fr">Mix Magique</span></figcaption></figure>
+            <figure><img src="assets/img/screenshots/home_for_you.jpg" alt="For you" loading="lazy" /><figcaption><span data-l="en">For you</span><span data-l="fr">Pour vous</span></figcaption></figure>
+            <figure><img src="assets/img/screenshots/search_results.jpg" alt="Search" loading="lazy" /><figcaption><span data-l="en">Search</span><span data-l="fr">Recherche</span></figcaption></figure>
+            <figure><img src="assets/img/screenshots/artist_detail.jpg" alt="Artist" loading="lazy" /><figcaption><span data-l="en">Artist</span><span data-l="fr">Artiste</span></figcaption></figure>
+            <figure><img src="assets/img/screenshots/album_detail.jpg" alt="Album" loading="lazy" /><figcaption>Album</figcaption></figure>
+            <figure><img src="assets/img/screenshots/library.jpg" alt="Library" loading="lazy" /><figcaption><span data-l="en">Library</span><span data-l="fr">Bibliothèque</span></figcaption></figure>
+            <figure><img src="assets/img/screenshots/library_grid.jpg" alt="Library grid" loading="lazy" /><figcaption><span data-l="en">Library, grid</span><span data-l="fr">Bibliothèque, grille</span></figcaption></figure>
+            <figure><img src="assets/img/screenshots/liked_songs.jpg" alt="Liked Songs" loading="lazy" /><figcaption><span data-l="en">Liked Songs</span><span data-l="fr">Titres likés</span></figcaption></figure>
+            <figure><img src="assets/img/screenshots/settings.jpg" alt="Settings" loading="lazy" /><figcaption><span data-l="en">Settings</span><span data-l="fr">Réglages</span></figcaption></figure>
+          </div>
+          <div class="shots shots--wide" data-set="landscape" tabindex="0" aria-label="Landscape screenshots" hidden>
+            <figure><img src="assets/img/screenshots/landscape_home.jpg" alt="Home in landscape" loading="lazy" /><figcaption><span data-l="en">Home</span><span data-l="fr">Accueil</span></figcaption></figure>
+            <figure><img src="assets/img/screenshots/landscape_player.jpg" alt="Player in landscape" loading="lazy" /><figcaption><span data-l="en">Player</span><span data-l="fr">Lecteur</span></figcaption></figure>
+            <figure><img src="assets/img/screenshots/landscape_liked.jpg" alt="Liked Songs in landscape" loading="lazy" /><figcaption><span data-l="en">Liked Songs</span><span data-l="fr">Titres likés</span></figcaption></figure>
+          </div>
+        </section>
+
+        <section id="limits">
+          <h2><span class="num">11</span><span data-l="en">Known limits</span><span data-l="fr">Limites connues</span></h2>
+          <div class="table-wrap"><table class="table">
+            <tbody>
+              <tr><td>iOS</td><td><span data-l="en">Unsigned IPA only (AltStore, Sideloadly); tested far less than Android.</span><span data-l="fr">IPA non signée seulement (AltStore, Sideloadly) ; bien moins testée qu'Android.</span></td></tr>
+              <tr><td>Android Auto</td><td><span data-l="en">Beta: browsing and playback work; voice commands do not yet.</span><span data-l="fr">Bêta : la navigation et la lecture marchent ; pas encore les commandes vocales.</span></td></tr>
+              <tr><td><span data-l="en">Memory</span><span data-l="fr">Mémoire</span></td><td><span data-l="en">Image caches can grow large on long sessions with big libraries; being worked on.</span><span data-l="fr">Les caches d'images peuvent grossir sur de longues sessions avec de grosses bibliothèques ; en cours d'amélioration.</span></td></tr>
+            </tbody>
+          </table></div>
+          <p class="note"><a href="https://github.com/DoodzProg/Musonic/blob/main/apps/mobile/CHANGELOG.md"><span data-l="en">What changed in each version</span><span data-l="fr">Ce qui a changé à chaque version</span></a> · <a href="https://github.com/DoodzProg/Musonic/issues/new/choose"><span data-l="en">Report an issue</span><span data-l="fr">Signaler un problème</span></a></p>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <a href="./" class="brand" aria-label="Musonic">
+        <img src="assets/img/logo.svg" alt="" width="26" height="26" />
+        <span>Musonic</span>
+      </a>
+      <nav class="footer__links" aria-label="Links">
+        <a href="https://github.com/DoodzProg/Musonic" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://github.com/DoodzProg/Musonic/releases" target="_blank" rel="noopener noreferrer"><span data-l="en">Releases</span><span data-l="fr">Versions</span></a>
+        <a href="https://github.com/DoodzProg/Musonic/issues/new/choose" target="_blank" rel="noopener noreferrer"><span data-l="en">Report an issue</span><span data-l="fr">Signaler un problème</span></a>
+        <a href="https://github.com/DoodzProg/Musonic#license" target="_blank" rel="noopener noreferrer"><span data-l="en">License</span><span data-l="fr">Licence</span></a>
+      </nav>
+      <p class="note"><span data-l="en">Made by</span><span data-l="fr">Fait par</span> <a href="https://doodz.dev/" target="_blank" rel="noopener noreferrer">Doodz</a></p>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js" defer></script>
+</body>
+</html>

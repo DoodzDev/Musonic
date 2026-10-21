@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!--
+    Musonic — website, web
+    Built on the design of the Musonic app (Design v2 tokens).
+    @author  DoodzProg
+    @version 3.0.0
+    @license CC-BY-NC-4.0
+    @see     https://github.com/DoodzProg/Musonic
+  -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>try{var l=localStorage.getItem('musonic-lang')}catch(e){}document.documentElement.lang=l==='fr'||l==='en'?l:(navigator.language||'').toLowerCase().indexOf('fr')===0?'fr':'en'</script>
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Musonic Web: the whole Musonic in your browser, nothing to install. Import your Spotify and Deezer playlists." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://doodzprog.github.io/Musonic/web.html" />
+  <meta property="og:title" content="Musonic" />
+  <meta property="og:description" content="Your music, your server, beautifully played." />
+  <meta property="og:image" content="https://doodzprog.github.io/Musonic/assets/img/screenshots/player.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="https://doodzprog.github.io/Musonic/web.html" />
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <title>Web · Musonic</title>
+</head>
+<body>
+
+  <a class="skip" href="#main"><span data-l="en">Skip to content</span><span data-l="fr">Aller au contenu</span></a>
+
+  <header class="bar">
+    <div class="wrap bar__inner">
+      <a href="./" class="brand" aria-label="Musonic">
+        <img src="assets/img/logo.svg" alt="" width="30" height="30" />
+        <span>Musonic</span>
+      </a>
+      <nav class="bar__links" aria-label="Pages">
+        <a href="./"><span data-l="en">Home</span><span data-l="fr">Accueil</span></a>
+        <a href="mobile-app.html"><span data-l="en">Mobile app</span><span data-l="fr">Application mobile</span></a>
+        <a href="web.html" aria-current="page">Web</a>
+        <a href="server.html"><span data-l="en">Server</span><span data-l="fr">Serveur</span></a>
+      </nav>
+      <div class="bar__end">
+        <div class="segmented" role="group" aria-label="Language">
+          <button type="button" data-lang="en" aria-pressed="true">EN</button>
+          <button type="button" data-lang="fr" aria-pressed="false">FR</button>
+        </div>
+        <a class="round" href="https://github.com/DoodzProg/Musonic" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <section class="hero wrap">
+      <div class="hero__text">
+        <p class="eyebrow"><span data-l="en">Web client · for your computer</span><span data-l="fr">Client web · pour votre ordinateur</span></p>
+        <h1><span data-l="en">All of Musonic, in a tab.</span><span data-l="fr">Tout Musonic, dans un onglet.</span></h1>
+        <p class="lead">
+          <span data-l="en">The same home, mixes, lyrics and playlists as on your phone, made for a big screen. Nothing to install: open it and sign in to your server.</span>
+          <span data-l="fr">Le même accueil, les mêmes mix, paroles et playlists que sur votre téléphone, pensés pour un grand écran. Rien à installer : ouvrez-le et connectez-vous à votre serveur.</span>
+        </p>
+        <div class="actions">
+          <a class="button button--accent" href="./app/">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="15" rx="2.5"/><path d="M2.5 8.5h19"/><path d="M10 11.5l4.5 2.5L10 16.5Z" fill="currentColor"/></svg>
+            <span data-l="en">Try it online</span><span data-l="fr">Essayer en ligne</span>
+          </a>
+          <a class="button js-web-download" href="https://github.com/DoodzProg/Musonic/releases?q=web-v&amp;expanded=true"><span data-l="en">Download to host it</span><span data-l="fr">Télécharger pour l'héberger</span></a>
+        </div>
+        <p class="note"><span data-l="en">Version</span><span data-l="fr">Version</span> <span class="js-web-version"></span> · <span data-l="en">Brave, Chrome, Edge recommended</span><span data-l="fr">Brave, Chrome, Edge conseillés</span></p>
+      </div>
+      <div class="hero__media">
+        <img class="hero__img" data-l="en" src="assets/img/screenshots/web/home-en.jpg" alt="Musonic Web" />
+        <img class="hero__img" data-l="fr" src="assets/img/screenshots/web/home-fr.jpg" alt="Musonic Web" />
+      </div>
+    </section>
+
+    <div class="wrap doc">
+      <nav class="toc" aria-label="Contents">
+        <p><span data-l="en">On this page</span><span data-l="fr">Sur cette page</span></p>
+        <a href="#start"><span data-l="en">1. Get started</span><span data-l="fr">1. Commencer</span></a>
+        <a href="#features"><span data-l="en">2. What it does</span><span data-l="fr">2. Ce qu'il fait</span></a>
+        <a href="#import"><span data-l="en">3. Import a playlist</span><span data-l="fr">3. Importer une playlist</span></a>
+        <a href="#keys"><span data-l="en">4. Keyboard and mini player</span><span data-l="fr">4. Clavier et mini-lecteur</span></a>
+        <a href="#browsers"><span data-l="en">5. Browsers and servers</span><span data-l="fr">5. Navigateurs et serveurs</span></a>
+        <a href="#host"><span data-l="en">6. Host it yourself</span><span data-l="fr">6. L'héberger vous-même</span></a>
+        <a href="#screens"><span data-l="en">7. Screenshots</span><span data-l="fr">7. Captures</span></a>
+      </nav>
+
+      <div class="doc__body">
+
+        <section id="start">
+          <h2><span class="num">1</span><span data-l="en">Get started</span><span data-l="fr">Commencer</span></h2>
+          <ol class="list" data-l="en">
+            <li>Open <a href="./app/">doodzprog.github.io/Musonic/app</a> on your computer.</li>
+            <li>Enter your server's address, your username and your password.</li>
+            <li>Tick <strong>Remember me</strong> on your own computer only: Musonic then keeps a sign-in token in this browser (it warns you first). Otherwise you are signed out when the tab closes.</li>
+          </ol>
+          <ol class="list" data-l="fr">
+            <li>Ouvrez <a href="./app/">doodzprog.github.io/Musonic/app</a> sur votre ordinateur.</li>
+            <li>Entrez l'adresse de votre serveur, votre identifiant et votre mot de passe.</li>
+            <li>Cochez <strong>Se souvenir de moi</strong> uniquement sur votre propre ordinateur : Musonic garde alors un jeton de connexion dans ce navigateur (il vous prévient d'abord). Sinon, vous êtes déconnecté à la fermeture de l'onglet.</li>
+          </ol>
+          <p class="callout" data-l="en">Your password is never sent in clear: the web client signs in with a token derived from it, and talks only to your server.</p>
+          <p class="callout" data-l="fr">Votre mot de passe n'est jamais envoyé en clair : le client web se connecte avec un jeton qui en est tiré, et ne parle qu'à votre serveur.</p>
+        </section>
+
+        <section id="features">
+          <h2><span class="num">2</span><span data-l="en">What it does</span><span data-l="fr">Ce qu'il fait</span></h2>
+          <ul class="group">
+            <li class="row row--text"><p class="row__title"><span data-l="en">Home and Magic Mixes</span><span data-l="fr">Accueil et Mix Magiques</span></p><p class="row__desc"><span data-l="en">Quick access, recently played, favourite artists, « More like… », « Because you liked… », and eight Magic Mixes a day from your favourite genres.</span><span data-l="fr">Accès rapide, écoutés récemment, artistes favoris, « Plus de… », « Parce que vous avez aimé… », et huit Mix Magiques par jour selon vos genres préférés.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">Library and search</span><span data-l="fr">Bibliothèque et recherche</span></p><p class="row__desc"><span data-l="en">Playlists with Liked Songs and My Music, albums, artists, play by genre; a search with endless results, and Browse: recently added, most played, random, by decade.</span><span data-l="fr">Playlists avec Titres likés et Ma Musique, albums, artistes, lecture par genre ; une recherche aux résultats sans fin, et Parcourir : ajouts récents, plus écoutés, au hasard, par décennie.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">The same playback engine as the app</span><span data-l="fr">Le même moteur de lecture que l'app</span></p><p class="row__desc"><span data-l="en">Shuffle off / on / Magic, repeat, autoplay, Previous restarts after 3 seconds; a queue in zones you can reorder by drag and drop.</span><span data-l="fr">Aléatoire désactivé / activé / Magique, répétition, lecture auto, Précédent redémarre après 3 secondes ; une file d'attente en zones, réordonnable par glisser-déposer.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">Full-screen player and synced lyrics</span><span data-l="fr">Lecteur plein écran et paroles synchronisées</span></p><p class="row__desc"><span data-l="en">A blurred cover background, a large cover, lyrics beside it with the sung line highlighted; click a line to jump to it.</span><span data-l="fr">Un fond de pochette floutée, une grande pochette, les paroles à côté avec la ligne chantée mise en valeur ; cliquez une ligne pour y aller.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">Playlists your way</span><span data-l="fr">Des playlists à votre façon</span></p><p class="row__desc"><span data-l="en">A heart and a « + / ✓ » on each song, right click for every action, a box to add a song to several playlists, name and description shared with every client.</span><span data-l="fr">Un cœur et un « + / ✓ » sur chaque titre, clic droit pour toutes les actions, une fenêtre pour ajouter un titre à plusieurs playlists, nom et description partagés avec tous les clients.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">English and French</span><span data-l="fr">Anglais et français</span></p><p class="row__desc"><span data-l="en">The browser's language by default; your choice is shared with this website.</span><span data-l="fr">La langue du navigateur par défaut ; votre choix est partagé avec ce site.</span></p></li>
+          </ul>
+        </section>
+
+        <section id="import">
+          <h2><span class="num">3</span><span data-l="en">Import a Spotify or Deezer playlist</span><span data-l="fr">Importer une playlist Spotify ou Deezer</span></h2>
+          <p data-l="en">With <a href="server.html">Musonic Server</a>, bring your playlists over: <strong>Library → Import</strong>, paste the playlist's address, check its name and cover, and import. It runs on the server, so you can close the window; the progress shows live.</p>
+          <p data-l="fr">Avec <a href="server.html">Musonic Server</a>, rapatriez vos playlists : <strong>Bibliothèque → Importer</strong>, collez l'adresse de la playlist, vérifiez son nom et sa pochette, et importez. L'import tourne sur le serveur, vous pouvez donc fermer la fenêtre ; la progression s'affiche en direct.</p>
+          <ul class="list" data-l="en">
+            <li>Each song is looked for in <strong>your library first</strong>: a song you already have is never downloaded again.</li>
+            <li>Then in the online catalogue. A song found online joins the playlist and is imported as a file, as for any song you add.</li>
+            <li>The report lists the <strong>uncertain</strong> songs (a close stand-in, such as another recording of the same piece) and the songs <strong>not found</strong>, with a button to look for them again.</li>
+            <li><strong>Spotify</strong> playlists are read up to their first 100 songs. For the rest, put them in a second Spotify playlist (select them, « Add to playlist » → « New playlist ») and paste its address in the report: they join the same playlist.</li>
+          </ul>
+          <ul class="list" data-l="fr">
+            <li>Chaque titre est cherché <strong>d'abord dans votre bibliothèque</strong> : un titre que vous avez déjà n'est jamais retéléchargé.</li>
+            <li>Puis dans le catalogue en ligne. Un titre trouvé en ligne entre dans la playlist et est importé en fichier, comme tout titre que vous ajoutez.</li>
+            <li>Le bilan liste les titres <strong>incertains</strong> (une version proche, comme un autre enregistrement du même morceau) et les titres <strong>introuvables</strong>, avec un bouton pour les chercher à nouveau.</li>
+            <li>Les playlists <strong>Spotify</strong> sont lues jusqu'à leurs 100 premiers titres. Pour le reste, mettez-les dans une deuxième playlist Spotify (sélectionnez-les, « Ajouter à la playlist » → « Nouvelle playlist ») et collez son adresse dans le bilan : ils rejoignent la même playlist.</li>
+          </ul>
+          <h3><span data-l="en">How many songs are found</span><span data-l="fr">Combien de titres sont trouvés</span></h3>
+          <div class="table-wrap"><table class="table">
+            <thead><tr><th><span data-l="en">Playlist</span><span data-l="fr">Playlist</span></th><th><span data-l="en">Found</span><span data-l="fr">Trouvés</span></th><th><span data-l="en">Uncertain</span><span data-l="fr">Incertains</span></th><th><span data-l="en">Not found</span><span data-l="fr">Introuvables</span></th></tr></thead>
+            <tbody>
+              <tr><td><span data-l="en">Pop and hits (250 songs)</span><span data-l="fr">Pop et tubes (250 titres)</span></td><td>98 %</td><td>2 %</td><td>0 %</td></tr>
+              <tr><td><span data-l="en">Deezer chart (100 songs)</span><span data-l="fr">Classement Deezer (100 titres)</span></td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
+              <tr><td><span data-l="en">Electro swing (33 songs)</span><span data-l="fr">Electro swing (33 titres)</span></td><td>94 %</td><td>0 %</td><td>6 %</td></tr>
+              <tr><td><span data-l="en">Classical music (100 songs)</span><span data-l="fr">Musique classique (100 titres)</span></td><td>73 %</td><td>16 %</td><td>11 %</td></tr>
+            </tbody>
+          </table></div>
+          <p class="note"><span data-l="en">Measured on real playlists, October 2026. Classical pieces are often titled differently from one service to another, hence more stand-ins.</span><span data-l="fr">Mesuré sur de vraies playlists, octobre 2026. Les œuvres classiques ont souvent des titres différents d'un service à l'autre, d'où plus de versions proches.</span></p>
+        </section>
+
+        <section id="keys">
+          <h2><span class="num">4</span><span data-l="en">Keyboard and mini player</span><span data-l="fr">Clavier et mini-lecteur</span></h2>
+          <div class="table-wrap"><table class="table">
+            <tbody>
+              <tr><td><kbd>Space</kbd></td><td><span data-l="en">Play / pause</span><span data-l="fr">Lecture / pause</span></td></tr>
+              <tr><td><kbd>Ctrl</kbd> + <kbd>←</kbd> <kbd>→</kbd></td><td><span data-l="en">Previous / next song</span><span data-l="fr">Titre précédent / suivant</span></td></tr>
+              <tr><td><span data-l="en">Media keys</span><span data-l="fr">Touches multimédia</span></td><td><span data-l="en">Also the desktop's media controls.</span><span data-l="fr">Ainsi que les contrôles multimédia du bureau.</span></td></tr>
+              <tr><td><kbd>Esc</kbd></td><td><span data-l="en">Close the full-screen player</span><span data-l="fr">Fermer le lecteur plein écran</span></td></tr>
+            </tbody>
+          </table></div>
+          <p data-l="en">The <strong>floating mini player</strong> stays on top of every window, even when the browser is minimized. Its layout follows its size: one thin line, or a large view with like and the next song.</p>
+          <p data-l="fr">Le <strong>mini-lecteur flottant</strong> reste au-dessus de toutes les fenêtres, même navigateur réduit. Sa mise en page suit sa taille : une fine ligne, ou une grande vue avec le like et le titre suivant.</p>
+        </section>
+
+        <section id="browsers">
+          <h2><span class="num">5</span><span data-l="en">Browsers and servers</span><span data-l="fr">Navigateurs et serveurs</span></h2>
+          <ul class="list" data-l="en">
+            <li><strong>Brave, Chrome or Edge</strong> recommended: the floating mini player needs them. Firefox and Safari play everything else.</li>
+            <li>Made for a computer. On a phone, use the <a href="mobile-app.html">mobile app</a>.</li>
+            <li>The online version can reach servers that allow it (CORS) over <code>https://</code>: Musonic Server and Navidrome do.</li>
+            <li>Importing playlists and the other extras need <a href="server.html">Musonic Server</a>; with Navidrome or another Subsonic server, the rest works.</li>
+          </ul>
+          <ul class="list" data-l="fr">
+            <li><strong>Brave, Chrome ou Edge</strong> conseillés : le mini-lecteur flottant en a besoin. Firefox et Safari lisent tout le reste.</li>
+            <li>Pensé pour l'ordinateur. Sur téléphone, utilisez l'<a href="mobile-app.html">application mobile</a>.</li>
+            <li>La version en ligne peut joindre les serveurs qui l'autorisent (CORS) en <code>https://</code> : Musonic Server et Navidrome le font.</li>
+            <li>L'import de playlists et les autres extras demandent <a href="server.html">Musonic Server</a> ; avec Navidrome ou un autre serveur Subsonic, le reste fonctionne.</li>
+          </ul>
+        </section>
+
+        <section id="host">
+          <h2><span class="num">6</span><span data-l="en">Host it yourself</span><span data-l="fr">L'héberger vous-même</span></h2>
+          <p data-l="en">Prefer your own address? Two ways:</p>
+          <p data-l="fr">Vous préférez votre propre adresse ? Deux façons :</p>
+          <ul class="list" data-l="en">
+            <li><strong>With Musonic Server</strong>: one click in its console (Settings → Musonic Web) installs the latest version at <code>your-server/app</code>, already set to connect to it.</li>
+            <li><strong>On any web server</strong>: download <a class="js-web-download" href="https://github.com/DoodzProg/Musonic/releases?q=web-v&amp;expanded=true"><code>Musonic-Web.zip</code></a> and follow its <a href="https://github.com/DoodzProg/Musonic/blob/main/apps/web/SELF-HOSTING.md">self-hosting guide</a>.</li>
+          </ul>
+          <ul class="list" data-l="fr">
+            <li><strong>Avec Musonic Server</strong> : un clic dans sa console (Réglages → Musonic Web) installe la dernière version à <code>votre-serveur/app</code>, déjà réglée pour s'y connecter.</li>
+            <li><strong>Sur n'importe quel serveur web</strong> : téléchargez <a class="js-web-download" href="https://github.com/DoodzProg/Musonic/releases?q=web-v&amp;expanded=true"><code>Musonic-Web.zip</code></a> et suivez son <a href="https://github.com/DoodzProg/Musonic/blob/main/apps/web/SELF-HOSTING.md">guide d'auto-hébergement</a>.</li>
+          </ul>
+          <p class="note"><a href="https://github.com/DoodzProg/Musonic/blob/main/apps/web/CHANGELOG.md"><span data-l="en">What changed in each version</span><span data-l="fr">Ce qui a changé à chaque version</span></a></p>
+        </section>
+
+        <section id="screens">
+          <h2><span class="num">7</span><span data-l="en">Screenshots</span><span data-l="fr">Captures</span></h2>
+          <p data-l="en">Click a screenshot to see it full screen.</p>
+          <p data-l="fr">Cliquez sur une capture pour la voir en plein écran.</p>
+          <div class="shots shots--wide" data-l="en" tabindex="0" aria-label="Screenshots">
+            <figure><img src="assets/img/screenshots/web/home-en.jpg" alt="Home" loading="lazy" /><figcaption>Home</figcaption></figure>
+            <figure><img src="assets/img/screenshots/web/album-en.jpg" alt="Album" loading="lazy" /><figcaption>Album</figcaption></figure>
+            <figure><img src="assets/img/screenshots/web/player-en.jpg" alt="Full-screen player and lyrics" loading="lazy" /><figcaption>Full-screen player and lyrics</figcaption></figure>
+            <figure><img src="assets/img/screenshots/web/search-en.jpg" alt="Search" loading="lazy" /><figcaption>Search</figcaption></figure>
+            <figure><img src="assets/img/screenshots/web/playlist-en.jpg" alt="Imported playlist" loading="lazy" /><figcaption>Imported playlist</figcaption></figure>
+            <figure><img src="assets/img/screenshots/web/import-en.jpg" alt="Import report" loading="lazy" /><figcaption>Import report</figcaption></figure>
+          </div>
+          <div class="shots shots--wide" data-l="fr" tabindex="0" aria-label="Screenshots">
+            <figure><img src="assets/img/screenshots/web/home-fr.jpg" alt="Home" loading="lazy" /><figcaption>Accueil</figcaption></figure>
+            <figure><img src="assets/img/screenshots/web/album-fr.jpg" alt="Album" loading="lazy" /><figcaption>Album</figcaption></figure>
+            <figure><img src="assets/img/screenshots/web/player-fr.jpg" alt="Full-screen player and lyrics" loading="lazy" /><figcaption>Lecteur plein écran et paroles</figcaption></figure>
+            <figure><img src="assets/img/screenshots/web/search-fr.jpg" alt="Search" loading="lazy" /><figcaption>Recherche</figcaption></figure>
+            <figure><img src="assets/img/screenshots/web/playlist-fr.jpg" alt="Imported playlist" loading="lazy" /><figcaption>Playlist importée</figcaption></figure>
+            <figure><img src="assets/img/screenshots/web/import-fr.jpg" alt="Import report" loading="lazy" /><figcaption>Bilan de l’import</figcaption></figure>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <a href="./" class="brand" aria-label="Musonic">
+        <img src="assets/img/logo.svg" alt="" width="26" height="26" />
+        <span>Musonic</span>
+      </a>
+      <nav class="footer__links" aria-label="Links">
+        <a href="https://github.com/DoodzProg/Musonic" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://github.com/DoodzProg/Musonic/releases" target="_blank" rel="noopener noreferrer"><span data-l="en">Releases</span><span data-l="fr">Versions</span></a>
+        <a href="https://github.com/DoodzProg/Musonic/issues/new/choose" target="_blank" rel="noopener noreferrer"><span data-l="en">Report an issue</span><span data-l="fr">Signaler un problème</span></a>
+        <a href="https://github.com/DoodzProg/Musonic#license" target="_blank" rel="noopener noreferrer"><span data-l="en">License</span><span data-l="fr">Licence</span></a>
+      </nav>
+      <p class="note"><span data-l="en">Made by</span><span data-l="fr">Fait par</span> <a href="https://doodz.dev/" target="_blank" rel="noopener noreferrer">Doodz</a></p>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js" defer></script>
+</body>
+</html>

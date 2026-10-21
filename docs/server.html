@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!--
+    Musonic — website, server
+    Built on the design of the Musonic app (Design v2 tokens).
+    @author  DoodzProg
+    @version 3.0.0
+    @license CC-BY-NC-4.0
+    @see     https://github.com/DoodzProg/Musonic
+  -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>try{var l=localStorage.getItem('musonic-lang')}catch(e){}document.documentElement.lang=l==='fr'||l==='en'?l:(navigator.language||'').toLowerCase().indexOf('fr')===0?'fr':'en'</script>
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Musonic Server: host your music yourself, with an online catalogue, real-time sync and an administration console." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://doodzprog.github.io/Musonic/server.html" />
+  <meta property="og:title" content="Musonic" />
+  <meta property="og:description" content="Your music, your server, beautifully played." />
+  <meta property="og:image" content="https://doodzprog.github.io/Musonic/assets/img/screenshots/player.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="https://doodzprog.github.io/Musonic/server.html" />
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <title>Server · Musonic</title>
+</head>
+<body>
+
+  <a class="skip" href="#main"><span data-l="en">Skip to content</span><span data-l="fr">Aller au contenu</span></a>
+
+  <header class="bar">
+    <div class="wrap bar__inner">
+      <a href="./" class="brand" aria-label="Musonic">
+        <img src="assets/img/logo.svg" alt="" width="30" height="30" />
+        <span>Musonic</span>
+      </a>
+      <nav class="bar__links" aria-label="Pages">
+        <a href="./"><span data-l="en">Home</span><span data-l="fr">Accueil</span></a>
+        <a href="mobile-app.html"><span data-l="en">Mobile app</span><span data-l="fr">Application mobile</span></a>
+        <a href="web.html">Web</a>
+        <a href="server.html" aria-current="page"><span data-l="en">Server</span><span data-l="fr">Serveur</span></a>
+      </nav>
+      <div class="bar__end">
+        <div class="segmented" role="group" aria-label="Language">
+          <button type="button" data-lang="en" aria-pressed="true">EN</button>
+          <button type="button" data-lang="fr" aria-pressed="false">FR</button>
+        </div>
+        <a class="round" href="https://github.com/DoodzProg/Musonic" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <section class="hero wrap">
+      <div class="hero__text">
+        <p class="eyebrow"><span data-l="en">Musonic Server · self-hosted</span><span data-l="fr">Musonic Server · auto-hébergé</span></p>
+        <h1><span data-l="en">Install it on your server. Be free.</span><span data-l="fr">Installez-le chez vous. Soyez libre.</span></h1>
+        <p class="lead">
+          <span data-l="en">One server for your whole music: your files, an online catalogue beside them, playlists from Spotify and Deezer, every device in sync, and a console to run it all. Your music never leaves your hardware.</span>
+          <span data-l="fr">Un seul serveur pour toute votre musique : vos fichiers, un catalogue en ligne à côté, vos playlists Spotify et Deezer, tous vos appareils synchronisés, et une console pour tout gérer. Votre musique ne quitte jamais votre machine.</span>
+        </p>
+        <div class="actions">
+          <a class="button button--accent" href="#install">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M11 7.5h6M11 16.5h6" stroke-linecap="round"/></svg>
+            <span data-l="en">Install it</span><span data-l="fr">L'installer</span>
+          </a>
+          <a class="button" href="#console"><span data-l="en">See the console</span><span data-l="fr">Voir la console</span></a>
+        </div>
+        <p class="note"><span data-l="en">Docker or a single program · Linux, x86 and ARM · free for personal use</span><span data-l="fr">Docker ou un seul programme · Linux, x86 et ARM · gratuit pour un usage personnel</span></p>
+      </div>
+      <div class="hero__media">
+        <img class="hero__img" data-l="en" src="assets/img/screenshots/console/dashboard-en.jpg" alt="Musonic Server console" />
+        <img class="hero__img" data-l="fr" src="assets/img/screenshots/console/dashboard-fr.jpg" alt="Musonic Server console" />
+      </div>
+    </section>
+
+    <div class="wrap doc">
+      <nav class="toc" aria-label="Contents">
+        <p><span data-l="en">The server</span><span data-l="fr">Le serveur</span></p>
+        <a href="#what"><span data-l="en">1. What it does</span><span data-l="fr">1. Ce qu'il fait</span></a>
+        <a href="#install"><span data-l="en">2. Install</span><span data-l="fr">2. Installer</span></a>
+        <a href="#first"><span data-l="en">3. First start</span><span data-l="fr">3. Premier démarrage</span></a>
+        <a href="#online"><span data-l="en">4. Online catalogue and imports</span><span data-l="fr">4. Catalogue en ligne et imports</span></a>
+        <a href="#playlists"><span data-l="en">5. Playlist imports</span><span data-l="fr">5. Imports de playlists</span></a>
+        <a href="#sync"><span data-l="en">6. Real-time sync</span><span data-l="fr">6. Synchro en temps réel</span></a>
+        <a href="#navidrome"><span data-l="en">7. Coming from Navidrome</span><span data-l="fr">7. Venir de Navidrome</span></a>
+        <a href="#settings"><span data-l="en">8. Settings</span><span data-l="fr">8. Réglages</span></a>
+        <a href="#security"><span data-l="en">9. Security and backups</span><span data-l="fr">9. Sécurité et sauvegardes</span></a>
+        <p class="toc__part"><span data-l="en">The console</span><span data-l="fr">La console</span></p>
+        <a href="#console"><span data-l="en">10. Overview</span><span data-l="fr">10. Présentation</span></a>
+        <a href="#c-dashboard"><span data-l="en">11. Dashboard and data</span><span data-l="fr">11. Tableau de bord et données</span></a>
+        <a href="#c-accounts"><span data-l="en">12. Accounts</span><span data-l="fr">12. Comptes</span></a>
+        <a href="#c-security"><span data-l="en">13. Devices and security</span><span data-l="fr">13. Appareils et sécurité</span></a>
+        <a href="#c-music"><span data-l="en">14. Library and imports</span><span data-l="fr">14. Bibliothèque et imports</span></a>
+        <a href="#c-maintenance"><span data-l="en">15. Settings and maintenance</span><span data-l="fr">15. Réglages et maintenance</span></a>
+        <a href="#c-journal"><span data-l="en">16. Activity and journal</span><span data-l="fr">16. Activité et journal</span></a>
+        <a href="#license"><span data-l="en">License</span><span data-l="fr">Licence</span></a>
+      </nav>
+
+      <div class="doc__body">
+
+        <section id="what">
+          <h2><span class="num">1</span><span data-l="en">What it does</span><span data-l="fr">Ce qu'il fait</span></h2>
+          <ul class="group">
+            <li class="row row--text"><p class="row__title"><span data-l="en">Your library</span><span data-l="fr">Votre bibliothèque</span></p><p class="row__desc"><span data-l="en">Scans your music folder (tags, covers, lyrics, several artists per song) in seconds, and watches it: a new file shows up on its own.</span><span data-l="fr">Analyse votre dossier de musique (tags, pochettes, paroles, plusieurs artistes par titre) en quelques secondes, et le surveille : un nouveau fichier apparaît tout seul.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">Every app works with it</span><span data-l="fr">Toutes les applis marchent avec</span></p><p class="row__desc"><span data-l="en">The Musonic apps, and any Subsonic app such as Substreamer or Symfonium. Lower bit rates on mobile data thanks to ffmpeg.</span><span data-l="fr">Les applis Musonic, et toute appli Subsonic comme Substreamer ou Symfonium. Débits réduits en données mobiles grâce à ffmpeg.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">An online catalogue</span><span data-l="fr">Un catalogue en ligne</span></p><p class="row__desc"><span data-l="en">Search and browse beyond your library; like an online song or add it to a playlist, and it becomes a file in your library.</span><span data-l="fr">Cherchez et parcourez au-delà de votre bibliothèque ; likez un titre en ligne ou ajoutez-le à une playlist, il devient un fichier de votre bibliothèque.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">Your playlists from elsewhere</span><span data-l="fr">Vos playlists d'ailleurs</span></p><p class="row__desc"><span data-l="en">Spotify and Deezer playlists imported from their address, by any account.</span><span data-l="fr">Les playlists Spotify et Deezer importées depuis leur adresse, par n'importe quel compte.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">Every device in sync</span><span data-l="fr">Tous les appareils synchronisés</span></p><p class="row__desc"><span data-l="en">A like on your phone shows at once on your computer: likes, playlists, plays, queue, imports.</span><span data-l="fr">Un like sur votre téléphone s'affiche aussitôt sur votre ordinateur : likes, playlists, écoutes, file d'attente, imports.</span></p></li>
+            <li class="row row--text"><p class="row__title"><span data-l="en">For your family and friends</span><span data-l="fr">Pour votre famille et vos amis</span></p><p class="row__desc"><span data-l="en">Accounts by invitation link, rights and quotas, a console to run everything. Written in Rust: fast, and light on memory.</span><span data-l="fr">Des comptes par lien d'invitation, des droits et des quotas, une console pour tout gérer. Écrit en Rust : rapide, et léger en mémoire.</span></p></li>
+          </ul>
+        </section>
+
+        <section id="install">
+          <h2><span class="num">2</span><span data-l="en">Install with Docker</span><span data-l="fr">Installer avec Docker</span></h2>
+          <p data-l="en">You need a Linux machine (a home server, a Raspberry Pi, a VPS) with Docker, and your music in a folder.</p>
+          <p data-l="fr">Il vous faut une machine Linux (un serveur maison, un Raspberry Pi, un VPS) avec Docker, et votre musique dans un dossier.</p>
+          <ol class="list" data-l="en">
+            <li>Get the project: <code>git clone https://github.com/DoodzProg/Musonic.git</code></li>
+            <li>Copy <code>apps/server/compose.example.yml</code> next to where your data will live, as <code>compose.yml</code>.</li>
+            <li>Set the path of your music folder, and the user owning it (<code>user: "1000:1000"</code>).</li>
+            <li>Start it: <code>docker compose up -d</code>. The server, ffmpeg and its console are built and started.</li>
+            <li>Put a reverse proxy with HTTPS in front (Caddy, nginx, a Cloudflare tunnel…): the server listens on <code>127.0.0.1:4533</code>.</li>
+          </ol>
+          <ol class="list" data-l="fr">
+            <li>Récupérez le projet : <code>git clone https://github.com/DoodzProg/Musonic.git</code></li>
+            <li>Copiez <code>apps/server/compose.example.yml</code> là où vivront vos données, sous le nom <code>compose.yml</code>.</li>
+            <li>Indiquez le chemin de votre dossier de musique, et l'utilisateur qui en est propriétaire (<code>user: "1000:1000"</code>).</li>
+            <li>Lancez : <code>docker compose up -d</code>. Le serveur, ffmpeg et sa console sont construits et démarrés.</li>
+            <li>Placez un reverse proxy en HTTPS devant (Caddy, nginx, un tunnel Cloudflare…) : le serveur écoute sur <code>127.0.0.1:4533</code>.</li>
+          </ol>
+          <pre><code>services:
+  musonic-server:
+    build:
+      context: ../..
+      dockerfile: apps/server/Dockerfile
+    restart: unless-stopped
+    user: "1000:1000"
+    ports:
+      - "127.0.0.1:4533:4533"
+    volumes:
+      - ./data:/data              # database, caches, daily backups
+      - /path/to/music:/music     # :ro if you do not want imports</code></pre>
+          <p class="note"><span data-l="en">Without Docker: build it with Rust (<code>cargo build --release</code> in <code>apps/server</code>), it is a single program. </span><span data-l="fr">Sans Docker : compilez-le avec Rust (<code>cargo build --release</code> dans <code>apps/server</code>), c'est un seul programme. </span><a href="https://github.com/DoodzProg/Musonic/blob/main/apps/server/README.md#build-and-run"><span data-l="en">Details</span><span data-l="fr">Détails</span></a></p>
+        </section>
+
+        <section id="first">
+          <h2><span class="num">3</span><span data-l="en">First start</span><span data-l="fr">Premier démarrage</span></h2>
+          <ol class="list" data-l="en">
+            <li>Create your administrator account: <code>docker compose exec musonic-server musonic-server user add &lt;name&gt; --admin</code> (it asks for a password).</li>
+            <li>Open your server's address in a browser: the <a href="#console">console</a> opens. Sign in.</li>
+            <li>Invite your family and friends from <strong>Accounts</strong>: each gets a link and chooses their own name and password.</li>
+            <li>In the apps, enter your server's address and sign in.</li>
+          </ol>
+          <ol class="list" data-l="fr">
+            <li>Créez votre compte administrateur : <code>docker compose exec musonic-server musonic-server user add &lt;nom&gt; --admin</code> (il demande un mot de passe).</li>
+            <li>Ouvrez l'adresse de votre serveur dans un navigateur : la <a href="#console">console</a> s'ouvre. Connectez-vous.</li>
+            <li>Invitez famille et amis depuis <strong>Comptes</strong> : chacun reçoit un lien et choisit lui-même son nom et son mot de passe.</li>
+            <li>Dans les applis, entrez l'adresse de votre serveur et connectez-vous.</li>
+          </ol>
+        </section>
+
+        <section id="online">
+          <h2><span class="num">4</span><span data-l="en">Online catalogue and imports</span><span data-l="fr">Catalogue en ligne et imports</span></h2>
+          <p data-l="en">Search shows your library and the online catalogue together (Deezer's public catalogue: songs, albums, artists, covers). Browsing it writes nothing. The moment you like an online song, add it to a playlist or like its album, it joins your library under one id, and is <strong>imported</strong> as a file in your music folder (<code>Musonic/Artist/Album/</code>), tagged and with its cover. Likes and playlists stay where they are.</p>
+          <p data-l="fr">La recherche montre ensemble votre bibliothèque et le catalogue en ligne (le catalogue public de Deezer : titres, albums, artistes, pochettes). Le parcourir n'écrit rien. Dès que vous likez un titre en ligne, l'ajoutez à une playlist ou likez son album, il entre dans votre bibliothèque sous un seul identifiant, et il est <strong>importé</strong> en fichier dans votre dossier de musique (<code>Musonic/Artiste/Album/</code>), tagué, avec sa pochette. Likes et playlists restent où ils sont.</p>
+          <ul class="list" data-l="en">
+            <li>Without anything else, online songs play as <strong>30-second previews</strong>.</li>
+            <li>Full songs and imports come from <strong>audio providers</strong> plugged into the server, for instance another Subsonic server to relay audio from (documented interface: <a href="https://github.com/DoodzProg/Musonic/blob/main/apps/server/docs/PROVIDERS.md">PROVIDERS.md</a>).</li>
+            <li>Imports run in the background, retry on their own, and follow each account's rights and quotas. Quality: MP3 128, MP3 320 or FLAC.</li>
+          </ul>
+          <ul class="list" data-l="fr">
+            <li>Sans rien d'autre, les titres en ligne se lisent en <strong>extraits de 30 secondes</strong>.</li>
+            <li>Les titres complets et les imports viennent de <strong>fournisseurs audio</strong> branchés sur le serveur, par exemple un autre serveur Subsonic dont il relaie l'audio (interface documentée : <a href="https://github.com/DoodzProg/Musonic/blob/main/apps/server/docs/PROVIDERS.md">PROVIDERS.md</a>).</li>
+            <li>Les imports tournent en arrière-plan, réessaient seuls, et suivent les droits et quotas de chaque compte. Qualité : MP3 128, MP3 320 ou FLAC.</li>
+          </ul>
+        </section>
+
+        <section id="playlists">
+          <h2><span class="num">5</span><span data-l="en">Playlist imports</span><span data-l="fr">Imports de playlists</span></h2>
+          <p data-l="en">Any account pastes the address of a Spotify or Deezer playlist in <a href="web.html#import">Musonic Web</a> and gets it as a Musonic playlist. Each song is looked for in the library first (never downloaded twice), then online; a report lists the uncertain songs and those not found. Pop playlists are found almost entirely; about 9 classical pieces in 10.</p>
+          <p data-l="fr">N'importe quel compte colle l'adresse d'une playlist Spotify ou Deezer dans <a href="web.html#import">Musonic Web</a> et la retrouve en playlist Musonic. Chaque titre est cherché d'abord dans la bibliothèque (jamais téléchargé deux fois), puis en ligne ; un bilan liste les titres incertains et introuvables. Les playlists pop sont retrouvées presque entièrement ; environ 9 œuvres classiques sur 10.</p>
+          <p class="note"><a href="web.html#import"><span data-l="en">How it works and the measured rates</span><span data-l="fr">Fonctionnement et taux mesurés</span></a></p>
+        </section>
+
+        <section id="sync">
+          <h2><span class="num">6</span><span data-l="en">Real-time sync</span><span data-l="fr">Synchro en temps réel</span></h2>
+          <p data-l="en">Every device signed in to an account is told at once what changed: a like, a playlist edited, a song played, the queue saved, an import finished. Your phone and your computer always show the same thing.</p>
+          <p data-l="fr">Chaque appareil connecté à un compte est prévenu aussitôt de ce qui change : un like, une playlist modifiée, un titre écouté, la file d'attente enregistrée, un import terminé. Votre téléphone et votre ordinateur montrent toujours la même chose.</p>
+          <p class="callout"><span data-l="en"><strong>Coming soon: Musonic Connect.</strong> See what plays on each of your devices and control it from another one: pause, skip, move the music from your phone to your computer.</span><span data-l="fr"><strong>Bientôt : Musonic Connect.</strong> Voir ce qui joue sur chacun de vos appareils et le piloter depuis un autre : pause, titre suivant, passer la musique du téléphone à l'ordinateur.</span></p>
+        </section>
+
+        <section id="navidrome">
+          <h2><span class="num">7</span><span data-l="en">Coming from Navidrome</span><span data-l="fr">Venir de Navidrome</span></h2>
+          <p data-l="en">Point Musonic Server at the same music folder, create the accounts under the same names, then bring over playlists, likes, ratings and plays (passwords never travel):</p>
+          <p data-l="fr">Pointez Musonic Server sur le même dossier de musique, créez les comptes sous les mêmes noms, puis rapatriez playlists, likes, notes et écoutes (les mots de passe, jamais) :</p>
+          <pre><code>sqlite3 -readonly navidrome.db ".backup navidrome-copy.db"
+musonic-server scan
+musonic-server import-navidrome navidrome-copy.db</code></pre>
+          <p data-l="en">Songs and playlists keep their Navidrome ids: what the apps saved (downloads, caches) keeps working. Running it again adds nothing twice.</p>
+          <p data-l="fr">Les titres et playlists gardent leurs identifiants Navidrome : ce que les applis ont enregistré (téléchargements, caches) continue de marcher. Le relancer n'ajoute rien en double.</p>
+        </section>
+
+        <section id="settings">
+          <h2><span class="num">8</span><span data-l="en">Settings</span><span data-l="fr">Réglages</span></h2>
+          <p data-l="en">Most settings change from the <a href="#c-maintenance">console</a>. The others are environment variables:</p>
+          <p data-l="fr">La plupart des réglages se changent depuis la <a href="#c-maintenance">console</a>. Les autres sont des variables d'environnement :</p>
+          <div class="table-wrap"><table class="table">
+            <thead><tr><th><span data-l="en">Setting</span><span data-l="fr">Réglage</span></th><th><span data-l="en">Variable</span><span data-l="fr">Variable</span></th><th><span data-l="en">Default</span><span data-l="fr">Par défaut</span></th></tr></thead>
+            <tbody>
+              <tr><td><span data-l="en">Address it listens on</span><span data-l="fr">Adresse d'écoute</span></td><td><code>MUSONIC_BIND</code></td><td><code>127.0.0.1:4533</code></td></tr>
+              <tr><td><span data-l="en">Data folder</span><span data-l="fr">Dossier des données</span></td><td><code>MUSONIC_DATA_DIR</code></td><td><code>data</code></td></tr>
+              <tr><td><span data-l="en">Music folder</span><span data-l="fr">Dossier de musique</span></td><td><code>MUSONIC_MUSIC_DIR</code></td><td>—</td></tr>
+              <tr><td><span data-l="en">Online catalogue</span><span data-l="fr">Catalogue en ligne</span></td><td><code>MUSONIC_ONLINE</code></td><td><code>true</code></td></tr>
+              <tr><td><span data-l="en">Imports, their folder, their quality</span><span data-l="fr">Imports, leur dossier, leur qualité</span></td><td><code>MUSONIC_IMPORT</code>, <code>…_IMPORT_DIR</code>, <code>…_IMPORT_QUALITY</code></td><td><code>true</code>, <code>Musonic</code>, <code>mp3_320</code></td></tr>
+              <tr><td><span data-l="en">Scan every … minutes</span><span data-l="fr">Scan toutes les … minutes</span></td><td><code>MUSONIC_SCAN_INTERVAL_MINUTES</code></td><td><code>60</code></td></tr>
+              <tr><td><span data-l="en">Daily backups kept</span><span data-l="fr">Sauvegardes quotidiennes gardées</span></td><td><code>MUSONIC_BACKUP_DAYS</code></td><td><code>14</code></td></tr>
+            </tbody>
+          </table></div>
+          <p class="note"><a href="https://github.com/DoodzProg/Musonic/blob/main/apps/server/README.md#build-and-run"><span data-l="en">Every setting</span><span data-l="fr">Tous les réglages</span></a></p>
+        </section>
+
+        <section id="security">
+          <h2><span class="num">9</span><span data-l="en">Security and backups</span><span data-l="fr">Sécurité et sauvegardes</span></h2>
+          <ul class="list" data-l="en">
+            <li>Passwords are hashed (argon2); each device can get its own key, revoked in one click when a phone is lost.</li>
+            <li>Too many wrong passwords block an address for 15 minutes; the console shows it and can unblock it.</li>
+            <li>The older Subsonic sign-in (used by many apps) can be turned off for keys only.</li>
+            <li>The database is backed up every day; backups are listed and downloaded from the console.</li>
+          </ul>
+          <ul class="list" data-l="fr">
+            <li>Les mots de passe sont hachés (argon2) ; chaque appareil peut avoir sa propre clé, révoquée en un clic en cas de téléphone perdu.</li>
+            <li>Trop de mots de passe faux bloquent une adresse 15 minutes ; la console le montre et peut débloquer.</li>
+            <li>L'ancienne connexion Subsonic (utilisée par beaucoup d'applis) peut être coupée pour n'accepter que les clés.</li>
+            <li>La base est sauvegardée chaque jour ; les sauvegardes se listent et se téléchargent depuis la console.</li>
+          </ul>
+        </section>
+
+        <div class="part-title">
+          <h2><span data-l="en">The administration console</span><span data-l="fr">La console d'administration</span></h2>
+        </div>
+
+        <section id="console">
+          <h2><span class="num">10</span><span data-l="en">Overview</span><span data-l="fr">Présentation</span></h2>
+          <p data-l="en">The console comes with the server, at its own address, in English and French. It is for administrators only: the apps stay exactly the same for everyone. Nothing to install, nothing to type in a terminal after the first account.</p>
+          <p data-l="fr">La console est livrée avec le serveur, à sa propre adresse, en français et en anglais. Elle est réservée aux administrateurs : les applis restent exactement les mêmes pour tout le monde. Rien à installer, plus rien à taper dans un terminal après le premier compte.</p>
+          <p data-l="en">Click a screenshot to see it full screen.</p>
+          <p data-l="fr">Cliquez sur une capture pour la voir en plein écran.</p>
+          <div class="shots shots--wide" data-l="en" tabindex="0" aria-label="Screenshots">
+            <figure><img src="assets/img/screenshots/console/dashboard-en.jpg" alt="Dashboard" loading="lazy" /><figcaption>Dashboard</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/accounts-en.jpg" alt="Accounts and invitations" loading="lazy" /><figcaption>Accounts and invitations</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/security-en.jpg" alt="Devices and security" loading="lazy" /><figcaption>Devices and security</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/library-en.jpg" alt="Library" loading="lazy" /><figcaption>Library</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/imports-en.jpg" alt="Imports and providers" loading="lazy" /><figcaption>Imports and providers</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/data-en.jpg" alt="Data" loading="lazy" /><figcaption>Data</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/settings-en.jpg" alt="Settings and maintenance" loading="lazy" /><figcaption>Settings and maintenance</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/activity-en.jpg" alt="Activity" loading="lazy" /><figcaption>Activity</figcaption></figure>
+          </div>
+          <div class="shots shots--wide" data-l="fr" tabindex="0" aria-label="Screenshots">
+            <figure><img src="assets/img/screenshots/console/dashboard-fr.jpg" alt="Dashboard" loading="lazy" /><figcaption>Tableau de bord</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/accounts-fr.jpg" alt="Accounts and invitations" loading="lazy" /><figcaption>Comptes et invitations</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/security-fr.jpg" alt="Devices and security" loading="lazy" /><figcaption>Appareils et sécurité</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/library-fr.jpg" alt="Library" loading="lazy" /><figcaption>Bibliothèque</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/imports-fr.jpg" alt="Imports and providers" loading="lazy" /><figcaption>Imports et fournisseurs</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/data-fr.jpg" alt="Data" loading="lazy" /><figcaption>Données</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/settings-fr.jpg" alt="Settings and maintenance" loading="lazy" /><figcaption>Réglages et maintenance</figcaption></figure>
+            <figure><img src="assets/img/screenshots/console/activity-fr.jpg" alt="Activity" loading="lazy" /><figcaption>Activité</figcaption></figure>
+          </div>
+        </section>
+
+        <section id="c-dashboard">
+          <h2><span class="num">11</span><span data-l="en">Dashboard and data</span><span data-l="fr">Tableau de bord et données</span></h2>
+          <ul class="list" data-l="en">
+            <li>A live bar on every page: network, who is listening, imports, CPU and memory, and alerts.</li>
+            <li><strong>Alerts</strong> when something needs you: a provider no longer connected, imports given up, disk almost full, no backup lately, a new version out.</li>
+            <li>The library's figures, disk space (music, imports, database, backups), recent activity, who listens to what right now.</li>
+            <li><strong>Data</strong>: traffic, CPU, memory and disk measured hour by hour, by day, week, month or year, and the month's upload against your host's limit.</li>
+          </ul>
+          <ul class="list" data-l="fr">
+            <li>Une barre en direct sur chaque page : réseau, qui écoute, imports, processeur et mémoire, et alertes.</li>
+            <li>Des <strong>alertes</strong> quand quelque chose demande votre attention : un fournisseur déconnecté, des imports abandonnés, un disque presque plein, pas de sauvegarde récente, une nouvelle version.</li>
+            <li>Les chiffres de la bibliothèque, la place disque (musique, imports, base, sauvegardes), l'activité récente, qui écoute quoi en ce moment.</li>
+            <li><strong>Données</strong> : trafic, processeur, mémoire et disque mesurés heure par heure, par jour, semaine, mois ou année, et l'envoi du mois face à la limite de votre hébergeur.</li>
+          </ul>
+        </section>
+
+        <section id="c-accounts">
+          <h2><span class="num">12</span><span data-l="en">Accounts</span><span data-l="fr">Comptes</span></h2>
+          <ul class="list" data-l="en">
+            <li><strong>Invitation links</strong>: the person creates their own account, name and password. The administrator never sees a password.</li>
+            <li><strong>Password reset links</strong>, used once, valid from a minute to a year.</li>
+            <li>Roles (administrator or user), suspension without deleting anything, sign out everywhere.</li>
+            <li><strong>Rights and quotas</strong> per account: imports, online catalogue, downloads, public playlists, imports per day or month, space, highest bit rate. Everything allowed by default.</li>
+          </ul>
+          <ul class="list" data-l="fr">
+            <li><strong>Liens d'invitation</strong> : la personne crée elle-même son compte, son nom et son mot de passe. L'administrateur ne voit jamais un mot de passe.</li>
+            <li><strong>Liens de nouveau mot de passe</strong>, à usage unique, valables d'une minute à un an.</li>
+            <li>Rôles (administrateur ou utilisateur), suspension sans rien supprimer, déconnexion partout.</li>
+            <li><strong>Droits et quotas</strong> par compte : imports, catalogue en ligne, téléchargements, playlists publiques, imports par jour ou par mois, place, débit maximal. Tout autorisé par défaut.</li>
+          </ul>
+        </section>
+
+        <section id="c-security">
+          <h2><span class="num">13</span><span data-l="en">Devices and security</span><span data-l="fr">Appareils et sécurité</span></h2>
+          <p data-l="en">Every device key of every account, with its last use, revoked in one click; the last sign-ins (who, which app, from where); the addresses blocked after wrong passwords, unblocked in one click; the older Subsonic sign-in on or off.</p>
+          <p data-l="fr">Toutes les clés d'appareils de tous les comptes, avec leur dernière utilisation, révoquées en un clic ; les dernières connexions (qui, quelle appli, d'où) ; les adresses bloquées après des mots de passe faux, débloquées en un clic ; l'ancienne connexion Subsonic activée ou non.</p>
+        </section>
+
+        <section id="c-music">
+          <h2><span class="num">14</span><span data-l="en">Library and imports</span><span data-l="fr">Bibliothèque et imports</span></h2>
+          <ul class="list" data-l="en">
+            <li><strong>Library</strong>: quick or full scan, every song with its file, and the lists to look at: missing files, duplicates, songs without a cover, online songs without a file. A page per song (tags, files, likes, plays) and a button to listen to a file.</li>
+            <li><strong>Imports</strong>: the queue (waiting, running, failed, done), retry or remove, the audio providers and their state; a provider's credential is changed here, checked before it replaces the old one, and never shown again.</li>
+            <li>Import settings: on or off, quality, online catalogue, 30-second previews.</li>
+          </ul>
+          <ul class="list" data-l="fr">
+            <li><strong>Bibliothèque</strong> : scan rapide ou complet, chaque titre avec son fichier, et les listes à surveiller : fichiers manquants, doublons, titres sans pochette, titres en ligne sans fichier. Une fiche par titre (tags, fichiers, likes, écoutes) et un bouton pour écouter un fichier.</li>
+            <li><strong>Imports</strong> : la file (en attente, en cours, en échec, faits), relancer ou retirer, les fournisseurs audio et leur état ; l'identifiant d'un fournisseur se change ici, vérifié avant de remplacer l'ancien, et jamais réaffiché.</li>
+            <li>Réglages des imports : activés ou non, qualité, catalogue en ligne, extraits de 30 secondes.</li>
+          </ul>
+        </section>
+
+        <section id="c-maintenance">
+          <h2><span class="num">15</span><span data-l="en">Settings and maintenance</span><span data-l="fr">Réglages et maintenance</span></h2>
+          <ul class="list" data-l="en">
+            <li>The server's settings, with a « Restart now » when one needs it; the page comes back on its own.</li>
+            <li>Backups: the list, one now, days kept, download.</li>
+            <li><strong>Musonic Web</strong> installed on your server at <code>/app</code> in one click, and updated the same way.</li>
+            <li>The server's last log lines, live, filtered by level; empty the caches; check for updates.</li>
+          </ul>
+          <ul class="list" data-l="fr">
+            <li>Les réglages du serveur, avec un « Redémarrer maintenant » quand l'un d'eux le demande ; la page revient toute seule.</li>
+            <li>Sauvegardes : la liste, une maintenant, les jours gardés, le téléchargement.</li>
+            <li><strong>Musonic Web</strong> installé sur votre serveur à <code>/app</code> en un clic, et mis à jour de la même façon.</li>
+            <li>Les dernières lignes des journaux du serveur, en direct, filtrées par niveau ; vider les caches ; vérifier les mises à jour.</li>
+          </ul>
+        </section>
+
+        <section id="c-journal">
+          <h2><span class="num">16</span><span data-l="en">Activity and journal</span><span data-l="fr">Activité et journal</span></h2>
+          <p data-l="en">Everything that happens, in plain sentences: sign-ins, accounts, imports, backups, settings changed. The administration journal shows what administrators did. Filter by kind and period, search, new lines arrive live. Its maximum size is up to you; the oldest lines go first.</p>
+          <p data-l="fr">Tout ce qui se passe, en phrases simples : connexions, comptes, imports, sauvegardes, réglages modifiés. Le journal d'administration montre ce que les administrateurs ont fait. Filtre par type et par période, recherche, nouvelles lignes en direct. Sa taille maximale est réglable ; les plus anciennes lignes partent en premier.</p>
+        </section>
+
+        <section id="license">
+          <h2><span data-l="en">License</span><span data-l="fr">Licence</span></h2>
+          <p data-l="en">Musonic Server is free to use and adapt for personal, non-commercial purposes (<a href="https://polyformproject.org/licenses/noncommercial/1.0.0">PolyForm Noncommercial 1.0.0</a>). Selling it, or a service built on it, is not allowed.</p>
+          <p data-l="fr">Musonic Server est libre d'utilisation et d'adaptation pour un usage personnel et non commercial (<a href="https://polyformproject.org/licenses/noncommercial/1.0.0">PolyForm Noncommercial 1.0.0</a>). Le vendre, ou vendre un service construit dessus, est interdit.</p>
+          <p class="note"><a href="https://github.com/DoodzProg/Musonic/blob/main/apps/server/CHANGELOG.md"><span data-l="en">What changed</span><span data-l="fr">Ce qui a changé</span></a> · <a href="https://github.com/DoodzProg/Musonic/tree/main/apps/server"><span data-l="en">Source code</span><span data-l="fr">Code source</span></a></p>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <a href="./" class="brand" aria-label="Musonic">
+        <img src="assets/img/logo.svg" alt="" width="26" height="26" />
+        <span>Musonic</span>
+      </a>
+      <nav class="footer__links" aria-label="Links">
+        <a href="https://github.com/DoodzProg/Musonic" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://github.com/DoodzProg/Musonic/releases" target="_blank" rel="noopener noreferrer"><span data-l="en">Releases</span><span data-l="fr">Versions</span></a>
+        <a href="https://github.com/DoodzProg/Musonic/issues/new/choose" target="_blank" rel="noopener noreferrer"><span data-l="en">Report an issue</span><span data-l="fr">Signaler un problème</span></a>
+        <a href="https://github.com/DoodzProg/Musonic#license" target="_blank" rel="noopener noreferrer"><span data-l="en">License</span><span data-l="fr">Licence</span></a>
+      </nav>
+      <p class="note"><span data-l="en">Made by</span><span data-l="fr">Fait par</span> <a href="https://doodz.dev/" target="_blank" rel="noopener noreferrer">Doodz</a></p>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js" defer></script>
+</body>
+</html>

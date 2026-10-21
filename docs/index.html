@@ -2,22 +2,23 @@
 <html lang="en">
 <head>
   <!--
-    Musonic — presentation website
+    Musonic — website, home
     Built on the design of the Musonic app (Design v2 tokens).
     @author  DoodzProg
-    @version 2.0.0
+    @version 3.0.0
     @license CC-BY-NC-4.0
     @see     https://github.com/DoodzProg/Musonic
   -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>try{var l=localStorage.getItem('musonic-lang')}catch(e){}document.documentElement.lang=l==='fr'||l==='en'?l:(navigator.language||'').toLowerCase().indexOf('fr')===0?'fr':'en'</script>
   <meta name="color-scheme" content="dark" />
   <meta name="theme-color" content="#000000" />
-  <meta name="description" content="Musonic is a music ecosystem for Navidrome and Subsonic servers: a mobile app and a web client today, server tools next." />
+  <meta name="description" content="Musonic: music apps for Android, iOS and the browser, and Musonic Server to host your own library." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://doodzprog.github.io/Musonic/" />
   <meta property="og:title" content="Musonic" />
-  <meta property="og:description" content="Your music server, everywhere you listen." />
+  <meta property="og:description" content="Your music, your server, beautifully played." />
   <meta property="og:image" content="https://doodzprog.github.io/Musonic/assets/img/screenshots/player.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="canonical" href="https://doodzprog.github.io/Musonic/" />
@@ -30,19 +31,19 @@
 </head>
 <body>
 
-  <a class="skip" href="#main" data-i18n="nav.skip">Skip to content</a>
+  <a class="skip" href="#main"><span data-l="en">Skip to content</span><span data-l="fr">Aller au contenu</span></a>
 
   <header class="bar">
     <div class="wrap bar__inner">
-      <a href="#" class="brand" aria-label="Musonic">
+      <a href="./" class="brand" aria-label="Musonic">
         <img src="assets/img/logo.svg" alt="" width="30" height="30" />
         <span>Musonic</span>
       </a>
-      <nav class="bar__links" aria-label="Sections">
-        <a href="#ecosystem" data-i18n="nav.ecosystem">Ecosystem</a>
-        <a href="#use" data-i18n="nav.use">Use Musonic</a>
-        <a href="#screens" data-i18n="nav.screens">Screenshots</a>
-        <a href="#start" data-i18n="nav.start">Get started</a>
+      <nav class="bar__links" aria-label="Pages">
+        <a href="./" aria-current="page"><span data-l="en">Home</span><span data-l="fr">Accueil</span></a>
+        <a href="mobile-app.html"><span data-l="en">Mobile app</span><span data-l="fr">Application mobile</span></a>
+        <a href="web.html">Web</a>
+        <a href="server.html"><span data-l="en">Server</span><span data-l="fr">Serveur</span></a>
       </nav>
       <div class="bar__end">
         <div class="segmented" role="group" aria-label="Language">
@@ -50,7 +51,7 @@
           <button type="button" data-lang="fr" aria-pressed="false">FR</button>
         </div>
         <a class="round" href="https://github.com/DoodzProg/Musonic" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.7 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
         </a>
       </div>
     </div>
@@ -58,19 +59,35 @@
 
   <main id="main">
 
-    <!-- Hero -->
     <section class="hero wrap">
       <div class="hero__text">
-        <h1 data-i18n="hero.title">Your music server, everywhere you listen.</h1>
-        <p class="lead" data-i18n="hero.lead">Musonic plays the music you host on Navidrome or any Subsonic server. A calm app on your phone and in your browser, server tools next. No account, no ads, nothing but your library.</p>
-        <div class="actions">
+        <h1><span data-l="en">Your music, your server.</span><span data-l="fr">Votre musique, votre serveur.</span></h1>
+        <p class="lead">
+          <span data-l="en">A calm music app on your phone and in your browser, and a server to host your library yourself. No account, no ads, nothing but your music.</span>
+          <span data-l="fr">Une app de musique sobre sur votre téléphone et dans votre navigateur, et un serveur pour héberger votre bibliothèque vous-même. Sans compte, sans pub, juste votre musique.</span>
+        </p>
+        <div class="get">
           <a class="button button--accent" href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.apk">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.59l3.3-3.3a1 1 0 1 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.42L11 13.6V4a1 1 0 0 1 1-1Zm-7 15a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/></svg>
-            <span data-i18n="cta.android">Download for Android</span>
+            Android
           </a>
-          <a class="button" href="#use" data-i18n="cta.other">Other platforms</a>
+          <a class="button" href="mobile-app.html#install">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10.5 18.5h3" stroke-linecap="round"/></svg>
+            iOS <small>sideload</small>
+          </a>
+          <a class="button" href="./app/">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="15" rx="2.5"/><path d="M2.5 8.5h19"/><path d="M10 11.5l4.5 2.5L10 16.5Z" fill="currentColor"/></svg>
+            <span data-l="en">Try it online</span><span data-l="fr">Essayer en ligne</span>
+          </a>
+          <a class="button" href="server.html#install">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M11 7.5h6M11 16.5h6" stroke-linecap="round"/></svg>
+            <span data-l="en">Install the server</span><span data-l="fr">Installer le serveur</span>
+          </a>
         </div>
-        <p class="note"><span class="js-version" data-i18n="hero.version">Latest version</span> · <span data-i18n="hero.req">Android 7 or later, free and open source</span></p>
+        <p class="note">
+          <span data-l="en">Mobile app</span><span data-l="fr">Application mobile</span> <span class="js-version"></span> ·
+          <span data-l="en">Android 7 or later, free and open source</span><span data-l="fr">Android 7 ou plus récent, gratuit et open source</span>
+        </p>
       </div>
       <div class="hero__phones" aria-hidden="true">
         <figure class="phone phone--back"><img src="assets/img/screenshots/home.jpg" alt="" /></figure>
@@ -78,191 +95,45 @@
       </div>
     </section>
 
-    <!-- Ecosystem -->
-    <section id="ecosystem" class="section wrap">
-      <h2 data-i18n="eco.title">More than an app</h2>
-      <p class="lead" data-i18n="eco.lead">Musonic is growing into a whole music environment built around your own server. Every piece speaks the same language and looks the same, on every screen.</p>
-
-      <div class="tree">
-        <div class="tree__root raised">
-          <span class="icon icon--server" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><circle cx="7" cy="7.5" r="1"/><circle cx="7" cy="16.5" r="1"/></svg></span>
-          <div>
-            <p class="row__title" data-i18n="eco.root.title">Your music server</p>
-            <p class="row__desc" data-i18n="eco.root.desc">Navidrome or any Subsonic-compatible server, at home or on a VPS. Your files never leave it.</p>
-          </div>
-        </div>
-        <ul class="group tree__branches">
-          <li class="row">
-            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10.5 18.5h3"/></svg></span>
-            <div class="row__body">
-              <p class="row__title" data-i18n="eco.mobile.title">Mobile app</p>
-              <p class="row__desc" data-i18n="eco.mobile.desc">Android and iOS. Library, synced lyrics, Magic Mixes, offline downloads.</p>
-            </div>
-            <span class="badge badge--ok" data-i18n="status.available">Available</span>
-          </li>
-          <li class="row">
-            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8 20.5h8M12 17v3.5"/></svg></span>
-            <div class="row__body">
-              <p class="row__title" data-i18n="eco.web.title">Web client</p>
-              <p class="row__desc" data-i18n="eco.web.desc">The same Musonic in your browser, made for desktop.</p>
-            </div>
-            <span class="badge badge--ok" data-i18n="status.available">Available</span>
-          </li>
-          <li class="row">
-            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18.5" cy="17" r="2.5"/></svg></span>
-            <div class="row__body">
-              <p class="row__title" data-i18n="eco.server.title">Server and API</p>
-              <p class="row__desc" data-i18n="eco.server.desc">Server-side features: imports, recommendations, sharing between accounts.</p>
-            </div>
-            <span class="badge" data-i18n="status.planned">Planned</span>
-          </li>
-          <li class="row">
-            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6l5 5-5 5M11 18h9"/></svg></span>
-            <div class="row__body">
-              <p class="row__title" data-i18n="eco.tools.title">Local tools</p>
-              <p class="row__desc" data-i18n="eco.tools.desc">Command line and desktop helpers for local files and your library.</p>
-            </div>
-            <span class="badge" data-i18n="status.idea">Exploring</span>
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- Use Musonic -->
-    <section id="use" class="section wrap">
-      <h2 data-i18n="use.title">Use Musonic</h2>
-      <p class="lead" data-i18n="use.lead">Pick the way you listen. The mobile app and the web client are ready; the server comes next.</p>
-
-      <div class="platforms">
-        <article class="platform raised">
-          <div class="platform__head">
-            <h3 data-i18n="use.mobile.title">Mobile</h3>
-            <span class="badge badge--ok" data-i18n="status.available">Available</span>
-          </div>
-          <p class="row__desc" data-i18n="use.mobile.desc">Install the APK on Android, or sideload the IPA on iPhone with AltStore or Sideloadly. The app tells you when an update is out.</p>
-          <div class="actions actions--tight">
-            <a class="button button--accent" href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.apk" data-i18n="cta.android">Download for Android</a>
-            <a class="button" href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.ipa" data-i18n="cta.ios">iOS sideload</a>
-          </div>
-          <p class="note"><span class="js-version" data-i18n="hero.version">Latest version</span> · <a href="https://github.com/DoodzProg/Musonic/releases" data-i18n="use.notes">Release notes</a></p>
-        </article>
-
-        <article class="platform raised">
-          <div class="platform__head">
-            <h3 data-i18n="use.web.title">Web</h3>
-            <span class="badge badge--ok" data-i18n="status.available">Available</span>
-          </div>
-          <p class="row__desc" data-i18n="use.web.desc">The complete Musonic on your computer: library, search, playlists, synced lyrics, a full-screen player and a floating mini player that stays on top. Use it online, nothing to install, or host it yourself next to your server.</p>
-          <div class="actions actions--tight">
-            <a class="button button--accent" href="./app/" data-i18n="cta.webTry">Use it online</a>
-            <a class="button js-web-download" href="https://github.com/DoodzProg/Musonic/releases?q=web-v&amp;expanded=true" data-i18n="cta.webDownload">Download (self-hosting)</a>
-          </div>
-          <p class="note"><span class="js-web-version" data-i18n="hero.version">Latest version</span> · <a href="https://github.com/DoodzProg/Musonic/releases?q=web-v&amp;expanded=true" data-i18n="use.notes">Release notes</a></p>
-        </article>
-
-        <article class="platform raised">
-          <div class="platform__head">
-            <h3 data-i18n="use.server.title">Server</h3>
-            <span class="badge" data-i18n="status.planned">Planned</span>
-          </div>
-          <p class="row__desc" data-i18n="use.server.desc">For now Musonic works with Navidrome directly. A Musonic server layer will come later.</p>
-          <div class="actions actions--tight">
-            <a class="button" href="https://www.navidrome.org/docs/installation/" target="_blank" rel="noopener noreferrer" data-i18n="use.navidrome">Install Navidrome</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- Screenshots -->
-    <section id="screens" class="section">
-      <div class="wrap section__head">
-        <div>
-          <h2 data-i18n="scr.title">Screenshots</h2>
-          <p class="lead" data-i18n="scr.lead">The mobile app, as it looks today.</p>
-        </div>
-        <div class="segmented segmented--wide" role="group" aria-label="Orientation">
-          <button type="button" data-shots="portrait" aria-pressed="true" data-i18n="scr.portrait">Portrait</button>
-          <button type="button" data-shots="landscape" aria-pressed="false" data-i18n="scr.landscape">Landscape</button>
-        </div>
-      </div>
-      <div class="shots" data-set="portrait" tabindex="0" aria-label="Portrait screenshots">
-        <figure><img src="assets/img/screenshots/home.jpg" alt="Home" loading="lazy" /><figcaption data-i18n="cap.home">Home</figcaption></figure>
-        <figure><img src="assets/img/screenshots/player.jpg" alt="Player" loading="lazy" /><figcaption data-i18n="cap.player">Player</figcaption></figure>
-        <figure><img src="assets/img/screenshots/lyrics.jpg" alt="Synced lyrics" loading="lazy" /><figcaption data-i18n="cap.lyrics">Synced lyrics</figcaption></figure>
-        <figure><img src="assets/img/screenshots/magic_mix.jpg" alt="Magic Mix" loading="lazy" /><figcaption data-i18n="cap.mix">Magic Mix</figcaption></figure>
-        <figure><img src="assets/img/screenshots/home_for_you.jpg" alt="For you" loading="lazy" /><figcaption data-i18n="cap.foryou">For you</figcaption></figure>
-        <figure><img src="assets/img/screenshots/search_results.jpg" alt="Search" loading="lazy" /><figcaption data-i18n="cap.search">Search</figcaption></figure>
-        <figure><img src="assets/img/screenshots/artist_detail.jpg" alt="Artist" loading="lazy" /><figcaption data-i18n="cap.artist">Artist</figcaption></figure>
-        <figure><img src="assets/img/screenshots/album_detail.jpg" alt="Album" loading="lazy" /><figcaption data-i18n="cap.album">Album</figcaption></figure>
-        <figure><img src="assets/img/screenshots/library.jpg" alt="Library" loading="lazy" /><figcaption data-i18n="cap.library">Library</figcaption></figure>
-        <figure><img src="assets/img/screenshots/library_grid.jpg" alt="Library grid" loading="lazy" /><figcaption data-i18n="cap.grid">Library, grid</figcaption></figure>
-        <figure><img src="assets/img/screenshots/liked_songs.jpg" alt="Liked Songs" loading="lazy" /><figcaption data-i18n="cap.liked">Liked Songs</figcaption></figure>
-        <figure><img src="assets/img/screenshots/queue.jpg" alt="Queue" loading="lazy" /><figcaption data-i18n="cap.queue">Queue</figcaption></figure>
-        <figure><img src="assets/img/screenshots/settings.jpg" alt="Settings" loading="lazy" /><figcaption data-i18n="cap.settings">Settings</figcaption></figure>
-      </div>
-      <div class="shots shots--wide" data-set="landscape" tabindex="0" aria-label="Landscape screenshots" hidden>
-        <figure><img src="assets/img/screenshots/landscape_home.jpg" alt="Home in landscape" loading="lazy" /><figcaption data-i18n="cap.home">Home</figcaption></figure>
-        <figure><img src="assets/img/screenshots/landscape_player.jpg" alt="Player in landscape" loading="lazy" /><figcaption data-i18n="cap.player">Player</figcaption></figure>
-        <figure><img src="assets/img/screenshots/landscape_liked.jpg" alt="Liked Songs in landscape" loading="lazy" /><figcaption data-i18n="cap.liked">Liked Songs</figcaption></figure>
-      </div>
-    </section>
-
-    <!-- Highlights -->
     <section class="section wrap">
-      <h2 data-i18n="hl.title">What you get</h2>
-      <div class="columns">
-        <div>
-          <p class="caption" data-i18n="hl.play">Playback</p>
-          <ul class="group">
-            <li class="row row--text"><p class="row__title" data-i18n="hl.lyrics.t">Synced lyrics</p><p class="row__desc" data-i18n="hl.lyrics.d">Line by line in the player. Tap a line to jump to it.</p></li>
-            <li class="row row--text"><p class="row__title" data-i18n="hl.queue.t">A queue you control</p><p class="row__desc" data-i18n="hl.queue.d">Shuffle, repeat, autoplay, reorder, and restored where you left it.</p></li>
-            <li class="row row--text"><p class="row__title" data-i18n="hl.magic.t">Shuffle Magic</p><p class="row__desc" data-i18n="hl.magic.d">Your songs, with related tracks found online in between.</p></li>
-          </ul>
-        </div>
-        <div>
-          <p class="caption" data-i18n="hl.discover">Discovery</p>
-          <ul class="group">
-            <li class="row row--text"><p class="row__title" data-i18n="hl.home.t">A home that knows you</p><p class="row__desc" data-i18n="hl.home.d">Recently played, picks for you and artists to discover.</p></li>
-            <li class="row row--text"><p class="row__title" data-i18n="hl.mixes.t">Magic Mixes</p><p class="row__desc" data-i18n="hl.mixes.d">One mix per genre, with about 3 discoveries in 10.</p></li>
-            <li class="row row--text"><p class="row__title" data-i18n="hl.search.t">One search</p><p class="row__desc" data-i18n="hl.search.d">Your library and the online catalogue, with a top result.</p></li>
-          </ul>
-        </div>
-        <div>
-          <p class="caption" data-i18n="hl.offline">Offline and data</p>
-          <ul class="group">
-            <li class="row row--text"><p class="row__title" data-i18n="hl.dl.t">Downloads</p><p class="row__desc" data-i18n="hl.dl.d">Playlists, albums or single tracks, ready with no signal.</p></li>
-            <li class="row row--text"><p class="row__title" data-i18n="hl.wifi.t">Wi-Fi first</p><p class="row__desc" data-i18n="hl.wifi.d">Downloads wait for Wi-Fi; streaming quality is set per network.</p></li>
-            <li class="row row--text"><p class="row__title" data-i18n="hl.private.t">Private by design</p><p class="row__desc" data-i18n="hl.private.d">No account, no analytics. Only artist and track names leave your phone, for photos and lyrics.</p></li>
-          </ul>
-        </div>
+      <h2><span data-l="en">Three parts, one Musonic</span><span data-l="fr">Trois parties, un seul Musonic</span></h2>
+      <div class="parts">
+        <a class="part raised" href="mobile-app.html">
+          <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10.5 18.5h3"/></svg></span>
+          <h3><span data-l="en">Mobile app</span><span data-l="fr">Application mobile</span></h3>
+          <p class="row__desc"><span data-l="en">Android and iOS: synced lyrics, Magic Mixes, offline downloads, Android Auto.</span><span data-l="fr">Android et iOS : paroles synchronisées, Mix Magiques, téléchargements hors ligne, Android Auto.</span></p>
+          <span class="part__more"><span data-l="en">Discover</span><span data-l="fr">Découvrir</span> →</span>
+        </a>
+        <a class="part raised" href="web.html">
+          <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8 20.5h8M12 17v3.5"/></svg></span>
+          <h3>Web</h3>
+          <p class="row__desc"><span data-l="en">The whole Musonic in your browser, nothing to install. Import your Spotify and Deezer playlists.</span><span data-l="fr">Tout Musonic dans votre navigateur, rien à installer. Importez vos playlists Spotify et Deezer.</span></p>
+          <span class="part__more"><span data-l="en">Discover</span><span data-l="fr">Découvrir</span> →</span>
+        </a>
+        <a class="part raised" href="server.html">
+          <span class="icon icon--server" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><circle cx="7" cy="7.5" r="1.3"/><circle cx="7" cy="16.5" r="1.3"/></svg></span>
+          <h3><span data-l="en">Server</span><span data-l="fr">Serveur</span></h3>
+          <p class="row__desc"><span data-l="en">Host your music yourself, with an online catalogue, real-time sync and an administration console.</span><span data-l="fr">Hébergez votre musique vous-même, avec un catalogue en ligne, la synchro en temps réel et une console d'administration.</span></p>
+          <span class="part__more"><span data-l="en">Discover</span><span data-l="fr">Découvrir</span> →</span>
+        </a>
       </div>
-    </section>
-
-    <!-- Get started -->
-    <section id="start" class="section wrap">
-      <h2 data-i18n="start.title">Get started</h2>
-      <ol class="steps">
-        <li class="raised"><span class="step" aria-hidden="true">1</span><div><p class="row__title" data-i18n="start.1.t">Run a music server</p><p class="row__desc" data-i18n="start.1.d">Install Navidrome, or use any Subsonic-compatible server you already have.</p></div></li>
-        <li class="raised"><span class="step" aria-hidden="true">2</span><div><p class="row__title" data-i18n="start.2.t">Install Musonic</p><p class="row__desc" data-i18n="start.2.d">Download the APK on Android, or sideload the IPA on iPhone.</p></div></li>
-        <li class="raised"><span class="step" aria-hidden="true">3</span><div><p class="row__title" data-i18n="start.3.t">Sign in to your server</p><p class="row__desc" data-i18n="start.3.d">Enter its address, your username and password. Your library is there.</p></div></li>
-      </ol>
     </section>
 
   </main>
 
   <footer class="footer">
     <div class="wrap footer__inner">
-      <a href="#" class="brand" aria-label="Musonic">
+      <a href="./" class="brand" aria-label="Musonic">
         <img src="assets/img/logo.svg" alt="" width="26" height="26" />
         <span>Musonic</span>
       </a>
       <nav class="footer__links" aria-label="Links">
         <a href="https://github.com/DoodzProg/Musonic" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <a href="https://github.com/DoodzProg/Musonic/releases" target="_blank" rel="noopener noreferrer" data-i18n="foot.releases">Releases</a>
-        <a href="https://github.com/DoodzProg/Musonic/issues/new/choose" target="_blank" rel="noopener noreferrer" data-i18n="foot.issue">Report an issue</a>
-        <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC 4.0</a>
+        <a href="https://github.com/DoodzProg/Musonic/releases" target="_blank" rel="noopener noreferrer"><span data-l="en">Releases</span><span data-l="fr">Versions</span></a>
+        <a href="https://github.com/DoodzProg/Musonic/issues/new/choose" target="_blank" rel="noopener noreferrer"><span data-l="en">Report an issue</span><span data-l="fr">Signaler un problème</span></a>
+        <a href="https://github.com/DoodzProg/Musonic#license" target="_blank" rel="noopener noreferrer"><span data-l="en">License</span><span data-l="fr">Licence</span></a>
       </nav>
-      <p class="note"><span data-i18n="foot.made">Made by</span> <a href="https://doodz.dev/" target="_blank" rel="noopener noreferrer">Doodz</a></p>
+      <p class="note"><span data-l="en">Made by</span><span data-l="fr">Fait par</span> <a href="https://doodz.dev/" target="_blank" rel="noopener noreferrer">Doodz</a></p>
     </div>
   </footer>
 
