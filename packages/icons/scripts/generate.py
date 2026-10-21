@@ -3,7 +3,8 @@
 the single source of Musonic's icons: the same artwork everywhere (mobile, web, console).
 
 Each React Native component becomes plain SVG markup. Props are replaced by their defaults
-(`{color}` → currentColor); a `cond ? A : B` on an attribute and `{flag ? (<A/>) : (<B/>)}` /
+(`{color}` → currentColor); a `fill="none"` on the root <Svg> goes to each shape without its own
+fill (SVG fills in black by default); a `cond ? A : B` on an attribute and `{flag ? (<A/>) : (<B/>)}` /
 `{flag && <A/>}` blocks give two variants: `name` (flag off) and `name-<flag>` (flag on).
 
     python3 packages/icons/scripts/generate.py
@@ -65,7 +66,7 @@ def value(expr: str, flags: dict, defs: dict, cs: dict) -> str | None:
     return None
 
 
-def render(body: str, flags: dict, defs: dict, cs: dict) -> str | None:
+def render(body: str, flags: dict, defs: dict, cs: dict, no_fill: bool) -> str | None:
     def block(m):
         cond, a, b = m.group(1), m.group(2), m.group(3) or ""
         return a if flags.get(cond) else b
@@ -87,27 +88,31 @@ def render(body: str, flags: dict, defs: dict, cs: dict) -> str | None:
     for a, b in RENAME.items():
         body = body.replace(f"{a}=", f"{b}=")
     body = re.sub(r"<(/?)(Path|Circle|Rect|Line|Polyline|Polygon|G|Ellipse)\b", lambda x: f"<{x.group(1)}{x.group(2).lower()}", body)
+    if no_fill:
+        body = re.sub(r"<(path|circle|rect|line|polyline|polygon|ellipse)\b(?![^>]*\bfill=)", r'<\1 fill="none"', body)
     return " ".join(body.split())
 
 
 icons, skipped = {}, []
 for f in sorted(SRC.glob("*Icon.tsx")):
     src = f.read_text()
-    m = re.search(r'<Svg[^>]*viewBox="([^"]+)"[^>]*>(.*?)</Svg>', src, re.S)
-    if not m:
+    m = re.search(r'<Svg([^>]*)>(.*?)</Svg>', src, re.S)
+    vb = m and re.search(r'viewBox="([^"]+)"', m.group(1))
+    if not vb:
         skipped.append(f.stem)
         continue
-    vb, body = m.group(1), m.group(2)
+    vb, body = vb.group(1), m.group(2)
+    no_fill = bool(re.search(r'\bfill="none"', m.group(1)))
     defs, cs = defaults(src), consts(src)
     flags = sorted(set(re.findall(r"\{\s*(\w+)\s*(?:\?|&&)", body)) | set(re.findall(r"=\{(\w+)\s*\?", body)))
     flags = [x for x in flags if x not in COLOR_PROPS]
-    base = render(body, {}, defs, cs)
+    base = render(body, {}, defs, cs, no_fill)
     if base is None:
         skipped.append(f.stem)
         continue
     icons[kebab(f.stem)] = (vb, base)
     for flag in flags:
-        alt = render(body, {flag: True}, defs, cs)
+        alt = render(body, {flag: True}, defs, cs, no_fill)
         if alt and alt != base:
             icons[f"{kebab(f.stem)}-{kebab(flag[0].upper() + flag[1:])}"] = (vb, alt)
 
