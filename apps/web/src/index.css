@@ -413,6 +413,7 @@ h1, h2, p { margin: 0; }
 .page-subtitle { font-size: 15px; color: var(--text-2); }
 .page-title { font-size: 32px; line-height: 38px; font-weight: 700; letter-spacing: -0.6px; }
 .page-title-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.page-title-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .search-field { display: flex; align-items: center; gap: 10px; max-width: 560px; height: 48px; padding: 0 16px; border-radius: 24px; background: var(--surface-1); box-shadow: var(--rim); color: var(--text-2); }
 .search-field:focus-within { box-shadow: inset 0 0 0 1px var(--accent); }
 .search-field input { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; font-size: 16px; color: var(--text); }
@@ -600,3 +601,25 @@ p.lyrics-line { font-size: 17px; line-height: 26px; font-weight: 600; padding: 0
 @media (max-aspect-ratio: 1/1) and (min-height: 420px) { .mini-next { display: block; } }
 /* Very narrow: no cover. */
 @media (max-width: 240px) and (min-aspect-ratio: 1/1) { .mini-art { display: none; } }
+
+/* Playlist import (ADR-020) */
+.dialog-wide { max-width: 520px; max-height: calc(100vh - 40px); overflow-y: auto; }
+.import-head { display: flex; align-items: center; gap: 14px; }
+.import-head > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.import-head strong { color: var(--text); font-size: 16px; }
+.import-cover { width: 64px; height: 64px; flex: none; border-radius: var(--radius-sm); object-fit: cover; background: var(--surface-2); }
+.import-note { font-size: 13px; line-height: 18px; color: var(--text-2); background: var(--surface-2); border-radius: var(--radius-sm); padding: 10px 12px; }
+.import-error { color: var(--destructive); }
+.import-bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.import-bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.4s ease; }
+.import-subtitle { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.import-list { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; }
+.import-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 0.5px solid var(--separator); }
+.import-list li:first-child { border-top: 0; }
+.import-list li > span { display: flex; flex-direction: column; min-width: 0; }
+.import-list strong, .import-list li > span > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.import-list strong { color: var(--text); font-weight: 500; }
+.import-list em { font-style: normal; font-size: 12px; color: var(--text-2); flex: none; text-align: right; }
+.import-list em.is-missing { color: var(--text-3); }
+.import-paste { display: flex; flex-direction: column; gap: 10px; padding-top: 6px; border-top: 0.5px solid var(--separator); }
+.import-open { align-self: flex-start; text-decoration: none; }

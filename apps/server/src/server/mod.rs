@@ -58,6 +58,9 @@ pub struct AppState {
     pub journal: crate::journal::Journal,
     /// The console's settings the server runs with ([`crate::settings`]).
     pub settings_now: Arc<std::collections::BTreeMap<String, serde_json::Value>>,
+    /// Services playlists can be imported from (ADR-020).
+    pub playlist_sources: Arc<Vec<Arc<dyn crate::playlist_import::PlaylistSource>>>,
+    pub playlist_imports: crate::playlist_import::PlaylistImports,
 }
 
 impl AppState {
@@ -82,6 +85,8 @@ impl AppState {
             metrics: None,
             journal: crate::journal::Journal::memory(),
             settings_now: Arc::new(crate::settings::of(&crate::config::Config::default())),
+            playlist_sources: Arc::default(),
+            playlist_imports: Default::default(),
         }
     }
 }

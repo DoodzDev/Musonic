@@ -75,6 +75,15 @@ pub enum Event {
         state: ImportState,
         path: Option<String>,
     },
+    /// A playlist import (ADR-020) went on: `state` `running`, `done` or `failed`; songs
+    /// looked for so far, out of `total`; the playlist made, once done.
+    PlaylistImport {
+        id: String,
+        state: String,
+        done: u32,
+        total: u32,
+        playlist: Option<String>,
+    },
     /// Keep-alive, every 30 seconds.
     Ping,
     /// Some events were missed: reload what is shown.

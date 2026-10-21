@@ -149,6 +149,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its latest release (`Musonic-Web-app.zip`).
 - Failed sign-ins count each different wrong password once: an app that keeps retrying a
   password changed since no longer locks its user out of the new one.
+- **Playlist imports** (ADR-020, any account): `/v1/playlist-imports` reads a Deezer playlist
+  (public API, every song) or a playlist of another service plugged in by a binary
+  (`Extensions::playlist_sources`), or pasted song links; each song is looked for in the
+  library (ISRC, else title, artists and length), then in the online catalog (same title, an
+  artist in common, length within 5 s; within 20 s it is kept as « uncertain »); the playlist
+  is made in the account at the end, songs without a file imported as usual (rights and
+  quotas apply). Runs in the background, one import at a time, goes on after a restart;
+  progress on `/v1/events` (`playlistImport`); a report per import (found, uncertain, missing
+  and why). Pasted links can complete an import: songs already found are kept.
+- `/v1/auth/login` also takes the Subsonic token and its salt instead of the password (for
+  clients that keep only those, like Musonic Web), under the legacy sign-in setting.
+- Artist names match whatever their spaces: « JAŸ-Z » is « JAY Z ».
 - A music folder that moved (another disk, another Docker mount) is followed: tracks, likes and
   playlists stay, files are found in the new place.
 - `musonic_server::cli`: the command line, for binaries that add their own providers.

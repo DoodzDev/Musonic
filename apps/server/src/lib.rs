@@ -17,6 +17,7 @@ pub mod matcher;
 pub mod metrics;
 pub mod model;
 pub mod online;
+pub mod playlist_import;
 pub mod providers;
 pub mod remote;
 pub mod server;
@@ -45,6 +46,8 @@ use crate::{
 #[derive(Default)]
 pub struct Extensions {
     pub providers: Vec<Arc<dyn AudioProvider>>,
+    /// Services playlists can be imported from, besides Deezer (ADR-020).
+    pub playlist_sources: Vec<Arc<dyn playlist_import::PlaylistSource>>,
 }
 
 /// The command line of a server binary, `extensions` giving its own providers:
@@ -119,7 +122,7 @@ pub fn init_tracing() {
         .init();
 }
 
-pub async fn run(mut config: Config, ext: Extensions) -> Result<()> {
+pub async fn run(mut config: Config, mut ext: Extensions) -> Result<()> {
     std::fs::create_dir_all(&config.data_dir)
         .with_context(|| format!("creating {}", config.data_dir.display()))?;
     let db = Db::open(&config.data_dir.join("musonic.db"))?;
@@ -184,6 +187,15 @@ pub async fn run(mut config: Config, ext: Extensions) -> Result<()> {
     if config.online {
         state.online = Some(Arc::new(online::Deezer::new(&config.deezer_api_url)?));
     }
+    let mut sources = std::mem::take(&mut ext.playlist_sources);
+    if let Some(dz) = &state.online {
+        sources.push(Arc::new(playlist_import::DeezerPlaylists::new(dz.clone())));
+    }
+    tracing::info!(
+        sources = ?sources.iter().map(|s| s.id()).collect::<Vec<_>>(),
+        "playlist import sources"
+    );
+    state.playlist_sources = Arc::new(sources);
     state.providers = Arc::new(providers(&config, ext, state.online.clone())?);
     // Credentials set in the console (checked online: in the background).
     {
@@ -240,6 +252,7 @@ pub async fn run(mut config: Config, ext: Extensions) -> Result<()> {
             }
         });
     }
+    playlist_import::PlaylistImports::start(state.clone());
     let sessions = state.sessions.clone();
     tokio::spawn(async move {
         let mut every = tokio::time::interval(Duration::from_secs(300));

@@ -7,4 +7,4 @@ import type { UserRef } from "./UserRef.ts";
 /**
  * What happened, by `type`.
  */
-export type Event = { "type": "hello", user: UserRef, device: string | null, features: Array<string>, } | { "type": "likes", items: Array<LikeItem>, } | { "type": "rating", kind: string, id: string, rating: number, } | { "type": "playlist", id: string, action: PlaylistAction, } | { "type": "play", ids: Array<string>, } | { "type": "queue", } | { "type": "import", id: string, state: ImportState, path: string | null, } | { "type": "ping" } | { "type": "resync" };
+export type Event = { "type": "hello", user: UserRef, device: string | null, features: Array<string>, } | { "type": "likes", items: Array<LikeItem>, } | { "type": "rating", kind: string, id: string, rating: number, } | { "type": "playlist", id: string, action: PlaylistAction, } | { "type": "play", ids: Array<string>, } | { "type": "queue", } | { "type": "import", id: string, state: ImportState, path: string | null, } | { "type": "playlistImport", id: string, state: string, done: number, total: number, playlist: string | null, } | { "type": "ping" } | { "type": "resync" };

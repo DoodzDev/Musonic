@@ -812,3 +812,35 @@ async fn the_journal_tells_who_did_what() {
     .await;
     assert_eq!(s, StatusCode::FORBIDDEN);
 }
+
+#[tokio::test]
+async fn the_subsonic_token_opens_a_session() {
+    let (app, _st, _) = admin_app().await;
+    let token = crate::users::md5_hex("correct horsesalty");
+    let (s, r) = call(
+        &app,
+        "POST",
+        "/v1/auth/login",
+        None,
+        Some(
+            json!({"username": "Doodz", "token": token, "salt": "salty", "client": "Musonic Web"}),
+        ),
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK, "{r}");
+    let session = r["token"].as_str().unwrap().to_owned();
+    let (s, me) = call(&app, "GET", "/v1/me", Some(&session), None).await;
+    assert_eq!(
+        (s, me["username"].as_str()),
+        (StatusCode::OK, Some("Doodz"))
+    );
+    let (s, _) = call(
+        &app,
+        "POST",
+        "/v1/auth/login",
+        None,
+        Some(json!({"username": "Doodz", "token": "0000", "salt": "salty"})),
+    )
+    .await;
+    assert_eq!(s, StatusCode::UNAUTHORIZED);
+}

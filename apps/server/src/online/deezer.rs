@@ -99,6 +99,23 @@ impl DzTrack {
     }
 }
 
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct DzUser {
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct DzPlaylist {
+    pub id: u64,
+    pub title: String,
+    pub picture_xl: Option<String>,
+    pub nb_tracks: Option<i64>,
+    pub public: bool,
+    pub creator: Option<DzUser>,
+}
+
 /// The Deezer API, shared by every request of the server.
 pub struct Deezer {
     http: reqwest::Client,
@@ -162,8 +179,8 @@ impl Deezer {
                     .await
                     .context("deezer answer")?;
                 if let Some(err) = v.get("error") {
-                    // 800: no data.
-                    if err["code"].as_i64() == Some(800) {
+                    // 800: no data; a private playlist answers as if it needed an account.
+                    if err["code"].as_i64() == Some(800) || err["type"] == "OAuthException" {
                         return Ok(None);
                     }
                     bail!("deezer error: {err}");
@@ -251,6 +268,36 @@ impl Deezer {
             .await?
             .unwrap_or_default()
             .data)
+    }
+
+    /// A public playlist (`None`: no such playlist, or a private one).
+    pub async fn playlist(&self, id: u64) -> Result<Option<DzPlaylist>> {
+        self.get(&format!("/playlist/{id}")).await
+    }
+
+    /// Up to `max` songs of a playlist, in order, read 100 at a time.
+    pub async fn playlist_tracks(&self, id: u64, max: usize) -> Result<Vec<DzTrack>> {
+        let mut out: Vec<DzTrack> = Vec::new();
+        while out.len() < max {
+            let path = format!("/playlist/{id}/tracks?index={}&limit=100", out.len());
+            let page = self
+                .get::<DzList<DzTrack>>(&path)
+                .await?
+                .unwrap_or_default();
+            let n = page.data.len();
+            out.extend(page.data);
+            if n == 0 || page.total.is_some_and(|t| out.len() as i64 >= t) {
+                break;
+            }
+        }
+        out.truncate(max);
+        Ok(out)
+    }
+
+    /// Where a Deezer short link (`link.deezer.com/s/…`, `deezer.page.link/…`) leads.
+    pub async fn follow(&self, url: &str) -> Result<String> {
+        let res = self.http.get(url).send().await.context("deezer link")?;
+        Ok(res.url().to_string())
     }
 
     /// Downloads a picture (covers, artist photos) from Deezer's image servers.

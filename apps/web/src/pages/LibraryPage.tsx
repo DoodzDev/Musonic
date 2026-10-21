@@ -1,10 +1,10 @@
 /**
  * @file LibraryPage.tsx
- * @description The library: playlists (with the liked songs and a "New playlist"
- *   button) then "Play by genre", albums and artists, each in a grid of the
- *   same cards as the Home.
+ * @description The library: playlists (with the liked songs, a "New playlist"
+ *   button and, on a Musonic Server, "Import" a Spotify or Deezer playlist) then
+ *   "Play by genre", albums and artists, each in a grid of the same cards as the Home.
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -13,15 +13,18 @@ import { Link, useNavigate } from 'react-router';
 import type { CardItem } from '@musonic/core';
 import { PageStatus } from '../components/CollectionHeader.tsx';
 import { GenreGrid } from '../components/GenreGrid.tsx';
+import { ImportPlaylistDialog } from '../components/ImportPlaylistDialog.tsx';
 import { TextDialog } from '../components/TextDialog.tsx';
 import { Shelf } from '../components/Shelf.tsx';
 import { MusicNoteIcon } from '../components/icons/MusicNoteIcon.tsx';
 import { PlayIcon } from '../components/icons/PlayIcon.tsx';
 import { PlusIcon } from '../components/icons/PlusIcon.tsx';
+import { DownloadArrowIcon } from '../components/icons/DownloadArrowIcon.tsx';
 import { useApp } from '../context/AppContext.tsx';
 import { TTL_LONG, TTL_SHORT, useCachedQuery } from '../hooks/useCachedQuery.ts';
 import { tr } from '../i18n/index.ts';
 import { loadAllSongs, MY_MUSIC_KEY } from '../lib/allSongs.ts';
+import { useMusonicServer } from '../lib/musonicApi.ts';
 import { usePlayer } from '../player/PlayerContext.tsx';
 import { keys } from '../player/usePlayItem.ts';
 import { usePlaylistActions } from '../player/usePlaylistActions.ts';
@@ -88,6 +91,9 @@ function Artists() {
 export function LibraryPage() {
   const [tab, setTab] = useState<Tab>('playlists');
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const { session } = useApp();
+  const musonic = useMusonicServer(session);
   const navigate = useNavigate();
   const { create } = usePlaylistActions();
 
@@ -102,9 +108,16 @@ export function LibraryPage() {
     <div className="page">
       <div className="page-title-row">
         <h1 className="page-title">{t.title}</h1>
-        <button type="button" className="btn-tinted" onClick={() => setCreating(true)}>
-          <PlusIcon size={18} /> {t.newPlaylist}
-        </button>
+        <div className="page-title-actions">
+          {musonic && (
+            <button type="button" className="btn-tinted" onClick={() => setImporting(true)}>
+              <DownloadArrowIcon size={18} /> {tr.importPlaylist.open}
+            </button>
+          )}
+          <button type="button" className="btn-tinted" onClick={() => setCreating(true)}>
+            <PlusIcon size={18} /> {t.newPlaylist}
+          </button>
+        </div>
       </div>
       <nav aria-label={t.title} className="chips">
         {TABS.map((tb) => (
@@ -116,6 +129,7 @@ export function LibraryPage() {
       {tab === 'playlists' && <Playlists />}
       {tab === 'albums' && <Albums />}
       {tab === 'artists' && <Artists />}
+      {importing && <ImportPlaylistDialog onClose={() => setImporting(false)} />}
       {creating && (
         <TextDialog
           title={t.newPlaylist}

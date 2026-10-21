@@ -60,9 +60,14 @@ pub fn same_title(a: &str, b: &str) -> bool {
     }
 }
 
-/// At least one artist in common (fuzzy), so "A feat. B" still matches "A".
+/// At least one artist in common (fuzzy), so "A feat. B" still matches "A". Spaces do not
+/// count: "JAŸ-Z" (normalized "jayz") is "JAY Z".
 pub fn artists_overlap(a: &[String], b: &[String]) -> bool {
-    a.iter().any(|x| b.iter().any(|y| similar(x, y)))
+    let compact = |s: &str| s.replace(' ', "");
+    a.iter().any(|x| {
+        b.iter()
+            .any(|y| similar(x, y) || similar(&compact(x), &compact(y)))
+    })
 }
 
 #[cfg(test)]
@@ -96,5 +101,9 @@ mod tests {
         let b = normalize_artists(["Daft Punk"]);
         assert!(artists_overlap(&a, &b));
         assert!(!artists_overlap(&b, &normalize_artists(["Justice"])));
+        assert!(artists_overlap(
+            &normalize_artists(["JAŸ-Z"]),
+            &normalize_artists(["JAY Z"])
+        ));
     }
 }

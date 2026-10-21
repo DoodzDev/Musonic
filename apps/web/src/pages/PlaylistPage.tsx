@@ -2,25 +2,46 @@
  * @file PlaylistPage.tsx
  * @description Playlist page: header (with its description), Play button and
  *   the track table. The owner can edit the name and description, or delete it.
+ *   An imported playlist (Musonic Server) opens its import report.
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { PlaylistImport } from '@musonic/core';
 import { useNavigate, useParams } from 'react-router';
 import { CollectionHeader, PageStatus } from '../components/CollectionHeader.tsx';
 import { Cover } from '../components/Cover.tsx';
 import { EditPlaylistDialog } from '../components/EditPlaylistDialog.tsx';
+import { ImportPlaylistDialog } from '../components/ImportPlaylistDialog.tsx';
 import { toast } from '../lib/toast.ts';
 import { TrackTable } from '../components/TrackTable.tsx';
 import { useApp } from '../context/AppContext.tsx';
 import { TTL_SHORT, useCachedQuery } from '../hooks/useCachedQuery.ts';
 import { tr } from '../i18n/index.ts';
 import { formatTotal } from '../lib/format.ts';
+import { isMusonicServer, v1 } from '../lib/musonicApi.ts';
 import { usePlayer } from '../player/PlayerContext.tsx';
 import { keys } from '../player/usePlayItem.ts';
 import { usePlaylistActions } from '../player/usePlaylistActions.ts';
+
+/** The import this playlist came from, if any. */
+function useImportOf(playlistId: string): PlaylistImport | null {
+  const { session } = useApp();
+  const [found, setFound] = useState<PlaylistImport | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void isMusonicServer(session)
+      .then((musonic) => (musonic ? v1<PlaylistImport[]>(session, '/v1/playlist-imports') : []))
+      .then((all) => alive && setFound(all.find((i) => i.playlistId === playlistId) ?? null))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [session, playlistId]);
+  return found;
+}
 
 export function PlaylistPage() {
   const { id = '' } = useParams();
@@ -29,6 +50,8 @@ export function PlaylistPage() {
   const actions = usePlaylistActions();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
+  const [report, setReport] = useState(false);
+  const imported = useImportOf(id);
   const query = useCachedQuery(keys.playlist(id), TTL_SHORT, () => client.getPlaylist(id));
   if (query.status !== 'ready') return <PageStatus status={query.status} />;
   const playlist = query.data;
@@ -49,6 +72,7 @@ export function PlaylistPage() {
         extra={
           mine && (
             <>
+              {imported && <button type="button" className="btn-quiet" onClick={() => setReport(true)}>{tr.importPlaylist.report}</button>}
               <button type="button" className="btn-quiet" onClick={() => setEditing(true)}>{tr.common.edit}</button>
               <button
                 type="button"
@@ -67,6 +91,7 @@ export function PlaylistPage() {
           )
         }
       />
+      {report && imported && <ImportPlaylistDialog importId={imported.id} onClose={() => setReport(false)} />}
       {editing && (
         <EditPlaylistDialog
           name={playlist.name}

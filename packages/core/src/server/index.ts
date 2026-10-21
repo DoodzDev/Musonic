@@ -4,7 +4,7 @@
  *   generated from the server's Rust code (`apps/server`, `cargo test`; see ADR-018).
  *   Never edit `generated/` by hand.
  * @author DoodzProg
- * @version 1.4.0
+ * @version 1.5.0
  * @license CC-BY-NC-4.0
  */
 
@@ -59,3 +59,8 @@ export type { TrackFile } from './generated/TrackFile.ts';
 export type { TrackPage } from './generated/TrackPage.ts';
 export type { TrackRow } from './generated/TrackRow.ts';
 export type { WebApp } from './generated/WebApp.ts';
+export type { PlaylistImportRequest } from './generated/PlaylistImportRequest.ts';
+export type { PlaylistPreview } from './generated/PlaylistPreview.ts';
+export type { PlaylistImport } from './generated/PlaylistImport.ts';
+export type { PlaylistImportTrack } from './generated/PlaylistImportTrack.ts';
+export type { PlaylistImportDetail } from './generated/PlaylistImportDetail.ts';

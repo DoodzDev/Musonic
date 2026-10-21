@@ -5,7 +5,7 @@
  *   `/Musonic/app/` for the GitHub Pages build). The version of package.json
  *   is given to the app as `__MUSONIC_WEB_VERSION__`.
  * @author DoodzProg
- * @version 0.4.0
+ * @version 0.5.0
  * @license CC-BY-NC-4.0
  */
 
@@ -23,7 +23,8 @@ const FORWARDED_HEADERS = ['range', 'accept', 'accept-encoding', 'if-none-match'
  * browser page cannot read their answers. In development the page calls
  * `/__relay/<protocol>/<host>/rest/...` on its own origin and this middleware
  * forwards the request to the server the user typed on the login screen.
- * Only Subsonic API paths are relayed.
+ * Only Subsonic API paths (GET) and the Musonic Server native API (`/v1/`, its body and
+ * token too) are relayed.
  */
 function subsonicRelay(): Plugin {
   return {
@@ -32,15 +33,17 @@ function subsonicRelay(): Plugin {
     configureServer(server) {
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
         if (!req.url?.startsWith(RELAY_PREFIX)) return next()
-        const match = /^\/__relay\/(https?)\/([^/]+)(\/(?:[^?]*\/)?rest\/[^?]*(?:\?.*)?)$/.exec(req.url)
-        if (!match || (req.method !== 'GET' && req.method !== 'HEAD')) {
+        const match = /^\/__relay\/(https?)\/([^/]+)(\/(?:[^?]*\/)?(?:rest|v1)\/[^?]*(?:\?.*)?)$/.exec(req.url)
+        const native = match?.[3].includes('/v1/') ?? false
+        const methods = native ? ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'] : ['GET', 'HEAD']
+        if (!match || !methods.includes(req.method ?? '')) {
           res.statusCode = 400
           res.end()
           return
         }
         const [, protocol, host, path] = match
         const headers: Record<string, string> = {}
-        for (const name of FORWARDED_HEADERS) {
+        for (const name of native ? [...FORWARDED_HEADERS, 'authorization', 'content-type'] : FORWARDED_HEADERS) {
           const value = req.headers[name]
           if (typeof value === 'string') headers[name] = value
         }
@@ -57,7 +60,8 @@ function subsonicRelay(): Plugin {
         })
         // Stop downloading when the browser drops the request (seek, track change).
         res.on('close', () => upstream.destroy())
-        upstream.end()
+        if (native && req.method !== 'GET' && req.method !== 'HEAD') req.pipe(upstream)
+        else upstream.end()
       })
     },
   }

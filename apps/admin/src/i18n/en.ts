@@ -377,6 +377,7 @@ export const en: Dict = {
       'server.restart': (u: string) => `${u} restarted the server`,
       'backup.downloaded': (u: string, t: string) => `${u} downloaded the backup ${t}`,
       'caches.cleared': (u: string, _t: string, d: string) => `${u} emptied the caches (${d} freed)`,
+      'playlist.imported': (u: string, t: string, d: string) => `${u} imported the playlist “${t}” (${d} songs found)`,
       'webapp.installed': (u: string, _t: string, d: string) => `${u} installed Musonic Web ${d} on the server`,
     },
     on: 'on',

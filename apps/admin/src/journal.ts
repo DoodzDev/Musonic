@@ -17,7 +17,7 @@ export const KINDS = {
   all: '',
   login: 'login',
   accounts: 'account,invite,reset,password,key',
-  imports: 'import',
+  imports: 'import,playlist',
   server: 'server,backup,provider,settings,library,caches,webapp',
   problems: 'login.fail,login.blocked,login.suspended,import.failed,backup.failed,provider.expired',
 } as const;
@@ -80,6 +80,8 @@ export function icon(e: JournalEntry): IconName {
       return 'library';
     case 'webapp':
       return 'globe';
+    case 'playlist':
+      return 'playlist';
     default:
       return 'computer';
   }

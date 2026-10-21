@@ -15,4 +15,4 @@ at: number,
 /**
  * The device that made the change, when it said (`X-Musonic-Device` / `device`).
  */
-by?: string, } & ({ "type": "hello", user: UserRef, device: string | null, features: Array<string>, } | { "type": "likes", items: Array<LikeItem>, } | { "type": "rating", kind: string, id: string, rating: number, } | { "type": "playlist", id: string, action: PlaylistAction, } | { "type": "play", ids: Array<string>, } | { "type": "queue", } | { "type": "import", id: string, state: ImportState, path: string | null, } | { "type": "ping" } | { "type": "resync" });
+by?: string, } & ({ "type": "hello", user: UserRef, device: string | null, features: Array<string>, } | { "type": "likes", items: Array<LikeItem>, } | { "type": "rating", kind: string, id: string, rating: number, } | { "type": "playlist", id: string, action: PlaylistAction, } | { "type": "play", ids: Array<string>, } | { "type": "queue", } | { "type": "import", id: string, state: ImportState, path: string | null, } | { "type": "playlistImport", id: string, state: string, done: number, total: number, playlist: string | null, } | { "type": "ping" } | { "type": "resync" });

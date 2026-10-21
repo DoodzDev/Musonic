@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Import a Spotify or Deezer playlist** (Library → Import, on a Musonic Server): paste the playlist's address, check its name, cover and songs, and Musonic makes it again with songs from your library and the online catalog. The import runs on the server (you can close the window) with its progress shown live, then a report lists the songs not found and the uncertain ones (a close version used instead). A Spotify playlist is read up to its first 100 songs; for the rest, open it in the Spotify app on a computer, press Ctrl+A then Ctrl+C, and paste the links in the report to complete the same playlist. The report stays available from the playlist's page.
+
 ### Fixed
 - **Plays are now counted.** The web client never told the server what you listened to, so "Recently played", "Most played" and the top songs stayed empty. A track counts once you have really listened to half of it (or 4 minutes, tracks under 30 s never count): skipping to the end does not count. The track also shows as "now playing" while it plays, and the home picks up the new plays on your next visit.
 - Liking an online track, or adding it to a playlist, now works: the track is first imported into your library (a message tells you while it downloads), then liked or added under its library id. Before, the server could not find it and nothing happened.

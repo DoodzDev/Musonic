@@ -85,7 +85,7 @@ fn verify_password(password: &str, hash: &str) -> bool {
 }
 
 /// Lower case hex md5, as in Subsonic tokens (only to check them, never to store anything).
-fn md5_hex(text: &str) -> String {
+pub(crate) fn md5_hex(text: &str) -> String {
     hex::encode(md5::Md5::digest(text.as_bytes()))
 }
 

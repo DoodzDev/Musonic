@@ -375,6 +375,7 @@ export const fr = {
       'server.restart': (u: string) => `${u} a redémarré le serveur`,
       'backup.downloaded': (u: string, t: string) => `${u} a téléchargé la sauvegarde ${t}`,
       'caches.cleared': (u: string, _t: string, d: string) => `${u} a vidé les caches (${d} libérés)`,
+      'playlist.imported': (u: string, t: string, d: string) => `${u} a importé la playlist « ${t} » (${d} titres trouvés)`,
       'webapp.installed': (u: string, _t: string, d: string) => `${u} a installé Musonic Web ${d} sur le serveur`,
     } as Record<string, (u: string, t: string, d: string) => string>,
     on: 'activé',

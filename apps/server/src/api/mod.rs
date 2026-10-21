@@ -45,6 +45,7 @@ pub use imports::restore_credentials;
 mod journal;
 mod library_admin;
 mod measures;
+mod playlist_imports;
 mod security;
 mod status;
 mod system;
@@ -141,6 +142,7 @@ pub fn router() -> Router<AppState> {
         .merge(library_admin::router())
         .merge(security::router())
         .merge(system::router())
+        .merge(playlist_imports::router())
 }
 
 /// Version of the native API; raised when it changes in a way clients must know.
@@ -255,7 +257,14 @@ async fn info(State(state): State<AppState>) -> Reply {
 #[derive(Deserialize)]
 struct Credentials {
     username: String,
+    #[serde(default)]
     password: String,
+    /// Instead of the password: the Subsonic token `md5(password + salt)` and its salt, for
+    /// clients that keep only those (Musonic Web). Follows the legacy sign-in setting.
+    #[serde(default)]
+    token: Option<String>,
+    #[serde(default)]
+    salt: Option<String>,
     /// The application signing in (`Musonic Web`, `Console`…), for the journal.
     #[serde(default)]
     client: Option<String>,
@@ -306,11 +315,18 @@ async fn login(
             "too many failed attempts, try again later".into(),
         ));
     }
-    match state
-        .users
-        .check_password(&body.username, &body.password)
-        .await?
-    {
+    let checked = match (&body.token, &body.salt) {
+        (Some(token), Some(salt)) if body.password.is_empty() => {
+            state.users.check_token(&body.username, token, salt).await?
+        }
+        _ => {
+            state
+                .users
+                .check_password(&body.username, &body.password)
+                .await?
+        }
+    };
+    match checked {
         Ok(user) => {
             state.limiter.succeeded(&from, &body.username);
             state.journal.log(
@@ -332,7 +348,8 @@ async fn login(
             ))
         }
         Err(_) => {
-            state.limiter.failed(&from, &body.username, &body.password);
+            let tried = body.token.as_deref().unwrap_or(&body.password);
+            state.limiter.failed(&from, &body.username, tried);
             state
                 .journal
                 .refused("login.fail", &body.username, client, &from);
