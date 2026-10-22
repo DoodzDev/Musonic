@@ -124,24 +124,20 @@
           <p data-l="en">You need a Linux machine (a home server, a Raspberry Pi, a VPS) with Docker, and your music in a folder.</p>
           <p data-l="fr">Il vous faut une machine Linux (un serveur maison, un Raspberry Pi, un VPS) avec Docker, et votre musique dans un dossier.</p>
           <ol class="list" data-l="en">
-            <li>Get the project: <code>git clone https://github.com/DoodzProg/Musonic.git</code></li>
-            <li>Copy <code>apps/server/compose.example.yml</code> next to where your data will live, as <code>compose.yml</code>.</li>
+            <li>In the folder where your data will live, get <code>compose.yml</code>: <code>curl -o compose.yml https://raw.githubusercontent.com/DoodzProg/Musonic/main/apps/server/compose.example.yml</code></li>
             <li>Set the path of your music folder, and the user owning it (<code>user: "1000:1000"</code>).</li>
-            <li>Start it: <code>docker compose up -d</code>. The server, ffmpeg and its console are built and started.</li>
+            <li>Start it: <code>docker compose up -d</code>. The server, ffmpeg and its console are downloaded and started.</li>
             <li>Put a reverse proxy with HTTPS in front (Caddy, nginx, a Cloudflare tunnel…): the server listens on <code>127.0.0.1:4533</code>.</li>
           </ol>
           <ol class="list" data-l="fr">
-            <li>Récupérez le projet : <code>git clone https://github.com/DoodzProg/Musonic.git</code></li>
-            <li>Copiez <code>apps/server/compose.example.yml</code> là où vivront vos données, sous le nom <code>compose.yml</code>.</li>
+            <li>Dans le dossier où vivront vos données, récupérez <code>compose.yml</code> : <code>curl -o compose.yml https://raw.githubusercontent.com/DoodzProg/Musonic/main/apps/server/compose.example.yml</code></li>
             <li>Indiquez le chemin de votre dossier de musique, et l'utilisateur qui en est propriétaire (<code>user: "1000:1000"</code>).</li>
-            <li>Lancez : <code>docker compose up -d</code>. Le serveur, ffmpeg et sa console sont construits et démarrés.</li>
+            <li>Lancez : <code>docker compose up -d</code>. Le serveur, ffmpeg et sa console sont téléchargés et démarrés.</li>
             <li>Placez un reverse proxy en HTTPS devant (Caddy, nginx, un tunnel Cloudflare…) : le serveur écoute sur <code>127.0.0.1:4533</code>.</li>
           </ol>
           <pre><code>services:
   musonic-server:
-    build:
-      context: ../..
-      dockerfile: apps/server/Dockerfile
+    image: ghcr.io/doodzprog/musonic-server:1
     restart: unless-stopped
     user: "1000:1000"
     ports:
@@ -149,7 +145,7 @@
     volumes:
       - ./data:/data              # database, caches, daily backups
       - /path/to/music:/music     # :ro if you do not want imports</code></pre>
-          <p class="note"><span data-l="en">Without Docker: build it with Rust (<code>cargo build --release</code> in <code>apps/server</code>), it is a single program. </span><span data-l="fr">Sans Docker : compilez-le avec Rust (<code>cargo build --release</code> dans <code>apps/server</code>), c'est un seul programme. </span><a href="https://github.com/DoodzProg/Musonic/blob/main/apps/server/README.md#build-and-run"><span data-l="en">Details</span><span data-l="fr">Détails</span></a></p>
+          <p class="note"><span data-l="en">Without Docker: download the program for Linux x86 or ARM from the <a href="https://github.com/DoodzProg/Musonic/releases">releases</a> (<code>server-v…</code>), it is a single program, its console next to it. </span><span data-l="fr">Sans Docker : téléchargez le programme pour Linux x86 ou ARM dans les <a href="https://github.com/DoodzProg/Musonic/releases">versions</a> (<code>server-v…</code>), c'est un seul programme, avec sa console à côté. </span><a href="https://github.com/DoodzProg/Musonic/blob/main/apps/server/README.md#install"><span data-l="en">Details</span><span data-l="fr">Détails</span></a></p>
         </section>
 
         <section id="first">

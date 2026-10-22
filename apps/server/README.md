@@ -3,10 +3,26 @@
 The music server of the Musonic ecosystem: your library, your accounts and your playlists, for
 the Musonic apps and for any Subsonic client.
 
-> **Status: in development (0.1.0).** Scanning, accounts, browsing, search, playback with
-> transcoding, covers, lyrics, likes, ratings, play counts, playlists, the saved play queue,
-> the online catalog and imports work; the import from Navidrome comes next.
-> Use [Navidrome](https://www.navidrome.org/) in the meantime.
+> **Version 1.0.0.** Install it with Docker (x86 and ARM) or as a single program: see
+> [Install](#install). What changed: [CHANGELOG.md](CHANGELOG.md).
+
+## Install
+With Docker, in the folder where its data will live:
+
+```sh
+curl -o compose.yml https://raw.githubusercontent.com/DoodzProg/Musonic/main/apps/server/compose.example.yml
+# set the path of your music folder and its owner (user: "1000:1000"), then:
+docker compose up -d
+docker compose exec musonic-server musonic-server user add <name> --admin
+```
+
+The image is `ghcr.io/doodzprog/musonic-server` (tags `1`, `1.0`, `1.0.0`, `latest`);
+`docker compose pull && docker compose up -d` updates it. Put a reverse proxy with HTTPS in
+front: the server listens on `127.0.0.1:4533`.
+
+Without Docker: each [release](https://github.com/DoodzProg/Musonic/releases) tagged
+`server-v…` has the program for Linux x86 and ARM (`musonic-server-…-linux-x86_64.tar.gz`,
+`…-aarch64.tar.gz`), with its console in `admin/` next to it. Install ffmpeg for transcoding.
 
 ## What it will do
 - **Library**: scans your music folder (tags, covers, lyrics, several artists per track), and
@@ -63,7 +79,8 @@ cargo run --release
 ### Docker
 `Dockerfile` builds the server, with ffmpeg and its administration console, from the
 repository root: `docker build -t musonic-server -f apps/server/Dockerfile .`;
-`compose.example.yml` runs it (data and music folders, limits, logs, healthcheck).
+`compose.example.yml` runs it (data and music folders, limits, logs, healthcheck), from the
+published image or, with its `build:` lines, from source.
 
 ### Administration console
 Open the server's address in a browser and sign in with an administrator account: accounts,
