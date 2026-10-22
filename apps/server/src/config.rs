@@ -40,6 +40,8 @@ pub struct Config {
     pub import_quality: String,
     /// Daily database backups kept in `<data_dir>/backups` (0 = none).
     pub backup_days: u64,
+    /// Transcoded songs kept on disk, MB (0 = none): played again or seeked at once.
+    pub transcode_cache_mb: u64,
     /// The built administration console. Default: `admin` next to the binary, else
     /// `/usr/share/musonic/admin`.
     pub admin_dir: Option<PathBuf>,
@@ -72,6 +74,7 @@ impl Default for Config {
             import_dir: "Musonic".to_owned(),
             import_quality: "mp3_320".to_owned(),
             backup_days: 14,
+            transcode_cache_mb: 500,
             admin_dir: None,
             update_check: true,
             max_bit_rate: 0,
@@ -142,6 +145,9 @@ impl Config {
         }
         if let Some(v) = env("MUSONIC_BACKUP_DAYS") {
             cfg.backup_days = v.parse().context("MUSONIC_BACKUP_DAYS")?;
+        }
+        if let Some(v) = env("MUSONIC_TRANSCODE_CACHE_MB") {
+            cfg.transcode_cache_mb = v.parse().context("MUSONIC_TRANSCODE_CACHE_MB")?;
         }
         if let Some(v) = env("MUSONIC_SUBSONIC_PROVIDER_URL") {
             cfg.subsonic_provider_url = Some(v);

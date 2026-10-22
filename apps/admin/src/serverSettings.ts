@@ -18,6 +18,7 @@ export type SettingKey =
   | 'online_previews'
   | 'scan_interval_minutes'
   | 'backup_days'
+  | 'transcode_cache_mb'
   | 'legacy_auth'
   | 'update_check'
   | 'max_bit_rate'

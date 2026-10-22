@@ -49,15 +49,48 @@ fn artist_index(rows: Vec<Value>) -> Value {
     })
 }
 
+/// Every album artist, sorted: the library's part is kept until the library changes (a like
+/// or a play elsewhere does not recompute it), then the account's likes are added.
 async fn all_artists(ctx: &Ctx) -> Result<Vec<Value>, ApiError> {
+    let state = &ctx.state;
+    let version = state.db.library_changes();
+    let library = match state.library_artists.get(version) {
+        Some(rows) => rows,
+        None => {
+            let mut rows = state
+                .db
+                // No account: no likes in this part.
+                .call(|c| Ok(model::artists(c, "1", "ar.name", "", &[&""])?))
+                .await?;
+            rows.sort_by_cached_key(|a| sort_key(a["name"].as_str().unwrap_or_default()));
+            let rows = std::sync::Arc::new(rows);
+            state.library_artists.put(version, rows.clone());
+            rows
+        }
+    };
     let user = ctx.user.id.clone();
-    let mut rows = ctx
-        .state
+    let starred: std::collections::HashMap<String, i64> = state
         .db
-        .call(move |c| Ok(model::artists(c, "1", "ar.name", "", &[&user])?))
+        .call(move |c| {
+            let mut st = c.prepare_cached(
+                "SELECT item_id, starred_at FROM annotation
+                  WHERE user_id = ?1 AND item_type = 'artist' AND starred_at IS NOT NULL",
+            )?;
+            Ok(st
+                .query_map([&user], |r| Ok((r.get(0)?, r.get(1)?)))?
+                .collect::<rusqlite::Result<_>>()?)
+        })
         .await?;
-    rows.sort_by_cached_key(|a| sort_key(a["name"].as_str().unwrap_or_default()));
-    Ok(rows)
+    Ok(library
+        .iter()
+        .map(|a| {
+            let mut a = a.clone();
+            if let Some(at) = a["id"].as_str().and_then(|id| starred.get(id)) {
+                a["starred"] = json!(model::iso(*at));
+            }
+            a
+        })
+        .collect())
 }
 
 pub async fn get_artists(ctx: &Ctx) -> Reply {
@@ -188,7 +221,12 @@ pub async fn get_music_directory(ctx: &Ctx) -> Reply {
     ))
 }
 
+/// Genres only depend on the library: kept until it changes.
 pub async fn get_genres(ctx: &Ctx) -> Reply {
+    let version = ctx.state.db.library_changes();
+    if let Some(genres) = ctx.state.genres.get(version) {
+        return Ok(one("genres", json!({ "genre": *genres })));
+    }
     let genres: Vec<Value> = ctx
         .state
         .db
@@ -207,10 +245,10 @@ pub async fn get_genres(ctx: &Ctx) -> Reply {
                 .collect::<rusqlite::Result<Vec<_>>>()?)
         })
         .await?;
-    Ok(one(
-        "genres",
-        json!({ "genre": genres.into_iter().filter(|g| g["songCount"] != 0).collect::<Vec<_>>() }),
-    ))
+    let genres: Vec<Value> = genres.into_iter().filter(|g| g["songCount"] != 0).collect();
+    let answer = one("genres", json!({ "genre": genres }));
+    ctx.state.genres.put(version, std::sync::Arc::new(genres));
+    Ok(answer)
 }
 
 /// `getAlbumList2` / `getAlbumList`.
@@ -220,10 +258,12 @@ pub async fn album_list(ctx: &Ctx, key: &str) -> Reply {
     let kind = ctx.params.require("type")?.to_owned();
     let size = count(ctx, "size", 10);
     let offset = offset(ctx, "offset");
+    if kind == "random" {
+        return Ok(albums_answer(key, random_albums(ctx, size).await?));
+    }
     let year = |name: &str| ctx.params.get(name).and_then(|v| v.parse::<i64>().ok());
     // Filter and order on `al` / `an`, and the parameters the filter adds after ?1-?3.
     let (filter, order, extra): (&str, &str, Vec<Sql>) = match kind.as_str() {
-        "random" => ("1", "random()", vec![]),
         "newest" => ("1", "al.created_at DESC, al.title", vec![]),
         "highest" => ("an.rating > 0", "an.rating DESC, al.title", vec![]),
         "frequent" => ("an.play_count > 0", "an.play_count DESC, al.title", vec![]),
@@ -269,17 +309,25 @@ pub async fn album_list(ctx: &Ctx, key: &str) -> Reply {
         }
     };
     let user = ctx.user.id.clone();
-    let (filter, order) = (filter.to_owned(), order.to_owned());
+    // The page's ids first, then the columns of those albums only (not of the whole library).
+    let filter = format!(
+        "al.id IN (SELECT al.id FROM album al
+                   LEFT JOIN annotation an ON an.user_id = ?1 AND an.item_type = 'album' AND an.item_id = al.id
+                   WHERE ({filter}) AND EXISTS (SELECT 1 FROM track t JOIN track_file f ON f.track_id = t.id
+                                                 WHERE t.album_id = al.id AND f.missing = 0)
+                   ORDER BY {order} LIMIT ?2 OFFSET ?3)"
+    );
+    let order = order.to_owned();
     let rows = ctx
         .state
         .db
         .call(move |c| {
             let mut p: Vec<&dyn ToSql> = vec![&user, &size, &offset];
             p.extend(extra.iter().map(|v| v as &dyn ToSql));
-            Ok(model::albums(c, &filter, &order, "LIMIT ?2 OFFSET ?3", &p)?)
+            Ok(model::albums(c, &filter, &order, "", &p)?)
         })
         .await?;
-    Ok(one(key, json!({ "album": rows })))
+    Ok(albums_answer(key, rows))
 }
 
 /// Present files only, plus optional genre / years.
@@ -289,16 +337,131 @@ pub async fn random_songs(ctx: &Ctx) -> Reply {
     let from: Option<i64> = ctx.params.get("fromYear").and_then(|v| v.parse().ok());
     let to: Option<i64> = ctx.params.get("toYear").and_then(|v| v.parse().ok());
     let user = ctx.user.id.clone();
+    if genre.is_none() && from.is_none() && to.is_none() {
+        return Ok(one(
+            "randomSongs",
+            json!({ "song": any_random_songs(ctx, size).await? }),
+        ));
+    }
     let rows = ctx
         .state
         .db
         .call(move |c| {
-            let filter = &format!("{} AND (?3 IS NULL OR t.id IN (SELECT tg.track_id FROM track_genre tg JOIN genre g ON g.id = tg.genre_id WHERE g.name = ?3 COLLATE NOCASE))
-                 AND (?4 IS NULL OR t.year >= ?4) AND (?5 IS NULL OR t.year <= ?5)", model::HAS_FILE);
-            Ok(model::songs(c, filter, "random() LIMIT ?2", &[&user, &size, &genre, &from, &to])?)
+            // The ids first, then the columns of those songs only.
+            let filter = &format!("t.id IN (SELECT t.id FROM track t
+                   WHERE EXISTS (SELECT 1 FROM track_file f WHERE f.track_id = t.id AND f.missing = 0)
+                     AND (?3 IS NULL OR t.id IN (SELECT tg.track_id FROM track_genre tg JOIN genre g ON g.id = tg.genre_id WHERE g.name = ?3 COLLATE NOCASE))
+                     AND (?4 IS NULL OR t.year >= ?4) AND (?5 IS NULL OR t.year <= ?5)
+                   ORDER BY random() LIMIT ?2) AND {}", model::HAS_FILE);
+            Ok(model::songs(c, filter, "random()", &[&user, &size, &genre, &from, &to])?)
         })
         .await?;
     Ok(one("randomSongs", json!({ "song": rows })))
+}
+
+/// `{"albumList2": {"album": […]}}`, or the older directory form for `getAlbumList`.
+fn albums_answer(key: &str, mut rows: Vec<Value>) -> serde_json::Map<String, Value> {
+    if key == "albumList" {
+        model::as_child(&mut rows);
+    }
+    one(key, json!({ "album": rows }))
+}
+
+/// Random albums: drawn from the ids of the present albums, kept until the library changes.
+async fn random_albums(ctx: &Ctx, size: i64) -> Result<Vec<Value>, ApiError> {
+    let ids = present_ids(
+        ctx,
+        &ctx.state.present_albums,
+        "SELECT al.id FROM album al WHERE EXISTS (SELECT 1 FROM track t
+           JOIN track_file f ON f.track_id = t.id WHERE t.album_id = al.id AND f.missing = 0)",
+    )
+    .await?;
+    let Some(list) = draw(&ids, size) else {
+        return Ok(Vec::new());
+    };
+    let user = ctx.user.id.clone();
+    let mut rows = ctx
+        .state
+        .db
+        .call(move |c| {
+            Ok(model::albums_uncached(
+                c,
+                &format!("al.id IN ({list})"),
+                "al.id",
+                &[&user],
+            )?)
+        })
+        .await?;
+    use rand::seq::SliceRandom;
+    rows.shuffle(&mut rand::thread_rng());
+    Ok(rows)
+}
+
+/// The ids `sql` lists, kept in `snapshot` until the library changes.
+async fn present_ids(
+    ctx: &Ctx,
+    snapshot: &super::Snapshot<Vec<String>>,
+    sql: &'static str,
+) -> Result<std::sync::Arc<Vec<String>>, ApiError> {
+    let version = ctx.state.db.library_changes();
+    if let Some(ids) = snapshot.get(version) {
+        return Ok(ids);
+    }
+    let ids = std::sync::Arc::new(
+        ctx.state
+            .db
+            .call(move |c| {
+                let mut st = c.prepare_cached(sql)?;
+                Ok(st
+                    .query_map([], |r| r.get::<_, String>(0))?
+                    .collect::<rusqlite::Result<Vec<_>>>()?)
+            })
+            .await?,
+    );
+    snapshot.put(version, ids.clone());
+    Ok(ids)
+}
+
+/// `size` ids drawn at random, as an SQL list (`None` when there is none).
+fn draw(ids: &[String], size: i64) -> Option<String> {
+    let mut rng = rand::thread_rng();
+    let picked =
+        rand::seq::index::sample(&mut rng, ids.len(), (size.max(0) as usize).min(ids.len()));
+    (!picked.is_empty()).then(|| {
+        picked
+            .into_iter()
+            .map(|i| format!("'{}'", ids[i].replace('\'', "''")))
+            .collect::<Vec<_>>()
+            .join(",")
+    })
+}
+
+/// Random songs without a filter (the most asked): drawn from the ids of the present tracks,
+/// kept in memory until the library changes, instead of sorting every track at random.
+async fn any_random_songs(ctx: &Ctx, size: i64) -> Result<Vec<Value>, ApiError> {
+    let ids = present_ids(
+        ctx,
+        &ctx.state.present_tracks,
+        "SELECT t.id FROM track t WHERE EXISTS (SELECT 1 FROM track_file f
+          WHERE f.track_id = t.id AND f.missing = 0)",
+    )
+    .await?;
+    let Some(list) = draw(&ids, size) else {
+        return Ok(Vec::new());
+    };
+    let user = ctx.user.id.clone();
+    let mut rows = ctx
+        .state
+        .db
+        .call(move |c| {
+            let filter = format!("t.id IN ({list}) AND {}", model::HAS_FILE);
+            Ok(model::songs_uncached(c, &filter, "t.id", &[&user])?)
+        })
+        .await?;
+    // The order of the draw, not of the ids.
+    use rand::seq::SliceRandom;
+    rows.shuffle(&mut rand::thread_rng());
+    Ok(rows)
 }
 
 pub async fn songs_by_genre(ctx: &Ctx) -> Reply {
@@ -350,6 +513,10 @@ pub async fn starred(ctx: &Ctx, key: &str) -> Reply {
             Ok((songs, albums, artists))
         })
         .await?;
+    let mut albums = albums;
+    if key == "starred" {
+        model::as_child(&mut albums);
+    }
     Ok(one(
         key,
         json!({ "song": songs, "album": albums, "artist": artists }),

@@ -238,6 +238,11 @@ pub async fn run(mut config: Config, mut ext: Extensions) -> Result<()> {
             let mut every = tokio::time::interval(Duration::from_secs(24 * 3600));
             loop {
                 every.tick().await;
+                // A restart the same day does not copy the database again (the first tick is
+                // at once, while the first requests come in).
+                if Db::todays_backup(&dir).is_ok_and(|p| p.is_file()) {
+                    continue;
+                }
                 match db.daily_backup(&dir, days).await {
                     Ok(p) => {
                         tracing::info!("database backed up to {}", p.display());

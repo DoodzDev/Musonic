@@ -8,7 +8,10 @@ mod migrations;
 
 use std::{
     path::{Path, PathBuf},
-    sync::{Arc, Mutex},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU64, Ordering},
+    },
 };
 
 use anyhow::{Context, Result, anyhow};
@@ -19,7 +22,55 @@ pub use migrations::{MIGRATIONS, SCHEMA_VERSION};
 #[derive(Clone)]
 pub struct Db {
     conn: Arc<Mutex<Connection>>,
+    /// Moves when what Subsonic answers show may have changed ([`Db::changes`]).
+    changes: Arc<AtomicU64>,
+    /// Moves when the library itself may have changed ([`Db::library_changes`]).
+    library: Arc<AtomicU64>,
+    /// Rows the update hook saw during the current call.
+    seen: Arc<Seen>,
 }
+
+#[derive(Default)]
+struct Seen {
+    unshown: AtomicU64,
+    library: AtomicU64,
+    other: AtomicU64,
+}
+
+/// The library: what the scanner, imports and the online catalog write; not what accounts do
+/// (likes, plays, playlists).
+const LIBRARY: [&str; 14] = [
+    "library",
+    "folder",
+    "artist",
+    "album",
+    "album_artist",
+    "track",
+    "track_artist",
+    "track_file",
+    "track_source",
+    "album_source",
+    "artist_source",
+    "genre",
+    "track_genre",
+    "album_genre",
+];
+
+/// Tables no cached answer reads, written often (each sign-in, every minute, while playing,
+/// while importing): their changes keep cached answers.
+const UNSHOWN: [&str; 11] = [
+    "api_key",
+    "session",
+    "metric_hour",
+    "scrobble",
+    "play_queue",
+    "play_queue_item",
+    "lyrics",
+    "invitation",
+    "password_reset",
+    "import_job",
+    "playlist_import_track",
+];
 
 impl Db {
     /// Opens (or creates) the database and brings its schema up to date.
@@ -33,10 +84,14 @@ impl Db {
         Self::setup(Connection::open_in_memory()?)
     }
 
-    /// The connection itself, for synchronous tests.
+    /// The connection itself, for synchronous tests. What they write is not counted: both
+    /// counters move, so nothing kept before is used after.
     #[cfg(test)]
     pub fn lock(&self) -> std::sync::MutexGuard<'_, Connection> {
-        self.conn.lock().unwrap()
+        let guard = self.conn.lock().unwrap();
+        self.changes.fetch_add(1, Ordering::Release);
+        self.library.fetch_add(1, Ordering::Release);
+        guard
     }
 
     fn setup(mut conn: Connection) -> Result<Self> {
@@ -47,8 +102,25 @@ impl Db {
              PRAGMA busy_timeout = 5000;",
         )?;
         migrations::apply(&mut conn)?;
+        let seen = Arc::new(Seen::default());
+        let hook = seen.clone();
+        conn.update_hook(Some(
+            move |_: rusqlite::hooks::Action, _: &str, table: &str, _: i64| {
+                let counter = if UNSHOWN.contains(&table) {
+                    &hook.unshown
+                } else if LIBRARY.contains(&table) {
+                    &hook.library
+                } else {
+                    &hook.other
+                };
+                counter.fetch_add(1, Ordering::Relaxed);
+            },
+        ));
         Ok(Self {
             conn: Arc::new(Mutex::new(conn)),
+            changes: Arc::default(),
+            library: Arc::default(),
+            seen,
         })
     }
 
@@ -58,14 +130,47 @@ impl Db {
         T: Send + 'static,
         F: FnOnce(&mut Connection) -> Result<T> + Send + 'static,
     {
-        let conn = self.conn.clone();
+        let (conn, seen) = (self.conn.clone(), self.seen.clone());
+        let (changes, library) = (self.changes.clone(), self.library.clone());
         tokio::task::spawn_blocking(move || {
             let mut guard = conn
                 .lock()
                 .map_err(|_| anyhow!("database connection poisoned"))?;
-            f(&mut guard)
+            let before = guard.total_changes();
+            for c in [&seen.unshown, &seen.library, &seen.other] {
+                c.store(0, Ordering::Relaxed);
+            }
+            let result = f(&mut guard);
+            let total = guard.total_changes() - before;
+            let (unshown, lib, other) = (
+                seen.unshown.load(Ordering::Relaxed),
+                seen.library.load(Ordering::Relaxed),
+                seen.other.load(Ordering::Relaxed),
+            );
+            // A change the hook did not see (some deletes, WITHOUT ROWID tables) counts as
+            // anything: both counters move.
+            let unseen = total > unshown + lib + other;
+            if lib > 0 || unseen {
+                library.fetch_add(1, Ordering::Release);
+            }
+            if lib > 0 || other > 0 || unseen {
+                changes.fetch_add(1, Ordering::Release);
+            }
+            result
         })
         .await?
+    }
+
+    /// Moves whenever a row changes outside the [`UNSHOWN`] tables. Every write goes through
+    /// this connection, so what was read at one value is still right while it stays the same.
+    pub fn changes(&self) -> u64 {
+        self.changes.load(Ordering::Acquire)
+    }
+
+    /// Like [`Db::changes`], for the [`LIBRARY`] tables only: stays the same while accounts
+    /// like, play or edit playlists.
+    pub fn library_changes(&self) -> u64 {
+        self.library.load(Ordering::Acquire)
     }
 
     /// Schema version (number of migrations applied).
@@ -89,14 +194,25 @@ impl Db {
     }
 
     /// Today's backup in `dir` (`musonic-YYYY-MM-DD.db`), keeping `days` of them.
-    pub async fn daily_backup(&self, dir: &Path, days: u64) -> Result<PathBuf> {
-        std::fs::create_dir_all(dir)?;
+    /// Where today's backup goes in `dir`.
+    pub fn todays_backup(dir: &Path) -> Result<PathBuf> {
         let day = crate::subsonic::iso_date(
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)?
                 .as_secs() as i64,
         );
-        let dest = dir.join(format!("musonic-{day}.db"));
+        Ok(dir.join(format!("musonic-{day}.db")))
+    }
+
+    pub async fn daily_backup(&self, dir: &Path, days: u64) -> Result<PathBuf> {
+        std::fs::create_dir_all(dir)?;
+        let dest = Self::todays_backup(dir)?;
+        let day = dest
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .and_then(|s| s.strip_prefix("musonic-"))
+            .unwrap_or_default()
+            .to_owned();
         let tmp = dir.join(format!(".musonic-{day}.db.part"));
         self.backup_to(&tmp).await?;
         std::fs::rename(&tmp, &dest)?;
@@ -122,5 +238,45 @@ impl Db {
             }
         }
         Ok(dest)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn changes_move_only_for_shown_tables() {
+        let db = Db::memory().unwrap();
+        let start = db.changes();
+        db.call(|c| Ok(c.query_row("SELECT count(*) FROM track", [], |r| r.get::<_, i64>(0))?))
+            .await
+            .unwrap();
+        assert_eq!(db.changes(), start, "a read changes nothing");
+        db.call(|c| {
+            Ok(c.execute(
+                "INSERT INTO metric_hour(hour, host_rx, host_tx, app_rx, app_tx, cpu_sum, samples)
+                 VALUES (1, 0, 0, 0, 0, 0, 0)",
+                [],
+            )?)
+        })
+        .await
+        .unwrap();
+        assert_eq!(db.changes(), start, "measures are not shown in answers");
+        db.call(|c| Ok(c.execute("INSERT INTO genre(id, name) VALUES (1, 'Jazz')", [])?))
+            .await
+            .unwrap();
+        assert_eq!(db.changes(), start + 1);
+        let library = db.library_changes();
+        db.call(|c| Ok(c.execute("DELETE FROM genre", [])?))
+            .await
+            .unwrap();
+        assert_eq!(db.changes(), start + 2, "a delete of the whole table too");
+        assert_eq!(db.library_changes(), library + 1);
+        db.call(|c| Ok(c.execute("INSERT INTO property(key, value) VALUES ('k', 'v')", [])?))
+            .await
+            .unwrap();
+        assert_eq!(db.changes(), start + 3);
+        assert_eq!(db.library_changes(), library + 1, "not the library");
     }
 }

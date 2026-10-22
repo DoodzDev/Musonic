@@ -154,3 +154,30 @@ async fn the_last_admin_cannot_be_deleted() {
     assert!(u.delete(&b.id).await.unwrap());
     assert_eq!(u.count().await.unwrap(), 1);
 }
+
+#[tokio::test]
+async fn a_checked_password_is_remembered_until_it_changes() {
+    let u = users(false);
+    let user = u.create("ana", "first password", false).await.unwrap();
+    let ok = |r: Result<Result<User, AuthError>>| r.unwrap().is_ok();
+    assert!(ok(u.check_password("ana", "first password").await));
+    assert!(u.verified.knows(
+        &user.id,
+        &u.credentials("ana").await.unwrap().unwrap().1,
+        "first password"
+    ));
+    assert!(
+        ok(u.check_password("ana", "first password").await),
+        "remembered"
+    );
+    assert!(
+        !ok(u.check_password("ana", "first passwor").await),
+        "another password is still checked"
+    );
+    u.set_password(&user.id, "second password").await.unwrap();
+    assert!(
+        !ok(u.check_password("ana", "first password").await),
+        "the old password no longer works"
+    );
+    assert!(ok(u.check_password("ana", "second password").await));
+}

@@ -1,7 +1,7 @@
 [package]
 name = "musonic-server"
 description = "Musonic Server: music library server, Subsonic-compatible, with a native API and pluggable audio providers"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2024"
 rust-version = "1.88"
 license-file = "LICENSE"
@@ -26,8 +26,12 @@ axum = { version = "0.8", features = ["ws"] }
 base64 = "0.22"
 blake3 = "1"
 bytes = "1"
+flate2 = "1"
 futures-util = "0.3"
 hex = "0.4"
+fast_image_resize = "5"
+jpeg-encoder = "0.6"
+mozjpeg = { version = "0.10", default-features = false }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif", "bmp"] }
 libc = "0.2"
 lofty = "0.22"
@@ -36,7 +40,7 @@ notify = "8"
 rand = "0.8"
 reqwest = { version = "0.12", default-features = false, features = ["json", "gzip", "rustls-tls"] }
 zip = { version = "2", default-features = false, features = ["deflate"] }
-rusqlite = { version = "0.37", features = ["bundled"] }
+rusqlite = { version = "0.37", features = ["bundled", "hooks"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
@@ -47,7 +51,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"
 tokio-util = { version = "0.7", features = ["io"] }
 toml = "0.9"
 tower = { version = "0.5", features = ["util"] }
-tower-http = { version = "0.6", features = ["cors", "fs"] }
+tower-http = { version = "0.6", features = ["cors", "fs", "compression-br", "compression-gzip"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 unicode-normalization = "0.1"
@@ -57,6 +61,10 @@ uuid = { version = "1", features = ["v4", "v5"] }
 tokio = { version = "1", features = ["test-util"] }
 http-body-util = "0.1"
 tokio-tungstenite = "0.27"
+
+# mozjpeg's SIMD: on ARM (NEON) it needs nothing more; on x86 it would need nasm.
+[target.'cfg(target_arch = "aarch64")'.dependencies]
+mozjpeg = { version = "0.10", default-features = false, features = ["with_simd"] }
 
 [profile.release]
 lto = "thin"

@@ -10,6 +10,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-22
+
+### Added
+- Transcoded songs are kept on disk (`transcode_cache_mb`, 500 MB by default, set in the
+  console's Playback page, which shows their size and empties them): a song played again is
+  sent at once as a file, and seeking in it works. When the account's saved play queue
+  (`savePlayQueue`) is known, the next song is transcoded in the background before its turn.
+- `ETag` on the kept answers: a client that already has an answer gets `304 Not Modified`.
+
+### Changed
+- Answers of the read-only Subsonic routes (artists, albums, lists, playlists, likes, search
+  without the online catalog…) are kept until a shown table changes: about 0.3 ms instead of
+  up to 13 ms on an ARM server, and 20 times more requests per second with several clients.
+  Background writes (measures, last use of a key, play queue) keep them.
+- Text answers are gzip-compressed for the clients that accept it (2 to 4 times smaller): on
+  the fly for the first client, then at the best level, made once in the background, for
+  the next ones.
+- A password sent with each request (Subsonic `p`, used for every cover and song) is checked
+  with argon2 once, then remembered in memory: 0.2 ms instead of about 20 ms per request.
+- Faster album lists (`getAlbumList2` / `getAlbumList`) and random songs (`getRandomSongs`):
+  only the songs and albums of the page are read, instead of the whole library.
+- Random songs and random albums are drawn from the present tracks and albums kept in memory;
+  the artist list and the genres keep their library part until the library changes (a like
+  or a play no longer recomputes them).
+- Resized covers: about a third smaller (4:2:0 JPEG at quality 80 with optimized tables,
+  instead of 4:4:4 at 85) and made about twice as fast (SIMD resizing); cached covers are
+  made again once.
+- Audio files are sent in 256 KiB reads instead of 4 KiB.
+- The last use of a device key, a session or a sign-in is saved at most once a minute.
+- After a write (a like, a play, a playlist edit), the most asked answers are made again in
+  the background, so the next screen finds them ready.
+- Resized covers get a smaller version made in the background with mozjpeg (about a sixth
+  smaller), which replaces the first one in the cache.
+- Albums in the ID3 routes (`getAlbumList2`, `search3`, `getArtist`, `getStarred2`…) no
+  longer repeat the directory fields (`title`, `album`, `isDir`, `parent`, `mediaType`), and
+  leave out empty values (`playCount` 0, `isCompilation` false, missing parts of
+  `releaseDate`): 15 % smaller compressed. `getAlbumList`, `search2` and `getStarred` keep
+  the directory fields.
+- Start: the server answers before watching the music folder (about 50 ms on 2,000
+  folders), and a restart the same day no longer copies the database again.
+
 ## [1.0.0] - 2026-10-22
 
 ### Added

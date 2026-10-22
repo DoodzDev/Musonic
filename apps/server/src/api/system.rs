@@ -265,11 +265,17 @@ async fn clear_caches(
         return Ok(Json(json!({ "freed": freed })));
     }
     let dir = state.data_dir.join("cache");
+    let transcoded = crate::subsonic::transcoded_dir(&state.data_dir);
     freed += tokio::task::spawn_blocking(move || {
         let mut freed = 0u64;
         if let Ok(entries) = std::fs::read_dir(&dir) {
             for e in entries.filter_map(Result::ok) {
                 let p = e.path();
+                // `covers`: the pictures only; `transcoded`: the transcoded songs only.
+                let is_transcoded = p == transcoded;
+                if (kind == "covers" && is_transcoded) || (kind == "transcoded" && !is_transcoded) {
+                    continue;
+                }
                 freed += crate::metrics::size_of(&p);
                 let _ = if p.is_dir() {
                     std::fs::remove_dir_all(&p)
@@ -301,6 +307,9 @@ pub struct Playback {
     /// Online songs being played or kept a few minutes.
     #[ts(type = "number")]
     pub streams_bytes: u64,
+    /// Transcoded songs kept on disk (`transcode_cache_mb`).
+    #[ts(type = "number")]
+    pub transcoded_bytes: u64,
     pub streams: u32,
 }
 
@@ -326,11 +335,14 @@ async fn ffmpeg_version() -> Option<String> {
 
 async fn playback(State(state): State<AppState>, auth: Auth) -> Reply {
     admin(&auth)?;
-    let (covers, streams) = (state.data_dir.join("cache"), streams_dir(&state));
-    let (covers_bytes, streams_bytes) = tokio::task::spawn_blocking(move || {
+    let (cache, streams) = (state.data_dir.join("cache"), streams_dir(&state));
+    let transcoded = crate::subsonic::transcoded_dir(&state.data_dir);
+    let (covers_bytes, streams_bytes, transcoded_bytes) = tokio::task::spawn_blocking(move || {
+        let transcoded = crate::metrics::size_of(&transcoded);
         (
-            crate::metrics::size_of(&covers),
+            crate::metrics::size_of(&cache).saturating_sub(transcoded),
             crate::metrics::size_of(&streams),
+            transcoded,
         )
     })
     .await
@@ -339,6 +351,7 @@ async fn playback(State(state): State<AppState>, auth: Auth) -> Reply {
         ffmpeg: ffmpeg_version().await,
         covers_bytes,
         streams_bytes,
+        transcoded_bytes,
         streams: state.sessions.count().await as u32,
     })))
 }

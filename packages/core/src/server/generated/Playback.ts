@@ -8,4 +8,8 @@ ffmpeg: string | null, coversBytes: number,
 /**
  * Online songs being played or kept a few minutes.
  */
-streamsBytes: number, streams: number, };
+streamsBytes: number, 
+/**
+ * Transcoded songs kept on disk (`transcode_cache_mb`).
+ */
+transcodedBytes: number, streams: number, };

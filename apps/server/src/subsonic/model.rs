@@ -208,6 +208,18 @@ pub fn songs(
     st.query_map(params, song)?.collect()
 }
 
+/// Like [`songs`], for SQL that differs at each call (not kept in the statement cache).
+pub fn songs_uncached(
+    c: &Connection,
+    filter: &str,
+    order: &str,
+    params: &[&dyn ToSql],
+) -> rusqlite::Result<Vec<Value>> {
+    let sql = format!("{SONG_SELECT} WHERE {filter} ORDER BY {order}");
+    let mut st = c.prepare(&sql)?;
+    st.query_map(params, song)?.collect()
+}
+
 // Albums ----------------------------------------------------------------------------------
 
 /// Album columns, counting the tracks that match `tracks` (SQL on `t`); albums without any
@@ -247,17 +259,15 @@ pub fn album(r: &Row) -> rusqlite::Result<Value> {
     let artists = refs(r.get(15)?);
     let mut m = Map::new();
     m.insert("id".into(), json!(id));
+    // AlbumID3 (the routes ending in 2 or 3, `getAlbum`, `getArtist`): `name`; the older
+    // directory form (`getAlbumList`, `search2`, `getStarred`) adds its fields ([`as_child`]).
     let title: String = r.get(1)?;
     m.insert("name".into(), json!(title));
-    m.insert("title".into(), json!(title));
-    m.insert("album".into(), json!(title));
-    m.insert("isDir".into(), json!(true));
     let artist: String = r.get(2)?;
     m.insert("artist".into(), json!(artist));
     m.insert("displayArtist".into(), json!(artist));
     if let Some(first) = artists.first() {
         m.insert("artistId".into(), first["id"].clone());
-        m.insert("parent".into(), first["id"].clone());
     }
     m.insert("artists".into(), json!(artists));
     put(&mut m, "year", r.get::<_, Option<i64>>(3)?);
@@ -273,13 +283,16 @@ pub fn album(r: &Row) -> rusqlite::Result<Value> {
             parts.next().flatten(),
         );
         if let Some(y) = y {
-            m.insert(
-                "releaseDate".into(),
-                json!({ "year": y, "month": mo, "day": d }),
-            );
+            let mut date = Map::new();
+            date.insert("year".into(), json!(y));
+            put(&mut date, "month", mo);
+            put(&mut date, "day", d);
+            m.insert("releaseDate".into(), Value::Object(date));
         }
     }
-    m.insert("isCompilation".into(), json!(r.get::<_, i64>(7)? != 0));
+    if r.get::<_, i64>(7)? != 0 {
+        m.insert("isCompilation".into(), json!(true));
+    }
     m.insert("songCount".into(), json!(r.get::<_, i64>(8)?));
     m.insert(
         "duration".into(),
@@ -288,9 +301,10 @@ pub fn album(r: &Row) -> rusqlite::Result<Value> {
     put(&mut m, "starred", r.get::<_, Option<i64>>(10)?.map(iso));
     let rating: Option<i64> = r.get(11)?;
     put(&mut m, "userRating", rating.filter(|r| *r > 0));
-    m.insert(
-        "playCount".into(),
-        json!(r.get::<_, Option<i64>>(12)?.unwrap_or(0)),
+    put(
+        &mut m,
+        "playCount",
+        r.get::<_, Option<i64>>(12)?.filter(|n| *n > 0),
     );
     put(&mut m, "played", r.get::<_, Option<i64>>(13)?.map(iso));
     if let Some(g) = genres.first() {
@@ -308,8 +322,22 @@ pub fn album(r: &Row) -> rusqlite::Result<Value> {
     if !r.get::<_, bool>(16)? {
         m.insert("online".into(), json!(true));
     }
-    m.insert("mediaType".into(), json!("album"));
     Ok(Value::Object(m))
+}
+
+/// Adds the fields of the older directory form (`Child`) to albums: `getAlbumList`,
+/// `search2`, `getStarred`.
+pub fn as_child(albums: &mut [Value]) {
+    for a in albums {
+        let Some(m) = a.as_object_mut() else { continue };
+        let name = m.get("name").cloned().unwrap_or_default();
+        m.insert("title".into(), name.clone());
+        m.insert("album".into(), name);
+        m.insert("isDir".into(), json!(true));
+        if let Some(artist) = m.get("artistId").cloned() {
+            m.insert("parent".into(), artist);
+        }
+    }
 }
 
 /// Albums of the library matching `filter` (SQL on `al`, `an`), ordered by `order`, with
@@ -326,6 +354,21 @@ pub fn albums(
         album_select_library()
     );
     let mut st = c.prepare_cached(&sql)?;
+    st.query_map(params, album)?.collect()
+}
+
+/// Like [`albums`], for SQL that differs at each call (not kept in the statement cache).
+pub fn albums_uncached(
+    c: &Connection,
+    filter: &str,
+    order: &str,
+    params: &[&dyn ToSql],
+) -> rusqlite::Result<Vec<Value>> {
+    let sql = format!(
+        "{} WHERE {filter} GROUP BY al.id ORDER BY {order}",
+        album_select_library()
+    );
+    let mut st = c.prepare(&sql)?;
     st.query_map(params, album)?.collect()
 }
 

@@ -33,6 +33,7 @@ const SETTINGS: &[(&str, Kind)] = &[
     ("online_previews", Kind::Bool),
     ("scan_interval_minutes", Kind::Int(0, 7 * 24 * 60)),
     ("backup_days", Kind::Int(0, 365)),
+    ("transcode_cache_mb", Kind::Int(0, 100_000)),
     ("legacy_auth", Kind::Bool),
     ("update_check", Kind::Bool),
     ("max_bit_rate", Kind::Int(0, 320)),
@@ -68,6 +69,7 @@ pub fn of(cfg: &Config) -> BTreeMap<String, Value> {
         ("online_previews", json!(cfg.online_previews)),
         ("scan_interval_minutes", json!(cfg.scan_interval_minutes)),
         ("backup_days", json!(cfg.backup_days)),
+        ("transcode_cache_mb", json!(cfg.transcode_cache_mb)),
         ("legacy_auth", json!(cfg.legacy_auth)),
         ("update_check", json!(cfg.update_check)),
         ("max_bit_rate", json!(cfg.max_bit_rate)),
@@ -146,6 +148,9 @@ pub fn apply(c: &Connection, cfg: &mut Config) -> Result<()> {
                 cfg.scan_interval_minutes = v.as_u64().unwrap_or(cfg.scan_interval_minutes)
             }
             "backup_days" => cfg.backup_days = v.as_u64().unwrap_or(cfg.backup_days),
+            "transcode_cache_mb" => {
+                cfg.transcode_cache_mb = v.as_u64().unwrap_or(cfg.transcode_cache_mb)
+            }
             "legacy_auth" => cfg.legacy_auth = v.as_bool().unwrap_or(cfg.legacy_auth),
             "update_check" => cfg.update_check = v.as_bool().unwrap_or(cfg.update_check),
             "max_bit_rate" => cfg.max_bit_rate = v.as_u64().map_or(cfg.max_bit_rate, |n| n as u32),

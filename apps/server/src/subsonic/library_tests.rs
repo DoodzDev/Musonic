@@ -128,6 +128,29 @@ impl Lib {
         )
     }
 
+    async fn raw_with(
+        &self,
+        uri: &str,
+        headers: &[(header::HeaderName, &str)],
+    ) -> (StatusCode, axum::http::HeaderMap, Vec<u8>) {
+        let mut req = Request::get(format!("/rest/{uri}"));
+        for (k, v) in headers {
+            req = req.header(k, *v);
+        }
+        let res = self
+            .app
+            .clone()
+            .oneshot(req.body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        let (status, h) = (res.status(), res.headers().clone());
+        (
+            status,
+            h,
+            res.into_body().collect().await.unwrap().to_bytes().to_vec(),
+        )
+    }
+
     /// The Subsonic error code of a failing call.
     async fn error(&self, query: &str) -> i64 {
         let (_, _, body) = self.raw(&format!("{query}&{AUTH}"), None).await;
@@ -264,8 +287,34 @@ async fn lists_search_genres() {
         .get("getAlbumList2?type=byYear&fromYear=1990&toYear=1999")
         .await;
     assert!(r["albumList2"]["album"].as_array().unwrap().is_empty());
+    let page = |r: &Value| -> Vec<(String, i64)> {
+        r["albumList2"]["album"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| {
+                (
+                    a["name"].as_str().unwrap().to_owned(),
+                    a["songCount"].as_i64().unwrap(),
+                )
+            })
+            .collect()
+    };
+    let all = page(&lib.get("getAlbumList2?type=alphabeticalByName").await);
+    assert_eq!(all.len(), 2);
+    let second = page(
+        &lib.get("getAlbumList2?type=alphabeticalByName&size=1&offset=1")
+            .await,
+    );
+    assert_eq!(second, all[1..], "page, order and song count kept");
     let r = lib.get("getRandomSongs?size=2").await;
     assert_eq!(r["randomSongs"]["song"].as_array().unwrap().len(), 2);
+    let r = lib.get("getRandomSongs?size=50").await;
+    assert_eq!(r["randomSongs"]["song"].as_array().unwrap().len(), 3);
+    let r = lib
+        .get("getRandomSongs?size=50&fromYear=1990&toYear=1999")
+        .await;
+    assert!(r["randomSongs"]["song"].as_array().unwrap().is_empty());
     let r = lib.get("getSongsByGenre?genre=Post-Rock").await;
     assert_eq!(r["songsByGenre"]["song"].as_array().unwrap().len(), 2);
     let r = lib.get("getTopSongs?artist=Sigur%20R%C3%B3s").await;
@@ -380,6 +429,24 @@ async fn transcodes_when_a_lower_bit_rate_is_asked() {
             body.len() > 1000 && body.windows(2).any(|w| w[0] == 0xFF && w[1] & 0xE0 == 0xE0),
             "MPEG frames"
         );
+        // Kept once made: the same song again is a file, with its length and ranges.
+        let uri = format!("stream?id={id}&maxBitRate=64&{AUTH}");
+        let mut again = None;
+        for _ in 0..50 {
+            let r = lib.raw(&uri, None).await;
+            if r.1.contains_key(header::CONTENT_LENGTH) {
+                again = Some(r);
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+        }
+        let (status, h, kept) = again.expect("kept after the first play");
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(h[header::ACCEPT_RANGES], "bytes");
+        assert_eq!(kept, body, "the same bytes");
+        let (status, _, part) = lib.raw(&uri, Some("bytes=100-199")).await;
+        assert_eq!(status, StatusCode::PARTIAL_CONTENT);
+        assert_eq!(part, body[100..200]);
     } else {
         assert_eq!(
             h[header::CONTENT_TYPE],
@@ -408,11 +475,13 @@ async fn covers_and_lyrics() {
     let img = image::load_from_memory(&small).unwrap();
     assert_eq!((img.width(), img.height()), (32, 24));
     assert_ne!(full, small);
-    // From the cache the second time, same bytes.
+    // From the cache the second time: the same picture, or its smaller version once made.
     let (_, _, again) = lib
         .raw(&format!("getCoverArt?id={cover}&size=32&{AUTH}"), None)
         .await;
-    assert_eq!(again, small);
+    let img = image::load_from_memory(&again).unwrap();
+    assert_eq!((img.width(), img.height()), (32, 24));
+    assert!(again.len() <= small.len());
     let (status, ..) = lib.raw(&format!("getCoverArt?id=nope&{AUTH}"), None).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 
@@ -1949,4 +2018,215 @@ async fn the_console_manages_imports_settings_and_backups() {
     .await;
     assert_eq!(s, StatusCode::OK);
     assert!(lib.st.limiter.allowed("9.9.9.9", "Hugo"));
+}
+
+#[tokio::test]
+async fn kept_answers_follow_likes_and_the_library() {
+    let lib = library("kept").await;
+    let artists = |r: Value| -> Vec<(String, bool)> {
+        r["artists"]["index"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|i| i["artist"].as_array().unwrap().clone())
+            .map(|a| {
+                (
+                    a["name"].as_str().unwrap().to_owned(),
+                    a["starred"].is_string(),
+                )
+            })
+            .collect()
+    };
+    assert_eq!(
+        lib.get("getGenres?").await["genres"]["genre"]
+            .as_array()
+            .unwrap()
+            .len(),
+        2
+    );
+    let before = artists(lib.get("getArtists?").await);
+    assert!(before.iter().all(|(_, starred)| !starred));
+    let random_albums = |r: Value| -> Vec<(String, i64)> {
+        let mut v: Vec<_> = r["albumList2"]["album"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| {
+                (
+                    a["name"].as_str().unwrap().to_owned(),
+                    a["songCount"].as_i64().unwrap(),
+                )
+            })
+            .collect();
+        v.sort();
+        v
+    };
+    let all = random_albums(lib.get("getAlbumList2?type=alphabeticalByName").await);
+    assert_eq!(
+        random_albums(lib.get("getAlbumList2?type=random&size=50").await),
+        all,
+        "every album, with its song count"
+    );
+    assert_eq!(
+        lib.get("getAlbumList2?type=random&size=1").await["albumList2"]["album"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    let first = lib.get("getArtists?").await["artists"]["index"][0]["artist"][0]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    lib.get(&format!("star?artistId={first}")).await;
+    let liked = artists(lib.get("getArtists?").await);
+    assert!(liked[0].1, "the like shows at once");
+    assert_eq!(liked.iter().filter(|(_, s)| *s).count(), 1);
+    lib.get(&format!("unstar?artistId={first}")).await;
+    assert_eq!(artists(lib.get("getArtists?").await), before);
+
+    // A file gone: its album, and an artist with nothing else, leave the lists.
+    let takk = lib.song_id("takk").await;
+    let hoppipolla = lib.song_id("hoppipolla").await;
+    lib.set_missing(&takk, true).await;
+    lib.set_missing(&hoppipolla, true).await;
+    let names: Vec<String> = artists(lib.get("getArtists?").await)
+        .into_iter()
+        .map(|(n, _)| n)
+        .collect();
+    assert_eq!(names, ["Daft Punk"]);
+    let genres: Vec<String> = lib.get("getGenres?").await["genres"]["genre"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|g| g["value"].as_str().unwrap().to_owned())
+        .collect();
+    assert!(
+        !genres.iter().any(|g| g == "Post-Rock"),
+        "a genre without files leaves: {genres:?}"
+    );
+    assert_eq!(
+        random_albums(lib.get("getAlbumList2?type=random&size=50").await).len(),
+        1,
+        "an album without files leaves the draw"
+    );
+    let r = lib.get("getRandomSongs?size=50").await;
+    assert_eq!(r["randomSongs"]["song"].as_array().unwrap().len(), 1);
+    lib.set_missing(&takk, false).await;
+    let r = lib.get("getRandomSongs?size=50").await;
+    assert_eq!(r["randomSongs"]["song"].as_array().unwrap().len(), 2);
+}
+
+#[tokio::test]
+async fn kept_answers_are_not_sent_again_to_a_client_that_has_them() {
+    let lib = library("etag").await;
+    let uri = format!("getArtists?{AUTH}");
+    let (status, headers, body) = lib.raw(&uri, None).await;
+    assert_eq!(status, StatusCode::OK);
+    let etag = headers[header::ETAG].to_str().unwrap().to_owned();
+    assert!(etag.starts_with("W/\""));
+    let again = lib
+        .raw_with(&uri, &[(header::IF_NONE_MATCH, etag.as_str())])
+        .await;
+    assert_eq!(again.0, StatusCode::NOT_MODIFIED);
+    assert!(again.2.is_empty());
+    let other = lib
+        .raw_with(&uri, &[(header::IF_NONE_MATCH, "W/\"other\"")])
+        .await;
+    assert_eq!(other.0, StatusCode::OK);
+    assert_eq!(other.2, body);
+    // A like changes the answer: a new tag.
+    let id = lib.get("getArtists?").await["artists"]["index"][0]["artist"][0]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    lib.get(&format!("star?artistId={id}")).await;
+    let changed = lib
+        .raw_with(&uri, &[(header::IF_NONE_MATCH, etag.as_str())])
+        .await;
+    assert_eq!(changed.0, StatusCode::OK);
+    assert_ne!(changed.1[header::ETAG].to_str().unwrap(), etag);
+}
+
+#[tokio::test]
+async fn the_most_asked_answers_are_made_again_after_a_write() {
+    let lib = library("hot").await;
+    lib.get("getArtists?").await;
+    lib.get("getArtists?").await;
+    let user = lib
+        .st
+        .users
+        .check_password("Doodz", "correct horse")
+        .await
+        .unwrap()
+        .unwrap();
+    let key = super::AnswerCache::key(
+        &user.id,
+        "getArtists",
+        &super::Params::parse(Some("f=json"), &[]),
+        false,
+    )
+    .unwrap();
+    assert!(lib.st.answers.get(&key, lib.st.db.changes()).is_some());
+    let id = lib.song_id("takk").await;
+    lib.get(&format!("star?id={id}")).await;
+    assert!(
+        lib.st.answers.get(&key, lib.st.db.changes()).is_none(),
+        "the like emptied it"
+    );
+    for _ in 0..50 {
+        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+        if lib.st.answers.get(&key, lib.st.db.changes()).is_some() {
+            return;
+        }
+    }
+    panic!("getArtists was not made again");
+}
+
+#[tokio::test]
+async fn the_next_song_of_the_queue_is_prepared() {
+    if std::process::Command::new("ffmpeg")
+        .arg("-version")
+        .output()
+        .is_err()
+    {
+        return;
+    }
+    let lib = library("prepare").await;
+    let (first, next) = (lib.song_id("hoppipolla").await, lib.song_id("takk").await);
+    lib.get(&format!(
+        "savePlayQueue?id={first}&id={next}&current={first}"
+    ))
+    .await;
+    let (status, ..) = lib
+        .raw(&format!("stream?id={first}&maxBitRate=64&{AUTH}"), None)
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    // Only the first song was asked: two kept songs means the next one was prepared.
+    let kept = || {
+        walk(&super::transcoded_dir(&lib.st.data_dir))
+            .into_iter()
+            .filter(|p| p.extension().is_some_and(|e| e == "mp3"))
+            .count()
+    };
+    for _ in 0..100 {
+        if kept() >= 2 {
+            return;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(30)).await;
+    }
+    panic!("the next song was not prepared");
+}
+
+fn walk(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+    let mut out = Vec::new();
+    for e in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+        let p = e.path();
+        if p.is_dir() {
+            out.extend(walk(&p));
+        } else {
+            out.push(p);
+        }
+    }
+    out
 }

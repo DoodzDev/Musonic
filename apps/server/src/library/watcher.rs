@@ -39,20 +39,26 @@ impl LibraryService {
             status: Arc::new(Mutex::new(ScanStatus::default())),
         };
 
-        let watcher = match watch(&root, service.wake.clone(), DEBOUNCE) {
-            Ok(w) => Some(w),
-            Err(e) => {
-                tracing::warn!(
-                    "cannot watch {}: {e}; relying on scheduled scans",
-                    root.display()
-                );
-                None
-            }
-        };
-
         let this = service.clone();
         tokio::spawn(async move {
-            let _watcher = watcher; // Lives as long as the task.
+            // Watching every folder takes a while on a large library: done here, so the server
+            // answers meanwhile; before the first scan, so no change is missed.
+            let wake = this.wake.clone();
+            let watched = root.clone();
+            let watcher = tokio::task::spawn_blocking(move || watch(&watched, wake, DEBOUNCE))
+                .await
+                .map_err(|e| notify::Error::generic(&e.to_string()))
+                .and_then(|r| r);
+            let _watcher = match watcher {
+                Ok(w) => Some(w), // Lives as long as the task.
+                Err(e) => {
+                    tracing::warn!(
+                        "cannot watch {}: {e}; relying on scheduled scans",
+                        root.display()
+                    );
+                    None
+                }
+            };
             loop {
                 let full =
                     std::mem::take(&mut *this.full.lock().unwrap_or_else(|e| e.into_inner()));

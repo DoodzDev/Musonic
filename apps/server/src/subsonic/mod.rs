@@ -7,6 +7,7 @@
 
 mod annotations;
 mod browse;
+mod cache;
 pub(crate) mod media;
 mod model;
 mod online;
@@ -14,10 +15,13 @@ mod playlists;
 mod queue;
 mod search;
 mod system;
+mod transcoded;
 mod xml;
 
 pub use annotations::NowPlaying;
+pub use cache::{Answer, AnswerCache, Snapshot};
 pub use model::iso_date;
+pub use transcoded::dir as transcoded_dir;
 
 use std::net::SocketAddr;
 
@@ -25,7 +29,7 @@ use axum::{
     Extension, Router,
     body::Bytes,
     extract::{ConnectInfo, Path, RawQuery, State},
-    http::{HeaderMap, HeaderValue, header},
+    http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{IntoResponse, Response},
     routing::any,
 };
@@ -99,7 +103,7 @@ impl From<anyhow::Error> for ApiError {
 pub type Reply = Result<Map<String, Value>, ApiError>;
 
 /// Request parameters, in order, repeated keys kept (`id=1&id=2`).
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Params(Vec<(String, String)>);
 
 impl Params {
@@ -255,6 +259,15 @@ async fn handle(
         Ok(u) => u,
         Err(e) => return format.render(Err(e)),
     };
+    let cache_key = AnswerCache::key(&user.id, &name, &params, state.online.is_some());
+    // Read before the answer is computed: a write meanwhile makes the stored answer stale.
+    let changes = state.db.changes();
+    if let Some(key) = &cache_key {
+        state.hot.record(key, &user, &name, &params, &format);
+        if let Some(cached) = state.answers.get(key, changes) {
+            return answer(cached, &headers);
+        }
+    }
     let ctx = Ctx {
         state,
         user,
@@ -271,56 +284,230 @@ async fn handle(
     if let Some(result) = media {
         return result.unwrap_or_else(|e| format.render(Err(e)));
     }
-    let reply = match name.as_str() {
+    let reply = dispatch(&ctx, &name).await;
+    // A write (a like, a play, a playlist edit): the most asked answers are made again.
+    if cache_key.is_none() && ctx.state.db.changes() != changes {
+        ctx.state.hot.schedule(&ctx.state);
+    }
+    match cache_key {
+        Some(key) if reply.is_ok() => {
+            let rendered = keep(&ctx.state, key, changes, &format, reply);
+            // Compressed on the fly (fast level) by the server's compression layer meanwhile.
+            answer(rendered, &ctx.headers)
+        }
+        _ => format.render(reply),
+    }
+}
+
+/// The most asked cacheable requests, made again in the background after a write (a like, a
+/// play): the next screen a client opens finds its answer ready.
+#[derive(Default)]
+pub struct Hot {
+    recipes: std::sync::Mutex<std::collections::HashMap<String, Recipe>>,
+    pending: std::sync::atomic::AtomicBool,
+    /// When the last write was seen.
+    last_write: std::sync::Mutex<Option<std::time::Instant>>,
+}
+
+struct Recipe {
+    user: User,
+    name: String,
+    params: Params,
+    format: Format,
+    hits: u64,
+    last: std::time::Instant,
+}
+
+/// Requests remembered, and made again after a write.
+const HOT_KEPT: usize = 64;
+const HOT_REMADE: usize = 16;
+/// Made again once writes have stopped for this long (a burst of likes, a scan: one remake).
+const HOT_DELAY: std::time::Duration = std::time::Duration::from_millis(150);
+/// Gzip versions being made at most; more answers are sent compressed on the fly.
+const GZIP_WAITING: usize = 4;
+
+impl Hot {
+    fn record(&self, key: &str, user: &User, name: &str, params: &Params, format: &Format) {
+        let Ok(mut recipes) = self.recipes.lock() else {
+            return;
+        };
+        if let Some(r) = recipes.get_mut(key) {
+            r.hits += 1;
+            r.last = std::time::Instant::now();
+            return;
+        }
+        if recipes.len() >= HOT_KEPT
+            && let Some(coldest) = recipes
+                .iter()
+                .min_by_key(|(_, r)| (r.hits, r.last))
+                .map(|(k, _)| k.clone())
+        {
+            recipes.remove(&coldest);
+        }
+        recipes.insert(
+            key.to_owned(),
+            Recipe {
+                user: user.clone(),
+                name: name.to_owned(),
+                params: params.clone(),
+                format: format.clone(),
+                hits: 1,
+                last: std::time::Instant::now(),
+            },
+        );
+    }
+
+    fn schedule(&self, state: &AppState) {
+        if let Ok(mut last) = self.last_write.lock() {
+            *last = Some(std::time::Instant::now());
+        }
+        if self.pending.swap(true, std::sync::atomic::Ordering::AcqRel) {
+            return;
+        }
+        let state = state.clone();
+        tokio::spawn(async move {
+            // Until `HOT_DELAY` after the last write.
+            loop {
+                let last = state
+                    .hot
+                    .last_write
+                    .lock()
+                    .ok()
+                    .and_then(|l| *l)
+                    .unwrap_or_else(std::time::Instant::now);
+                let Some(wait) =
+                    (last + HOT_DELAY).checked_duration_since(std::time::Instant::now())
+                else {
+                    break;
+                };
+                tokio::time::sleep(wait).await;
+            }
+            let seen = state.db.changes();
+            state
+                .hot
+                .pending
+                .store(false, std::sync::atomic::Ordering::Release);
+            let mut picked: Vec<_> = match state.hot.recipes.lock() {
+                Ok(r) => r.iter().map(|(k, r)| (k.clone(), r.hits, r.last)).collect(),
+                Err(_) => return,
+            };
+            picked.sort_by_key(|(_, hits, last)| std::cmp::Reverse((*hits, *last)));
+            for (key, _, _) in picked.into_iter().take(HOT_REMADE) {
+                let changes = state.db.changes();
+                if changes != seen {
+                    // Another write: its own remake follows.
+                    break;
+                }
+                if state.answers.get(&key, changes).is_some() {
+                    continue;
+                }
+                let Some((user, name, params, format)) =
+                    state.hot.recipes.lock().ok().and_then(|r| {
+                        r.get(&key).map(|r| {
+                            (
+                                r.user.clone(),
+                                r.name.clone(),
+                                r.params.clone(),
+                                r.format.clone(),
+                            )
+                        })
+                    })
+                else {
+                    continue;
+                };
+                let ctx = Ctx {
+                    state: state.clone(),
+                    user,
+                    params,
+                    headers: HeaderMap::new(),
+                };
+                let reply = dispatch(&ctx, &name).await;
+                if reply.is_ok() {
+                    keep(&state, key, changes, &format, reply);
+                }
+            }
+        });
+    }
+}
+
+/// Keeps a rendered answer, and makes its gzip version in the background.
+fn keep(state: &AppState, key: String, changes: u64, format: &Format, reply: Reply) -> Answer {
+    let (content_type, body) = format.text(reply);
+    let rendered = Answer::new(content_type, Bytes::from(body));
+    state.answers.put(key.clone(), changes, rendered.clone());
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    static WAITING: AtomicUsize = AtomicUsize::new(0);
+    if rendered.body.len() >= 1024 && WAITING.fetch_add(1, Ordering::AcqRel) < GZIP_WAITING {
+        let (answers, kept) = (state.answers.clone(), rendered.clone());
+        tokio::task::spawn_blocking(move || {
+            // Not for an answer a write has already replaced.
+            if answers
+                .get(&key, changes)
+                .is_some_and(|a| a.body == kept.body)
+                && let Some(gz) = kept.compressed()
+            {
+                answers.add_gzip(&key, changes, &kept.body, gz);
+            }
+            WAITING.fetch_sub(1, Ordering::AcqRel);
+        });
+    } else if rendered.body.len() >= 1024 {
+        WAITING.fetch_sub(1, Ordering::AcqRel);
+    }
+    rendered
+}
+
+/// The answer of a Subsonic route (not the binary ones).
+async fn dispatch(ctx: &Ctx, name: &str) -> Reply {
+    match name {
         "ping" => Ok(Map::new()),
         "getLicense" => system::license(),
-        "tokenInfo" => system::token_info(&ctx),
-        "getUser" => system::get_user(&ctx).await,
-        "getUsers" => system::get_users(&ctx).await,
-        "createUser" => system::create_user(&ctx).await,
-        "deleteUser" => system::delete_user(&ctx).await,
-        "changePassword" => system::change_password(&ctx).await,
-        "getMusicFolders" => system::music_folders(&ctx).await,
-        "getArtists" => browse::get_artists(&ctx).await,
-        "getIndexes" => browse::get_indexes(&ctx).await,
-        "getArtist" => browse::get_artist(&ctx).await,
-        "getAlbum" => browse::get_album(&ctx).await,
-        "getSong" => browse::get_song(&ctx).await,
-        "getMusicDirectory" => browse::get_music_directory(&ctx).await,
-        "getGenres" => browse::get_genres(&ctx).await,
-        "getAlbumList2" => browse::album_list(&ctx, "albumList2").await,
-        "getAlbumList" => browse::album_list(&ctx, "albumList").await,
-        "getRandomSongs" => browse::random_songs(&ctx).await,
-        "getSongsByGenre" => browse::songs_by_genre(&ctx).await,
-        "getStarred2" => browse::starred(&ctx, "starred2").await,
-        "getStarred" => browse::starred(&ctx, "starred").await,
-        "getTopSongs" => browse::top_songs(&ctx).await,
-        "getSimilarSongs2" => browse::similar_songs(&ctx, "similarSongs2").await,
-        "getSimilarSongs" => browse::similar_songs(&ctx, "similarSongs").await,
-        "getArtistInfo2" => browse::artist_info(&ctx, "artistInfo2").await,
-        "getArtistInfo" => browse::artist_info(&ctx, "artistInfo").await,
-        "getAlbumInfo2" => browse::album_info(&ctx, "albumInfo").await,
-        "getAlbumInfo" => browse::album_info(&ctx, "albumInfo").await,
-        "getScanStatus" => browse::scan_status(&ctx).await,
-        "startScan" => browse::start_scan(&ctx).await,
-        "star" => annotations::star(&ctx, true).await,
-        "unstar" => annotations::star(&ctx, false).await,
-        "setRating" => annotations::set_rating(&ctx).await,
-        "scrobble" => annotations::scrobble(&ctx).await,
-        "getNowPlaying" => annotations::get_now_playing(&ctx).await,
-        "savePlayQueue" => queue::save(&ctx, false).await,
-        "savePlayQueueByIndex" => queue::save(&ctx, true).await,
-        "getPlayQueue" => queue::get(&ctx, false).await,
-        "getPlayQueueByIndex" => queue::get(&ctx, true).await,
-        "search3" => search::search(&ctx, "searchResult3").await,
-        "search2" => search::search(&ctx, "searchResult2").await,
-        "getPlaylists" => playlists::get_playlists(&ctx).await,
-        "getPlaylist" => playlists::get_playlist(&ctx).await,
-        "createPlaylist" => playlists::create_playlist(&ctx).await,
-        "updatePlaylist" => playlists::update_playlist(&ctx).await,
-        "deletePlaylist" => playlists::delete_playlist(&ctx).await,
-        "getLyricsBySongId" => media::lyrics_by_song_id(&ctx).await,
-        "getLyrics" => media::lyrics(&ctx).await,
+        "tokenInfo" => system::token_info(ctx),
+        "getUser" => system::get_user(ctx).await,
+        "getUsers" => system::get_users(ctx).await,
+        "createUser" => system::create_user(ctx).await,
+        "deleteUser" => system::delete_user(ctx).await,
+        "changePassword" => system::change_password(ctx).await,
+        "getMusicFolders" => system::music_folders(ctx).await,
+        "getArtists" => browse::get_artists(ctx).await,
+        "getIndexes" => browse::get_indexes(ctx).await,
+        "getArtist" => browse::get_artist(ctx).await,
+        "getAlbum" => browse::get_album(ctx).await,
+        "getSong" => browse::get_song(ctx).await,
+        "getMusicDirectory" => browse::get_music_directory(ctx).await,
+        "getGenres" => browse::get_genres(ctx).await,
+        "getAlbumList2" => browse::album_list(ctx, "albumList2").await,
+        "getAlbumList" => browse::album_list(ctx, "albumList").await,
+        "getRandomSongs" => browse::random_songs(ctx).await,
+        "getSongsByGenre" => browse::songs_by_genre(ctx).await,
+        "getStarred2" => browse::starred(ctx, "starred2").await,
+        "getStarred" => browse::starred(ctx, "starred").await,
+        "getTopSongs" => browse::top_songs(ctx).await,
+        "getSimilarSongs2" => browse::similar_songs(ctx, "similarSongs2").await,
+        "getSimilarSongs" => browse::similar_songs(ctx, "similarSongs").await,
+        "getArtistInfo2" => browse::artist_info(ctx, "artistInfo2").await,
+        "getArtistInfo" => browse::artist_info(ctx, "artistInfo").await,
+        "getAlbumInfo2" => browse::album_info(ctx, "albumInfo").await,
+        "getAlbumInfo" => browse::album_info(ctx, "albumInfo").await,
+        "getScanStatus" => browse::scan_status(ctx).await,
+        "startScan" => browse::start_scan(ctx).await,
+        "star" => annotations::star(ctx, true).await,
+        "unstar" => annotations::star(ctx, false).await,
+        "setRating" => annotations::set_rating(ctx).await,
+        "scrobble" => annotations::scrobble(ctx).await,
+        "getNowPlaying" => annotations::get_now_playing(ctx).await,
+        "savePlayQueue" => queue::save(ctx, false).await,
+        "savePlayQueueByIndex" => queue::save(ctx, true).await,
+        "getPlayQueue" => queue::get(ctx, false).await,
+        "getPlayQueueByIndex" => queue::get(ctx, true).await,
+        "search3" => search::search(ctx, "searchResult3").await,
+        "search2" => search::search(ctx, "searchResult2").await,
+        "getPlaylists" => playlists::get_playlists(ctx).await,
+        "getPlaylist" => playlists::get_playlist(ctx).await,
+        "createPlaylist" => playlists::create_playlist(ctx).await,
+        "updatePlaylist" => playlists::update_playlist(ctx).await,
+        "deletePlaylist" => playlists::delete_playlist(ctx).await,
+        "getLyricsBySongId" => media::lyrics_by_song_id(ctx).await,
+        "getLyrics" => media::lyrics(ctx).await,
         "getInternetRadioStations" => Ok(one(
             "internetRadioStations",
             json!({ "internetRadioStation": [] }),
@@ -329,8 +516,55 @@ async fn handle(
             Code::Generic,
             format!("{name} is not implemented yet"),
         )),
-    };
-    format.render(reply)
+    }
+}
+
+/// A rendered answer, already compressed when the client accepts gzip.
+fn answer(a: Answer, request: &HeaderMap) -> Response {
+    let content_type = (
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(a.content_type),
+    );
+    let vary = (header::VARY, HeaderValue::from_static("accept-encoding"));
+    let etag = (
+        header::ETAG,
+        HeaderValue::from_str(&a.etag).expect("hex in quotes"),
+    );
+    // The client keeps it but asks each time (the answer depends on the account).
+    let cache = (
+        header::CACHE_CONTROL,
+        HeaderValue::from_static("private, no-cache"),
+    );
+    let known = request
+        .get_all(header::IF_NONE_MATCH)
+        .iter()
+        .filter_map(|v| v.to_str().ok())
+        .any(|v| {
+            v.split(',')
+                .any(|t| t.trim().trim_start_matches("W/") == a.etag.trim_start_matches("W/"))
+        });
+    if known {
+        return (StatusCode::NOT_MODIFIED, [vary, etag, cache]).into_response();
+    }
+    let accepts_gzip = request
+        .get_all(header::ACCEPT_ENCODING)
+        .iter()
+        .filter_map(|v| v.to_str().ok())
+        .any(|v| v.split(',').any(|e| e.trim().starts_with("gzip")));
+    match a.gzip {
+        Some(gz) if accepts_gzip => (
+            [
+                content_type,
+                vary,
+                etag,
+                cache,
+                (header::CONTENT_ENCODING, HeaderValue::from_static("gzip")),
+            ],
+            gz,
+        )
+            .into_response(),
+        _ => ([content_type, vary, etag, cache], a.body).into_response(),
+    }
 }
 
 async fn authenticate(state: &AppState, p: &Params, addr: &str) -> Result<User, ApiError> {
@@ -417,6 +651,7 @@ fn suspended() -> ApiError {
     )
 }
 
+#[derive(Clone)]
 enum Format {
     Xml,
     Json,
@@ -436,6 +671,16 @@ impl Format {
     }
 
     fn render(&self, reply: Reply) -> Response {
+        let (content_type, text) = self.text(reply);
+        (
+            [(header::CONTENT_TYPE, HeaderValue::from_static(content_type))],
+            text,
+        )
+            .into_response()
+    }
+
+    /// Content type and text of an answer.
+    fn text(&self, reply: Reply) -> (&'static str, String) {
         let mut body = Map::new();
         body.insert(
             "status".into(),
@@ -454,7 +699,7 @@ impl Format {
                 );
             }
         }
-        let (content_type, text) = match self {
+        match self {
             Self::Xml => ("application/xml; charset=utf-8", xml::render(&body)),
             Self::Json => (
                 "application/json; charset=utf-8",
@@ -464,12 +709,7 @@ impl Format {
                 "application/javascript; charset=utf-8",
                 format!("{cb}({});", json!({ "subsonic-response": body })),
             ),
-        };
-        (
-            [(header::CONTENT_TYPE, HeaderValue::from_static(content_type))],
-            text,
-        )
-            .into_response()
+        }
     }
 }
 

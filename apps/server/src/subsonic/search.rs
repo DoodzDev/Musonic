@@ -105,7 +105,13 @@ pub async fn search(ctx: &Ctx, key: &str) -> Reply {
     }
     Ok(one(
         key,
-        json!({ "artist": artists, "album": albums, "song": songs }),
+        json!({ "artist": artists, "album": if key == "searchResult2" {
+            let mut albums = albums;
+            model::as_child(&mut albums);
+            albums
+        } else {
+            albums
+        }, "song": songs }),
     ))
 }
 

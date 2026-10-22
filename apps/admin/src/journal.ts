@@ -53,6 +53,7 @@ export function settingValue(key: string, value: string): string {
   if (key === 'max_bit_rate') return Number(value) ? `${value} kbit/s` : t.common.noLimit.toLowerCase();
   if (key === 'transcode_format') return value.toUpperCase();
   if (key === 'backup_days') return Number(value) ? t.settings.days(Number(value)) : t.settings.keepOff;
+  if (key === 'transcode_cache_mb') return Number(value) ? bytes(Number(value) * 1024 * 1024) : t.playback.none.toLowerCase();
   return value;
 }
 

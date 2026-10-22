@@ -34,7 +34,7 @@ export function PlaybackPage() {
   useEffect(load, [load]);
   useAutoRefresh(load);
 
-  const clear = (kind: 'streams' | 'covers') => {
+  const clear = (kind: 'streams' | 'covers' | 'transcoded') => {
     setError(null);
     api<{ freed: number }>(`/v1/admin/caches/clear?kind=${kind}`, { method: 'POST' })
       .then((r) => {
@@ -83,6 +83,17 @@ export function PlaybackPage() {
           <div className="setting">
             <div><b>{p.covers[0]}</b><p>{p.covers[1]}</p><p>{freed.covers !== undefined ? t.settings.cleared(bytes(freed.covers)) : status ? t.settings.cachesSize(bytes(status.coversBytes)) : '…'}</p></div>
             <button className="btn sm" onClick={() => clear('covers')}><Icon name="trash" size={14} /> {t.settings.clear}</button>
+          </div>
+          <div className="setting">
+            <div><b>{p.transcoded[0]}</b><p>{p.transcoded[1]}</p><p>{freed.transcoded !== undefined ? t.settings.cleared(bytes(freed.transcoded)) : status ? t.settings.cachesSize(bytes(status.transcodedBytes)) : '…'}</p></div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {settings.loaded && (
+                <select className="input" style={{ width: 'auto' }} value={Number(settings.value('transcode_cache_mb') ?? 500)} onChange={(e) => settings.set('transcode_cache_mb', Number(e.target.value))}>
+                  {[0, 250, 500, 1000, 2000, 5000].map((mb) => <option key={mb} value={mb}>{mb ? bytes(mb * 1024 * 1024) : p.none}</option>)}
+                </select>
+              )}
+              <button className="btn sm" onClick={() => clear('transcoded')}><Icon name="trash" size={14} /> {t.settings.clear}</button>
+            </div>
           </div>
           <div className="setting">
             <div><b>{p.levelling[0]}</b><p>{p.levelling[1]}</p></div>

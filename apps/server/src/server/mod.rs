@@ -13,7 +13,14 @@ use axum::{
     routing::get,
 };
 use serde_json::{Value, json};
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::{
+    CompressionLevel,
+    compression::{
+        CompressionLayer,
+        predicate::{Predicate, SizeAbove},
+    },
+    cors::{Any, CorsLayer},
+};
 
 use crate::{
     api,
@@ -35,6 +42,18 @@ pub struct AppState {
     pub data_dir: PathBuf,
     /// What each user plays now (Subsonic `getNowPlaying`).
     pub now_playing: Arc<crate::subsonic::NowPlaying>,
+    /// Rendered Subsonic answers, until the database changes.
+    pub answers: Arc<crate::subsonic::AnswerCache>,
+    /// The most asked of them, made again after a write.
+    pub hot: Arc<crate::subsonic::Hot>,
+    /// Ids of the tracks with a file present, until the library changes (random songs).
+    pub present_tracks: Arc<crate::subsonic::Snapshot<Vec<String>>>,
+    /// Ids of the albums with a file present, until the library changes (random albums).
+    pub present_albums: Arc<crate::subsonic::Snapshot<Vec<String>>>,
+    /// Genres and their counts, until the library changes.
+    pub genres: Arc<crate::subsonic::Snapshot<Vec<serde_json::Value>>>,
+    /// Album artists without the accounts' likes, sorted, until the library changes.
+    pub library_artists: Arc<crate::subsonic::Snapshot<Vec<serde_json::Value>>>,
     /// Online catalog, when enabled.
     pub online: Option<Arc<crate::online::Deezer>>,
     /// Where audio comes from for tracks without a file, tried in order.
@@ -73,6 +92,12 @@ impl AppState {
             limiter: Arc::new(AuthLimiter::default()),
             setup_lock: Arc::new(tokio::sync::Mutex::new(())),
             now_playing: Arc::default(),
+            answers: Arc::default(),
+            hot: Arc::default(),
+            present_tracks: Arc::default(),
+            present_albums: Arc::default(),
+            library_artists: Arc::default(),
+            genres: Arc::default(),
             online: None,
             providers: Arc::default(),
             sessions: Arc::default(),
@@ -115,11 +140,17 @@ pub fn router(state: AppState) -> Router {
             Method::PATCH,
             Method::DELETE,
         ])
-        .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE, header::RANGE])
+        .allow_headers([
+            header::AUTHORIZATION,
+            header::CONTENT_TYPE,
+            header::RANGE,
+            header::IF_NONE_MATCH,
+        ])
         .expose_headers([
             header::CONTENT_RANGE,
             header::CONTENT_LENGTH,
             header::ACCEPT_RANGES,
+            header::ETAG,
         ]);
     let admin = state
         .admin_dir
@@ -147,7 +178,28 @@ pub fn router(state: AppState) -> Router {
             ),
         None => app.route("/", get(home)),
     };
-    app.layer(cors).with_state(state)
+    app.layer(compression()).layer(cors).with_state(state)
+}
+
+/// Text answers (Subsonic, `/v1`, the console's files) compressed for the clients that accept
+/// it: a list of artists goes from about 100 KB to 15. Audio and pictures are sent as they are.
+fn compression() -> CompressionLayer<impl Predicate> {
+    let text = |_: axum::http::StatusCode,
+                _: axum::http::Version,
+                h: &HeaderMap,
+                _: &axum::http::Extensions| {
+        h.get(header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .is_some_and(|t| {
+                t.starts_with("text/")
+                    || t.starts_with("application/json")
+                    || t.starts_with("application/xml")
+                    || t.starts_with("application/javascript")
+            })
+    };
+    CompressionLayer::new()
+        .quality(CompressionLevel::Fastest)
+        .compress_when(SizeAbove::new(1024).and(text))
 }
 
 async fn api_not_found() -> (axum::http::StatusCode, Json<Value>) {

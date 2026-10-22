@@ -8,7 +8,11 @@ pub mod admin;
 pub mod limiter;
 pub mod secret;
 
-use std::sync::Arc;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
 
 use anyhow::{Result, bail};
 use argon2::{
@@ -56,6 +60,59 @@ pub struct Users {
     secrets: Arc<SecretBox>,
     /// Keep an encrypted copy of passwords for the Subsonic `t` + `s` auth.
     pub legacy_auth: bool,
+    verified: Arc<Verified>,
+}
+
+/// Passwords checked recently. Subsonic clients send the password with every request (each
+/// cover, each song: `p`), and checking it with argon2 takes tens of milliseconds: a checked
+/// one is remembered as a keyed SHA-256 of the stored hash and the password, so a new
+/// password (another stored hash) or another password never matches. Memory only.
+struct Verified {
+    key: [u8; 32],
+    seen: Mutex<HashMap<String, ([u8; 32], Instant)>>,
+}
+
+/// How long a checked password is remembered.
+const VERIFIED_FOR: Duration = Duration::from_secs(3600);
+/// Accounts remembered at most (all forgotten beyond).
+const VERIFIED_MAX: usize = 1024;
+
+impl Verified {
+    fn new() -> Self {
+        let mut key = [0u8; 32];
+        rand::thread_rng().fill_bytes(&mut key);
+        Self {
+            key,
+            seen: Mutex::default(),
+        }
+    }
+
+    fn digest(&self, hash: &str, password: &str) -> [u8; 32] {
+        let mut h = Sha256::new();
+        h.update(self.key);
+        h.update(hash.as_bytes());
+        h.update([0]);
+        h.update(password.as_bytes());
+        h.finalize().into()
+    }
+
+    fn knows(&self, user_id: &str, hash: &str, password: &str) -> bool {
+        let digest = self.digest(hash, password);
+        self.seen.lock().is_ok_and(|seen| {
+            seen.get(user_id)
+                .is_some_and(|(d, at)| *d == digest && at.elapsed() < VERIFIED_FOR)
+        })
+    }
+
+    fn remember(&self, user_id: &str, hash: &str, password: &str) {
+        let digest = self.digest(hash, password);
+        if let Ok(mut seen) = self.seen.lock() {
+            if seen.len() >= VERIFIED_MAX {
+                seen.clear();
+            }
+            seen.insert(user_id.to_owned(), (digest, Instant::now()));
+        }
+    }
 }
 
 pub(crate) fn sha256_hex(text: &str) -> String {
@@ -123,6 +180,7 @@ impl Users {
             db,
             secrets: Arc::new(secrets),
             legacy_auth,
+            verified: Arc::new(Verified::new()),
         }
     }
 
@@ -261,7 +319,8 @@ impl Users {
             .db
             .call(move |c| {
                 Ok(c.execute(
-                    "UPDATE user SET last_login_at = unixepoch() WHERE id = ?1",
+                    "UPDATE user SET last_login_at = unixepoch()
+                      WHERE id = ?1 AND coalesce(last_login_at, 0) < unixepoch() - 60",
                     [&id],
                 )?)
             })
@@ -282,10 +341,13 @@ impl Users {
             );
             return Ok(Err(AuthError::WrongCredentials));
         };
-        let password = password.to_owned();
-        let ok = tokio::task::spawn_blocking(move || verify_password(&password, &hash)).await?;
-        if !ok {
-            return Ok(Err(AuthError::WrongCredentials));
+        if !self.verified.knows(&user.id, &hash, password) {
+            let (pw, stored) = (password.to_owned(), hash.clone());
+            let ok = tokio::task::spawn_blocking(move || verify_password(&pw, &stored)).await?;
+            if !ok {
+                return Ok(Err(AuthError::WrongCredentials));
+            }
+            self.verified.remember(&user.id, &hash, password);
         }
         if user.suspended {
             return Ok(Err(AuthError::Suspended));
@@ -412,7 +474,8 @@ impl Users {
                     .optional()?;
                 if user.is_some() {
                     c.execute(
-                        "UPDATE api_key SET last_used_at = unixepoch() WHERE key_hash = ?1",
+                        "UPDATE api_key SET last_used_at = unixepoch()
+                          WHERE key_hash = ?1 AND coalesce(last_used_at, 0) < unixepoch() - 60",
                         [&hash],
                     )?;
                 }
@@ -460,7 +523,8 @@ impl Users {
                     .optional()?;
                 if user.is_some() {
                     c.execute(
-                        "UPDATE session SET last_seen_at = unixepoch(), expires_at = unixepoch() + ?2 WHERE token_hash = ?1",
+                        "UPDATE session SET last_seen_at = unixepoch(), expires_at = unixepoch() + ?2
+                          WHERE token_hash = ?1 AND coalesce(last_seen_at, 0) < unixepoch() - 60",
                         params![hash, SESSION_DAYS * 86400],
                     )?;
                 }
