@@ -4,8 +4,9 @@
  *   choice is kept in `musonic-lang`, shared with the web client), the latest
  *   mobile and web versions read from GitHub releases (tags `mobile-v…`,
  *   `web-v…`, with the web download link), the side table of contents that
- *   follows the reading, the portrait / landscape screenshot switch, and the
- *   screenshot viewer (full screen, previous / next, keys and swipe).
+ *   follows the reading, the portrait / landscape screenshot switch, the
+ *   screenshot viewer (full screen, previous / next, keys and swipe), and the
+ *   tabs of the benchmark results.
  * @author DoodzProg
  * @version 3.0.0
  * @license CC-BY-NC-4.0
@@ -76,6 +77,31 @@ function initShots() {
   });
 }
 
+/** Tabs inside a card (benchmark results): click, or ← → once a tab has the focus. */
+function initTabs() {
+  document.querySelectorAll('[data-tabs]').forEach((box) => {
+    const tabs = [...box.querySelectorAll('[role="tab"]')];
+    const select = (tab) => {
+      tabs.forEach((x) => {
+        const on = x === tab;
+        x.setAttribute('aria-selected', String(on));
+        x.tabIndex = on ? 0 : -1;
+        document.getElementById(x.getAttribute('aria-controls')).hidden = !on;
+      });
+    };
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => select(tab));
+      tab.addEventListener('keydown', (e) => {
+        const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!step) return;
+        const next = tabs[(i + step + tabs.length) % tabs.length];
+        select(next);
+        next.focus();
+      });
+    });
+  });
+}
+
 /** Screenshots open full screen; ← → (or a swipe) go through the set they belong to. */
 function initViewer() {
   let box = null;
@@ -139,5 +165,6 @@ function initViewer() {
 initLanguage();
 initContents();
 initShots();
+initTabs();
 initViewer();
 loadVersions();

@@ -19,8 +19,12 @@
   <meta property="og:url" content="https://doodzprog.github.io/Musonic/" />
   <meta property="og:title" content="Musonic" />
   <meta property="og:description" content="Your music, your server, beautifully played." />
-  <meta property="og:image" content="https://doodzprog.github.io/Musonic/assets/img/screenshots/player.jpg" />
+  <meta property="og:image" content="https://doodzprog.github.io/Musonic/assets/img/social-card.jpg" />
+  <meta property="og:image:width" content="1280" />
+  <meta property="og:image:height" content="640" />
+  <meta property="og:image:alt" content="Musonic: your music, your server. 6.9× better than Navidrome on average." />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://doodzprog.github.io/Musonic/assets/img/social-card.jpg" />
   <link rel="canonical" href="https://doodzprog.github.io/Musonic/" />
   <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -46,6 +50,7 @@
         <a href="server.html"><span data-l="en">Server</span><span data-l="fr">Serveur</span></a>
       </nav>
       <div class="bar__end">
+        <a class="bar__faq" href="faq.html"><span data-l="en">Why Musonic?</span><span data-l="fr">Pourquoi Musonic ?</span></a>
         <div class="segmented" role="group" aria-label="Language">
           <button type="button" data-lang="en" aria-pressed="true">EN</button>
           <button type="button" data-lang="fr" aria-pressed="false">FR</button>
@@ -89,28 +94,47 @@
           <span data-l="en">Android 7 or later, free and open source</span><span data-l="fr">Android 7 ou plus récent, gratuit et open source</span>
         </p>
       </div>
-      <div class="hero__phones" aria-hidden="true">
-        <figure class="phone phone--back"><img src="assets/img/screenshots/home.jpg" alt="" /></figure>
-        <figure class="phone phone--front"><img src="assets/img/screenshots/player.jpg" alt="" /></figure>
+      <div class="showcase" aria-hidden="true">
+        <figure class="showcase__web">
+          <img data-l="en" src="assets/img/screenshots/web/home-en.jpg" alt="" />
+          <img data-l="fr" src="assets/img/screenshots/web/home-fr.jpg" alt="" />
+        </figure>
+        <figure class="phone showcase__phone"><img src="assets/img/screenshots/player.jpg" alt="" /></figure>
       </div>
+    </section>
+
+    <section class="wrap">
+      <a class="proof raised" href="faq.html#overall">
+        <span class="proof__value"><span data-l="en">6.9×</span><span data-l="fr">6,9×</span></span>
+        <span class="proof__text">
+          <strong><span data-l="en">better than Navidrome, on average</span><span data-l="fr">mieux que Navidrome, en moyenne</span></strong>
+          <span><span data-l="en">36 measured tests: library scan 10× faster, 5× less memory at rest, 20× less processor.</span><span data-l="fr">36 tests mesurés : analyse de la bibliothèque 10× plus rapide, 5× moins de mémoire au repos, 20× moins de processeur.</span></span>
+        </span>
+        <span class="part__more"><span data-l="en">See the benchmark</span><span data-l="fr">Voir le benchmark</span> →</span>
+      </a>
     </section>
 
     <section class="section wrap">
       <h2><span data-l="en">Three parts, one Musonic</span><span data-l="fr">Trois parties, un seul Musonic</span></h2>
       <div class="parts">
         <a class="part raised" href="mobile-app.html">
+          <img class="part__shot" src="assets/img/screenshots/landscape_home.jpg" alt="" loading="lazy" />
           <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10.5 18.5h3"/></svg></span>
           <h3><span data-l="en">Mobile app</span><span data-l="fr">Application mobile</span></h3>
           <p class="row__desc"><span data-l="en">Android and iOS: synced lyrics, Magic Mixes, offline downloads, Android Auto.</span><span data-l="fr">Android et iOS : paroles synchronisées, Mix Magiques, téléchargements hors ligne, Android Auto.</span></p>
           <span class="part__more"><span data-l="en">Discover</span><span data-l="fr">Découvrir</span> →</span>
         </a>
         <a class="part raised" href="web.html">
+          <img class="part__shot" data-l="en" src="assets/img/screenshots/web/album-en.jpg" alt="" loading="lazy" />
+          <img class="part__shot" data-l="fr" src="assets/img/screenshots/web/album-fr.jpg" alt="" loading="lazy" />
           <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8 20.5h8M12 17v3.5"/></svg></span>
           <h3>Web</h3>
           <p class="row__desc"><span data-l="en">The whole Musonic in your browser, nothing to install. Import your Spotify and Deezer playlists.</span><span data-l="fr">Tout Musonic dans votre navigateur, rien à installer. Importez vos playlists Spotify et Deezer.</span></p>
           <span class="part__more"><span data-l="en">Discover</span><span data-l="fr">Découvrir</span> →</span>
         </a>
         <a class="part raised" href="server.html">
+          <img class="part__shot" data-l="en" src="assets/img/screenshots/console/dashboard-en.jpg" alt="" loading="lazy" />
+          <img class="part__shot" data-l="fr" src="assets/img/screenshots/console/dashboard-fr.jpg" alt="" loading="lazy" />
           <span class="icon icon--server" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><circle cx="7" cy="7.5" r="1.3"/><circle cx="7" cy="16.5" r="1.3"/></svg></span>
           <h3><span data-l="en">Server</span><span data-l="fr">Serveur</span></h3>
           <p class="row__desc"><span data-l="en">Host your music yourself, with an online catalogue, real-time sync and an administration console.</span><span data-l="fr">Hébergez votre musique vous-même, avec un catalogue en ligne, la synchro en temps réel et une console d'administration.</span></p>
