@@ -45,7 +45,8 @@ import {
   TrackMagicIcon,
 } from './icons';
 import {getCoverArtUrl} from '../api/client';
-import TrackPlayer, {useActiveTrack, usePlaybackState, useProgress, State} from 'react-native-track-player';
+import TrackPlayer, {useActiveTrack, usePlaybackState, State} from 'react-native-track-player';
+import {useForegroundProgress} from '../hooks/useForegroundProgress';
 import FastImage from '@d11/react-native-fast-image';
 import {usePlayerStore} from '../store/playerStore';
 import {usePlaylistCacheStore} from '../store/playlistCacheStore';
@@ -115,7 +116,7 @@ function rememberLyrics(trackId: string, data: NonNullable<LyricsData>) {
 }
 
 /**
- * Always-mounted shell. The player body (and its per-second useProgress
+ * Always-mounted shell. The player body (and its per-second useForegroundProgress
  * re-render) mounts only while `isFullScreenOpen` is true; the body calls
  * closeFullScreen() at the end of its close animation, which unmounts it.
  * Adjacent cover art is preloaded here so track changes stay instant even
@@ -160,7 +161,7 @@ function FullScreenPlayerContent() {
   const currentTrack = useActiveTrack();
   const {state} = usePlaybackState();
   const isPlaying = state === State.Playing;
-  const {position} = useProgress();
+  const {position} = useForegroundProgress();
   const shuffleMode = usePlayerStore(s => s.shuffleMode);
   const repeatMode = usePlayerStore(s => s.repeatMode);
   const isFullScreenOpen = usePlayerStore(s => s.isFullScreenOpen);

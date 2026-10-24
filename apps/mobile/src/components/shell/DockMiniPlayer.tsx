@@ -14,7 +14,8 @@
  */
 import React from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
-import {State, useActiveTrack, usePlaybackState, useProgress} from 'react-native-track-player';
+import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
+import {useForegroundProgress} from '../../hooks/useForegroundProgress';
 import GlassSurface from '../ui/GlassSurface';
 import CoverWash from '../ui/CoverWash';
 import {BLURRED_COVER_SOURCE_SIZE} from '../ui/BlurredCover';
@@ -34,7 +35,7 @@ import {DOCK_MINI_HEIGHT} from '../../navigation/dockLayout';
 import {useT} from '../../i18n';
 
 function ProgressLine({duration}: {duration: number}) {
-  const {position} = useProgress();
+  const {position} = useForegroundProgress();
   const fraction = duration > 0 ? Math.min(position / duration, 1) : 0;
   return (
     <View style={styles.progressTrack} pointerEvents="none">

@@ -13,7 +13,7 @@
  */
 import React, {useCallback, useEffect, useMemo, useRef} from 'react';
 import {ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {useProgress} from 'react-native-track-player';
+import {useForegroundProgress} from '../../hooks/useForegroundProgress';
 import MaskedView from '@react-native-masked-view/masked-view';
 import LinearGradient from 'react-native-linear-gradient';
 import type {LyricLine, LyricsData} from '../../api/endpoints/library';
@@ -72,7 +72,7 @@ type Props = {
 
 export default function PlayerLyrics({lyrics, onSeek, compact}: Props) {
   const t = useT();
-  const {position} = useProgress(PROGRESS_INTERVAL_MS);
+  const {position} = useForegroundProgress(PROGRESS_INTERVAL_MS);
   const lines = useMemo(() => lyrics?.lines ?? [], [lyrics]);
   const synced = !!lyrics?.synced;
 

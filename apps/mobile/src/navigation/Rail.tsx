@@ -14,7 +14,8 @@
 import React from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {State, useActiveTrack, usePlaybackState, useProgress} from 'react-native-track-player';
+import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
+import {useForegroundProgress} from '../hooks/useForegroundProgress';
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import GlassSurface from '../components/ui/GlassSurface';
 import Cover from '../components/ui/Cover';
@@ -46,7 +47,7 @@ const RAIL_GAP = 10;
 const RAIL_BOTTOM_GAP = 8;
 
 function ProgressLine({duration}: {duration: number}) {
-  const {position} = useProgress();
+  const {position} = useForegroundProgress();
   const fraction = duration > 0 ? Math.min(position / duration, 1) : 0;
   return (
     <View style={styles.progressTrack} pointerEvents="none">
