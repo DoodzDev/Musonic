@@ -1,0 +1,58 @@
+diff --git a/node_modules/react-native-worklets/src/runLoop/uiRuntime/requestAnimationFrame.ts b/node_modules/react-native-worklets/src/runLoop/uiRuntime/requestAnimationFrame.ts
+--- a/node_modules/react-native-worklets/src/runLoop/uiRuntime/requestAnimationFrame.ts
++++ b/node_modules/react-native-worklets/src/runLoop/uiRuntime/requestAnimationFrame.ts
+@@ -30,11 +30,30 @@
+     callMicrotasks();
+   }
+ 
++  // Musonic patch: frames are asked only while there is work (callbacks or
++  // microtasks) instead of every frame forever, so an idle app (screen off)
++  // no longer wakes the main thread 60 times a second.
++  let nativeFrameRequested = false;
++
++  function scheduleNativeFrame() {
++    if (!nativeFrameRequested) {
++      nativeFrameRequested = true;
++      nativeRequestAnimationFrame(nativeFlushQueue);
++    }
++  }
++
++  const queueMicrotaskWithoutFrame = globalThis.queueMicrotask;
++  globalThis.queueMicrotask = (callback: () => void) => {
++    queueMicrotaskWithoutFrame(callback);
++    scheduleNativeFrame();
++  };
++
+   function requestAnimationFrame(
+     callback: (timestamp: number) => void
+   ): number {
+     const handle = queuedCallbacksEnd++;
+     queuedCallbacks.push(callback);
++    scheduleNativeFrame();
+     return handle;
+   }
+ 
+@@ -51,10 +70,13 @@
+   }
+ 
+   function nativeFlushQueue(timestamp: number) {
++    nativeFrameRequested = false;
+     flushQueue(timestamp);
+ 
+-    /* Schedule next frame */
+-    nativeRequestAnimationFrame(nativeFlushQueue);
++    /* Schedule next frame, only if callbacks were queued meanwhile */
++    if (queuedCallbacks.length > 0) {
++      scheduleNativeFrame();
++    }
+   }
+ 
+   function flushQueue(timestamp: number) {
+@@ -72,6 +94,5 @@
+     flushQueue(eventTimestamp);
+   };
+ 
+-  /* Start the loop */
+-  nativeRequestAnimationFrame(nativeFlushQueue);
++  /* The loop starts with the first requested frame */
+ }

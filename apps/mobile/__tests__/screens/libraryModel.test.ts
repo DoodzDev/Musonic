@@ -30,10 +30,21 @@ describe('collectArtists', () => {
     expect(out.map(a => a.id)).toEqual(['b', 'c', 'a']);
   });
 
-  it('gives server artists their cover id, not online ones', () => {
-    const out = collectArtists([], [], [song('x1', 'X'), song('ext-deezer-artist-9', 'Y')]);
-    expect(out.find(a => a.id === 'x1')?.coverArt).toBe('ar-x1');
+  it('gives server artists the cover of an album they were met on, not online ones', () => {
+    const out = collectArtists(
+      [{id: 'b', name: 'Bea', coverArt: 'al-7'}, {id: 'd', name: 'Dan'}],
+      [],
+      [
+        song('x1', 'X'),
+        {...song('x1', 'X'), coverArt: 'al-1'},
+        {...song('ext-deezer-artist-9', 'Y'), coverArt: 'dz-album-2'},
+      ],
+    );
+    expect(out.find(a => a.id === 'b')?.coverArt).toBe('al-7');
+    expect(out.find(a => a.id === 'd')?.coverArt).toBeUndefined();
+    expect(out.find(a => a.id === 'x1')?.coverArt).toBe('al-1');
     expect(out.find(a => a.id === 'ext-deezer-artist-9')?.coverArt).toBeUndefined();
+    expect(out.some(a => a.coverArt?.startsWith('ar-'))).toBe(false);
   });
 
   it('skips songs without an artist id', () => {

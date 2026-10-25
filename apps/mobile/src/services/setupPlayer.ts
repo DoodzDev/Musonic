@@ -33,7 +33,7 @@ async function run(): Promise<void> {
         Capability.SeekTo,
       ],
       compactCapabilities: [Capability.Play, Capability.Pause, Capability.SkipToNext, Capability.SkipToPrevious],
-      progressUpdateEventInterval: 0.5,
+      // No progressUpdateEventInterval: nothing listens to it and its native loop woke the main thread every 0.5 s.
     });
     const {shuffleMode, repeatMode} = useSettingsStore.getState();
     usePlayerStore.getState().setShuffleMode(shuffleMode);

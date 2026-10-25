@@ -26,9 +26,13 @@ export type LibraryEntry = {
   downloadable?: number;
 };
 
-/** Cover id of an artist on the server (Navidrome serves `ar-<id>`). */
-export function artistCoverId(artistId: string): string | undefined {
-  return artistId.startsWith('ext-') ? undefined : `ar-${artistId}`;
+/**
+ * Cover of an artist met on an album or a song: that album's cover, already
+ * cached (the server gives its own artists their latest album's). Not every
+ * server knows `ar-<id>`, so it is never guessed; online artists get none.
+ */
+function artistCoverId(artistId: string, itemCover: string | undefined): string | undefined {
+  return artistId.startsWith('ext-') ? undefined : itemCover;
 }
 
 /**
@@ -61,17 +65,19 @@ export function collectArtists(
   for (const a of starred) {
     if (seen.has(a.id)) continue;
     seen.add(a.id);
-    out.push({...a, coverArt: a.coverArt || artistCoverId(a.id)});
+    out.push(a);
   }
   const counts = new Map<string, {artist: SubsonicArtist; n: number; first: number}>();
-  const add = (id: string | undefined, name: string | undefined) => {
+  const add = (id: string | undefined, name: string | undefined, cover: string | undefined) => {
     if (!id || !name || seen.has(id)) return;
     const hit = counts.get(id);
-    if (hit) hit.n += 1;
-    else counts.set(id, {artist: {id, name, coverArt: artistCoverId(id)}, n: 1, first: counts.size});
+    if (hit) {
+      hit.n += 1;
+      hit.artist.coverArt ??= artistCoverId(id, cover);
+    } else counts.set(id, {artist: {id, name, coverArt: artistCoverId(id, cover)}, n: 1, first: counts.size});
   };
   for (const item of [...albums, ...songs]) {
-    for (const a of creditedArtists(item)) add(a.id, a.name);
+    for (const a of creditedArtists(item)) add(a.id, a.name, item.coverArt);
   }
   const rest = [...counts.values()].sort((a, b) => b.n - a.n || a.first - b.first);
   return [...out, ...rest.map(r => r.artist)];
