@@ -102,6 +102,18 @@ describe('SubsonicClient', () => {
     expect(error.isAuthError).toBe(false);
   });
 
+  it('replaces the songs of a playlist in order', async () => {
+    let url = '';
+    const client = new SubsonicClient(session, async (input) => {
+      url = input;
+      return jsonResponse({ 'subsonic-response': { status: 'ok' } });
+    });
+    await client.replacePlaylistSongs('p1', ['b', 'a', 'b']);
+    const q = new URL(url).searchParams;
+    expect(new URL(url).pathname).toBe('/rest/createPlaylist.view');
+    expect([q.get('playlistId'), q.getAll('songId')]).toEqual(['p1', ['b', 'a', 'b']]);
+  });
+
   it('sends a device key alone', () => {
     const url = new URL(new SubsonicClient({ ...session, token: '', salt: '', apiKey: 'msk_x' }).buildUrl('ping'));
     expect(url.searchParams.get('apiKey')).toBe('msk_x');

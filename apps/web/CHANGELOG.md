@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **On a Musonic Server, the browser keeps a device key instead of a token made from your password.** The password is used once at sign-in; the key, named after the browser, is listed in the server's console and can be revoked there. Other Subsonic servers keep the token as before.
 
 ### Changed
+- **Edit a playlist in place** — “Edit” turns the page into its edit mode: the name and description become fields, each song gets a handle to drag it to a new place (or the up and down arrow keys) and a “−” to remove it; “Done” saves everything at once, Escape or “Cancel” drops the changes. It replaces the name and description dialog.
 - **Log out revokes the browser's key** on a Musonic Server.
 
 ### Fixed

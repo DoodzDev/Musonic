@@ -5,7 +5,7 @@
  *   and are reported to the user by the caller. Online tracks (`ext-…`) are
  *   first imported into the library, then handled under their library id.
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
@@ -57,9 +57,18 @@ export function usePlaylistActions() {
     create: (name: string, songIds: string[] = []): Promise<PlaylistWithSongs | null> =>
       attempt(() => client.createPlaylist(name, songIds), () => refresh(keys.playlists)),
     rename: (id: string, name: string) => attempt(() => client.updatePlaylist(id, { name }), () => refresh(keys.playlists, keys.playlist(id))),
-    /** Name and description (Subsonic "comment"), shared with every client. */
-    update: (id: string, changes: { name: string; comment: string }) =>
-      attempt(() => client.updatePlaylist(id, changes), () => refresh(keys.playlists, keys.playlist(id))),
+    /**
+     * Saves the edit mode: name and description (Subsonic "comment", shared with every client),
+     * and, when given, the songs in their new order (moves and removals in one request).
+     */
+    edit: (id: string, changes: { name: string; comment: string; songIds?: string[] }) =>
+      attempt(
+        async () => {
+          if (changes.songIds) await client.replacePlaylistSongs(id, changes.songIds);
+          await client.updatePlaylist(id, { name: changes.name, comment: changes.comment });
+        },
+        () => refresh(keys.playlists, keys.playlist(id)),
+      ),
     /** Removes every occurrence of a track from a playlist (positions read from the server). */
     removeSong: (id: string, songId: string) =>
       attempt(

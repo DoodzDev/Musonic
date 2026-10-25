@@ -4,7 +4,7 @@
  *   authentication). An account the server refuses (key revoked, suspended,
  *   password changed) is reported through `onAuthProblem`.
  * @author DoodzProg
- * @version 0.7.0
+ * @version 0.8.0
  * @license CC-BY-NC-4.0
  */
 
@@ -290,6 +290,11 @@ export class SubsonicClient {
       { playlistId: id, name: changes.name, comment: changes.comment, songIdToAdd: changes.add, songIndexToRemove: changes.removeIndexes },
       signal,
     );
+  }
+
+  /** Replaces all the songs of a playlist, in this order (how Subsonic clients reorder and remove). */
+  async replacePlaylistSongs(id: string, songIds: readonly string[], signal?: AbortSignal): Promise<void> {
+    await this.request('createPlaylist', { playlistId: id, songId: songIds }, signal);
   }
 
   async deletePlaylist(id: string, signal?: AbortSignal): Promise<void> {

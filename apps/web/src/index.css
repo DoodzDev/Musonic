@@ -648,3 +648,30 @@ p.lyrics-line { font-size: 17px; line-height: 26px; font-weight: 600; padding: 0
 .sleep-presets, .sleep-more { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .sleep-off { color: var(--destructive); }
 .menu-hint { padding: 8px 14px 4px; font-size: 12px; color: var(--text-3); }
+
+/* Playlist edit mode (in place) */
+.collection-title-input {
+  font: inherit; font-size: 48px; line-height: 54px; font-weight: 700; letter-spacing: -1px; color: var(--text);
+  background: var(--hover); border: 0; border-radius: var(--radius-md); padding: 0 12px; margin-left: -12px; width: calc(100% + 12px);
+  box-shadow: var(--rim);
+}
+.collection-description-input {
+  font: inherit; font-size: 15px; color: var(--text-2); background: var(--hover); border: 0; border-radius: var(--radius-md);
+  padding: 8px 12px; margin-left: -12px; width: calc(100% + 12px); resize: vertical; box-shadow: var(--rim);
+}
+.collection-title-input:focus-visible, .collection-description-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.edit-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.edit-row { position: relative; display: flex; align-items: center; gap: 12px; padding: 6px 8px; border-radius: var(--radius-md); }
+.edit-row:hover { background: var(--hover); }
+.edit-row.is-dragging { opacity: 0.4; }
+.edit-row .item-text { flex: 1; min-width: 0; }
+.edit-handle { cursor: grab; color: var(--text-3); }
+.edit-handle:active { cursor: grabbing; }
+.edit-duration { width: 48px; text-align: right; }
+.edit-remove { color: var(--text-3); }
+.edit-remove:hover { color: var(--destructive); }
+.edit-row.drop-before::before, .edit-row.drop-after::after {
+  content: ''; position: absolute; left: 8px; right: 8px; height: 2px; border-radius: 1px; background: var(--accent);
+}
+.edit-row.drop-before::before { top: -2px; }
+.edit-row.drop-after::after { bottom: -2px; }

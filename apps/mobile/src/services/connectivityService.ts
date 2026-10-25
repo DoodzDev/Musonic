@@ -7,7 +7,7 @@
  *   answers but refuses the account sends it back to sign in (ADR-021)
  *   instead of switching to offline mode.
  * @author DoodzProg
- * @version 1.5.0
+ * @version 1.6.0
  * @license CC-BY-NC-4.0
  */
 import {getActiveServer, pingServer, PingError, reportAuthProblem} from '../api/client';
@@ -85,11 +85,13 @@ async function tick(): Promise<boolean> {
     lastPingOk = false;
     // No URL in the log: it carries the account credentials.
     const reason = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
-    console.warn(`[connectivity] ping failed #${consecutiveFailures} after ${Date.now() - startedAt} ms (${reason})`);
+    // A log, not a warning: being offline is expected, and the dev warning banner covered
+    // the Dock (tapping it crashed Hermes in debug builds, ISS-036).
+    console.log(`[connectivity] ping failed #${consecutiveFailures} after ${Date.now() - startedAt} ms (${reason})`);
     useNetworkStore.getState().setServerReachable(false);
     const s = useSettingsStore.getState();
     if (!s.isOfflineMode && consecutiveFailures >= FAILURES_BEFORE_OFFLINE) {
-      console.warn('[connectivity] switching to offline mode');
+      console.log('[connectivity] switching to offline mode');
       s.setOfflineMode(true);
     }
     schedule(INTERVAL_DEGRADED_MS);
