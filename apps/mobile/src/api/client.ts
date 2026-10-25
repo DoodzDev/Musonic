@@ -81,11 +81,11 @@ export function getRemoteCoverArtUrl(id: string, size = 300): string {
   return `${base}/rest/getCoverArt.view?${p.toString()}`;
 }
 
-async function fetchWithTimeout(urlStr: string, timeoutMs: number): Promise<Response> {
+async function fetchWithTimeout(urlStr: string, timeoutMs: number, headers?: Record<string, string>): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(urlStr, {signal: controller.signal});
+    const res = await fetch(urlStr, {signal: controller.signal, headers});
     clearTimeout(timer);
     return res;
   } catch (err) {
@@ -94,13 +94,10 @@ async function fetchWithTimeout(urlStr: string, timeoutMs: number): Promise<Resp
   }
 }
 
-export async function subsonicGet<T>(
-  endpoint: string,
-  params: Record<string, unknown> = {},
-): Promise<T> {
+/** URL of a Subsonic route with the account's credentials. Never persist or log it. */
+function restUrl(endpoint: string, params: Record<string, unknown>): string {
   if (!_server) throw new Error('No server configured');
   const {url, username, password} = _server;
-
   const p = new URLSearchParams({u: username, p: password, v: '1.16.1', c: 'Musonic', f: 'json'});
   for (const [k, v] of Object.entries(params)) {
     if (Array.isArray(v)) {
@@ -109,26 +106,56 @@ export async function subsonicGet<T>(
       p.append(k, String(v));
     }
   }
+  return `${url.replace(/\/$/, '')}/rest/${endpoint}?${p.toString()}`;
+}
 
-  const urlStr = `${url.replace(/\/$/, '')}/rest/${endpoint}?${p.toString()}`;
+/** The Subsonic answer of a response, or a `SubsonicError`. */
+async function subsonicBody<T>(res: Response): Promise<T> {
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  const body = data['subsonic-response'];
+  if (body.status !== 'ok') {
+    throw new SubsonicError(body.error?.message ?? 'Subsonic error');
+  }
+  return body as T;
+}
+
+async function subsonicFetch(urlStr: string, timeoutMs: number, headers?: Record<string, string>): Promise<Response> {
   try {
-    const res = await fetchWithTimeout(urlStr, 10000);
+    const res = await fetchWithTimeout(urlStr, timeoutMs, headers);
     const store = useNetworkStore.getState();
     store.setOffline(false);
     store.setServerReachable(true);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const body = data['subsonic-response'];
-    if (body.status !== 'ok') {
-      throw new SubsonicError(body.error?.message ?? 'Subsonic error');
-    }
-    return body as T;
+    return res;
   } catch (err) {
     if (err instanceof TypeError) {
       useNetworkStore.getState().setOffline(true);
     }
     throw err;
   }
+}
+
+export async function subsonicGet<T>(
+  endpoint: string,
+  params: Record<string, unknown> = {},
+): Promise<T> {
+  return subsonicBody<T>(await subsonicFetch(restUrl(endpoint, params), 10000));
+}
+
+/**
+ * Like `subsonicGet`, sending the `ETag` of the copy the app already has: `null` when the
+ * server answers 304 (unchanged, nothing downloaded). Musonic Server keeps such answers.
+ */
+export async function subsonicGetIfChanged<T>(
+  endpoint: string,
+  params: Record<string, unknown> = {},
+  etag?: string,
+  timeoutMs = 20000,
+): Promise<{body: T; etag?: string} | null> {
+  const res = await subsonicFetch(restUrl(endpoint, params), timeoutMs, etag ? {'If-None-Match': etag} : undefined);
+  if (res.status === 304) return null;
+  const body = await subsonicBody<T>(res);
+  return {body, etag: res.headers.get('etag') ?? undefined};
 }
 
 /** Why a server could not be reached, so the setup screen can say it plainly (F29). */

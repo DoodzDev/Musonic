@@ -18,11 +18,21 @@ import {usePlaylistCacheStore} from '../store/playlistCacheStore';
 import {useLibraryCacheStore} from '../store/libraryCacheStore';
 import {useSettingsStore} from '../store/settingsStore';
 import {useNetworkStore} from '../store/networkStore';
+import {storage} from '../store/storage';
 import {collectAlbums, collectArtists} from '../screens/Library/libraryModel';
 
 export type LibraryStatus = 'loading' | 'ready' | 'error';
 
+/** Songs of the last "My Music" list (saved by that screen): the real count of songs. */
+export const SONG_COUNT_KEY = 'all-songs-count-v1';
+
+/**
+ * Songs in the library. The scan status counts files (a song kept in two files counts
+ * twice): only until "My Music" has listed the songs once.
+ */
 async function fetchSongTotal(): Promise<number | null> {
+  const listed = storage.getNumber(SONG_COUNT_KEY);
+  if (listed) return listed;
   try {
     const res = await subsonicGet<any>('getScanStatus.view');
     const count = Number(res.scanStatus?.count);

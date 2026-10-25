@@ -38,12 +38,14 @@ import SongOptionsSheet from '../../components/SongOptionsSheet';
 import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
 import {showToast} from '../../components/Toast';
 import {CheckIcon, SortIcon} from '../../components/icons';
-import {subsonicGet} from '../../api/client';
+import {SubsonicError, subsonicGet, subsonicGetIfChanged} from '../../api/client';
 import {playFromList, addSongToQueue} from '../../services/playback/launchers';
 import {usePlayerStore} from '../../store/playerStore';
 import {useSettingsStore, type AllSongsSortMode} from '../../store/settingsStore';
 import {useDownloadStore} from '../../store/downloadStore';
 import {storage} from '../../store/storage';
+import {SONG_COUNT_KEY} from '../../hooks/useLibraryCollections';
+import {useLibraryCacheStore} from '../../store/libraryCacheStore';
 import {downloadedSongs} from '../../utils/offlineSongs';
 import {songToTrack} from '../../utils/songToTrack';
 import {useIsLandscape} from '../../hooks/useIsLandscape';
@@ -91,6 +93,25 @@ async function fetchAllNativeSongs(): Promise<SubsonicSong[]> {
 
 /** Device copy of the last list: only what the rows, sorts and playback use. */
 const CACHE_KEY = 'all-songs-cache-v1';
+/** `ETag` of that copy on a Musonic Server. */
+const ETAG_KEY = 'all-songs-etag-v1';
+
+/**
+ * Musonic Server: the whole library in one kept answer, and nothing at all when it has not
+ * changed since the saved copy (`null`, ADR-021). `undefined` on another server.
+ */
+async function fetchMusonicLibrary(hasCopy: boolean): Promise<SubsonicSong[] | null | undefined> {
+  try {
+    const etag = hasCopy ? storage.getString(ETAG_KEY) : undefined;
+    const res = await subsonicGetIfChanged<any>('getMusonicLibrary.view', {}, etag);
+    if (!res) return null;
+    if (res.etag) storage.set(ETAG_KEY, res.etag);
+    return res.body.musonicLibrary?.song ?? [];
+  } catch (e) {
+    if (e instanceof SubsonicError) return undefined;
+    throw e;
+  }
+}
 
 function readCache(): SubsonicSong[] {
   try {
@@ -102,6 +123,9 @@ function readCache(): SubsonicSong[] {
 }
 
 function writeCache(songs: SubsonicSong[]) {
+  // The real count of songs, for the Library's tile (now and at the next launch).
+  storage.set(SONG_COUNT_KEY, songs.length);
+  useLibraryCacheStore.getState().save({songTotal: songs.length});
   const slim = songs.map(s => ({
     id: s.id, title: s.title, artist: s.artist, artistId: s.artistId, album: s.album, albumId: s.albumId,
     coverArt: s.coverArt, duration: s.duration, suffix: s.suffix, created: (s as {created?: string}).created,
@@ -191,9 +215,11 @@ export default function AllSongsScreen() {
     const cached = readCache();
     setSongs(cached);
     setLoading(cached.length === 0);
-    fetchAllNativeSongs()
+    fetchMusonicLibrary(cached.length > 0)
+      .then(async library => (library === undefined ? fetchAllNativeSongs() : library))
       .then(result => {
-        if (cancelled) return;
+        // null: unchanged since the saved list, already shown.
+        if (cancelled || result === null) return;
         setSongs(result);
         writeCache(result);
       })
