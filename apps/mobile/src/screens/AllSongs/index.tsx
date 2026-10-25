@@ -109,6 +109,43 @@ function writeCache(songs: SubsonicSong[]) {
   storage.set(CACHE_KEY, JSON.stringify(slim));
 }
 
+type RowActions = {
+  play: (index: number) => void;
+  menu: (song: SubsonicSong) => void;
+  like: (song: SubsonicSong) => void;
+  add: (song: SubsonicSong) => void;
+  download: (song: SubsonicSong) => void;
+  queue: (song: SubsonicSong) => void;
+};
+
+type SongRowProps = {
+  song: SubsonicSong;
+  index: number;
+  playback: 'idle' | 'current' | 'playing';
+  liked: boolean;
+  download: 'none' | 'downloading' | 'done';
+  actions: RowActions;
+};
+
+const SongRow = React.memo(function SongRow({song, index, playback, liked, download, actions}: SongRowProps) {
+  return (
+    <TrackRow
+      title={song.title}
+      subtitle={song.artist}
+      coverId={song.coverArt}
+      playback={playback}
+      liked={liked}
+      download={download}
+      onPress={() => actions.play(index)}
+      onLongPress={() => actions.menu(song)}
+      onToggleLike={() => actions.like(song)}
+      onAddToPlaylist={() => actions.add(song)}
+      onDownload={() => actions.download(song)}
+      onAddToQueue={() => actions.queue(song)}
+    />
+  );
+});
+
 export default function AllSongsScreen() {
   const t = useT();
   const navigation = useNavigation<any>();
@@ -188,12 +225,26 @@ export default function AllSongsScreen() {
     const index = headerIndex(rows, letter);
     if (index === undefined) return;
     // The header lands just under the top bar (portrait) or the status bar (landscape).
-    const viewOffset = insets.top + (isLandscape ? 0 : DETAIL_BAR_HEIGHT);
+    // FlashList adds viewOffset to the row's offset: negative to stop above it.
+    const viewOffset = -(insets.top + (isLandscape ? 0 : DETAIL_BAR_HEIGHT));
     listRef.current?.scrollToIndex({index, viewOffset, animated: false});
   }, [rows, insets.top, isLandscape]);
 
   const playAll = useCallback(() => { if (tracks.length) playFromList({type: 'library'}, tracks); }, [tracks]);
   const playButton = usePlayButton({type: 'library'}, playAll);
+
+  // Same handlers for every row and every render: a row redraws only when its own song,
+  // playback, like or download state changes, not the ~200 mounted rows at each play / pause.
+  const latest = useRef({tracks, toggleLike});
+  latest.current = {tracks, toggleLike};
+  const rowActions = useMemo<RowActions>(() => ({
+    play: index => playFromList({type: 'library'}, latest.current.tracks, index),
+    menu: setMenuSong,
+    like: song => latest.current.toggleLike(String(song.id), song.title, song.artist),
+    add: setAddTo,
+    download: song => useDownloadStore.getState().enqueueTrack(song),
+    queue: addSongToQueue,
+  }), []);
 
   const renderItem = useCallback(({item}: {item: Row}) => {
     if (item.kind === 'header') {
@@ -212,22 +263,16 @@ export default function AllSongsScreen() {
     const isCurrent = active?.id != null && String(active.id) === id;
     const dl = activeDownloads[id];
     return (
-      <TrackRow
-        title={song.title}
-        subtitle={song.artist}
-        coverId={song.coverArt}
+      <SongRow
+        song={song}
+        index={item.index}
         playback={isCurrent ? (state === State.Playing ? 'playing' : 'current') : 'idle'}
         liked={overrides[id] ?? likedSongIds.has(id)}
         download={id in downloads ? 'done' : dl && (dl.status === 'queued' || dl.status === 'downloading') ? 'downloading' : 'none'}
-        onPress={() => playFromList({type: 'library'}, tracks, item.index)}
-        onLongPress={() => setMenuSong(song)}
-        onToggleLike={() => toggleLike(id, song.title, song.artist)}
-        onAddToPlaylist={() => setAddTo(song)}
-        onDownload={() => useDownloadStore.getState().enqueueTrack(song)}
-        onAddToQueue={() => addSongToQueue(song)}
+        actions={rowActions}
       />
     );
-  }, [t, active?.id, state, overrides, likedSongIds, downloads, activeDownloads, tracks, toggleLike]);
+  }, [t, active?.id, state, overrides, likedSongIds, downloads, activeDownloads, rowActions]);
 
   const meta = loading ? '…' : [t.allSongs.trackCount(songs.length), totalSeconds > 0 ? lengthLabel(totalSeconds) : ''].filter(Boolean).join(' · ');
 
