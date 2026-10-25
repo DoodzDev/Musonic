@@ -1,8 +1,8 @@
 /**
  * @file CardMenu.tsx
  * @description Right-click menu of a card (album, artist, playlist, mix, liked
- *   songs): play, play next, add to the queue, open, go to the artist. A song
- *   card gets the track menu instead.
+ *   songs): play, play next, add to the queue, add to a playlist, open, go to
+ *   the artist. A song card gets the track menu instead.
  * @author DoodzProg
  * @version 0.1.0
  * @license CC-BY-NC-4.0
@@ -19,6 +19,7 @@ import { usePlayer } from '../player/PlayerContext.tsx';
 import { useItemSongs, usePlayItem } from '../player/usePlayItem.ts';
 import { describe } from './cardModel.ts';
 import { MenuRow, MenuShell } from './MenuShell.tsx';
+import { SongsPlaylistPicker } from './SongsPlaylistPicker.tsx';
 import { TrackMenu } from './TrackMenu.tsx';
 
 export interface CardMenuTarget {
@@ -36,6 +37,8 @@ export function CardMenu({ target, onClose }: { target: CardMenuTarget; onClose:
   const play = usePlayItem();
   const songsOf = useItemSongs();
   const d = describe(item);
+  // Songs of the card, once "Add to a playlist" is chosen: the picker replaces the menu.
+  const [picking, setPicking] = useState<Song[] | null>(null);
 
   const withSongs = (action: (songs: Song[]) => void, message: (n: number) => string) => async () => {
     onClose();
@@ -49,12 +52,25 @@ export function CardMenu({ target, onClose }: { target: CardMenuTarget; onClose:
     }
   };
   const artistId = item.type === 'album' ? item.album.artistId : undefined;
+  const pickPlaylist = async () => {
+    try {
+      const { songs } = await songsOf(item, list);
+      if (songs.length) setPicking(songs);
+      else onClose();
+    } catch {
+      onClose();
+      toast(tr.library.failed);
+    }
+  };
+
+  if (picking) return <SongsPlaylistPicker songs={picking} title={d.title} onClose={onClose} />;
 
   return (
     <MenuShell x={target.x} y={target.y} label={t.cardLabel(d.title)} onClose={onClose}>
       <MenuRow onClick={() => { onClose(); void play(item, list); }}>{t.play}</MenuRow>
       <MenuRow onClick={withSongs((songs) => songs.slice().reverse().forEach(playNext), t.willPlayNext)}>{tr.trackMenu.playNext}</MenuRow>
       <MenuRow onClick={withSongs((songs) => songs.forEach(addToQueue), t.added)}>{tr.trackMenu.addToQueue}</MenuRow>
+      <MenuRow onClick={() => void pickPlaylist()}>{tr.trackMenu.addToPlaylist}…</MenuRow>
       {(d.to || artistId) && <div className="menu-separator" />}
       {d.to && <MenuRow onClick={() => { onClose(); navigate(d.to!); }}>{t.open}</MenuRow>}
       {artistId && <MenuRow onClick={() => { onClose(); navigate(`/artist/${artistId}`); }}>{tr.trackMenu.goToArtist}</MenuRow>}
