@@ -12,9 +12,9 @@
  * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
-import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
+import {State, useActiveTrack, usePlaybackState, type Track} from 'react-native-track-player';
 import {useForegroundProgress} from '../../hooks/useForegroundProgress';
 import GlassSurface from '../ui/GlassSurface';
 import CoverWash from '../ui/CoverWash';
@@ -33,6 +33,15 @@ import {haptic} from '../../services/haptics';
 import {colors, radii, sizes, spacing} from '../../theme';
 import {DOCK_MINI_HEIGHT} from '../../navigation/dockLayout';
 import {useT} from '../../i18n';
+import {setupPlayer} from '../../services/setupPlayer';
+import {loadQueue} from '../../services/playback/snapshot';
+import {useSettingsStore} from '../../store/settingsStore';
+
+/** The current track saved with the queue: shown at launch, before the player has restored it. */
+function savedTrack(): Track | null {
+  const account = useSettingsStore.getState().activeServerId;
+  return account ? loadQueue<Track & {id: string}>(account, t => t)?.current ?? null : null;
+}
 
 function ProgressLine({duration}: {duration: number}) {
   const {position} = useForegroundProgress();
@@ -46,13 +55,26 @@ function ProgressLine({duration}: {duration: number}) {
 
 export default function DockMiniPlayer() {
   const t = useT();
-  const track = useActiveTrack();
+  const live = useActiveTrack();
+  // Launch: the saved track at once (the player restores the queue ~0.6 s later); then only
+  // the player's, so an emptied queue hides the mini player.
+  const [saved] = useState(savedTrack);
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    setupPlayer().finally(() => mounted && setRestored(true));
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  const track = restored ? live : live ?? saved ?? undefined;
   const {state} = usePlaybackState();
   const togglePlay = usePlayerStore(s => s.togglePlay);
   const openFullScreen = usePlayerStore(s => s.openFullScreen);
   const visible = usePlayerStore(s => s.isMiniPlayerVisible);
 
-  if (!visible || !track?.id) return null;
+  // Before the restore, the store does not know the queue yet: the saved track decides.
+  if (!(visible || (!restored && saved)) || !track?.id) return null;
   const playing = state === State.Playing;
   let washUri: string | undefined;
   try {
@@ -65,7 +87,8 @@ export default function DockMiniPlayer() {
 
   return (
     <SwipeSurface onSwipeUp={openFullScreen} onSwipeLeft={skipNext} onSwipeRight={skipPrevForce}>
-      <GlassSurface style={styles.capsule}>
+      {/* Not ready yet (saved track shown): taps would reach an empty player. */}
+      <GlassSurface style={styles.capsule} pointerEvents={restored || live ? 'auto' : 'none'}>
         <CoverWash uri={washUri} />
         {/* Only the cover and titles open the player: the buttons just act. */}
         <Pressable
