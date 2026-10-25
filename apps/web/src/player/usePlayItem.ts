@@ -23,50 +23,50 @@ export const keys = {
   home: (day: string) => `home:${day}`,
 };
 
-export function usePlayItem(): (item: CardItem, list?: Song[]) => Promise<void> {
+/** The songs a card stands for (an album's, a playlist's, an artist's best…), and where they come from. */
+export function useItemSongs(): (item: CardItem, list?: Song[]) => Promise<{ songs: Song[]; start?: number; source: string | null }> {
   const { client, cache, session } = useApp();
-  const { playSongs } = usePlayer();
   const cached = <T,>(key: string, ttl: number, load: () => Promise<T>) => cache.get(`${session.username}|${key}`, ttl, load);
 
   return async (item, list) => {
     switch (item.type) {
       case 'album': {
         const album = await cached(keys.album(item.album.id), TTL_LONG, () => client.getAlbum(item.album.id));
-        playSongs(album.song, undefined, `album:${album.id}`);
-        return;
+        return { songs: album.song, source: `album:${album.id}` };
       }
       case 'playlist': {
         const playlist = await cached(keys.playlist(item.playlist.id), TTL_SHORT, () => client.getPlaylist(item.playlist.id));
-        playSongs(playlist.entry, undefined, `playlist:${playlist.id}`);
-        return;
+        return { songs: playlist.entry, source: `playlist:${playlist.id}` };
       }
       case 'liked': {
         const starred = await cached(keys.starred, TTL_SHORT, () => client.getStarred());
-        playSongs(starred.song, undefined, 'liked');
-        return;
+        return { songs: starred.song, source: 'liked' };
       }
       case 'artist': {
         const top = await cached(keys.topSongs(item.artist.name), TTL_LONG, () => client.getTopSongs(item.artist.name, 20)).catch(() => []);
-        if (top.length) {
-          playSongs(top, undefined, `artist:${item.artist.id}`);
-          return;
-        }
-        // No popularity data on the server: play the artist's latest album.
+        if (top.length) return { songs: top, source: `artist:${item.artist.id}` };
+        // No popularity data on the server: the artist's latest album.
         const artist = await cached(keys.artist(item.artist.id), TTL_LONG, () => client.getArtist(item.artist.id));
         const latest = artist.album.slice().sort((a, b) => (b.year ?? 0) - (a.year ?? 0))[0];
-        if (!latest) return;
+        if (!latest) return { songs: [], source: null };
         const album = await cached(keys.album(latest.id), TTL_LONG, () => client.getAlbum(latest.id));
-        playSongs(album.song, undefined, `artist:${item.artist.id}`);
-        return;
+        return { songs: album.song, source: `artist:${item.artist.id}` };
       }
       case 'mix':
-        playSongs(item.songs, undefined, item.id);
-        return;
+        return { songs: item.songs, source: item.id };
       case 'song': {
         const songs = list ?? [item.song];
-        playSongs(songs, Math.max(0, songs.findIndex((s) => s.id === item.song.id)), null);
-        return;
+        return { songs, start: Math.max(0, songs.findIndex((s) => s.id === item.song.id)), source: null };
       }
     }
+  };
+}
+
+export function usePlayItem(): (item: CardItem, list?: Song[]) => Promise<void> {
+  const { playSongs } = usePlayer();
+  const songsOf = useItemSongs();
+  return async (item, list) => {
+    const { songs, start, source } = await songsOf(item, list);
+    if (songs.length) playSongs(songs, start, source);
   };
 }

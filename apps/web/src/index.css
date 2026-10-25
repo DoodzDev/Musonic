@@ -314,6 +314,7 @@ h1, h2, p { margin: 0; }
   display: flex; flex-wrap: wrap; align-items: center; column-gap: 24px; row-gap: 8px;
 }
 .player-track { flex: 1 1 240px; min-width: 0; display: flex; align-items: center; gap: 12px; }
+.player-actions { display: flex; align-items: center; flex: none; margin-left: -4px; }
 .player-error { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--destructive); }
 .player-center { flex: 2 1 380px; min-width: 0; max-width: 680px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .player-controls { display: flex; align-items: center; gap: 14px; }
@@ -542,6 +543,7 @@ p.lyrics-line { font-size: 17px; line-height: 26px; font-weight: 600; padding: 0
 @media (max-width: 860px) { .full-lyrics { display: none; } }
 .full-bottom { width: 100%; max-width: 900px; margin: 0 auto; padding: 0 32px 32px; display: flex; flex-direction: column; gap: 10px; }
 .full-meta { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.full-actions { display: flex; align-items: center; gap: 4px; flex: none; }
 .full-title { font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .full-artist { font-size: 17px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .full-controls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
@@ -623,3 +625,23 @@ p.lyrics-line { font-size: 17px; line-height: 26px; font-weight: 600; padding: 0
 .import-list em.is-missing { color: var(--text-3); }
 .import-paste { display: flex; flex-direction: column; gap: 10px; padding-top: 6px; border-top: 0.5px solid var(--separator); }
 .import-open { align-self: flex-start; text-decoration: none; }
+
+/* Sleep timer: hours / minutes / seconds wheels, like the mobile app. Opens just above the player
+   bar (not over it), compact, scrolling inside a short window. */
+.sleep-backdrop { align-items: flex-end; padding-bottom: 124px; }
+.sleep-dialog { max-width: 400px; max-height: calc(100vh - 148px); overflow-y: auto; gap: 14px; padding: 18px 20px; }
+.sleep-status { text-align: center; font-size: 14px; color: var(--accent); }
+.wheels { position: relative; flex: none; display: flex; justify-content: center; gap: 28px; height: 180px; }
+.wheels-band { position: absolute; left: 0; right: 0; top: 72px; height: 36px; border-radius: 12px; background: var(--fill); pointer-events: none; }
+.wheel { position: relative; display: flex; align-items: center; gap: 6px; }
+/* Rows snap on their centre, the band's: row i is centred at scrollTop = i × 36. */
+.wheel-list { height: 180px; width: 56px; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; padding: 72px 0; box-sizing: border-box; border-radius: 12px; }
+.wheel-list::-webkit-scrollbar { display: none; }
+.wheel-row { height: 36px; scroll-snap-align: center; display: flex; align-items: center; justify-content: center; font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-3); }
+.wheel-row.is-on { color: var(--text); }
+.wheel-row:not(.is-on) { cursor: pointer; }
+.wheel-row:not(.is-on):hover { color: var(--text-2); }
+.wheel-unit { width: 28px; font-size: 14px; color: var(--text-2); }
+.sleep-presets, .sleep-more { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.sleep-off { color: var(--destructive); }
+.menu-hint { padding: 8px 14px 4px; font-size: 12px; color: var(--text-3); }

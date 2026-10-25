@@ -17,6 +17,7 @@ import { useApp } from '../context/AppContext.tsx';
 import { usePlayer } from './PlayerContext.tsx';
 import { onSeekRequest, publishPosition } from './position.ts';
 import { handleShortcut, TransportContext, type Transport } from './transport.ts';
+import { registerSleepPause, takeEndOfTrack } from './sleepTimer.ts';
 import { useScrobbler } from './useScrobbler.ts';
 
 const VOLUME_KEY = 'musonic.volume';
@@ -41,6 +42,10 @@ export function AudioEngine({ children }: { children: ReactNode }) {
   const [failed, setFailed] = useState(false);
   const entry = song?.entryId;
   const scrobbler = useScrobbler(song, entry);
+  // Sleep timer "end of track": the next track (loaded within 2 s of the end) does not start.
+  const holdNext = useRef(0);
+
+  useEffect(() => registerSleepPause(() => audioRef.current?.pause()), []);
 
   // Load and start the track whenever the current queue entry changes.
   useEffect(() => {
@@ -50,6 +55,11 @@ export function AudioEngine({ children }: { children: ReactNode }) {
     publishPosition(0);
     setDuration(song.duration ?? 0);
     audio.src = client.streamUrl(song.id);
+    if (Date.now() - holdNext.current < 2000) {
+      holdNext.current = 0;
+      setPlaying(false);
+      return;
+    }
     audio.play().catch(() => setPlaying(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client, entry, setPlaying]);
@@ -176,7 +186,13 @@ export function AudioEngine({ children }: { children: ReactNode }) {
         }}
         onEnded={() => {
           scrobbler.ended();
-          if (player.trackEnded()) restart();
+          const stop = takeEndOfTrack();
+          holdNext.current = stop ? Date.now() : 0;
+          const replay = player.trackEnded();
+          if (replay && stop) {
+            holdNext.current = 0;
+            setPlaying(false);
+          } else if (replay) restart();
         }}
         onError={() => song && setFailed(true)}
       />

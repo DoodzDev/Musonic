@@ -15,14 +15,14 @@ import { useApp } from '../context/AppContext.tsx';
 import { tr } from '../i18n/index.ts';
 import { usePlayer } from '../player/PlayerContext.tsx';
 import { useLyrics } from '../player/useLyrics.ts';
-import { isLiked, usePlaylistActions } from '../player/usePlaylistActions.ts';
 import { colors } from '../theme/tokens.ts';
 import { Cover } from './Cover.tsx';
 import { FullscreenIcon, MiniPlayerIcon } from './Icons.tsx';
 import { LyricsView } from './LyricsView.tsx';
+import { NowPlayingActions } from './NowPlayingActions.tsx';
+import { SleepTimerButton } from './SleepTimerButton.tsx';
 import { ProgressBar, TransportButtons, VolumeControl } from './PlayerControls.tsx';
 import { ChevronDownIcon } from './icons/ChevronDownIcon.tsx';
-import { HeartIcon } from './icons/HeartIcon.tsx';
 import { LyricsIcon } from './icons/LyricsIcon.tsx';
 
 const t = tr.player;
@@ -45,12 +45,9 @@ function readShowLyrics(): boolean {
 export function FullPlayer({ onClose, onToggleMini, miniOpen }: Props) {
   const { client } = useApp();
   const { current: song } = usePlayer();
-  const actions = usePlaylistActions();
   const lyrics = useLyrics(song);
   const [showLyrics, setShowLyrics] = useState(readShowLyrics);
   const [fullscreen, setFullscreen] = useState(() => !!document.fullscreenElement);
-  const [, setLikeRevision] = useState(0);
-  const liked = song ? isLiked(song) : false;
   const lines = lyrics.status === 'ready' ? lyrics.data : null;
 
   useEffect(() => {
@@ -84,11 +81,6 @@ export function FullPlayer({ onClose, onToggleMini, miniOpen }: Props) {
     } catch {
       // Preference only.
     }
-  }
-
-  async function toggleLike() {
-    if (!song) return;
-    if ((await actions.setLiked(song, !liked)) !== null) setLikeRevision((r) => r + 1);
   }
 
   return (
@@ -146,16 +138,9 @@ export function FullPlayer({ onClose, onToggleMini, miniOpen }: Props) {
             <span className="full-title">{song ? song.title : t.idle}</span>
             {song && <span className="full-artist">{song.artist}</span>}
           </span>
-          <button
-            type="button"
-            className="icon-btn full-icon"
-            onClick={toggleLike}
-            disabled={!song}
-            aria-label={liked ? tr.trackMenu.unlike : tr.trackMenu.like}
-            aria-pressed={liked}
-            title={liked ? tr.trackMenu.unlike : tr.trackMenu.like}>
-            <HeartIcon size={24} filled={liked} color={liked ? colors.accent : 'currentColor'} />
-          </button>
+          <span className="full-actions">
+            <NowPlayingActions song={song ?? undefined} size={24} className="icon-btn full-icon" />
+          </span>
         </div>
         <ProgressBar />
         <div className="full-controls">
@@ -169,6 +154,7 @@ export function FullPlayer({ onClose, onToggleMini, miniOpen }: Props) {
               title={t.lyrics}>
               <LyricsIcon size={22} color={showLyrics ? colors.accent : 'currentColor'} />
             </button>
+            <SleepTimerButton size={22} className="icon-btn full-icon icon-mode" />
           </span>
           <TransportButtons size={1.4} />
           <span className="full-side full-volume">

@@ -86,6 +86,43 @@ export const en: typeof fr = {
     newPlaylistDefault: 'My playlist',
     failed: 'That did not work. Check the connection to the server.',
   },
+  sleepTimer: {
+    title: 'Sleep timer',
+    button: 'Sleep timer',
+    active: (left: string) => `Sleep timer · ${left}`,
+    /** "1 h 05 min", "12 min", "45 s". */
+    duration: (seconds: number) => {
+      if (seconds < 60) return `${seconds} s`;
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      if (h > 0) return `${h} h${m || s ? ` ${String(m).padStart(2, '0')} min` : ''}${s ? ` ${s} s` : ''}`;
+      return `${m} min${s ? ` ${s} s` : ''}`;
+    },
+    hours: 'h',
+    minutes: 'min',
+    seconds: 's',
+    start: (d: string) => `Stop in ${d}`,
+    pickDuration: 'Pick a duration',
+    endOfTrack: 'End of track',
+    off: 'Turn off timer',
+    stopsIn: (d: string) => `Playback stops in ${d}.`,
+    stopsAtEnd: 'Playback stops at the end of the track.',
+    endShort: 'end of track',
+  },
+  contextMenu: {
+    label: 'Menu',
+    cardLabel: (title: string) => `Actions on “${title}”`,
+    play: 'Play',
+    open: 'Open',
+    back: 'Back',
+    forward: 'Forward',
+    myMusic: 'My Music',
+    reload: 'Reload the page',
+    browserHint: 'Right click again: browser menu',
+    added: (n: number) => (n === 1 ? '1 song added to the queue' : `${n} songs added to the queue`),
+    willPlayNext: (n: number) => (n === 1 ? '1 song will play next' : `${n} songs will play next`),
+  },
   trackMenu: {
     label: (title: string) => `Actions on “${title}”`,
     more: 'More actions',

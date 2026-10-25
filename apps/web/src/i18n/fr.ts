@@ -86,6 +86,43 @@ export const fr = {
     newPlaylistDefault: 'Ma playlist',
     failed: 'L’action n’a pas abouti. Vérifiez la connexion au serveur.',
   },
+  sleepTimer: {
+    title: 'Minuteur de veille',
+    button: 'Minuteur de veille',
+    active: (left: string) => `Minuteur de veille · ${left}`,
+    /** "1 h 05 min", "12 min", "45 s". */
+    duration: (seconds: number) => {
+      if (seconds < 60) return `${seconds} s`;
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      if (h > 0) return `${h} h${m || s ? ` ${String(m).padStart(2, '0')} min` : ''}${s ? ` ${s} s` : ''}`;
+      return `${m} min${s ? ` ${s} s` : ''}`;
+    },
+    hours: 'h',
+    minutes: 'min',
+    seconds: 's',
+    start: (d: string) => `Arrêter dans ${d}`,
+    pickDuration: 'Choisissez une durée',
+    endOfTrack: 'Fin du titre',
+    off: 'Désactiver le minuteur',
+    stopsIn: (d: string) => `La lecture s’arrête dans ${d}.`,
+    stopsAtEnd: 'La lecture s’arrête à la fin du titre.',
+    endShort: 'fin du titre',
+  },
+  contextMenu: {
+    label: 'Menu',
+    cardLabel: (title: string) => `Actions sur « ${title} »`,
+    play: 'Lire',
+    open: 'Ouvrir',
+    back: 'Retour',
+    forward: 'Avancer',
+    myMusic: 'Ma Musique',
+    reload: 'Recharger la page',
+    browserHint: 'Clic droit à nouveau : menu du navigateur',
+    added: (n: number) => (n === 1 ? '1 titre ajouté à la file d’attente' : `${n} titres ajoutés à la file d’attente`),
+    willPlayNext: (n: number) => (n === 1 ? '1 titre sera lu ensuite' : `${n} titres seront lus ensuite`),
+  },
   trackMenu: {
     label: (title: string) => `Actions sur « ${title} »`,
     more: 'Plus d’actions',

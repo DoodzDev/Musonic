@@ -14,6 +14,7 @@ import { MemoryCache, SubsonicClient, type SubsonicSession } from '@musonic/core
 import { FullPlayer } from './components/FullPlayer.tsx';
 import { LoginScreen } from './components/LoginScreen.tsx';
 import { MiniPlayer } from './components/MiniPlayer.tsx';
+import { PageMenu } from './components/PageMenu.tsx';
 import { PlayerBar } from './components/PlayerBar.tsx';
 import { ProfileMenu } from './components/ProfileMenu.tsx';
 import { ResizeHandle } from './components/ResizeHandle.tsx';
@@ -88,6 +89,7 @@ function Shell() {
           )}
         </div>
         <ToastHost />
+        <PageMenu />
         <PlayerBar onExpand={() => setFull(true)} onToggleMini={toggleMini} miniOpen={!!mini.win} />
         {full && current && <FullPlayer onClose={() => setFull(false)} onToggleMini={toggleMini} miniOpen={!!mini.win} />}
       </div>

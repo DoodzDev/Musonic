@@ -20,6 +20,7 @@ import { ClockIcon } from './Icons.tsx';
 import { AddToPlaylistButton } from './AddToPlaylistButton.tsx';
 import { LikeButton } from './LikeButton.tsx';
 import { PlaylistPicker } from './PlaylistPicker.tsx';
+import { claimContextMenu } from '../player/contextMenu.ts';
 import { usePlaylistMembership } from '../player/usePlaylistMembership.ts';
 import { PlayIcon } from './icons/PlayIcon.tsx';
 import { DotsHorizontalIcon } from './icons/DotsHorizontalIcon.tsx';
@@ -72,8 +73,7 @@ export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover
               className={'track-row' + (isCurrent ? ' is-current' : '') + (menu?.song === song ? ' is-menu' : '')}
               onDoubleClick={play}
               onContextMenu={(e) => {
-                e.preventDefault();
-                openMenu(song, i, e.clientX, e.clientY);
+                if (claimContextMenu(e)) openMenu(song, i, e.clientX, e.clientY);
               }}>
               <span role="cell" className="c-index">
                 {isCurrent ? (

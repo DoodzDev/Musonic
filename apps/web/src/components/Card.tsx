@@ -10,6 +10,7 @@ import type { CardItem, Song } from '@musonic/core';
 import { Link } from 'react-router';
 import { tr } from '../i18n/index.ts';
 import { usePlayItem } from '../player/usePlayItem.ts';
+import { useCardMenu } from './CardMenu.tsx';
 import { describe } from './cardModel.ts';
 import { Cover } from './Cover.tsx';
 import { HeartIcon } from './icons/HeartIcon.tsx';
@@ -51,6 +52,7 @@ interface CardProps {
 export function Card({ item, list }: CardProps) {
   const play = usePlayItem();
   const d = describe(item);
+  const { onContextMenu, menu } = useCardMenu(item, list);
   const round = item.type === 'artist';
   const body = (
     <>
@@ -70,7 +72,7 @@ export function Card({ item, list }: CardProps) {
   );
 
   return (
-    <div className={`card${round ? ' card-round' : ''}`}>
+    <div className={`card${round ? ' card-round' : ''}`} onContextMenu={onContextMenu}>
       {d.to ? (
         <Link to={d.to} className="card-link">{body}</Link>
       ) : (
@@ -79,6 +81,7 @@ export function Card({ item, list }: CardProps) {
       <button type="button" className="card-play" onClick={() => void play(item, list)} aria-label={t.play(d.title)}>
         <PlayIcon size={18} color="currentColor" />
       </button>
+      {menu}
     </div>
   );
 }
@@ -96,8 +99,9 @@ function TileArt({ item }: { item: CardItem }) {
 export function QuickTile({ item }: { item: CardItem }) {
   const play = usePlayItem();
   const d = describe(item);
+  const { onContextMenu, menu } = useCardMenu(item);
   return (
-    <div className={`tile${item.type === 'liked' ? ' tile-liked' : ''}`}>
+    <div className={`tile${item.type === 'liked' ? ' tile-liked' : ''}`} onContextMenu={onContextMenu}>
       {d.to ? (
         <Link to={d.to} className="tile-link">
           <TileArt item={item} />
@@ -112,6 +116,7 @@ export function QuickTile({ item }: { item: CardItem }) {
       <button type="button" className="tile-play" onClick={() => void play(item)} aria-label={t.play(d.title)}>
         <PlayIcon size={15} color="currentColor" />
       </button>
+      {menu}
     </div>
   );
 }
