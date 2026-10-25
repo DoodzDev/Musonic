@@ -57,7 +57,7 @@ react {
 /**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
 
 // keystore.properties is gitignored: a fresh clone must still be able to build.
 def keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -120,6 +120,7 @@ android {
             // Without the release keystore, fall back to the debug key so assembleRelease still works locally.
             signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
+            shrinkResources enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
