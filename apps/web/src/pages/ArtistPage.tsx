@@ -33,13 +33,13 @@ export function ArtistPage() {
   const albums = artist.album.slice().sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
   const popular = top.status === 'ready' ? top.data.slice(0, POPULAR_SHOWN) : [];
   const similar: CardItem[] = info.status === 'ready'
-    ? info.data.similarArtist.filter((a) => a.id).map((a) => ({ type: 'artist', artist: { ...a, coverArt: a.coverArt ?? `ar-${a.id}` } }))
+    ? info.data.similarArtist.filter((a) => a.id).map((a) => ({ type: 'artist', artist: a }))
     : [];
 
   return (
     <div className="page">
       <CollectionHeader
-        art={<Cover coverArt={artist.coverArt ?? `ar-${artist.id}`} fallbackCoverArt={albums[0]?.coverArt} size={208} round className="cover-hero" eager placeholder={artist.name.slice(0, 1)} />}
+        art={<Cover coverArt={artist.coverArt} fallbackCoverArt={albums[0]?.coverArt} size={208} round className="cover-hero" eager placeholder={artist.name.slice(0, 1)} />}
         eyebrow={tr.page.artist}
         title={artist.name}
         meta={tr.page.albums(artist.album.length)}

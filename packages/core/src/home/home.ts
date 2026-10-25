@@ -131,7 +131,9 @@ export function favoriteArtists(base: HomeBase): ArtistScore[] {
   const scores = new Map<string, ArtistScore>();
   const add = (id: string | undefined, name: string | undefined, points: number, cover?: string) => {
     if (!id || !name) return;
-    const entry = scores.get(id) ?? { artist: { id, name, coverArt: `ar-${id}` }, score: 0 };
+    // No guessed `ar-<id>` (a Navidrome convention): liked artists bring their own picture,
+    // the others show the cover of an album they were met on.
+    const entry = scores.get(id) ?? { artist: { id, name }, score: 0 };
     entry.score += points;
     entry.fallbackCoverArt ??= cover;
     scores.set(id, entry);

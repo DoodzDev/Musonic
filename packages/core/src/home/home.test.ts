@@ -93,6 +93,17 @@ describe('favoriteArtists', () => {
   });
 });
 
+describe('favoriteArtists covers', () => {
+  it('never guesses an ar- cover id: a liked artist keeps its picture, the others an album cover', () => {
+    const scores = favoriteArtists(base({ starred: { song: [], album: [], artist: [{ id: 'ar1', name: 'Nova', coverArt: 'pic-ar1' }] } }));
+    expect(scores.every((s) => !s.artist.coverArt?.startsWith('ar-'))).toBe(true);
+    expect(scores.find((s) => s.artist.id === 'ar1')?.artist.coverArt).toBe('pic-ar1');
+    const sora = scores.find((s) => s.artist.id === 'ar2');
+    expect(sora?.artist.coverArt).toBeUndefined();
+    expect(sora?.fallbackCoverArt).toBeUndefined();
+  });
+});
+
 describe('mixCovers', () => {
   it('keeps one cover per album, four at most', () => {
     const songs = [
