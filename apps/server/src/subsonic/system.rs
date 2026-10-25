@@ -12,8 +12,9 @@ pub fn open_subsonic_extensions() -> Reply {
             { "name": "apiKeyAuthentication", "versions": [1] },
             { "name": "formPost", "versions": [1] },
             { "name": "indexBasedQueue", "versions": [1] },
-            // Musonic Server itself: its clients switch to what it adds (see ADR-018).
-            { "name": "musonicServer", "versions": [1] },
+            // Musonic Server itself: its clients switch to what it adds (see ADR-018);
+            // version 2: the one-request routes of ADR-021 (`getMusonicLibrary`, `getMusonicHome`…).
+            { "name": "musonicServer", "versions": [1, 2] },
         ]),
     ))
 }

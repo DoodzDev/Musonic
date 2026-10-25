@@ -2230,3 +2230,53 @@ fn walk(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
     }
     out
 }
+
+#[tokio::test]
+async fn musonic_routes_answer_in_one_request() {
+    let lib = library("musonic").await;
+    let id = lib.song_id("Get Lucky").await;
+    lib.get(&format!("star?id={id}")).await;
+
+    let r = lib.get("getMusonicLibrary?").await;
+    let all = &r["musonicLibrary"];
+    assert_eq!(all["total"], 3);
+    let songs = all["song"].as_array().unwrap();
+    assert_eq!(songs.len(), 3);
+    let lucky = songs.iter().find(|s| s["title"] == "Get Lucky").unwrap();
+    assert_eq!(lucky["album"], "Random Access Memories");
+    assert!(lucky["duration"].is_number() && lucky["albumId"].is_string());
+    let hopp = songs.iter().find(|s| s["title"] == "Hoppípolla").unwrap();
+    assert!(hopp["coverArt"].is_string());
+    assert!(
+        lucky.get("starred").is_none(),
+        "likes change often: not in the list"
+    );
+    assert!(lucky.get("path").is_none() && lucky.get("playCount").is_none());
+
+    // Kept and validated like the other lists.
+    let (_, headers, _) = lib.raw(&format!("getMusonicLibrary?{AUTH}"), None).await;
+    let etag = headers[header::ETAG].to_str().unwrap().to_owned();
+    let (status, _, _) = lib
+        .raw_with(
+            &format!("getMusonicLibrary?{AUTH}"),
+            &[(header::IF_NONE_MATCH, etag.as_str())],
+        )
+        .await;
+    assert_eq!(status, StatusCode::NOT_MODIFIED);
+
+    let r = lib.get("getMusonicHome?").await;
+    let home = &r["musonicHome"];
+    assert_eq!(home["newest"].as_array().unwrap().len(), 2);
+    assert_eq!(home["starred"]["song"][0]["title"], "Get Lucky");
+    assert!(home["playlists"].is_array() && home["recent"].is_array());
+
+    let r = lib
+        .get("getMusonicHomeMore?genre=electro&genre=nothing")
+        .await;
+    let more = &r["musonicHomeMore"];
+    assert_eq!(more["genreMixes"][0]["genre"], "electro");
+    assert_eq!(more["genreMixes"][0]["song"][0]["title"], "Get Lucky");
+    assert!(more["genreMixes"][1]["song"].as_array().unwrap().is_empty());
+    assert!(more["similarArtistAlbums"].as_array().unwrap().is_empty());
+    assert_eq!(lib.error("getMusonicHomeMore?").await, 10);
+}

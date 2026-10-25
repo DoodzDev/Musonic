@@ -10,6 +10,7 @@ mod browse;
 mod cache;
 pub(crate) mod media;
 mod model;
+mod musonic;
 mod online;
 mod playlists;
 mod queue;
@@ -502,6 +503,9 @@ async fn dispatch(ctx: &Ctx, name: &str) -> Reply {
         "search3" => search::search(ctx, "searchResult3").await,
         "search2" => search::search(ctx, "searchResult2").await,
         "getPlaylists" => playlists::get_playlists(ctx).await,
+        "getMusonicLibrary" => musonic::library(ctx).await,
+        "getMusonicHome" => musonic::home(ctx).await,
+        "getMusonicHomeMore" => musonic::home_more(ctx).await,
         "getPlaylist" => playlists::get_playlist(ctx).await,
         "createPlaylist" => playlists::create_playlist(ctx).await,
         "updatePlaylist" => playlists::update_playlist(ctx).await,

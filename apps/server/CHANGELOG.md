@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Routes for Musonic's own clients, announced by version 2 of the `musonicServer` OpenSubsonic
+  extension (ADR-021): `getMusonicLibrary` (every song of the library in one kept answer with
+  an `ETag`, only the fields the clients use), `getMusonicHome` (the first wave of the home
+  screen in one answer) and `getMusonicHomeMore` (its second wave: similar artists' albums,
+  similar songs, genre mixes, chained on the server). About 20 requests in 3 waves become 2.
+
 ### Fixed
 - `search3` / `search2`: the offsets (`songOffset`, `albumOffset`, `artistOffset`) were capped at
   500 like the counts, so a client listing the whole library by pages of 500 got songs 500–999

@@ -90,7 +90,7 @@ impl AnswerCache {
         };
         let cacheable = match endpoint {
             "getArtists" | "getIndexes" | "getMusicFolders" | "getGenres" | "getStarred"
-            | "getStarred2" | "getPlaylists" | "getSongsByGenre" => true,
+            | "getStarred2" | "getPlaylists" | "getSongsByGenre" | "getMusonicLibrary" => true,
             "getAlbum" | "getArtist" | "getSong" | "getPlaylist" | "getMusicDirectory" => {
                 local_id()
             }
