@@ -9,10 +9,11 @@
  *   Advanced settings mode, the start tab and the date on the Home, and the
  *   network rules: downloads on Wi-Fi only, streaming quality per network,
  *   and the storage limit for downloads, and the optional Musonic API
- *   (address + key, ADR-016).
+ *   (address + key, ADR-016). Accounts keep a device key or a token rather
+ *   than the password (ADR-021).
  *   Persisted across restarts; consumed by RootNavigator to gate the server-setup flow.
  * @author DoodzProg
- * @version 1.9.0
+ * @version 1.10.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -35,12 +36,31 @@ export type NavBarPosition = 'left' | 'right';
 export type LibraryViewMode = 'list' | 'grid';
 export type FullPlayerCoverSide = 'left' | 'right';
 
+/**
+ * A saved account. Secrets (never log them): on Musonic Server only the device
+ * key is kept (`apiKey`, ADR-021); on other Subsonic servers a fixed token
+ * (`token` + `salt`); `password` stays only for servers that refuse tokens,
+ * or until an account saved by an older version is upgraded.
+ */
 export type Server = {
   id: string;
   name: string;
   url: string;
   username: string;
   password: string;
+  /** Musonic Server device key, and its id to revoke it. */
+  apiKey?: string;
+  apiKeyId?: string;
+  /** Subsonic token md5(password + salt) and its salt, fixed for the account. */
+  token?: string;
+  salt?: string;
+};
+
+/** Why an account has to sign in again: key revoked, account suspended, password changed. */
+export type AuthProblem = {
+  url: string;
+  username: string;
+  reason: 'revoked' | 'suspended' | 'credentials';
 };
 
 type SettingsState = {
@@ -49,7 +69,12 @@ type SettingsState = {
   crossfadeDuration: number;
   setCrossfadeDuration: (duration: number) => void;
   addServer: (server: Server) => void;
+  /** Replaces a saved account (same id), e.g. once its password is traded for a key. */
+  updateServer: (server: Server) => void;
   removeServer: (id: string) => void;
+  /** Set when the active account was refused; the setup screen explains it (kept across a restart). */
+  authProblem: AuthProblem | null;
+  setAuthProblem: (problem: AuthProblem | null) => void;
   setActiveServer: (id: string) => void;
   disconnectServer: () => void;
   getActiveServer: () => Server | null;
@@ -128,6 +153,10 @@ export const useSettingsStore = create<SettingsState>()(
       setCrossfadeDuration: duration => set({crossfadeDuration: duration}),
       addServer: server =>
         set(state => ({servers: [...state.servers, server]})),
+      updateServer: server =>
+        set(state => ({servers: state.servers.map(s => (s.id === server.id ? server : s))})),
+      authProblem: null,
+      setAuthProblem: problem => set({authProblem: problem}),
       removeServer: id =>
         set(state => ({servers: state.servers.filter(s => s.id !== id)})),
       setActiveServer: id => set({activeServerId: id}),

@@ -20,6 +20,7 @@
     "@react-navigation/native-stack": "^7.14.11",
     "@sbaiahmed1/react-native-blur": "^6.0.2",
     "@shopify/flash-list": "^2.3.1",
+    "js-md5": "0.9.2",
     "react": "19.2.3",
     "react-native": "0.85.2",
     "react-native-blob-util": "^0.24.7",

@@ -1,16 +1,27 @@
 /**
  * @file LoginScreen.tsx
- * @description Server login form. Checks the credentials with a ping before opening the app.
- *   "Remember me" keeps the session on this browser, after a warning about the stored token.
+ * @description Server login form. Checks the credentials before opening the app: on Musonic
+ *   Server the password is traded for a device key of this browser (ADR-021), elsewhere a
+ *   ping checks the Subsonic token. "Remember me" keeps the session on this browser, after a
+ *   warning about the stored key or token. Says why an account was refused.
  * @author DoodzProg
- * @version 0.4.0
+ * @version 0.5.0
  * @license CC-BY-NC-4.0
  */
 
 import { useState, type FormEvent } from 'react';
-import { createSession, SubsonicClient, SubsonicError, type SubsonicSession } from '@musonic/core';
+import {
+  createDeviceKeySession,
+  createSession,
+  normalizeBaseUrl,
+  SubsonicClient,
+  SubsonicError,
+  type AuthProblemReason,
+  type SubsonicSession,
+} from '@musonic/core';
 import { lang, setLang, tr } from '../i18n/index.ts';
-import { loadLastServer, transportSession } from '../lib/session.ts';
+import { isMusonicServer } from '../lib/musonicApi.ts';
+import { loadLastServer, transportBaseUrl, transportSession } from '../lib/session.ts';
 import { ConfirmDialog } from './ConfirmDialog.tsx';
 import { EyeIcon } from './Icons.tsx';
 import { AlertIcon } from './icons/AlertIcon.tsx';
@@ -18,19 +29,29 @@ import { LogoIcon } from './icons/LogoIcon.tsx';
 
 interface Props {
   onLogin: (session: SubsonicSession, remember: boolean) => void;
+  /** The account the server refused, and why. */
+  refused?: { reason: AuthProblemReason; username: string } | null;
 }
 
 const t = tr.login;
 
-export function LoginScreen({ onLogin }: Props) {
+/** Name of the key in the console's device list, e.g. "Musonic Web · Firefox (Linux)". */
+function deviceName(): string {
+  const ua = navigator.userAgent;
+  const browser = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'browser';
+  const os = /Windows/.test(ua) ? 'Windows' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : /Mac OS/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : '';
+  return `Musonic Web · ${browser}${os ? ` (${os})` : ''}`;
+}
+
+export function LoginScreen({ onLogin, refused }: Props) {
   const [server, setServer] = useState(loadLastServer);
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(refused?.username ?? '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
   const [askRemember, setAskRemember] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(refused ? t.errors[refused.reason] : null);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -44,13 +65,21 @@ export function LoginScreen({ onLogin }: Props) {
       setBusy(false);
       return;
     }
-    const session = createSession(address, username, password);
+    const plain = createSession(address, username, password);
     try {
-      await new SubsonicClient(transportSession(session)).ping();
+      let session = plain;
+      if (await isMusonicServer(plain)) {
+        session = await createDeviceKeySession(address, username, password, deviceName(), {
+          transportUrl: transportBaseUrl(normalizeBaseUrl(address)),
+        });
+      } else {
+        await new SubsonicClient(transportSession(plain)).ping();
+      }
       setPassword('');
       onLogin(session, remember);
     } catch (e) {
-      if (e instanceof SubsonicError && e.isAuthError) setError(t.errors.auth);
+      if (e instanceof SubsonicError && e.status === 403) setError(t.errors.suspended);
+      else if (e instanceof SubsonicError && e.isAuthError) setError(t.errors.auth);
       else if (e instanceof SubsonicError && e.isUnreachable) setError(t.errors.unreachable);
       else setError(t.errors.generic);
     } finally {

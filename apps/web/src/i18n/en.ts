@@ -2,7 +2,7 @@
  * @file en.ts
  * @description English strings of the web client. Same shape as fr.ts (checked by the type).
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -26,17 +26,20 @@ export const en: typeof fr = {
     rememberWarning: {
       title: 'Stay signed in on this browser?',
       body: 'A sign-in token will be saved in this browser. Anyone or any extension with access to it could steal it and use it to sign in to your server.',
-      advice: 'Only turn this on for a computer you own, never on a shared or public one. “Log out” erases the token.',
+      advice: 'Only turn this on for a computer you own, never on a shared or public one. “Log out” erases the token (and revokes it on a Musonic Server).',
       confirm: 'Turn on',
     },
     submit: 'Sign in',
     submitting: 'Signing in…',
-    footnote: 'Works with Navidrome and Subsonic-compatible servers. Your password is never sent in clear.',
+    footnote: 'Works with Musonic Server, Navidrome and Subsonic-compatible servers. Your password is never stored.',
     errors: {
       auth: 'Wrong username or password.',
       unreachable: 'Server unreachable. Check the address and your connection.',
       invalidUrl: 'Invalid address. Example: https://music.example.com',
       generic: 'Sign-in failed.',
+      revoked: 'This browser was signed out of your account. Please sign in again.',
+      suspended: 'Your account has been suspended. Ask the server’s administrator.',
+      credentials: 'Did your password change? Please sign in with the new one.',
     },
   },
   layout: {

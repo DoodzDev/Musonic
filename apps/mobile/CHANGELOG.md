@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **Your password no longer stays on the phone.** On a Musonic Server, signing in now gives this phone its own device key: the password is used once and forgotten, and the key alone goes with each request (no more username and password in the addresses of songs and covers). The key is listed in the server's console, where it can be revoked. Accounts already saved switch over by themselves at the next launch. On other Subsonic servers the app keeps a sign-in token instead of the password.
+
+### Changed
+- **Log out really logs out**: it revokes this phone's key and removes the account from the phone; you sign in again with your password.
+
+### Fixed
+- **A refused account no longer leaves the app stuck offline**: when its key was revoked, the account suspended or the password changed, the app goes back to the sign-in screen, filled in, and says why.
+
 ## [2.0.1] - 2026-10-17
 
 **Android Auto (beta) and a security fix.** Musonic now shows up in Android Auto, the server credentials no longer reach other apps, and two small player touches.

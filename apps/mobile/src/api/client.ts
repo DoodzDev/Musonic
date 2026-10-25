@@ -5,11 +5,13 @@
  *   server stored in settingsStore. Streams follow the quality chosen for the
  *   current network (Wi-Fi or mobile data); downloads always get the original.
  *   Deezer tracks are streamed through the Musonic API when it answers (ADR-016).
+ *   Requests carry the account's device key on Musonic Server, else its fixed
+ *   token (ADR-021); an account the server refuses is sent back to sign in.
  * @author DoodzProg
- * @version 1.4.0
+ * @version 1.5.0
  * @license CC-BY-NC-4.0
  */
-import {useSettingsStore, type Server} from '../store/settingsStore';
+import {useSettingsStore, type AuthProblem, type Server} from '../store/settingsStore';
 import {isOnMobileData} from '../services/network';
 import {useNetworkStore} from '../store/networkStore';
 import {getLocalCoverUri} from '../store/localCovers';
@@ -24,9 +26,12 @@ const PERMANENT_ERROR_PATTERNS = [
 
 export class SubsonicError extends Error {
   isPermanent: boolean;
-  constructor(message: string) {
+  /** Subsonic error code (40 wrong credentials, 44 invalid key, 50 not allowed…). */
+  code?: number;
+  constructor(message: string, code?: number) {
     super(message);
     this.name = 'SubsonicError';
+    this.code = code;
     this.isPermanent = PERMANENT_ERROR_PATTERNS.some(p =>
       message.toLowerCase().includes(p.toLowerCase()),
     );
@@ -43,6 +48,35 @@ export function getActiveServer(): Server | null {
   return _server;
 }
 
+/**
+ * Authentication parameters of an account: the device key alone on Musonic
+ * Server (OpenSubsonic `apiKey` refuses `u` beside it), else the fixed token,
+ * else the password. Secrets: never persist or log a URL built with them.
+ */
+export function authParams(server: Server): Record<string, string> {
+  if (server.apiKey) return {apiKey: server.apiKey};
+  if (server.token && server.salt) return {u: server.username, t: server.token, s: server.salt};
+  return {u: server.username, p: server.password};
+}
+
+/** Why the server refused an account, from its Subsonic error; null when it was not about the account. */
+export function authProblemOf(code: number | undefined, message: string): AuthProblem['reason'] | null {
+  if (code === 44) return 'revoked';
+  if (code === 40) return 'credentials';
+  // 50 is also "not allowed" for one action (a playlist of someone else): only the suspension counts.
+  if (code === 50 && /suspended/i.test(message)) return 'suspended';
+  return null;
+}
+
+/** The active account was refused: forget the session and let the setup screen say why. */
+export function reportAuthProblem(reason: AuthProblem['reason']) {
+  const server = _server;
+  if (!server) return;
+  const s = useSettingsStore.getState();
+  s.setAuthProblem({url: server.url, username: server.username, reason});
+  s.disconnectServer();
+}
+
 /** Streaming bitrate cap for the current network, in kbit/s (0 = original). */
 function streamQuality(): number {
   const s = useSettingsStore.getState();
@@ -55,9 +89,8 @@ export function getStreamUrl(songId: string, options?: {original?: boolean}): st
   const deezerId = deezerSongId(songId);
   if (deezerId && isMusonicApiActive()) return musonicStreamUrl(deezerId);
   if (!_server) throw new Error('No server configured');
-  const {url, username, password} = _server;
-  const base = url.replace(/\/$/, '');
-  const p = new URLSearchParams({id: songId, u: username, p: password, v: '1.16.1', c: 'Musonic'});
+  const base = _server.url.replace(/\/$/, '');
+  const p = new URLSearchParams({id: songId, ...authParams(_server), v: '1.16.1', c: 'Musonic'});
   const quality = options?.original ? 0 : streamQuality();
   // Navidrome transcodes down to this bitrate; files already below it are sent as is.
   if (quality > 0) p.set('maxBitRate', String(quality));
@@ -75,9 +108,8 @@ export function getCoverArtUrl(id: string, size = 300): string {
 /** Server cover art URL. Carries the account credentials: never persist or log it. */
 export function getRemoteCoverArtUrl(id: string, size = 300): string {
   if (!_server) throw new Error('No server configured');
-  const {url, username, password} = _server;
-  const base = url.replace(/\/$/, '');
-  const p = new URLSearchParams({id, size: String(size), u: username, p: password, v: '1.16.1', c: 'Musonic'});
+  const base = _server.url.replace(/\/$/, '');
+  const p = new URLSearchParams({id, size: String(size), ...authParams(_server), v: '1.16.1', c: 'Musonic'});
   return `${base}/rest/getCoverArt.view?${p.toString()}`;
 }
 
@@ -97,8 +129,8 @@ async function fetchWithTimeout(urlStr: string, timeoutMs: number, headers?: Rec
 /** URL of a Subsonic route with the account's credentials. Never persist or log it. */
 function restUrl(endpoint: string, params: Record<string, unknown>): string {
   if (!_server) throw new Error('No server configured');
-  const {url, username, password} = _server;
-  const p = new URLSearchParams({u: username, p: password, v: '1.16.1', c: 'Musonic', f: 'json'});
+  const {url} = _server;
+  const p = new URLSearchParams({...authParams(_server), v: '1.16.1', c: 'Musonic', f: 'json'});
   for (const [k, v] of Object.entries(params)) {
     if (Array.isArray(v)) {
       v.forEach(item => p.append(k, String(item)));
@@ -115,7 +147,10 @@ async function subsonicBody<T>(res: Response): Promise<T> {
   const data = await res.json();
   const body = data['subsonic-response'];
   if (body.status !== 'ok') {
-    throw new SubsonicError(body.error?.message ?? 'Subsonic error');
+    const message = body.error?.message ?? 'Subsonic error';
+    const problem = authProblemOf(body.error?.code, message);
+    if (problem) reportAuthProblem(problem);
+    throw new SubsonicError(message, body.error?.code);
   }
   return body as T;
 }
@@ -159,7 +194,13 @@ export async function subsonicGetIfChanged<T>(
 }
 
 /** Why a server could not be reached, so the setup screen can say it plainly (F29). */
-export type PingFailure = 'auth' | 'http' | 'timeout' | 'unreachable' | 'notSubsonic' | 'server';
+export type PingFailure = 'auth' | 'revoked' | 'suspended' | 'http' | 'timeout' | 'unreachable' | 'notSubsonic' | 'server';
+
+/** What a successful check learnt about the server. */
+export type PingResult = {
+  /** Musonic Server (it marks every answer `type: "musonic"`): device keys are available. */
+  musonic: boolean;
+};
 
 export class PingError extends Error {
   kind: PingFailure;
@@ -174,10 +215,8 @@ export class PingError extends Error {
 }
 
 /** Checks a server and its credentials; throws a `PingError` saying why it failed. */
-export async function pingServer(server: Server): Promise<void> {
-  const p = new URLSearchParams({
-    u: server.username, p: server.password, v: '1.16.1', c: 'Musonic', f: 'json',
-  });
+export async function pingServer(server: Server): Promise<PingResult> {
+  const p = new URLSearchParams({...authParams(server), v: '1.16.1', c: 'Musonic', f: 'json'});
   const urlStr = `${server.url.replace(/\/$/, '')}/rest/ping.view?${p.toString()}`;
   let res: Response;
   try {
@@ -197,8 +236,10 @@ export async function pingServer(server: Server): Promise<void> {
   // A web page or another API answered: not a Subsonic server at this address.
   if (!body) throw new PingError('notSubsonic', 'Not a Subsonic response');
   if (body.status !== 'ok') {
-    // Subsonic error 40: wrong username or password.
-    const kind = body.error?.code === 40 ? 'auth' : 'server';
-    throw new PingError(kind, body.error?.message ?? 'Auth failed');
+    const message = body.error?.message ?? 'Auth failed';
+    const problem = authProblemOf(body.error?.code, message);
+    const kind = problem === 'credentials' ? 'auth' : problem ?? 'server';
+    throw new PingError(kind, message);
   }
+  return {musonic: body.type === 'musonic'};
 }

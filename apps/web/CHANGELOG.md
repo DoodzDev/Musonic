@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **On a Musonic Server, the browser keeps a device key instead of a token made from your password.** The password is used once at sign-in; the key, named after the browser, is listed in the server's console and can be revoked there. Other Subsonic servers keep the token as before.
+
+### Changed
+- **Log out revokes the browser's key** on a Musonic Server.
+
+### Fixed
+- **A refused account goes back to the sign-in form with the reason** (key revoked, account suspended, password changed) instead of showing errors and an empty library.
+
 ### Added
 - **Import a Spotify or Deezer playlist** (Library → Import, on a Musonic Server): paste the playlist's address, check its name, cover and songs, and Musonic makes it again with songs from your library and the online catalog. The import runs on the server (you can close the window) with its progress shown live, then a report lists the songs not found and the uncertain ones (a close version used instead). A Spotify playlist is read up to its first 100 songs; for the rest, put them in a second Spotify playlist and paste its address in the report: its songs are added to the same playlist. The report can look for the missing songs again. The report stays available from the playlist's page.
 

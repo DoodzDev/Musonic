@@ -2,18 +2,25 @@
  * @file types.ts
  * @description Subsonic / OpenSubsonic response types used by Musonic clients.
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
-/** Credentials kept by a client once logged in. The clear password is never stored. */
+/**
+ * Credentials kept by a client once logged in. The clear password is never stored:
+ * a device key on Musonic Server (ADR-021), the Subsonic token elsewhere.
+ */
 export interface SubsonicSession {
   /** Server origin, e.g. `https://music.example.com`. Empty string means same origin. */
   baseUrl: string;
   username: string;
-  /** md5(password + salt), see the Subsonic token authentication. */
+  /** md5(password + salt), see the Subsonic token authentication. Empty with a device key. */
   token: string;
   salt: string;
+  /** Musonic Server device key (OpenSubsonic `apiKey`), sent alone instead of `u` + `t` + `s`. */
+  apiKey?: string;
+  /** Id of the device key, to revoke it at logout. */
+  apiKeyId?: string;
 }
 
 export interface Playlist {

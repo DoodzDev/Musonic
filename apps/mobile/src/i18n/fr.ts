@@ -79,6 +79,9 @@ export const t = {
       unreachable: "Serveur introuvable — vérifiez l'URL",
       notSubsonic: "Aucun serveur Subsonic à cette adresse — vérifiez l'URL",
       generic: 'Connexion impossible',
+      revoked: 'Cet appareil a été déconnecté de votre compte. Reconnectez-vous.',
+      suspended: "Votre compte a été suspendu. Demandez à l'administrateur du serveur.",
+      credentials: 'Votre mot de passe a changé ? Reconnectez-vous avec le nouveau.',
     },
     httpWarning: 'HTTP au lieu de HTTPS — vos identifiants peuvent transiter en clair.',
   },
@@ -97,7 +100,7 @@ export const t = {
     logout: 'Se déconnecter',
     logoutTitle: 'Se déconnecter',
     logoutMessage: (name: string, url: string) =>
-      `Voulez-vous vous déconnecter de :\n\n${name}\n${url}`,
+      `Voulez-vous vous déconnecter de :\n\n${name}\n${url}\n\nVous devrez saisir à nouveau votre mot de passe.`,
     logoutConfirm: 'Déconnecter',
     cancelButton: 'Annuler',
     goOffline: 'Passer hors ligne',

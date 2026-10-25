@@ -1,11 +1,11 @@
 /**
  * @file musonicApi.ts
  * @description Musonic Server's native API (`/v1`), for what Subsonic cannot do (importing
- *   playlists…). Only when the server is a Musonic Server (`/v1/info`). The session is
- *   opened with the Subsonic token the web client already keeps (never the password) and
- *   kept for the tab.
+ *   playlists…). Only when the server is a Musonic Server (`/v1/info`). The device key
+ *   of the session is used directly (ADR-021); an older session holding only the Subsonic
+ *   token opens a native session with it (never the password), kept for the tab.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -97,8 +97,8 @@ export async function v1<T>(session: SubsonicSession, path: string, options: { m
       throw new ApiError(0, 'no answer');
     }
   };
-  let res = await send(savedToken(session) ?? (await signIn(session)));
-  if (res.status === 401) res = await send(await signIn(session));
+  let res = await send(session.apiKey ?? savedToken(session) ?? (await signIn(session)));
+  if (res.status === 401 && !session.apiKey) res = await send(await signIn(session));
   const data = (await res.json().catch(() => ({}))) as { error?: string };
   if (!res.ok) throw new ApiError(res.status, data.error ?? `error ${res.status}`);
   return data as T;

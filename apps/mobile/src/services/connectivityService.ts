@@ -3,12 +3,14 @@
  * @description Background polling service that pings the active Subsonic server
  *   every 15 s and updates networkStore.isOffline. Used by ConnectivityMonitor
  *   and the Home screen auto-recovery logic. `checkNow` runs a check at once
- *   (the playback engine calls it on a stream network error).
+ *   (the playback engine calls it on a stream network error). A server that
+ *   answers but refuses the account sends it back to sign in (ADR-021)
+ *   instead of switching to offline mode.
  * @author DoodzProg
- * @version 1.4.0
+ * @version 1.5.0
  * @license CC-BY-NC-4.0
  */
-import {getActiveServer, pingServer} from '../api/client';
+import {getActiveServer, pingServer, PingError, reportAuthProblem} from '../api/client';
 import {useNetworkStore} from '../store/networkStore';
 import {useDownloadStore} from '../store/downloadStore';
 import {syncPlaylistCovers} from './offlinePlaylistCovers';
@@ -70,6 +72,15 @@ async function tick(): Promise<boolean> {
     schedule(INTERVAL_NORMAL_MS);
     return true;
   } catch (e) {
+    // The server answered and refused the account (key revoked, suspended, password changed):
+    // not a network problem, so not offline mode — the setup screen says why.
+    if (e instanceof PingError && e.status === undefined && (e.kind === 'auth' || e.kind === 'revoked' || e.kind === 'suspended')) {
+      consecutiveFailures = 0;
+      useNetworkStore.getState().setServerReachable(true);
+      reportAuthProblem(e.kind === 'auth' ? 'credentials' : e.kind);
+      schedule(INTERVAL_DEGRADED_MS);
+      return false;
+    }
     consecutiveFailures++;
     lastPingOk = false;
     // No URL in the log: it carries the account credentials.

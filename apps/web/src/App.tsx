@@ -1,16 +1,17 @@
 /**
  * @file App.tsx
  * @description Web client shell: login gate, routes, sidebar, right panel (queue or lyrics),
- *   player bar, full-screen player and floating mini player.
+ *   player bar, full-screen player and floating mini player. Logging out revokes the
+ *   device key; an account the server refuses goes back to the login form, which says why.
  * @author DoodzProg
- * @version 0.5.0
+ * @version 0.6.0
  * @license CC-BY-NC-4.0
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Navigate, Route, Routes } from 'react-router';
-import { MemoryCache, SubsonicClient, type SubsonicSession } from '@musonic/core';
+import { MemoryCache, revokeDeviceKey, SubsonicClient, type AuthProblemReason, type SubsonicSession } from '@musonic/core';
 import { FullPlayer } from './components/FullPlayer.tsx';
 import { LoginScreen } from './components/LoginScreen.tsx';
 import { MiniPlayer } from './components/MiniPlayer.tsx';
@@ -26,7 +27,7 @@ import { AppContext, type AppContextValue } from './context/AppContext.tsx';
 import { usePanelWidth } from './hooks/usePanelWidth.ts';
 import { useScrollMemory } from './hooks/useScrollMemory.ts';
 import { tr } from './i18n/index.ts';
-import { clearSession, loadSession, saveSession, transportSession } from './lib/session.ts';
+import { clearSession, loadSession, saveSession, transportBaseUrl, transportSession } from './lib/session.ts';
 import { AlbumPage } from './pages/AlbumPage.tsx';
 import { ArtistPage } from './pages/ArtistPage.tsx';
 import { BrowsePage } from './pages/BrowsePage.tsx';
@@ -100,14 +101,23 @@ function Shell() {
 
 export default function App() {
   const [session, setSession] = useState<SubsonicSession | null>(loadSession);
+  // Why the last account was refused, for the login form.
+  const [refused, setRefused] = useState<{ reason: AuthProblemReason; username: string } | null>(null);
 
   const app = useMemo<AppContextValue | null>(() => {
     if (!session) return null;
     return {
       session,
-      client: new SubsonicClient(transportSession(session)),
+      client: new SubsonicClient(transportSession(session), undefined, {
+        onAuthProblem: (reason) => {
+          clearSession();
+          setRefused({ reason, username: session.username });
+          setSession(null);
+        },
+      }),
       cache: new MemoryCache(),
       logout: () => {
+        void revokeDeviceKey(session, { transportUrl: transportBaseUrl(session.baseUrl) });
         clearSession();
         setSession(null);
       },
@@ -123,8 +133,10 @@ export default function App() {
   if (!app) {
     return (
       <LoginScreen
+        refused={refused}
         onLogin={(next, remember) => {
           saveSession(next, remember);
+          setRefused(null);
           setSession(next);
         }}
       />

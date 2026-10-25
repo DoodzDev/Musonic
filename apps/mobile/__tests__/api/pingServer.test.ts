@@ -1,9 +1,10 @@
 /**
  * @file pingServer.test.ts
  * @description The server check of the setup screen says why it failed:
- *   wrong credentials, HTTP error, timeout, unreachable, not a Subsonic server.
+ *   wrong credentials, revoked key, suspended account, HTTP error, timeout,
+ *   unreachable, not a Subsonic server; and it tells a Musonic Server apart.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 jest.mock('../../src/store/storage', () => ({storage: {getString: () => undefined, set: () => {}, delete: () => {}}, mmkvStorage: {getItem: () => null, setItem: () => {}, removeItem: () => {}}}));
@@ -37,7 +38,19 @@ async function failure(): Promise<PingError> {
 describe('pingServer', () => {
   it('succeeds on an ok Subsonic answer', async () => {
     answer(200, {'subsonic-response': {status: 'ok'}});
-    await expect(pingServer(server)).resolves.toBeUndefined();
+    await expect(pingServer(server)).resolves.toEqual({musonic: false});
+  });
+  it('tells a Musonic Server apart', async () => {
+    answer(200, {'subsonic-response': {status: 'ok', type: 'musonic'}});
+    await expect(pingServer(server)).resolves.toEqual({musonic: true});
+  });
+  it('reports a revoked key and a suspended account', async () => {
+    answer(200, {'subsonic-response': {status: 'failed', error: {code: 44, message: 'Invalid API key'}}});
+    expect((await failure()).kind).toBe('revoked');
+    answer(200, {'subsonic-response': {status: 'failed', error: {code: 50, message: "This account is suspended: ask the server's administrator"}}});
+    expect((await failure()).kind).toBe('suspended');
+    answer(200, {'subsonic-response': {status: 'failed', error: {code: 50, message: 'Not allowed'}}});
+    expect((await failure()).kind).toBe('server');
   });
   it('reports wrong credentials (Subsonic error 40 or HTTP 401)', async () => {
     answer(200, {'subsonic-response': {status: 'failed', error: {code: 40, message: 'Wrong username or password'}}});

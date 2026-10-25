@@ -3,11 +3,11 @@
  * @description Migrations of the persisted settings shape. Kept apart from
  *   settingsStore.ts so they can be unit-tested without native storage.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 
-export const SETTINGS_VERSION = 3;
+export const SETTINGS_VERSION = 4;
 
 /**
  * Brings settings saved by an older version up to `SETTINGS_VERSION`.
@@ -15,6 +15,9 @@ export const SETTINGS_VERSION = 3;
  * - v1 -> v2: drops the never-used `colorScheme` and `accentColor` fields.
  * - v2 -> v3: adds `musonicApiUrl` / `musonicApiKey`; their defaults (empty)
  *   come from the store, nothing to change in the saved data.
+ * - v3 -> v4: accounts may hold `apiKey` / `apiKeyId` or `token` / `salt`
+ *   instead of the password, plus `authProblem`; all optional, nothing to
+ *   change (passwords are traded at launch by `upgradeSavedAccounts`).
  */
 export function migrateSettings(
   persistedState: unknown,

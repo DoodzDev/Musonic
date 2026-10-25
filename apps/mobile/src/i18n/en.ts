@@ -76,6 +76,9 @@ export const en = {
       unreachable: 'Server not found — check the URL',
       notSubsonic: 'No Subsonic server at this address — check the URL',
       generic: 'Unable to connect',
+      revoked: 'This device was signed out of your account. Please sign in again.',
+      suspended: "Your account has been suspended. Ask the server's administrator.",
+      credentials: 'Did your password change? Please sign in with the new one.',
     },
     httpWarning: 'Using HTTP instead of HTTPS. Your credentials may be sent in plaintext.',
   },
@@ -94,7 +97,7 @@ export const en = {
     logout: 'Log out',
     logoutTitle: 'Log out',
     logoutMessage: (name: string, url: string) =>
-      `Log out of:\n\n${name}\n${url}`,
+      `Log out of:\n\n${name}\n${url}\n\nYou will need to enter your password again.`,
     logoutConfirm: 'Log out',
     cancelButton: 'Cancel',
     goOffline: 'Go offline',

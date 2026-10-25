@@ -1,9 +1,10 @@
 /**
  * @file session.ts
  * @description Keeps the Subsonic session for the lifetime of the browser tab,
- *   or on this browser when the user ticked "Remember me".
+ *   or on this browser when the user ticked "Remember me". On Musonic Server the
+ *   session holds a device key, elsewhere the Subsonic token (ADR-021).
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
@@ -12,7 +13,7 @@ import type { SubsonicSession } from '@musonic/core';
 const SESSION_KEY = 'musonic.session';
 const LAST_SERVER_KEY = 'musonic.lastServer';
 
-// sessionStorage by default: the token is a reusable credential, so it is
+// sessionStorage by default: the token or key is a reusable credential, so it is
 // dropped when the tab closes. localStorage only when the user asked to be
 // remembered (and was warned). The clear password is never stored.
 export function loadSession(): SubsonicSession | null {
@@ -23,7 +24,12 @@ export function loadSession(): SubsonicSession | null {
     if (typeof s.baseUrl !== 'string' || typeof s.username !== 'string' || typeof s.token !== 'string' || typeof s.salt !== 'string') {
       return null;
     }
-    return { baseUrl: s.baseUrl, username: s.username, token: s.token, salt: s.salt };
+    const session: SubsonicSession = { baseUrl: s.baseUrl, username: s.username, token: s.token, salt: s.salt };
+    if (typeof s.apiKey === 'string' && typeof s.apiKeyId === 'string') {
+      session.apiKey = s.apiKey;
+      session.apiKeyId = s.apiKeyId;
+    }
+    return session.apiKey || session.token ? session : null;
   } catch {
     return null;
   }

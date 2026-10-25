@@ -2,12 +2,13 @@
  * @file ProfileSheet.tsx
  * @description Design v2 Profile sheet, replacing the side drawer (ADR-010
  *   B2-B3): active account, offline mode, storage used, Settings, the Design
- *   screen (debug builds only), about links and log out. Accounts (switching,
+ *   screen (debug builds only), about links and log out (revokes the device
+ *   key and forgets the account, ADR-021). Accounts (switching,
  *   adding) live on a second page of the same sheet, kept as tall as the main
  *   page. The identity block is the sheet's fixed header, so swiping down on
  *   it closes the sheet; in landscape it moves to a column on the left.
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.4.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useState} from 'react';
@@ -26,6 +27,7 @@ import {useSettingsStore} from '../../store/settingsStore';
 import {useIsLandscape} from '../../hooks/useIsLandscape';
 import {useDownloadStore} from '../../store/downloadStore';
 import {pingServer} from '../../api/client';
+import {revokeDeviceKey} from '../../api/accountAuth';
 import {withTimeout} from '../../services/connectivityService';
 import {colors, spacing} from '../../theme';
 import {useT} from '../../i18n';
@@ -45,6 +47,7 @@ export default function ProfileSheet({visible, onClose}: Props) {
   const activeId = useSettingsStore(s => s.activeServerId);
   const setActiveServer = useSettingsStore(s => s.setActiveServer);
   const disconnectServer = useSettingsStore(s => s.disconnectServer);
+  const removeServer = useSettingsStore(s => s.removeServer);
   const isOffline = useSettingsStore(s => s.isOfflineMode);
   const setOfflineMode = useSettingsStore(s => s.setOfflineMode);
   const storageBytes = useDownloadStore(s => s.getTotalSizeBytes());
@@ -105,6 +108,11 @@ export default function ProfileSheet({visible, onClose}: Props) {
         style: 'destructive',
         onPress: () => {
           onClose();
+          // A real logout: the device key is revoked and the account forgotten (ADR-021).
+          if (active) {
+            revokeDeviceKey(active);
+            removeServer(active.id);
+          }
           disconnectServer();
         },
       },

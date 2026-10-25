@@ -1,8 +1,10 @@
 /**
  * @file client.ts
- * @description Minimal Subsonic API client (JSON format, token authentication).
+ * @description Minimal Subsonic API client (JSON format, device key or token
+ *   authentication). An account the server refuses (key revoked, suspended,
+ *   password changed) is reported through `onAuthProblem`.
  * @author DoodzProg
- * @version 0.6.0
+ * @version 0.7.0
  * @license CC-BY-NC-4.0
  */
 
@@ -54,6 +56,23 @@ export class SubsonicError extends Error {
   get isAuthError(): boolean {
     return this.code === 40 || this.code === 41 || this.status === 401;
   }
+
+  /** Why the server refused the account itself, or `null` when the error is about something else. */
+  get authProblem(): AuthProblemReason | null {
+    if (this.code === 44) return 'revoked';
+    if (this.code === 40) return 'credentials';
+    // 50 is also "not allowed" for one action (someone else's playlist): only the suspension counts.
+    if (this.code === 50 && /suspended/i.test(this.message)) return 'suspended';
+    return null;
+  }
+}
+
+/** Why an account has to sign in again: device key revoked, account suspended, password changed. */
+export type AuthProblemReason = 'revoked' | 'suspended' | 'credentials';
+
+export interface SubsonicClientOptions {
+  /** Called when the server refuses the account (the request still fails). */
+  onAuthProblem?: (reason: AuthProblemReason) => void;
 }
 
 /** A list value is sent as a repeated parameter (`songIdToAdd=1&songIdToAdd=2`). */
@@ -63,18 +82,26 @@ type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 export class SubsonicClient {
   private readonly session: SubsonicSession;
   private readonly fetchImpl: FetchLike;
+  private readonly options: SubsonicClientOptions;
 
-  constructor(session: SubsonicSession, fetchImpl: FetchLike = (input, init) => fetch(input, init)) {
+  constructor(
+    session: SubsonicSession,
+    fetchImpl: FetchLike = (input, init) => fetch(input, init),
+    options: SubsonicClientOptions = {},
+  ) {
     this.session = session;
     this.fetchImpl = fetchImpl;
+    this.options = options;
   }
 
   /** Full endpoint URL with authentication parameters. Treat it as a secret: never log or persist it. */
   buildUrl(endpoint: string, params: Params = {}): string {
+    // OpenSubsonic: the key is sent alone (`u` beside it is refused).
+    const auth: Record<string, string> = this.session.apiKey
+      ? { apiKey: this.session.apiKey }
+      : { u: this.session.username, t: this.session.token, s: this.session.salt };
     const query = new URLSearchParams({
-      u: this.session.username,
-      t: this.session.token,
-      s: this.session.salt,
+      ...auth,
       v: API_VERSION,
       c: CLIENT_NAME,
       f: 'json',
@@ -102,13 +129,18 @@ export class SubsonicClient {
     if (!payload) throw new SubsonicError('Not a Subsonic response');
     if (payload.status !== 'ok') {
       const error = payload.error as SubsonicErrorPayload | undefined;
-      throw new SubsonicError(error?.message ?? 'Request failed', { code: error?.code });
+      const failure = new SubsonicError(error?.message ?? 'Request failed', { code: error?.code });
+      const problem = failure.authProblem;
+      if (problem) this.options.onAuthProblem?.(problem);
+      throw failure;
     }
     return payload as T;
   }
 
-  async ping(signal?: AbortSignal): Promise<void> {
-    await this.request('ping', {}, signal);
+  /** Checks the credentials; `musonic` tells a Musonic Server apart (it marks every answer). */
+  async ping(signal?: AbortSignal): Promise<{ musonic: boolean }> {
+    const res = await this.request<{ type?: string }>('ping', {}, signal);
+    return { musonic: res.type === 'musonic' };
   }
 
   async getPlaylists(signal?: AbortSignal): Promise<Playlist[]> {

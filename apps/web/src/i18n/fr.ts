@@ -3,7 +3,7 @@
  * @description French strings of the web client (source of truth: en.ts
  *   must have the same shape). Pick the active language through i18n/index.ts.
  * @author DoodzProg
- * @version 0.5.0
+ * @version 0.6.0
  * @license CC-BY-NC-4.0
  */
 
@@ -26,17 +26,20 @@ export const fr = {
     rememberWarning: {
       title: 'Rester connecté sur ce navigateur ?',
       body: 'Un jeton de connexion sera enregistré dans ce navigateur. Toute personne ou extension qui y a accès pourrait le voler et l’utiliser pour se connecter à votre serveur.',
-      advice: 'N’activez cette option que sur un ordinateur qui vous appartient, jamais sur un poste partagé ou public. « Se déconnecter » efface le jeton.',
+      advice: 'N’activez cette option que sur un ordinateur qui vous appartient, jamais sur un poste partagé ou public. « Se déconnecter » efface le jeton (et le révoque sur un Musonic Server).',
       confirm: 'Activer',
     },
     submit: 'Se connecter',
     submitting: 'Connexion…',
-    footnote: 'Fonctionne avec Navidrome et les serveurs compatibles Subsonic. Votre mot de passe n’est jamais envoyé en clair.',
+    footnote: 'Fonctionne avec Musonic Server, Navidrome et les serveurs compatibles Subsonic. Votre mot de passe n’est jamais enregistré.',
     errors: {
       auth: 'Identifiant ou mot de passe incorrect.',
       unreachable: 'Serveur injoignable. Vérifiez l’adresse et votre connexion.',
       invalidUrl: 'Adresse invalide. Exemple : https://music.exemple.com',
       generic: 'La connexion a échoué.',
+      revoked: 'Ce navigateur a été déconnecté de votre compte. Reconnectez-vous.',
+      suspended: 'Votre compte a été suspendu. Demandez à l’administrateur du serveur.',
+      credentials: 'Votre mot de passe a changé ? Reconnectez-vous avec le nouveau.',
     },
   },
   layout: {

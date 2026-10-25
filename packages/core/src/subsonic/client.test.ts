@@ -1,14 +1,16 @@
 /**
  * @file client.test.ts
- * @description Tests for Subsonic token authentication and the API client.
+ * @description Tests for Subsonic token authentication, Musonic Server device
+ *   keys (ADR-021) and the API client.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
 import { describe, expect, it } from 'vitest';
 import { createSalt, createSession, createToken, normalizeBaseUrl } from './auth.ts';
-import { SubsonicClient, SubsonicError } from './client.ts';
+import { SubsonicClient, SubsonicError, type AuthProblemReason } from './client.ts';
+import { createDeviceKeySession, revokeDeviceKey } from './deviceKey.ts';
 
 const session = { baseUrl: 'https://music.example.com', username: 'doodz', token: 'abc', salt: 'def' };
 
@@ -98,5 +100,76 @@ describe('SubsonicClient', () => {
     const error = (await client.ping().catch((e: unknown) => e)) as SubsonicError;
     expect(error.isUnreachable).toBe(true);
     expect(error.isAuthError).toBe(false);
+  });
+
+  it('sends a device key alone', () => {
+    const url = new URL(new SubsonicClient({ ...session, token: '', salt: '', apiKey: 'msk_x' }).buildUrl('ping'));
+    expect(url.searchParams.get('apiKey')).toBe('msk_x');
+    expect(['u', 't', 's', 'p'].some((k) => url.searchParams.has(k))).toBe(false);
+  });
+
+  it('tells a Musonic Server apart', async () => {
+    const answer = (extra: object) => new SubsonicClient(session, async () => jsonResponse({ 'subsonic-response': { status: 'ok', ...extra } }));
+    expect(await answer({ type: 'musonic' }).ping()).toEqual({ musonic: true });
+    expect(await answer({ type: 'navidrome' }).ping()).toEqual({ musonic: false });
+  });
+
+  it('reports a refused account, not a refused action', async () => {
+    const seen: AuthProblemReason[] = [];
+    const failing = (code: number, message: string) =>
+      new SubsonicClient(session, async () => jsonResponse({ 'subsonic-response': { status: 'failed', error: { code, message } } }), {
+        onAuthProblem: (r) => seen.push(r),
+      });
+    await failing(44, 'Invalid API key').ping().catch(() => {});
+    await failing(50, "This account is suspended: ask the server's administrator").ping().catch(() => {});
+    await failing(40, 'Wrong username or password').ping().catch(() => {});
+    await failing(50, 'Only the owner can change this playlist').ping().catch(() => {});
+    await failing(70, 'Not found').ping().catch(() => {});
+    expect(seen).toEqual(['revoked', 'suspended', 'credentials']);
+  });
+});
+
+describe('device keys', () => {
+  type Call = { url: string; method?: string; auth?: string; body?: string };
+
+  function server(loginStatus = 200) {
+    const calls: Call[] = [];
+    const fetchImpl = async (url: string, init?: RequestInit) => {
+      const headers = (init?.headers ?? {}) as Record<string, string>;
+      calls.push({ url, method: init?.method, auth: headers.Authorization, body: init?.body as string | undefined });
+      if (url.endsWith('/v1/auth/login')) return jsonResponse(loginStatus === 200 ? { token: 'session-1' } : { error: 'no' }, loginStatus);
+      if (url.endsWith('/v1/me/api-keys')) return jsonResponse({ key: 'msk_device', info: { id: 'k1' } });
+      return jsonResponse({});
+    };
+    return { calls, fetchImpl };
+  }
+
+  it('trades the password for a key and closes the short session', async () => {
+    const { calls, fetchImpl } = server();
+    const s = await createDeviceKeySession('https://music.example.com/', ' doodz ', 'sesame', 'Musonic Web · Firefox', { fetchImpl });
+    expect(s).toEqual({ baseUrl: 'https://music.example.com', username: 'doodz', token: '', salt: '', apiKey: 'msk_device', apiKeyId: 'k1' });
+    expect(JSON.stringify(s)).not.toContain('sesame');
+    expect(calls[1]).toMatchObject({ url: 'https://music.example.com/v1/me/api-keys', auth: 'Bearer session-1' });
+    await Promise.resolve();
+    expect(calls.some((c) => c.url.endsWith('/v1/auth/logout'))).toBe(true);
+  });
+
+  it('calls the transport address and fails on a wrong password', async () => {
+    const { calls, fetchImpl } = server(401);
+    const error = (await createDeviceKeySession('https://music.example.com', 'doodz', 'bad', 'x', {
+      fetchImpl,
+      transportUrl: '/__relay/https/music.example.com',
+    }).catch((e: unknown) => e)) as SubsonicError;
+    expect(error.status).toBe(401);
+    expect(error.isAuthError).toBe(true);
+    expect(calls[0].url).toBe('/__relay/https/music.example.com/v1/auth/login');
+  });
+
+  it('revokes the key with itself', async () => {
+    const { calls, fetchImpl } = server();
+    await revokeDeviceKey({ ...session, apiKey: 'msk_x', apiKeyId: 'k9' }, { fetchImpl });
+    expect(calls[0]).toMatchObject({ method: 'DELETE', url: 'https://music.example.com/v1/me/api-keys/k9', auth: 'Bearer msk_x' });
+    await revokeDeviceKey(session, { fetchImpl });
+    expect(calls).toHaveLength(1);
   });
 });
