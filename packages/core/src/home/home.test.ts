@@ -9,7 +9,18 @@
 import { describe, expect, it } from 'vitest';
 import { MemoryCache } from '../cache.ts';
 import type { Album, Song } from '../subsonic/types.ts';
-import { buildHome, favoriteArtists, mixCovers, planSeeds, topGenres, type HomeBase, type HomeExtra, type HomeSeeds } from './home.ts';
+import {
+  buildHome,
+  favoriteArtists,
+  loadHome,
+  mixCovers,
+  planSeeds,
+  topGenres,
+  type HomeBase,
+  type HomeExtra,
+  type HomeSeeds,
+  type HomeSource,
+} from './home.ts';
 import { dailySeed, seededRng, shuffled } from './random.ts';
 
 const NOW = new Date('2026-10-12T20:00:00');
@@ -182,5 +193,58 @@ describe('MemoryCache', () => {
     expect(await cache.get('a', 100, async () => 'ok')).toBe('ok');
     cache.invalidate('a');
     expect(await cache.get('a', 100, async () => 'fresh')).toBe('fresh');
+  });
+});
+
+describe('loadHome', () => {
+  /** A source that counts its calls; `musonic` adds the one-request routes (or makes them fail). */
+  function source(musonic: 'yes' | 'fails' | 'no') {
+    const calls: string[] = [];
+    const call = <T>(name: string, value: T) => {
+      calls.push(name);
+      return Promise.resolve(value);
+    };
+    const b = base();
+    const src: HomeSource = {
+      getAlbumList: (type) => call(`list:${type}`, b[type as 'recent'] ?? []),
+      getStarred: () => call('starred', b.starred),
+      getPlaylists: () => call('playlists', b.playlists),
+      getArtistInfo: () => call('artistInfo', { similarArtist: [] }),
+      getArtist: (id) => call('artist', { id, name: id, album: [] }),
+      getSimilarSongs: () => call('similar', [song('sim')]),
+      getRandomSongs: () => call('random', []),
+    };
+    if (musonic !== 'no') {
+      src.getMusonicHome = () => {
+        calls.push('musonicHome');
+        return musonic === 'yes' ? Promise.resolve(b) : Promise.reject(new Error('Unknown endpoint'));
+      };
+      src.getMusonicHomeMore = () => call('musonicHomeMore', { ...noExtra, similarSongs: [song('sim')] });
+    }
+    return { src, calls };
+  }
+
+  it('asks a Musonic Server two requests, one per wave', async () => {
+    const { src, calls } = source('yes');
+    const feed = await loadHome(src, { username: 'doodz', now: NOW });
+    expect(calls).toEqual(['musonicHome', 'musonicHomeMore']);
+    expect(feed.shelves.length).toBeGreaterThan(0);
+  });
+
+  it('falls back to the separate requests once, then stops trying', async () => {
+    const { src, calls } = source('fails');
+    await loadHome(src, { username: 'doodz', now: NOW });
+    expect(calls[0]).toBe('musonicHome');
+    expect(calls).toContain('list:recent');
+    expect(calls).not.toContain('musonicHomeMore');
+    calls.length = 0;
+    await loadHome(src, { username: 'doodz', now: NOW });
+    expect(calls).not.toContain('musonicHome');
+  });
+
+  it('keeps the separate requests for other servers', async () => {
+    const { src, calls } = source('no');
+    await loadHome(src, { username: 'doodz', now: NOW });
+    expect(calls.filter((c) => c.startsWith('list:'))).toHaveLength(4);
   });
 });

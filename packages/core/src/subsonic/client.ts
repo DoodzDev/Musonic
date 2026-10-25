@@ -2,7 +2,7 @@
  * @file client.ts
  * @description Minimal Subsonic API client (JSON format, token authentication).
  * @author DoodzProg
- * @version 0.5.0
+ * @version 0.6.0
  * @license CC-BY-NC-4.0
  */
 
@@ -23,6 +23,7 @@ import type {
   SubsonicErrorPayload,
   SubsonicSession,
 } from './types.ts';
+import type { HomeBase, HomeExtra, HomeSeeds } from '../home/home.ts';
 
 export const API_VERSION = '1.16.1';
 export const CLIENT_NAME = 'Musonic';
@@ -162,6 +163,38 @@ export class SubsonicClient {
   async getSimilarSongs(id: string, count = 20, signal?: AbortSignal): Promise<Song[]> {
     const res = await this.request<{ similarSongs2?: { song?: Song[] } }>('getSimilarSongs2', { id, count }, signal);
     return res.similarSongs2?.song ?? [];
+  }
+
+  /**
+   * First wave of the home screen in one request (Musonic Server, ADR-021): the four album lists,
+   * likes and playlists. Fails on another server: callers fall back to the separate requests.
+   */
+  async getMusonicHome(signal?: AbortSignal): Promise<HomeBase> {
+    const res = await this.request<{ musonicHome?: Partial<HomeBase> & { starred?: Partial<Starred> } }>('getMusonicHome', {}, signal);
+    const home = res.musonicHome;
+    if (!home) throw new SubsonicError('Not a Musonic Server');
+    return {
+      recent: home.recent ?? [],
+      frequent: home.frequent ?? [],
+      newest: home.newest ?? [],
+      random: home.random ?? [],
+      starred: { song: home.starred?.song ?? [], album: home.starred?.album ?? [], artist: home.starred?.artist ?? [] },
+      playlists: home.playlists ?? [],
+    };
+  }
+
+  /** Second wave of the home screen in one request, chained by the server (Musonic Server, ADR-021). */
+  async getMusonicHomeMore(seeds: HomeSeeds, signal?: AbortSignal): Promise<HomeExtra> {
+    const res = await this.request<{
+      musonicHomeMore?: { similarArtistAlbums?: Album[]; similarSongs?: Song[]; genreMixes?: { genre: string; song?: Song[] }[] };
+    }>('getMusonicHomeMore', { artist: seeds.styleArtist?.id, song: seeds.likedSong?.id, genre: seeds.genres }, signal);
+    const more = res.musonicHomeMore;
+    if (!more) throw new SubsonicError('Not a Musonic Server');
+    return {
+      similarArtistAlbums: more.similarArtistAlbums ?? [],
+      similarSongs: more.similarSongs ?? [],
+      genreMixes: (more.genreMixes ?? []).map((m) => ({ genre: m.genre, songs: m.song ?? [] })),
+    };
   }
 
   async getRandomSongs(options: { size?: number; genre?: string } = {}, signal?: AbortSignal): Promise<Song[]> {

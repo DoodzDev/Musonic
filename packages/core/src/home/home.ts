@@ -89,7 +89,14 @@ export interface HomeSource {
   getArtist(id: string, signal?: AbortSignal): Promise<ArtistWithAlbums>;
   getSimilarSongs(id: string, count?: number, signal?: AbortSignal): Promise<Song[]>;
   getRandomSongs(options?: { size?: number; genre?: string }, signal?: AbortSignal): Promise<Song[]>;
+  /** Musonic Server: the first wave in one request (ADR-021). */
+  getMusonicHome?(signal?: AbortSignal): Promise<HomeBase>;
+  /** Musonic Server: the second wave in one request (ADR-021). */
+  getMusonicHomeMore?(seeds: HomeSeeds, signal?: AbortSignal): Promise<HomeExtra>;
 }
+
+/** Sources whose server turned out not to have the one-request routes: not asked again. */
+const withoutMusonicHome = new WeakSet<HomeSource>();
 
 const SHELF_SIZE = 12;
 const QUICK_ACCESS_SIZE = 8;
@@ -299,7 +306,10 @@ const settled = async <T>(promise: Promise<T>, fallback: T): Promise<T> => {
   }
 };
 
-/** Fetches everything in two parallel waves and builds the feed. A failing source only hides its shelf. */
+/**
+ * Fetches everything in two parallel waves and builds the feed. A failing source only hides its shelf.
+ * On a Musonic Server each wave is one request (`getMusonicHome`, `getMusonicHomeMore`).
+ */
 export async function loadHome(
   client: HomeSource,
   options: { username: string; now?: Date; signal?: AbortSignal; mixCount?: number },
@@ -308,15 +318,28 @@ export async function loadHome(
   const signal = options.signal;
   const rng = seededRng(dailySeed(options.username, now));
 
-  const [recent, frequent, newest, random, starred, playlists] = await Promise.all([
-    settled(client.getAlbumList('recent', { size: 24 }, signal), []),
-    settled(client.getAlbumList('frequent', { size: 40 }, signal), []),
-    settled(client.getAlbumList('newest', { size: 16 }, signal), []),
-    settled(client.getAlbumList('random', { size: 16 }, signal), []),
-    settled(client.getStarred(signal), { song: [], album: [], artist: [] }),
-    settled(client.getPlaylists(signal), []),
-  ]);
-  const base: HomeBase = { recent, frequent, newest, random, starred, playlists };
+  // Musonic Server: each wave in one request; another server (or an older one): the separate requests.
+  const fast = client.getMusonicHome && !withoutMusonicHome.has(client);
+  let base: HomeBase | null = null;
+  if (fast) {
+    try {
+      base = await client.getMusonicHome!(signal);
+    } catch (e) {
+      if ((e as { name?: string } | null)?.name === 'AbortError') throw e;
+      withoutMusonicHome.add(client);
+    }
+  }
+  if (!base) {
+    const [recent, frequent, newest, random, starred, playlists] = await Promise.all([
+      settled(client.getAlbumList('recent', { size: 24 }, signal), []),
+      settled(client.getAlbumList('frequent', { size: 40 }, signal), []),
+      settled(client.getAlbumList('newest', { size: 16 }, signal), []),
+      settled(client.getAlbumList('random', { size: 16 }, signal), []),
+      settled(client.getStarred(signal), { song: [], album: [], artist: [] }),
+      settled(client.getPlaylists(signal), []),
+    ]);
+    base = { recent, frequent, newest, random, starred, playlists };
+  }
   const seeds = planSeeds(base, rng, options.mixCount);
 
   const similarArtistAlbums = async (): Promise<Album[]> => {
@@ -329,6 +352,14 @@ export async function loadHome(
       .map((a) => a?.album.slice().sort((x, y) => (y.year ?? 0) - (x.year ?? 0))[0])
       .filter((a): a is Album => !!a);
   };
+
+  if (base && client.getMusonicHomeMore && !withoutMusonicHome.has(client)) {
+    const hasSeeds = seeds.styleArtist || seeds.likedSong || seeds.genres.length;
+    const extra = hasSeeds
+      ? await settled(client.getMusonicHomeMore(seeds, signal), null)
+      : { similarArtistAlbums: [], similarSongs: [], genreMixes: [] };
+    if (extra) return buildHome(base, seeds, extra, rng, now);
+  }
 
   const [moreLike, similarSongs, genreMixes] = await Promise.all([
     settled(similarArtistAlbums(), []),
