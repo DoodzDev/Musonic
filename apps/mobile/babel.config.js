@@ -19,6 +19,7 @@ module.exports = {
           '@musonic/core/releases': '../../packages/core/src/releases/releases.ts',
           '@musonic/core/home': '../../packages/core/src/home/home.ts',
           '@musonic/core/playback': '../../packages/core/src/playback/buildQueue.ts',
+          '@musonic/core/listen': '../../packages/core/src/playback/listenTracker.ts',
         },
       },
     ],

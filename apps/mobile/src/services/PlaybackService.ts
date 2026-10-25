@@ -20,6 +20,8 @@ import {useDownloadStore} from '../store/downloadStore';
 import {subsonicGet} from '../api/client';
 import {skipNext, skipPrev} from './playerActions';
 import {playbackEngine} from './playback/engine';
+import {ListenTracker} from '@musonic/core/listen';
+import {onSleepTimerTrackChanged} from './sleepTimer';
 import {playAutoMediaId, startAndroidAuto} from './auto/androidAuto';
 
 let wasPlayingBeforeDuck = false;
@@ -29,13 +31,12 @@ let progressPoller: ReturnType<typeof setInterval> | null = null;
 let fadeOutStarted = false;
 
 // Subsonic scrobble: "now playing" is sent immediately on track start; the
-// "submission" scrobble (counts as a real play server-side / forwarded to
-// Last.fm by Navidrome) requires the Last.fm convention — played past the
-// lesser of 50% of duration or 4 minutes, tracks under 30s never qualify.
-const SCROBBLE_MIN_DURATION = 30;
-const SCROBBLE_MAX_THRESHOLD = 240;
+// "submission" (a real play server-side, forwarded to Last.fm by some servers)
+// once the time really listened reaches the Last.fm rule — half the track or
+// 4 minutes, never under 30 s — as on the web (`ListenTracker`): skipping to
+// the end or seeking forward is not a play.
 let scrobbleTrack: {id: string; duration: number} | null = null;
-let scrobblePosition = 0;
+let listen: ListenTracker | null = null;
 let scrobblePoller: ReturnType<typeof setInterval> | null = null;
 
 /** Position save interval while playing, in scrobble poller ticks (1 s). */
@@ -61,12 +62,21 @@ function stopScrobblePoller() {
   if (scrobblePoller) { clearInterval(scrobblePoller); scrobblePoller = null; }
 }
 
+/** Sends the play of the current track once it counts (at most once per track). */
+function submitIfListened() {
+  const track = scrobbleTrack;
+  if (!track || !listen?.takeScrobble()) return;
+  const scrobbleId = resolveScrobbleId(track.id);
+  if (scrobbleId) subsonicGet('scrobble.view', {id: scrobbleId, submission: true}).catch(() => {});
+}
+
 function startScrobblePoller() {
   stopScrobblePoller();
   scrobblePoller = setInterval(async () => {
     try {
       const {position} = await TrackPlayer.getProgress();
-      scrobblePosition = position;
+      listen?.progress(position);
+      submitIfListened();
       if (++positionTicks >= POSITION_SAVE_TICKS && scrobbleTrack) {
         positionTicks = 0;
         playbackEngine.savePosition(scrobbleTrack.id, position);
@@ -75,16 +85,12 @@ function startScrobblePoller() {
   }, 1000);
 }
 
+/** Track ends or changes: the last stretch may make the play count. */
 async function submitScrobbleIfEligible() {
   stopScrobblePoller();
-  const track = scrobbleTrack;
+  submitIfListened();
   scrobbleTrack = null;
-  if (!track || track.duration < SCROBBLE_MIN_DURATION) return;
-  const threshold = Math.min(track.duration * 0.5, SCROBBLE_MAX_THRESHOLD);
-  if (scrobblePosition < threshold) return;
-  const scrobbleId = resolveScrobbleId(track.id);
-  if (!scrobbleId) return;
-  subsonicGet('scrobble.view', {id: scrobbleId, submission: true}).catch(() => {});
+  listen = null;
 }
 
 function clearAll() {
@@ -189,9 +195,11 @@ export async function PlaybackService() {
   TrackPlayer.addEventListener(Event.RemotePrevious, () => {
     skipPrev();
   });
-  TrackPlayer.addEventListener(Event.RemoteSeek, ({position}) =>
-    TrackPlayer.seekTo(position),
-  );
+  TrackPlayer.addEventListener(Event.RemoteSeek, ({position}) => {
+    // A jump is not listening: the next position starts a new stretch.
+    listen?.interrupt();
+    TrackPlayer.seekTo(position);
+  });
   // Android Auto: a track tapped in the car plays its whole list (ADR-015).
   TrackPlayer.addEventListener(Event.RemotePlayId, ({id}) => {
     playAutoMediaId(id).catch(() => console.warn('[auto] play failed'));
@@ -216,6 +224,8 @@ export async function PlaybackService() {
   });
   TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, async event => {
     playbackEngine.onActiveTrackChanged(event.track?.id != null ? String(event.track.id) : undefined);
+    // Sleep timer set to "end of track": a track just ended (or was skipped).
+    if (event.lastTrack) onSleepTimerTrackChanged();
     const manualSkip = playbackEngine.consumeManualSkip();
     await submitScrobbleIfEligible();
 
@@ -256,7 +266,7 @@ export async function PlaybackService() {
         const id = String(activeTrack.id);
         const duration = Number(activeTrack.duration ?? 0);
         scrobbleTrack = {id, duration};
-        scrobblePosition = 0;
+        listen = new ListenTracker(duration);
         startScrobblePoller();
         const scrobbleId = resolveScrobbleId(id);
         if (scrobbleId) {
