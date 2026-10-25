@@ -79,3 +79,6 @@ yarn-error.log
 # APK binaries and temp files
 *.apk
 temporaire.txt
+
+# TypeScript incremental build info (generated)
+*.tsbuildinfo
