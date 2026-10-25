@@ -4,18 +4,16 @@
  *   helpers for stream/cover-art URLs. All requests are made against the active
  *   server stored in settingsStore. Streams follow the quality chosen for the
  *   current network (Wi-Fi or mobile data); downloads always get the original.
- *   Deezer tracks are streamed through the Musonic API when it answers (ADR-016).
  *   Requests carry the account's device key on Musonic Server, else its fixed
  *   token (ADR-021); an account the server refuses is sent back to sign in.
  * @author DoodzProg
- * @version 1.5.0
+ * @version 1.6.0
  * @license CC-BY-NC-4.0
  */
 import {useSettingsStore, type AuthProblem, type Server} from '../store/settingsStore';
 import {isOnMobileData} from '../services/network';
 import {useNetworkStore} from '../store/networkStore';
 import {getLocalCoverUri} from '../store/localCovers';
-import {deezerSongId, isMusonicApiActive, musonicStreamUrl} from './musonicApi';
 
 const PERMANENT_ERROR_PATTERNS = [
   'ext-deezer',
@@ -85,9 +83,6 @@ function streamQuality(): number {
 
 /** Stream URL; `original` skips the quality cap (downloads). */
 export function getStreamUrl(songId: string, options?: {original?: boolean}): string {
-  // Deezer tracks go through the Musonic API when it answers (ADR-016, step A).
-  const deezerId = deezerSongId(songId);
-  if (deezerId && isMusonicApiActive()) return musonicStreamUrl(deezerId);
   if (!_server) throw new Error('No server configured');
   const base = _server.url.replace(/\/$/, '');
   const p = new URLSearchParams({id: songId, ...authParams(_server), v: '1.16.1', c: 'Musonic'});

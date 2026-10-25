@@ -2,7 +2,7 @@
  * @file settingsMigrations.test.ts
  * @description Unit tests for the persisted settings migrations.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {migrateSettings} from '../../src/store/settingsMigrations';
@@ -26,6 +26,11 @@ describe('migrateSettings', () => {
 
   it('migrates unversioned (v0) settings the same way', () => {
     expect(migrateSettings(v1, 0)).not.toHaveProperty('accentColor');
+  });
+
+  it('drops the Musonic API settings of v4 and older', () => {
+    const v4 = {servers: [], musonicApiUrl: 'https://api.example.com', musonicApiKey: 'k', locale: 'en'};
+    expect(migrateSettings(v4, 4)).toEqual({servers: [], locale: 'en'});
   });
 
   it('does not mutate the stored object', () => {

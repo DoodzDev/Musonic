@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The mini player is there from the start** — it shows the last track as soon as the app opens; Back closes the queue first.
 - **Black launch screen** instead of a grey flash.
 
+### Removed
+- **The optional “Musonic API” setting** — Musonic Server now does what it did (online tracks start fast on their own); its address and key are cleared from the phone.
+
 ### Fixed
 - **Plays are counted on the time really listened** — half the track (or 4 minutes); skipping to the end no longer counts, the same rule as Musonic Web.
 - **Artist pictures** — artists without a picture of their own now show one of their albums instead of an empty image.

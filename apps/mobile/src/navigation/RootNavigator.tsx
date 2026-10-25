@@ -5,13 +5,12 @@
  *   controls global fullscreen mode (OS status bar visibility), manages the
  *   full-screen player overlay, and clears per-account local caches (playlist
  *   membership, search history) when the active server/account changes, and
- *   checks the optional Musonic API at launch and when its settings change,
- *   and trades the passwords of saved accounts for device keys or tokens at
+ *   trades the passwords of saved accounts for device keys or tokens at
  *   launch (ADR-021).
  *   Debug builds also register the Design v2 reference screen and its
  *   track-list and large-title demos.
  * @author DoodzProg
- * @version 1.7.0
+ * @version 1.8.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useRef} from 'react';
@@ -20,7 +19,6 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import Orientation from 'react-native-orientation-locker';
 import {useSettingsStore} from '../store/settingsStore';
 import {configureClient} from '../api/client';
-import {checkMusonicApi} from '../api/musonicApi';
 import {upgradeSavedAccounts} from '../api/accountAuth';
 import {usePlaylistCacheStore, fetchAndCachePlaylistSongs} from '../store/playlistCacheStore';
 import {useSearchHistoryStore} from '../store/searchHistoryStore';
@@ -48,16 +46,9 @@ export default function RootNavigator() {
   const rotationLocked = useSettingsStore(s => s.rotationLocked);
   const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
 
-  const musonicApiUrl = useSettingsStore(s => s.musonicApiUrl);
-  const musonicApiKey = useSettingsStore(s => s.musonicApiKey);
-
   if (activeServer) {
     configureClient(activeServer);
   }
-
-  useEffect(() => {
-    checkMusonicApi();
-  }, [musonicApiUrl, musonicApiKey]);
 
   useEffect(() => {
     upgradeSavedAccounts();
