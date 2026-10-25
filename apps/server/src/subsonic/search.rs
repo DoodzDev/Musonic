@@ -17,12 +17,17 @@ fn fts_query(q: &str) -> Option<String> {
     (!words.is_empty()).then(|| words.join(" "))
 }
 
-fn number(ctx: &Ctx, name: &str, default: i64) -> i64 {
-    ctx.params
-        .get(name)
+/// Page size asked (`*Count`): 0 to 500.
+fn count(value: Option<&str>, default: i64) -> i64 {
+    value
         .and_then(|v| v.parse().ok())
         .unwrap_or(default)
         .clamp(0, 500)
+}
+
+/// Rows to skip (`*Offset`): not bounded, clients page through the whole library with it.
+fn offset(value: Option<&str>) -> i64 {
+    value.and_then(|v| v.parse().ok()).unwrap_or(0).max(0)
 }
 
 pub async fn search(ctx: &Ctx, key: &str) -> Reply {
@@ -35,16 +40,16 @@ pub async fn search(ctx: &Ctx, key: &str) -> Reply {
         .to_owned();
     let query = fts_query(&raw);
     let (ac, ao) = (
-        number(ctx, "artistCount", 20),
-        number(ctx, "artistOffset", 0).max(0),
+        count(ctx.params.get("artistCount"), 20),
+        offset(ctx.params.get("artistOffset")),
     );
     let (lc, lo) = (
-        number(ctx, "albumCount", 20),
-        number(ctx, "albumOffset", 0).max(0),
+        count(ctx.params.get("albumCount"), 20),
+        offset(ctx.params.get("albumOffset")),
     );
     let (sc, so) = (
-        number(ctx, "songCount", 20),
-        number(ctx, "songOffset", 0).max(0),
+        count(ctx.params.get("songCount"), 20),
+        offset(ctx.params.get("songOffset")),
     );
     let user = ctx.user.id.clone();
     let has_query = query.is_some();
@@ -117,7 +122,17 @@ pub async fn search(ctx: &Ctx, key: &str) -> Reply {
 
 #[cfg(test)]
 mod tests {
-    use super::fts_query;
+    use super::{count, fts_query, offset};
+
+    #[test]
+    fn pages_go_past_500_rows() {
+        assert_eq!(count(Some("9999"), 20), 500);
+        assert_eq!(count(None, 20), 20);
+        assert_eq!(count(Some("-3"), 20), 0);
+        assert_eq!(offset(Some("1500")), 1500, "the 4th page of 500 songs");
+        assert_eq!(offset(Some("-1")), 0);
+        assert_eq!(offset(Some("x")), 0);
+    }
 
     #[test]
     fn builds_safe_prefix_queries() {
