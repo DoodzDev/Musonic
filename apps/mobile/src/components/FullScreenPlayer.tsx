@@ -59,6 +59,7 @@ import WaveformScrubber from './WaveformScrubber';
 import QueueSheet from './QueueSheet';
 import AddToPlaylistSheet from './AddToPlaylistSheet';
 import SongOptionsSheet from './SongOptionsSheet';
+import SleepTimerSheet from './SleepTimerSheet';
 import Toast from './Toast';
 import {useT, getT} from '../i18n';
 import type {SubsonicSong} from '../api/types';
@@ -286,6 +287,7 @@ function FullScreenPlayerContent() {
 
   // Queue sheet
   const [queueVisible, setQueueVisible] = useState(false);
+  const [sleepTimerVisible, setSleepTimerVisible] = useState(false);
   const queueSlideY = useRef(new Animated.Value(winH)).current;
 
 
@@ -561,7 +563,8 @@ function FullScreenPlayerContent() {
       transparent
       animationType="none"
       statusBarTranslucent
-      onRequestClose={handleClose}>
+      // Back closes the top layer: the queue when it is open, else the player.
+      onRequestClose={queueVisible ? closeQueue : handleClose}>
       {/* A Modal is a separate native root: gestures inside it (queue sheet swipe-down) need their own root view. */}
       <GestureHandlerRootView style={StyleSheet.absoluteFill}>
       <Animated.View
@@ -661,7 +664,10 @@ function FullScreenPlayerContent() {
           onToast={showToast}
           onNavigateAlbum={handleNavigateAlbumFromPlayer}
           onNavigateArtist={(id, name) => { setSongOptionsVisible(false); onArtistPress(name, id); }}
+          onSleepTimer={() => { setSongOptionsVisible(false); setSleepTimerVisible(true); }}
         />
+
+        <SleepTimerSheet visible={sleepTimerVisible} onClose={() => setSleepTimerVisible(false)} />
 
       </Animated.View>
 

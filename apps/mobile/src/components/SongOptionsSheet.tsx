@@ -36,7 +36,8 @@ import {usePlayerStore, type Track} from '../store/playerStore';
 import {usePlaylistCacheStore, fetchAndCachePlaylistSongs} from '../store/playlistCacheStore';
 import {useT, getT} from '../i18n';
 import type {SubsonicSong} from '../api/types';
-import {DiscIcon, MinusCircleIcon} from './icons';
+import {ClockIcon, DiscIcon, MinusCircleIcon} from './icons';
+import {secondsLeft, useSleepTimerStore} from '../services/sleepTimer';
 
 const SHEET_MAX_WIDTH = 560;
 const SHEET_MAX_HEIGHT_RATIO = 0.9;
@@ -57,6 +58,8 @@ type Props = {
   onRemoved?: () => void;
   onNavigateAlbum?: (albumId: string) => void;
   onNavigateArtist?: (artistId: string | undefined, artistName: string) => void;
+  /** Shown from the player only: opens the sleep timer. */
+  onSleepTimer?: () => void;
 };
 
 // ─── Action Row ───────────────────────────────────────────────────────────────
@@ -92,8 +95,12 @@ export default function SongOptionsSheet({
   onRemoved,
   onNavigateAlbum,
   onNavigateArtist,
+  onSleepTimer,
 }: Props) {
   const t = useT();
+  const sleepEndsAt = useSleepTimerStore(st => st.endsAt);
+  const sleepEndOfTrack = useSleepTimerStore(st => st.endOfTrack);
+  const sleepActive = sleepEndsAt !== null || sleepEndOfTrack;
   // Measured on every render so the hidden sheet stays off-screen after rotation.
   const {width: winW, height: SH} = useWindowDimensions();
   // Cap the height (content scrolls) and, in landscape, keep the sheet at a readable width.
@@ -281,6 +288,16 @@ export default function SongOptionsSheet({
                 label={t.songOptions.goToArtist}
                 onPress={handleGoToArtist}
               />
+              {onSleepTimer && (
+                <ActionRow
+                  icon={<ClockIcon size={22} color={sleepActive ? darkTheme.accent : ICON_COLOR} />}
+                  label={sleepEndsAt !== null
+                    ? t.sleepTimer.menuActive(t.sleepTimer.duration(secondsLeft(sleepEndsAt)))
+                    : sleepEndOfTrack ? t.sleepTimer.menuActive(t.sleepTimer.shortEnd) : t.sleepTimer.menu}
+                  accent={sleepActive}
+                  onPress={onSleepTimer}
+                />
+              )}
 
               <View style={styles.bottomPad} />
             </ScrollView>

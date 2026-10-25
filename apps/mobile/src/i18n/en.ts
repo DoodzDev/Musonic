@@ -304,6 +304,30 @@ export const en = {
   },
 
   // ─── Song Options Sheet ────────────────────────────────────────────────────
+  sleepTimer: {
+    title: 'Sleep timer',
+    menu: 'Sleep timer',
+    menuActive: (left: string) => `Sleep timer · ${left}`,
+    /** "1 h 05 min", "12 min", "45 s". */
+    duration: (seconds: number) => {
+      if (seconds < 60) return `${seconds} s`;
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      if (h > 0) return `${h} h${m || s ? ` ${String(m).padStart(2, '0')} min` : ''}${s ? ` ${s} s` : ''}`;
+      return `${m} min${s ? ` ${s} s` : ''}`;
+    },
+    hoursUnit: 'h',
+    minutesUnit: 'min',
+    secondsUnit: 's',
+    start: (d: string) => `Stop in ${d}`,
+    pickDuration: 'Pick a duration',
+    endOfTrack: 'End of track',
+    off: 'Turn off timer',
+    stopsIn: (d: string) => `Playback stops in ${d}.`,
+    stopsAtEnd: 'Playback stops at the end of the track.',
+    shortEnd: 'end of track',
+  },
   songOptions: {
     addToPlaylist: 'Add to playlist',
     removeFromPlaylist: 'Remove from playlist',

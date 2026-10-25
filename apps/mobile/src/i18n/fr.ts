@@ -308,6 +308,30 @@ export const t = {
   },
 
   // ─── Song Options Sheet ────────────────────────────────────────────────────
+  sleepTimer: {
+    title: 'Minuteur de veille',
+    menu: 'Minuteur de veille',
+    menuActive: (left: string) => `Minuteur de veille · ${left}`,
+    /** "1 h 05 min", "12 min", "45 s". */
+    duration: (seconds: number) => {
+      if (seconds < 60) return `${seconds} s`;
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      if (h > 0) return `${h} h${m || s ? ` ${String(m).padStart(2, '0')} min` : ''}${s ? ` ${s} s` : ''}`;
+      return `${m} min${s ? ` ${s} s` : ''}`;
+    },
+    hoursUnit: 'h',
+    minutesUnit: 'min',
+    secondsUnit: 's',
+    start: (d: string) => `Arrêter dans ${d}`,
+    pickDuration: 'Choisissez une durée',
+    endOfTrack: 'Fin du titre',
+    off: 'Désactiver le minuteur',
+    stopsIn: (d: string) => `La lecture s'arrête dans ${d}.`,
+    stopsAtEnd: "La lecture s'arrête à la fin du titre.",
+    shortEnd: 'fin du titre',
+  },
   songOptions: {
     download: 'Télécharger',
     downloadQueued: 'Téléchargement ajouté',
