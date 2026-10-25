@@ -2,13 +2,14 @@
  * @file TrackTable.tsx
  * @description Track list used by playlist, album, artist, liked, genre and
  *   search pages. Like the mobile app, a heart shows the liked tracks and a
- *   "+" / "✓" whether the track is in one of the user's playlists.
+ *   "+" / "✓" whether the track is in one of the user's playlists. Long lists
+ *   (My Music…) build only the rows on screen (`useWindowedRows`).
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { Song } from '@musonic/core';
 import { Link } from 'react-router';
 import { tr } from '../i18n/index.ts';
@@ -25,6 +26,7 @@ import { usePlaylistMembership } from '../player/usePlaylistMembership.ts';
 import { PlayIcon } from './icons/PlayIcon.tsx';
 import { DotsHorizontalIcon } from './icons/DotsHorizontalIcon.tsx';
 import { TrackMenu, type TrackMenuTarget } from './TrackMenu.tsx';
+import { useWindowedRows } from '../hooks/useWindowedRows.ts';
 
 interface Props {
   songs: Song[];
@@ -40,6 +42,8 @@ interface Props {
 }
 
 const t = tr.table;
+/** Height of a song row (`.track-row` in index.css). */
+const ROW_HEIGHT = 60;
 
 export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover = true, numbering = 'index', playlistId }: Props) {
   const [menu, setMenu] = useState<TrackMenuTarget | null>(null);
@@ -50,6 +54,8 @@ export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover
   const { playSongs, current, sourceId: playingSource, playing } = usePlayer();
   const playingId = playingSource === sourceId ? current?.id : undefined;
   const columns = showAlbum ? 'cols-4' : 'cols-3';
+  const body = useRef<HTMLDivElement>(null);
+  const [start, end] = useWindowedRows(songs.length, ROW_HEIGHT, body);
 
   return (
     <div className="table-scroll">
@@ -63,7 +69,10 @@ export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover
           <span role="columnheader" className="c-duration" aria-label={t.duration}><ClockIcon /></span>
           <span role="columnheader" className="c-more" />
         </div>
-        {songs.map((song, i) => {
+        <div ref={body} className="track-body" role="presentation">
+        {start > 0 && <div role="presentation" style={{ height: start * ROW_HEIGHT }} />}
+        {songs.slice(start, end).map((song, offset) => {
+          const i = start + offset;
           const isCurrent = song.id === playingId;
           const play = () => playSongs(songs, i, sourceId);
           return (
@@ -128,6 +137,8 @@ export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover
             </div>
           );
         })}
+        {end < songs.length && <div role="presentation" style={{ height: (songs.length - end) * ROW_HEIGHT }} />}
+        </div>
       </div>
       {menu && <TrackMenu target={menu} onClose={() => setMenu(null)} />}
       {picker && <PlaylistPicker song={picker} onClose={() => setPicker(null)} />}

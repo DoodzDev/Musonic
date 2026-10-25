@@ -184,6 +184,7 @@ h1, h2, p { margin: 0; }
 /* Track table */
 .table-scroll { overflow-x: auto; }
 .track-table { min-width: 520px; display: flex; flex-direction: column; }
+.track-body { display: flex; flex-direction: column; }
 .track-row {
   display: grid; grid-template-columns: 44px minmax(0, 4fr) minmax(0, 3fr) 32px 32px 52px 36px; align-items: center; gap: 12px;
   height: 60px; padding: 0 12px; border-radius: 10px; transition: background 0.12s;
@@ -196,6 +197,8 @@ h1, h2, p { margin: 0; }
 }
 .c-index { display: flex; justify-content: center; font-size: 15px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .c-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+/* Long album names end with « … » before the + / ♥ / duration columns, like the titles. */
+.c-album { min-width: 0; display: flex; flex-direction: column; }
 .c-duration { display: flex; justify-content: flex-end; font-variant-numeric: tabular-nums; }
 .row-play { display: none; width: 32px; height: 32px; align-items: center; justify-content: center; color: var(--text); }
 .track-row:hover .num { display: none; }
