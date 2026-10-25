@@ -5,12 +5,13 @@
  *   logging in again), then the server URL, username and password. The
  *   credentials are checked against the Subsonic API before the server is
  *   saved; a failure says plainly what to fix (F29), and a plain-HTTP
- *   address explains the risk (ISS-021). The password is then traded for a
+ *   address explains the risk, and plain HTTP is only accepted on the home
+ *   network (ISS-021). The password is then traded for a
  *   device key or a token (ADR-021). When the server refused the account
  *   (key revoked, suspended, password changed), the form comes back filled
  *   in with the reason, and signing in again replaces the old account.
  * @author DoodzProg
- * @version 2.1.0
+ * @version 2.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useRef, useState} from 'react';
@@ -36,6 +37,7 @@ import {useSettingsStore, type AuthProblem, type Server} from '../../store/setti
 import {colors, radii, spacing} from '../../theme';
 import {useT, getT} from '../../i18n';
 import {hostOf} from '../../utils/hostOf';
+import {isAllowedServerUrl} from '../../utils/localAddress';
 
 /** Same account: same server address and username. */
 function sameAccount(a: {url: string; username: string}, b: {url: string; username: string}): boolean {
@@ -92,6 +94,11 @@ export default function ServerSetupScreen() {
     if (!ready) {
       setStatus('error');
       setMessage(t.serverSetup.missingFieldsBody);
+      return;
+    }
+    if (!isAllowedServerUrl(url)) {
+      setStatus('error');
+      setMessage(t.serverSetup.httpRefused);
       return;
     }
     setLoading(true);

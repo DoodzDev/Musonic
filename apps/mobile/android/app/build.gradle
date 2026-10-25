@@ -126,6 +126,15 @@ android {
     }
 }
 
+// Plain HTTP stays possible for a server on the home network (ISS-021); the app itself refuses
+// http:// addresses that are not local (src/utils/localAddress.ts). React Native's plugin turns it
+// off for release builds in its own finalizeDsl, registered before this one, so this runs after it.
+androidComponents {
+    finalizeDsl { ext ->
+        ext.buildTypes.getByName("release").manifestPlaceholders["usesCleartextTraffic"] = "true"
+    }
+}
+
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")

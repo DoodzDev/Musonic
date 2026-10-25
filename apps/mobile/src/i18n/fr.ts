@@ -84,6 +84,7 @@ export const t = {
       credentials: 'Votre mot de passe a changé ? Reconnectez-vous avec le nouveau.',
     },
     httpWarning: 'HTTP au lieu de HTTPS — vos identifiants peuvent transiter en clair.',
+    httpRefused: 'Adresse en HTTP refusée : utilisez HTTPS, ou une adresse de votre réseau local (ex. http://192.168.1.20:4533).',
   },
 
   // ─── Tab Bar ───────────────────────────────────────────────────────────────

@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The optional “Musonic API” setting** — Musonic Server now does what it did (online tracks start fast on their own); its address and key are cleared from the phone.
 
 ### Fixed
+- **A server on your home network works in plain HTTP** (for example `http://192.168.1.20:4533`, a `.local` name or Tailscale): the released app used to refuse every `http://` address. Addresses on the internet still need HTTPS.
 - **Plays are counted on the time really listened** — half the track (or 4 minutes); skipping to the end no longer counts, the same rule as Musonic Web.
 - **Artist pictures** — artists without a picture of their own now show one of their albums instead of an empty image.
 - **A refused account no longer leaves the app stuck offline**: when its key was revoked, the account suspended or the password changed, the app goes back to the sign-in screen, filled in, and says why.

@@ -81,6 +81,7 @@ export const en = {
       credentials: 'Did your password change? Please sign in with the new one.',
     },
     httpWarning: 'Using HTTP instead of HTTPS. Your credentials may be sent in plaintext.',
+    httpRefused: 'Plain HTTP refused: use HTTPS, or an address on your home network (e.g. http://192.168.1.20:4533).',
   },
 
   // ─── Tab Bar ───────────────────────────────────────────────────────────────
