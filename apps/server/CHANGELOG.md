@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `search3` / `search2`: the offsets (`songOffset`, `albumOffset`, `artistOffset`) were capped at
+  500 like the counts, so a client listing the whole library by pages of 500 got songs 500–999
+  again and again and never the ones past the 1000th.
+
 ## [1.0.1] - 2026-10-22
 
 ### Added
