@@ -142,6 +142,9 @@ dependencies {
     // Native player (ADR-022): ExoPlayer with audio offload, in a Media3 session.
     implementation("androidx.media3:media3-exoplayer:1.11.1")
     implementation("androidx.media3:media3-session:1.11.1")
+    // Musonic's own Android Auto screens (templated media app, Car App Library API 8, ADR-025).
+    implementation("androidx.car.app:app:1.8.0-rc01")
+    implementation("androidx.car.app:app-projected:1.8.0-rc01")
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

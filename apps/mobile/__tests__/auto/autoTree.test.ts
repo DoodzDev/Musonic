@@ -1,15 +1,17 @@
 /**
  * @file autoTree.test.ts
  * @description Unit tests of the Android Auto browse tree (ADR-015): node and
- *   track ids round-trip, and anything else is ignored.
+ *   track ids round-trip, and anything else is ignored; Liked songs comes
+ *   first with its drawn tile, playlists and albums carry Play and Shuffle.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import {
   albumItems,
   albumNodeId,
   artistItems,
+  likedItem,
   parseNode,
   parseTrackRef,
   playlistItems,
@@ -30,6 +32,7 @@ describe('parseNode', () => {
     expect(parseNode('albums')).toEqual({kind: 'albums'});
     expect(parseNode('artists')).toEqual({kind: 'artists'});
     expect(parseNode('downloads')).toEqual({kind: 'downloads'});
+    expect(parseNode('liked')).toEqual({kind: 'liked'});
     expect(parseNode(albumNodeId('3'))).toEqual({kind: 'album', id: '3'});
     expect(parseNode('artist:ar-9')).toEqual({kind: 'artist', id: 'ar-9'});
   });
@@ -74,8 +77,8 @@ describe('items', () => {
       cover => (cover ? {key: cover, uri: `file:///c/${cover}.jpg`} : undefined),
     );
     expect(items).toEqual([
-      {id: 'playlist:1', title: 'Route', subtitle: '2 titres', browsable: true, downloaded: true},
-      {id: 'playlist:2', title: 'Vide', subtitle: '0 titres', browsable: true, downloaded: false},
+      {id: 'playlist:1', title: 'Route', subtitle: '2 titres', browsable: true, downloaded: true, actions: ['play', 'shuffle']},
+      {id: 'playlist:2', title: 'Vide', subtitle: '0 titres', browsable: true, downloaded: false, actions: ['play', 'shuffle']},
     ]);
   });
 
@@ -87,7 +90,7 @@ describe('items', () => {
   it('builds albums and artists that open their content', () => {
     const artOf = (cover?: string) => (cover ? {key: cover, uri: `file:///c/${cover}.jpg`} : undefined);
     expect(albumItems([{id: '3', name: 'A', artist: 'X'}], artOf)).toEqual([
-      {id: 'album:3', title: 'A', subtitle: 'X', browsable: true, art: {key: '3', uri: 'file:///c/3.jpg'}},
+      {id: 'album:3', title: 'A', subtitle: 'X', browsable: true, actions: ['play', 'shuffle'], art: {key: '3', uri: 'file:///c/3.jpg'}},
     ]);
     expect(artistItems([{id: 'ar-9', name: 'X', coverArt: 'ar-9'}], artOf)).toEqual([
       {id: 'artist:ar-9', title: 'X', browsable: true, grid: true, art: {key: 'ar-9', uri: 'file:///c/ar-9.jpg'}},
@@ -100,5 +103,23 @@ describe('items', () => {
     expect(playlist.art).toEqual({key: 'pl-1', uri: 'file:///c/pl-1.jpg'});
     const [track] = trackItems('playlist:1', [{id: '7', title: 'A'}], () => false, artOf);
     expect(track.art).toEqual({key: '7', uri: 'file:///c/7.jpg'});
+  });
+});
+
+describe('liked songs', () => {
+  it('is a list with Play and Shuffle and the tile the app draws', () => {
+    expect(likedItem('Titres likés', '3 titres', false)).toEqual({
+      id: 'liked',
+      title: 'Titres likés',
+      subtitle: '3 titres',
+      browsable: true,
+      downloaded: false,
+      actions: ['play', 'shuffle'],
+      art: {key: 'res:liked', uri: ''},
+    });
+  });
+
+  it('plays a tapped track from the whole list', () => {
+    expect(parseTrackRef(trackMediaId('liked', '7'))).toEqual({list: {kind: 'liked'}, trackId: '7'});
   });
 });

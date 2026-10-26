@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">Musonic</string>
+    <!-- Android Auto: buttons on a playlist or an album (browse actions). -->
+    <string name="auto_action_play">Play</string>
+    <string name="auto_action_shuffle">Shuffle</string>
+    <!-- Android Auto screens (Car App Library). -->
+    <string name="car_tab_home">Home</string>
+    <string name="car_tab_library">Library</string>
+    <string name="car_tab_downloads">Downloaded</string>
+    <string name="car_now_playing">Now playing</string>
+    <string name="car_empty">Nothing here yet</string>
 </resources>

@@ -1,0 +1,9 @@
+<resources>
+    <string name="auto_action_play">Lire</string>
+    <string name="auto_action_shuffle">Aléatoire</string>
+    <string name="car_tab_home">Accueil</string>
+    <string name="car_tab_library">Bibliothèque</string>
+    <string name="car_tab_downloads">Téléchargés</string>
+    <string name="car_now_playing">Lecture en cours</string>
+    <string name="car_empty">Rien ici pour l\'instant</string>
+</resources>

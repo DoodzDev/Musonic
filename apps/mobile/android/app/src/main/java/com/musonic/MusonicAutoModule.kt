@@ -1,11 +1,12 @@
 package com.musonic
 
+import android.content.Context
 import android.net.Uri
-import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.support.v4.media.MediaBrowserCompat.MediaItem
-import android.support.v4.media.MediaDescriptionCompat
+import android.util.Log
 import androidx.media.MediaBrowserServiceCompat.Result
 import com.doublesymmetry.trackplayer.service.MusonicCustomActions
 import com.facebook.react.bridge.Arguments
@@ -19,8 +20,11 @@ import com.facebook.react.bridge.WritableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 
 /**
- * Bridge between [MusonicAutoService] and the JS side (ADR-015): the car asks for the
- * children of a node, JS answers with plain items (covers go through [MusonicArtwork]).
+ * Bridge between the car ([MusonicAutoService], the classic media browser, and the screens of
+ * [MusonicCarAppService]) and the JS side (ADR-015): the car asks for the children of a node;
+ * the lists of the snapshot are answered at once ([MusonicAutoSnapshot], ADR-022 step 2), the
+ * others by JS with plain items (covers go through [MusonicArtwork]). A tapped track is played
+ * by JS too.
  * JS also sets the playback screen's shuffle / repeat / like buttons and gets their presses,
  * and registers the player's covers (served by [MusonicArtworkProvider], never a server URL).
  * Everything runs on the main thread.
@@ -30,26 +34,77 @@ import com.facebook.react.modules.core.DeviceEventManagerModule
 object MusonicAutoBridge {
   private const val TIMEOUT_MS = 8000L
 
+  private const val TAG = "MusonicAuto"
+
+  private class Request(val parentId: String, val onEntries: (List<AutoEntry>) -> Unit, val start: Long)
+
   private val main = Handler(Looper.getMainLooper())
-  private val pending = HashMap<String, Result<MutableList<MediaItem>>>()
+  private val pending = HashMap<String, Request>()
   private var nextId = 0
 
   /** Set once JS listens for requests, cleared when the React instance goes away. */
   var module: MusonicAutoModule? = null
 
-  /** Returns false when JS is not running: the caller answers with an empty list. */
-  fun loadChildren(parentId: String, result: Result<MutableList<MediaItem>>): Boolean {
-    val target = module ?: return false
-    val requestId = (nextId++).toString()
-    pending[requestId] = result
+  /** The classic media browser's request; false when the list cannot be had: the caller answers empty. */
+  fun loadChildren(context: Context, parentId: String, result: Result<MutableList<MediaItem>>): Boolean {
+    if (MusonicAutoSnapshot.entries(context, parentId) == null && module == null) return false
     result.detach()
-    target.requestChildren(requestId, parentId)
-    main.postDelayed({ pending.remove(requestId)?.sendResult(mutableListOf()) }, TIMEOUT_MS)
+    entries(context, parentId) { list -> result.sendResult(list.mapTo(mutableListOf()) { MusonicAutoSnapshot.mediaItem(context, it) }) }
     return true
   }
 
-  fun resolve(requestId: String, items: MutableList<MediaItem>) {
-    main.post { pending.remove(requestId)?.sendResult(items) }
+  /**
+   * The entries of [parentId]: from the snapshot at once, else from JS (empty after a while, or
+   * at once when JS is not running). [onEntries] runs on the main thread.
+   */
+  fun entries(context: Context, parentId: String, onEntries: (List<AutoEntry>) -> Unit) {
+    val start = SystemClock.elapsedRealtime()
+    MusonicAutoSnapshot.entries(context, parentId)?.let { list ->
+      onEntries(list)
+      log(parentId, list.size, start, "snapshot")
+      return
+    }
+    val target = module
+    if (target == null) {
+      onEntries(emptyList())
+      return
+    }
+    val requestId = (nextId++).toString()
+    pending[requestId] = Request(parentId, onEntries, start)
+    target.requestChildren(requestId, parentId)
+    main.postDelayed({ pending.remove(requestId)?.onEntries?.invoke(emptyList()) }, TIMEOUT_MS)
+  }
+
+  fun resolve(requestId: String, list: List<AutoEntry>) {
+    main.post {
+      val request = pending.remove(requestId) ?: return@post
+      request.onEntries(list)
+      log(request.parentId, list.size, request.start, "js")
+    }
+  }
+
+  /** A track tapped on a car screen: JS plays its whole list from it. False when JS is not running. */
+  fun play(mediaId: String): Boolean {
+    val target = module ?: return false
+    target.notifyPlay(mediaId)
+    return true
+  }
+
+  /** Play or Shuffle pressed on a list in the car; false when JS is not running. */
+  fun browseAction(action: String, mediaId: String): Boolean {
+    val target = module ?: return false
+    target.notifyBrowseAction(action, mediaId)
+    return true
+  }
+
+  /** The car (or the system's media controls) connected: JS sends a fresh snapshot. */
+  fun connected() {
+    module?.notifyConnected()
+  }
+
+  // Ids only (playlist, album): never a title or a URL.
+  private fun log(parentId: String, count: Int, start: Long, from: String) {
+    Log.i(TAG, "$parentId: $count items in ${SystemClock.elapsedRealtime() - start} ms ($from)")
   }
 }
 
@@ -64,6 +119,34 @@ class MusonicAutoModule(context: ReactApplicationContext) : ReactContextBaseJava
   @ReactMethod
   fun registerArtwork(key: String, uri: String) {
     MusonicArtwork.register(reactApplicationContext, key, uri)
+  }
+
+  fun notifyBrowseAction(action: String, mediaId: String) {
+    emit(EVENT_BROWSE_ACTION, Arguments.createMap().apply {
+      putString("action", action)
+      putString("mediaId", mediaId)
+    })
+  }
+
+  fun notifyPlay(mediaId: String) {
+    emit(EVENT_PLAY, Arguments.createMap().apply { putString("mediaId", mediaId) })
+  }
+
+  fun notifyConnected() {
+    emit(EVENT_CONNECTED, Arguments.createMap())
+  }
+
+  /** The snapshot (ADR-022 step 2): [nodes] is kept on disk, [arts] (cover addresses) in memory only. */
+  @ReactMethod
+  fun setSnapshot(nodes: String, arts: ReadableMap) {
+    val iterator = arts.keySetIterator()
+    while (iterator.hasNextKey()) {
+      val key = iterator.nextKey()
+      arts.getString(key)?.let { MusonicArtwork.register(reactApplicationContext, key, it) }
+    }
+    MusonicAutoSnapshot.set(reactApplicationContext, nodes) { changed ->
+      MusonicAutoService.current?.let { service -> changed.forEach(service::notifyChildrenChanged) }
+    }
   }
 
   fun requestChildren(requestId: String, parentId: String) {
@@ -124,20 +207,24 @@ class MusonicAutoModule(context: ReactApplicationContext) : ReactContextBaseJava
 
   @ReactMethod
   fun resolveChildren(requestId: String, items: ReadableArray) {
-    val list = ArrayList<MediaItem>(items.size())
+    val list = ArrayList<AutoEntry>(items.size())
     for (i in 0 until items.size()) {
       val item = items.getMap(i) ?: continue
-      list.add(toMediaItem(
+      list.add(AutoEntry(
           id = item.getString("id") ?: continue,
           title = item.getString("title") ?: "",
           subtitle = if (item.hasKey("subtitle")) item.getString("subtitle") else null,
           browsable = item.hasKey("browsable") && item.getBoolean("browsable"),
           downloaded = item.hasKey("downloaded") && item.getBoolean("downloaded"),
           grid = item.hasKey("grid") && item.getBoolean("grid"),
-          art = (if (item.hasKey("art")) item.getMap("art") else null)?.let { art ->
+          artKey = (if (item.hasKey("art")) item.getMap("art") else null)?.let { art ->
             val key = art.getString("key")
             val uri = art.getString("uri")
-            if (key != null && uri != null) MusonicArtwork.register(reactApplicationContext, key, uri) else null
+            if (key != null && !uri.isNullOrEmpty()) MusonicArtwork.register(reactApplicationContext, key, uri)
+            key
+          },
+          actions = (if (item.hasKey("actions")) item.getArray("actions") else null)?.let { list ->
+            (0 until list.size()).mapNotNull { list.getString(it) }
           },
       ))
     }
@@ -157,38 +244,12 @@ class MusonicAutoModule(context: ReactApplicationContext) : ReactContextBaseJava
     super.invalidate()
   }
 
-  private fun toMediaItem(
-      id: String,
-      title: String,
-      subtitle: String?,
-      browsable: Boolean,
-      downloaded: Boolean,
-      grid: Boolean,
-      art: Uri?,
-  ): MediaItem {
-    val extras = Bundle()
-    if (downloaded) {
-      extras.putLong(MediaDescriptionCompat.EXTRA_DOWNLOAD_STATUS, MediaDescriptionCompat.STATUS_DOWNLOADED)
-    }
-    if (browsable) {
-      // Style of this node's own children in the car.
-      val style = if (grid) CONTENT_STYLE_GRID else CONTENT_STYLE_LIST
-      extras.putInt(CONTENT_STYLE_BROWSABLE_HINT, style)
-      extras.putInt(CONTENT_STYLE_PLAYABLE_HINT, style)
-    }
-    val description = MediaDescriptionCompat.Builder()
-        .setMediaId(id)
-        .setTitle(title)
-        .setSubtitle(subtitle)
-        .setIconUri(art)
-        .setExtras(extras)
-        .build()
-    return MediaItem(description, if (browsable) MediaItem.FLAG_BROWSABLE else MediaItem.FLAG_PLAYABLE)
-  }
-
   companion object {
     const val EVENT_CHILDREN = "musonic-auto-children"
     const val EVENT_ACTION = "musonic-auto-action"
+    const val EVENT_CONNECTED = "musonic-auto-connected"
+    const val EVENT_BROWSE_ACTION = "musonic-auto-browse-action"
+    const val EVENT_PLAY = "musonic-auto-play"
     const val ACTION_SHUFFLE = "musonic.shuffle"
     const val ACTION_REPEAT = "musonic.repeat"
     const val ACTION_LIKE = "musonic.like"

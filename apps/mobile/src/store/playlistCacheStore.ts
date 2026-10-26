@@ -9,13 +9,14 @@
  *      "Liked songs" screen can list the downloaded ones offline.
  *   All slices are persisted to MMKV and available synchronously after rehydration.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
 import {persist, createJSONStorage} from 'zustand/middleware';
 import {mmkvStorage} from './storage';
 import {getPlaylists, getPlaylist} from '../api/endpoints/playlists';
+import {getStarred} from '../api/endpoints/library';
 import type {SubsonicPlaylist, SubsonicSong} from '../api/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -120,10 +121,14 @@ export const usePlaylistCacheStore = create<PlaylistCacheState>()(
 // ─── Background fetch ─────────────────────────────────────────────────────────
 
 /**
- * Fetches all playlists and their songs, then writes both caches (Layer 1 + Layer 2).
+ * Fetches all playlists and their songs, then writes both caches (Layer 1 + Layer 2), and
+ * the liked songs (Android Auto lists them without opening the app's screen).
  * Silent on network error — stale MMKV data remains available for offline mode.
  */
 export async function fetchAndCachePlaylistSongs(): Promise<void> {
+  getStarred()
+    .then(d => usePlaylistCacheStore.getState().setCachedLikedSongs(d.songs))
+    .catch(() => {});
   try {
     const playlists = await getPlaylists();
     if (!playlists.length) return;
