@@ -8,7 +8,7 @@
  * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
-import TrackPlayer from 'react-native-track-player';
+import TrackPlayer from '../player';
 import {getCoverArtUrl, getStreamUrl, subsonicGet} from '../../api/client';
 import {usePlayerStore, type Track} from '../../store/playerStore';
 import {playbackEngine} from './engine';

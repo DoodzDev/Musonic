@@ -14,7 +14,7 @@
 import React from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
+import {State, useActiveTrack, usePlaybackState} from '../services/player';
 import {useForegroundProgress} from '../hooks/useForegroundProgress';
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import GlassSurface from '../components/ui/GlassSurface';

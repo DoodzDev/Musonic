@@ -16,7 +16,7 @@ import {ActivityIndicator, Alert, Pressable, StyleSheet, View} from 'react-nativ
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import TrackPlayer, {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
+import TrackPlayer, {State, useActiveTrack, usePlaybackState} from '../../services/player';
 import ReorderableList, {
   reorderItems,
   useIsActive,

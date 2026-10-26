@@ -6,7 +6,7 @@
  * @version 2.3.0
  * @license CC-BY-NC-4.0
  */
-import TrackPlayer from 'react-native-track-player';
+import TrackPlayer from './player';
 import {getStreamUrl, getCoverArtUrl} from '../api/client';
 import {getSimilarSongs} from '../api/endpoints/library';
 import {getDeezerArtistId, getDeezerArtistTopTracks} from '../api/deezer';

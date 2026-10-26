@@ -8,7 +8,7 @@
  */
 import {useEffect} from 'react';
 import ImageColors from 'react-native-image-colors';
-import {useActiveTrack} from 'react-native-track-player';
+import {useActiveTrack} from '../services/player';
 import {getCoverArtUrl} from '../api/client';
 import {usePlayerStore} from '../store/playerStore';
 import {colorFromId} from '../utils/colorUtils';

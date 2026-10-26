@@ -82,9 +82,11 @@ class MusonicAutoModule(context: ReactApplicationContext) : ReactContextBaseJava
   @ReactMethod
   fun ready() {
     MusonicAutoBridge.module = this
-    MusonicCustomActions.onAction = { name ->
+    val onAction = { name: String ->
       emit(EVENT_ACTION, Arguments.createMap().apply { putString("action", name) })
     }
+    MusonicCustomActions.onAction = onAction
+    MusonicPlayback.onAction = onAction
   }
 
   /** `{shuffle: off|on|magic, repeat: none|all|one, liked: boolean|null, labels: {...}}` */
@@ -114,7 +116,10 @@ class MusonicAutoModule(context: ReactApplicationContext) : ReactContextBaseJava
           if (liked) R.drawable.ic_auto_liked else R.drawable.ic_auto_like,
       ))
     }
-    UiThreadUtil.runOnUiThread { MusonicCustomActions.set(actions) }
+    UiThreadUtil.runOnUiThread {
+      MusonicCustomActions.set(actions)
+      MusonicPlayback.setActions(actions.map { MusonicPlayback.Action(it.name, it.label, it.icon) })
+    }
   }
 
   @ReactMethod
@@ -147,6 +152,7 @@ class MusonicAutoModule(context: ReactApplicationContext) : ReactContextBaseJava
     if (MusonicAutoBridge.module === this) {
       MusonicAutoBridge.module = null
       MusonicCustomActions.onAction = null
+      MusonicPlayback.onAction = null
     }
     super.invalidate()
   }

@@ -45,7 +45,7 @@ import {
   TrackMagicIcon,
 } from './icons';
 import {getCoverArtUrl} from '../api/client';
-import TrackPlayer, {useActiveTrack, usePlaybackState, State} from 'react-native-track-player';
+import TrackPlayer, {useActiveTrack, usePlaybackState, State} from '../services/player';
 import {useForegroundProgress} from '../hooks/useForegroundProgress';
 import FastImage from '@d11/react-native-fast-image';
 import {usePlayerStore} from '../store/playerStore';

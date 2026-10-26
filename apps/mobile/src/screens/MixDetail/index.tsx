@@ -17,7 +17,7 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {useRoute, type RouteProp} from '@react-navigation/native';
-import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
+import {State, useActiveTrack, usePlaybackState} from '../../services/player';
 import {mixCovers} from '@musonic/core/home';
 import {homeSource} from '../../services/home/homeSource';
 import {getSongsByGenre} from '../../api/endpoints/library';

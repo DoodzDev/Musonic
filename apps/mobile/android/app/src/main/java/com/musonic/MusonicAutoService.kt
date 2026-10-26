@@ -9,9 +9,9 @@ import androidx.media.MediaBrowserServiceCompat
 import com.doublesymmetry.trackplayer.service.MediaSessionTokenHolder
 
 /**
- * Makes Musonic visible to Android Auto as a media app. The car controls the track player's
- * own session, so the queue stays driven by the JS playback engine. The browse tree comes
- * from JS through [MusonicAutoBridge] (ADR-015).
+ * Makes Musonic visible to Android Auto as a media app. The car controls the player's own
+ * session (track-player's, or the native player's: ADR-022), so the queue stays driven by the
+ * JS playback engine. The browse tree comes from JS through [MusonicAutoBridge] (ADR-015).
  *
  * @author DoodzProg
  */
@@ -24,12 +24,13 @@ class MusonicAutoService : MediaBrowserServiceCompat() {
   override fun onCreate() {
     super.onCreate()
     // The player may not exist yet: the car's connection waits until the token is set.
-    val token = MediaSessionTokenHolder.token
+    val token = MediaSessionTokenHolder.token ?: MusonicPlayback.token
     if (token != null) {
       sessionToken = token
       return
     }
     MediaSessionTokenHolder.addListener(onToken)
+    MusonicPlayback.addTokenListener(onToken)
     // Musonic is closed: start the player without a screen.
     MediaSessionTokenHolder.startedByCar = true
     try {
@@ -41,6 +42,7 @@ class MusonicAutoService : MediaBrowserServiceCompat() {
 
   override fun onDestroy() {
     MediaSessionTokenHolder.removeListener(onToken)
+    MusonicPlayback.removeTokenListener(onToken)
     super.onDestroy()
   }
 

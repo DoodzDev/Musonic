@@ -8,7 +8,7 @@
  * @license CC-BY-NC-4.0
  */
 import {useEffect} from 'react';
-import {useActiveTrack, usePlaybackState, State} from 'react-native-track-player';
+import {useActiveTrack, usePlaybackState, State} from '../services/player';
 import {usePlayerStore} from '../store/playerStore';
 import {star, unstar} from '../api/endpoints/library';
 import {SubsonicError} from '../api/client';

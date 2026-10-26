@@ -21,7 +21,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
-import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
+import {State, useActiveTrack, usePlaybackState} from '../../services/player';
 import DetailScaffold from '../../components/detail/DetailScaffold';
 import {DETAIL_BAR_HEIGHT, PlayShuffleRow} from '../../components/detail/DetailParts';
 import {usePlayButton} from '../../hooks/usePlayButton';

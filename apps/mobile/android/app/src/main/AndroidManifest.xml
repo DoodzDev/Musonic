@@ -39,6 +39,15 @@
       <service
         android:name=".MusonicAutoStartService"
         android:exported="false" />
+      <!-- Native player (ADR-022), used when chosen in the hidden setting. -->
+      <service
+        android:name=".MusonicPlayerService"
+        android:foregroundServiceType="mediaPlayback"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="androidx.media3.session.MediaSessionService" />
+        </intent-filter>
+      </service>
       <provider
         android:name=".MusonicArtworkProvider"
         android:authorities="${applicationId}.artwork"

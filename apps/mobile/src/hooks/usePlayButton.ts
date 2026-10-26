@@ -8,7 +8,7 @@
  * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
-import {State, usePlaybackState} from 'react-native-track-player';
+import {State, usePlaybackState} from '../services/player';
 import {usePlayerStore} from '../store/playerStore';
 import {sourceKey} from '../services/playback/engine';
 

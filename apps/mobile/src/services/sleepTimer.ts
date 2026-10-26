@@ -8,7 +8,7 @@
  * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
-import TrackPlayer from 'react-native-track-player';
+import TrackPlayer from './player';
 import {create} from 'zustand';
 
 type SleepTimerState = {

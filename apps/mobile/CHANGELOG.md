@@ -11,11 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
-- **Your password no longer stays on the phone.** On a Musonic Server, signing in now gives this phone its own device key: the password is used once and forgotten, and the key alone goes with each request (no more username and password in the addresses of songs and covers). The key is listed in the server's console, where it can be revoked. Accounts already saved switch over by themselves at the next launch. On other Subsonic servers the app keeps a sign-in token instead of the password.
+- **Your password no longer stays on the phone.** On a Musonic Server, signing in now gives this phone its own device key: the password is used once and forgotten, and the key alone goes with each request (no more username and password in the addresses of songs and covers). The key is listed in the server's console, where it can be revoked. Accounts already saved switch over by themselves at the next launch. The password they kept is then wiped from the app's storage, not just replaced. On other Subsonic servers the app keeps a sign-in token instead of the password.
 
 ### Added
 - **Sleep timer** — from the player menu: any length (hours, minutes, seconds), quick presets, or the end of the current track. Playback stops when it runs out.
 - **Android Auto: albums, artists and downloads** — browse them from the car screen too, and Musonic starts in Android Auto even when the app was closed.
+- **New player (test)** — in Settings, advanced mode: Android's own player, which lets the phone's audio chip decode the music. With the screen off, the app uses about three times less processor. Off by default while it is being tested.
 
 ### Changed
 - **Log out really logs out**: it revokes this phone's key and removes the account from the phone; you sign in again with your password.
@@ -34,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Plays are counted on the time really listened** — half the track (or 4 minutes); skipping to the end no longer counts, the same rule as Musonic Web.
 - **Artist pictures** — artists without a picture of their own now show one of their albums instead of an empty image.
 - **A refused account no longer leaves the app stuck offline**: when its key was revoked, the account suspended or the password changed, the app goes back to the sign-in screen, filled in, and says why.
+- **The log out question names the account and the server** (it showed the server address twice).
 
 ## [2.0.1] - 2026-10-17
 

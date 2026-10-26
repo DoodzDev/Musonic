@@ -40,7 +40,7 @@ import ReorderableList, {
 } from 'react-native-reorderable-list';
 import {Gesture, GestureDetector, GestureHandlerRootView} from 'react-native-gesture-handler';
 import LinearGradient from 'react-native-linear-gradient';
-import {useActiveTrack} from 'react-native-track-player';
+import {useActiveTrack} from '../services/player';
 import CoverArt from './CoverArt';
 import GlassSurface from './ui/GlassSurface';
 import PressableScale from './ui/PressableScale';

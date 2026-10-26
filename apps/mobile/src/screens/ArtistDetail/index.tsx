@@ -17,7 +17,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
+import {State, useActiveTrack, usePlaybackState} from '../../services/player';
 import DetailScaffold from '../../components/detail/DetailScaffold';
 import {PlayShuffleRow} from '../../components/detail/DetailParts';
 import {usePlayButton} from '../../hooks/usePlayButton';

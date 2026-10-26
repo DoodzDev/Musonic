@@ -7,7 +7,7 @@
  * @version 2.0.0
  * @license CC-BY-NC-4.0
  */
-import {Event, useTrackPlayerEvents} from 'react-native-track-player';
+import {Event, useTrackPlayerEvents} from '../services/player';
 import {usePlayerStore} from '../store/playerStore';
 
 const SYNC_EVENTS = [Event.PlaybackActiveTrackChanged];

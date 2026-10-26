@@ -14,7 +14,7 @@
  */
 import React, {useEffect, useState} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
-import {State, useActiveTrack, usePlaybackState, type Track} from 'react-native-track-player';
+import {State, useActiveTrack, usePlaybackState, type Track} from '../../services/player';
 import {useForegroundProgress} from '../../hooks/useForegroundProgress';
 import GlassSurface from '../ui/GlassSurface';
 import CoverWash from '../ui/CoverWash';

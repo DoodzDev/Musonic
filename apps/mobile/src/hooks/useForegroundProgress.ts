@@ -10,8 +10,8 @@
  */
 import {useEffect, useState} from 'react';
 import {AppState} from 'react-native';
-import TrackPlayer, {Event, useTrackPlayerEvents} from 'react-native-track-player';
-import type {Progress} from 'react-native-track-player';
+import TrackPlayer, {Event, useTrackPlayerEvents} from '../services/player';
+import type {Progress} from '../services/player';
 
 const INITIAL_STATE: Progress = {position: 0, duration: 0, buffered: 0};
 

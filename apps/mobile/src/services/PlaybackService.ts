@@ -13,7 +13,7 @@
  * @license CC-BY-NC-4.0
  */
 import {AppState} from 'react-native';
-import TrackPlayer, {Event, State} from 'react-native-track-player';
+import TrackPlayer, {Event, State} from './player';
 import {useSettingsStore} from '../store/settingsStore';
 import {usePlayerStore} from '../store/playerStore';
 import {useDownloadStore} from '../store/downloadStore';

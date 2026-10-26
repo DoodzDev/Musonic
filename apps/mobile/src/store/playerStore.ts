@@ -11,7 +11,7 @@
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
-import TrackPlayer, {State} from 'react-native-track-player';
+import TrackPlayer, {State} from '../services/player';
 import {star, unstar} from '../api/endpoints/library';
 import {SubsonicError, getStreamUrl, subsonicGet} from '../api/client';
 import {getT} from '../i18n';

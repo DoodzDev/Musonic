@@ -6,11 +6,11 @@
  *   choices (progress bar style, landscape navigation bar side, landscape
  *   player layout) show a small preview of each option.
  * @author DoodzProg
- * @version 2.6.0
+ * @version 2.7.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
-import {ActivityIndicator, Alert, StatusBar, StyleSheet, View} from 'react-native';
+import {ActivityIndicator, Alert, Platform, StatusBar, StyleSheet, View} from 'react-native';
 import Animated from 'react-native-reanimated';
 import {useNavigation} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -25,6 +25,7 @@ import Button from '../../components/ui/Button';
 import Text from '../../components/ui/Text';
 import {BackArrowIcon} from '../../components/icons';
 import {checkForUpdate} from '../../services/updateChecker';
+import {chooseNativePlayer, nativePlayerChosen} from '../../services/player/mode';
 import {useSettingsStore, type StorageLimitMB, type StreamQuality} from '../../store/settingsStore';
 import {useDownloadStore} from '../../store/downloadStore';
 import {formatBytes} from '../../utils/formatBytes';
@@ -184,6 +185,13 @@ export default function SettingsScreen() {
   );
 
   const advanced = s.settingsMode === 'advanced';
+  // Player under test (ADR-022): saved for the next launch.
+  const [nativePlayer, setNativePlayerState] = useState(nativePlayerChosen);
+  const setNativePlayer = (on: boolean) => {
+    chooseNativePlayer(on);
+    setNativePlayerState(on);
+    Alert.alert(t.settings.playback.nativePlayerRestartTitle, t.settings.playback.nativePlayerRestartMessage);
+  };
   const qualityOptions: {value: StreamQuality; label: string}[] = [
     {value: 0, label: t.settings.playback.qualityOriginal},
     {value: 320, label: '320'},
@@ -283,6 +291,13 @@ export default function SettingsScreen() {
               description={t.settings.playback.alwaysPreviousDesc}
               toggle={{value: s.isAlwaysPrevious, onValueChange: s.setIsAlwaysPrevious}}
             />
+            {advanced && Platform.OS === 'android' ? (
+              <ListItem
+                label={t.settings.playback.nativePlayerLabel}
+                description={t.settings.playback.nativePlayerDesc}
+                toggle={{value: nativePlayer, onValueChange: setNativePlayer}}
+              />
+            ) : null}
           </ListGroup>
 
           <ListGroup caption={t.settings.sections.downloads}>

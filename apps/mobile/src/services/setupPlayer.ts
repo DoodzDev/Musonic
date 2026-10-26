@@ -11,7 +11,7 @@
  * @version 1.0.0
  * @license CC-BY-NC-4.0
  */
-import TrackPlayer, {AppKilledPlaybackBehavior, Capability, RepeatMode} from 'react-native-track-player';
+import TrackPlayer, {AppKilledPlaybackBehavior, Capability, RepeatMode} from './player';
 import {useSettingsStore} from '../store/settingsStore';
 import {usePlayerStore} from '../store/playerStore';
 import {playbackEngine} from './playback/engine';

@@ -25,7 +25,7 @@
  * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
-import TrackPlayer, {RepeatMode as NativeRepeat} from 'react-native-track-player';
+import TrackPlayer, {RepeatMode as NativeRepeat} from '../player';
 import {setEngineBridge, usePlayerStore, type RepeatModeUI, type ShuffleMode, type Track} from '../../store/playerStore';
 import {useSettingsStore} from '../../store/settingsStore';
 import {useDownloadStore} from '../../store/downloadStore';

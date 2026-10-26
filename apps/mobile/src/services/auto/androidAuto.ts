@@ -13,7 +13,7 @@
  * @license CC-BY-NC-4.0
  */
 import {NativeEventEmitter, NativeModules, Platform} from 'react-native';
-import TrackPlayer, {Event} from 'react-native-track-player';
+import TrackPlayer, {Event} from '../player';
 import {getCoverArtUrl} from '../../api/client';
 import {getAlbum, getAlbumsByArtist} from '../../api/endpoints/library';
 import {getPlaylist, getPlaylists} from '../../api/endpoints/playlists';

@@ -14,7 +14,7 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import {Alert, Pressable, StyleSheet, View} from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import {State, useActiveTrack, usePlaybackState} from 'react-native-track-player';
+import {State, useActiveTrack, usePlaybackState} from '../../services/player';
 import DetailScaffold from '../../components/detail/DetailScaffold';
 import {PlayShuffleRow, SquareButton} from '../../components/detail/DetailParts';
 import {usePlayButton} from '../../hooks/usePlayButton';
