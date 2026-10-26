@@ -11,7 +11,7 @@
  *   (key revoked, suspended, password changed), the form comes back filled
  *   in with the reason, and signing in again replaces the old account.
  * @author DoodzProg
- * @version 2.2.0
+ * @version 2.2.1
  * @license CC-BY-NC-4.0
  */
 import React, {useRef, useState} from 'react';
@@ -34,6 +34,7 @@ import {AlertIcon, CheckIcon, LogoIcon} from '../../components/icons';
 import {PingError} from '../../api/client';
 import {secureAccount} from '../../api/accountAuth';
 import {useSettingsStore, type AuthProblem, type Server} from '../../store/settingsStore';
+import {scrubStorage} from '../../store/scrubStorage';
 import {colors, radii, spacing} from '../../theme';
 import {useT, getT} from '../../i18n';
 import {hostOf} from '../../utils/hostOf';
@@ -117,6 +118,7 @@ export default function ServerSetupScreen() {
       if (existing) {
         updateServer({...secured, id: existing.id, name: existing.name});
         setActiveServer(existing.id);
+        if (existing.password) scrubStorage().catch(() => {});
       } else {
         addServer(secured);
         setActiveServer(secured.id);

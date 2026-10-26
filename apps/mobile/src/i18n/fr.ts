@@ -100,8 +100,8 @@ export const t = {
     settings: 'Réglages',
     logout: 'Se déconnecter',
     logoutTitle: 'Se déconnecter',
-    logoutMessage: (name: string, url: string) =>
-      `Voulez-vous vous déconnecter de :\n\n${name}\n${url}\n\nVous devrez saisir à nouveau votre mot de passe.`,
+    logoutMessage: (username: string, host: string) =>
+      `Voulez-vous déconnecter ${username} de ${host} ?\n\nVous devrez saisir à nouveau votre mot de passe.`,
     logoutConfirm: 'Déconnecter',
     cancelButton: 'Annuler',
     goOffline: 'Passer hors ligne',
@@ -526,6 +526,10 @@ export const t = {
       autoplayDesc: "Lance automatiquement des titres similaires à la fin de la file d'attente.",
       alwaysPreviousLabel: "Précédent revient toujours au titre d'avant",
       alwaysPreviousDesc: 'Sinon, après 3 secondes, Précédent redémarre le titre.',
+      nativePlayerLabel: 'Nouveau lecteur (test)',
+      nativePlayerDesc: "Lecteur natif d'Android, plus économe écran éteint. En cours de test.",
+      nativePlayerRestartTitle: 'Relancez Musonic',
+      nativePlayerRestartMessage: "Le changement s'applique au prochain lancement : fermez Musonic (glissez-le hors des applis récentes), puis rouvrez-le.",
       autoDownloadLabel: 'Téléchargement automatique',
       autoDownloadDesc: "Télécharge les titres que vous écoutez, pour les retrouver hors ligne.",
       autoDownloadAlertTitle: 'Téléchargement automatique',

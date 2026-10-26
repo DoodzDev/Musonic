@@ -3,12 +3,19 @@
  * @description Accounts keep a device key on Musonic Server and a fixed token
  *   elsewhere, never the password (ADR-021): the URLs carry the key alone, a
  *   server refusing tokens keeps the password, and accounts saved by older
- *   versions are upgraded at launch, quietly when the server cannot be reached.
+ *   versions are upgraded at launch, quietly when the server cannot be reached,
+ *   and the storage file is then wiped of their passwords.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
-jest.mock('../../src/store/storage', () => ({storage: {getString: () => undefined, set: () => {}, delete: () => {}}, mmkvStorage: {getItem: () => null, setItem: () => {}, removeItem: () => {}}}));
+let mockScrubbed = true;
+const mockScrub = jest.fn(async () => {});
+jest.mock('../../src/store/storage', () => ({
+  storage: {getString: () => undefined, getBoolean: () => mockScrubbed, set: () => {}, delete: () => {}},
+  mmkvStorage: {getItem: () => null, setItem: () => {}, removeItem: () => {}},
+}));
+jest.mock('../../src/store/scrubStorage', () => ({scrubStorage: () => mockScrub()}));
 jest.mock('../../src/store/localCovers', () => ({getLocalCoverUri: () => undefined}));
 jest.mock('../../src/store/networkStore', () => ({useNetworkStore: {getState: () => ({setOffline: () => {}, setServerReachable: () => {}})}}));
 jest.mock('../../src/services/network', () => ({isOnMobileData: () => false}));
@@ -92,14 +99,27 @@ describe('upgradeSavedAccounts', () => {
   it('upgrades accounts saved with a password', async () => {
     fakeServer({musonic: true});
     useSettingsStore.setState({servers: [account]});
+    mockScrub.mockClear();
     await upgradeSavedAccounts();
     expect(useSettingsStore.getState().servers[0]).toMatchObject({id: '1', password: '', apiKey: 'msk_device'});
+    expect(mockScrub).toHaveBeenCalledTimes(1);
   });
   it('leaves them as they are when the server cannot be reached', async () => {
     fakeServer({musonic: true, down: true});
     useSettingsStore.setState({servers: [account]});
+    mockScrub.mockClear();
     await upgradeSavedAccounts();
     expect(useSettingsStore.getState().servers[0]).toEqual(account);
+    expect(mockScrub).not.toHaveBeenCalled();
+  });
+  it('wipes the storage file once for accounts traded by an earlier build', async () => {
+    fakeServer({musonic: true});
+    useSettingsStore.setState({servers: [{...account, password: '', apiKey: 'msk_old', apiKeyId: 'k0'}]});
+    mockScrubbed = false;
+    mockScrub.mockClear();
+    await upgradeSavedAccounts();
+    mockScrubbed = true;
+    expect(mockScrub).toHaveBeenCalledTimes(1);
   });
 });
 

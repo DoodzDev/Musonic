@@ -97,8 +97,8 @@ export const en = {
     settings: 'Settings',
     logout: 'Log out',
     logoutTitle: 'Log out',
-    logoutMessage: (name: string, url: string) =>
-      `Log out of:\n\n${name}\n${url}\n\nYou will need to enter your password again.`,
+    logoutMessage: (username: string, host: string) =>
+      `Log ${username} out of ${host}?\n\nYou will need to enter your password again.`,
     logoutConfirm: 'Log out',
     cancelButton: 'Cancel',
     goOffline: 'Go offline',
@@ -520,6 +520,10 @@ export const en = {
       autoplayDesc: 'Automatically plays similar tracks when the queue ends.',
       alwaysPreviousLabel: 'Previous always goes back',
       alwaysPreviousDesc: 'Otherwise, after 3 seconds, Previous restarts the track.',
+      nativePlayerLabel: 'New player (test)',
+      nativePlayerDesc: "Android's native player, lighter with the screen off. Being tested.",
+      nativePlayerRestartTitle: 'Restart Musonic',
+      nativePlayerRestartMessage: 'The change applies at the next launch: close Musonic (swipe it out of the recent apps), then open it again.',
       autoDownloadLabel: 'Automatic download',
       autoDownloadDesc: 'Downloads the tracks you play, so you have them offline.',
       autoDownloadAlertTitle: 'Enable auto-download',

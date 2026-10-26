@@ -6,15 +6,19 @@
  *   when a server refuses tokens. Also trades the passwords of accounts saved
  *   by older versions, and revokes the device key at logout.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {Platform} from 'react-native';
 import {md5} from 'js-md5';
 import {pingServer} from './client';
 import {useSettingsStore, type Server} from '../store/settingsStore';
+import {storage} from '../store/storage';
+import {scrubStorage} from '../store/scrubStorage';
 
 const TIMEOUT_MS = 10000;
+/** Set once the storage file has been wiped of the passwords saved by older versions. */
+const SCRUBBED_KEY = 'accounts.storageScrubbed';
 
 /** Server root without trailing slashes or `/rest`. */
 function rootOf(url: string): string {
@@ -117,6 +121,7 @@ let upgrading = false;
 export async function upgradeSavedAccounts(): Promise<void> {
   if (upgrading) return;
   upgrading = true;
+  let traded = false;
   try {
     for (const server of useSettingsStore.getState().servers) {
       if (!server.password || server.apiKey || server.token) continue;
@@ -125,10 +130,19 @@ export async function upgradeSavedAccounts(): Promise<void> {
         if (!secured.apiKey && !secured.token) continue;
         // The account may have been removed or changed meanwhile.
         const current = useSettingsStore.getState().servers.find(s => s.id === server.id);
-        if (current && current.password === server.password) useSettingsStore.getState().updateServer(secured);
+        if (current && current.password === server.password) {
+          useSettingsStore.getState().updateServer(secured);
+          traded = true;
+        }
       } catch {
         // Offline or password changed: the usual checks deal with it.
       }
+    }
+    // The traded passwords must not linger in the storage file, nor those traded by an earlier build.
+    if (traded || !storage.getBoolean(SCRUBBED_KEY)) {
+      await scrubStorage()
+        .then(() => storage.set(SCRUBBED_KEY, true))
+        .catch(() => {});
     }
   } finally {
     upgrading = false;

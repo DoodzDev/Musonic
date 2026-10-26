@@ -9,7 +9,10 @@
 import {MMKV} from 'react-native-mmkv';
 import {StateStorage} from 'zustand/middleware';
 
-export const storage = new MMKV({id: 'musonic-storage'});
+/** Name of the MMKV file, under `<files>/mmkv/`. */
+export const STORAGE_ID = 'musonic-storage';
+
+export const storage = new MMKV({id: STORAGE_ID});
 
 export const mmkvStorage: StateStorage = {
   getItem: key => storage.getString(key) ?? null,

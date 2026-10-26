@@ -8,7 +8,7 @@
  *   page. The identity block is the sheet's fixed header, so swiping down on
  *   it closes the sheet; in landscape it moves to a column on the left.
  * @author DoodzProg
- * @version 1.4.0
+ * @version 1.4.1
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useState} from 'react';
@@ -28,6 +28,7 @@ import {useIsLandscape} from '../../hooks/useIsLandscape';
 import {useDownloadStore} from '../../store/downloadStore';
 import {pingServer} from '../../api/client';
 import {revokeDeviceKey} from '../../api/accountAuth';
+import {scrubStorage} from '../../store/scrubStorage';
 import {withTimeout} from '../../services/connectivityService';
 import {colors, spacing} from '../../theme';
 import {useT} from '../../i18n';
@@ -101,7 +102,7 @@ export default function ProfileSheet({visible, onClose}: Props) {
   };
 
   const logout = () =>
-    Alert.alert(t.drawer.logoutTitle, t.drawer.logoutMessage(active?.name ?? '', active?.url ?? ''), [
+    Alert.alert(t.drawer.logoutTitle, t.drawer.logoutMessage(active?.username ?? '', active ? hostOf(active.url) : ''), [
       {text: t.drawer.cancelButton, style: 'cancel'},
       {
         text: t.drawer.logoutConfirm,
@@ -114,6 +115,8 @@ export default function ProfileSheet({visible, onClose}: Props) {
             removeServer(active.id);
           }
           disconnectServer();
+          // An account kept with its password (server refusing tokens) leaves no trace of it.
+          if (active?.password) scrubStorage().catch(() => {});
         },
       },
     ]);
