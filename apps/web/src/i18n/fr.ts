@@ -177,6 +177,10 @@ export const fr = {
     close: 'Fermer les réglages',
     language: 'Langue',
     languageHint: 'Partagée avec le site de Musonic. La page se recharge pour l’appliquer.',
+    crossfade: 'Fondu enchaîné',
+    crossfadeOff: 'Désactivé',
+    crossfadeSeconds: (seconds: number) => `${seconds} s`,
+    crossfadeHint: 'Le titre suivant démarre en fondu sur la fin du titre en cours. Jamais quand vous passez un titre vous-même.',
   },
   nav: {
     main: 'Navigation principale',

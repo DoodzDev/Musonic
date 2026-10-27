@@ -177,6 +177,10 @@ export const en: typeof fr = {
     close: 'Close settings',
     language: 'Language',
     languageHint: 'Shared with the Musonic website. The page reloads to apply it.',
+    crossfade: 'Crossfade',
+    crossfadeOff: 'Off',
+    crossfadeSeconds: (seconds: number) => `${seconds} s`,
+    crossfadeHint: 'The next track fades in over the end of the current one. Never when you skip a track yourself.',
   },
   nav: {
     main: 'Main navigation',
