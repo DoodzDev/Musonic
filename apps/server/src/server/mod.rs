@@ -233,7 +233,7 @@ async fn home() -> Html<&'static str> {
         "p{color:#a0a0aa}code{color:#e8e8ec}a{color:#e8e8ec}</style></head><body><main>",
         "<h1>Musonic Server is running</h1>",
         "<p>Sign in from a Musonic app or any Subsonic client, with this page's address as the ",
-        "server (for example <a href=\"https://doodzprog.github.io/Musonic/app/\">Musonic Web</a>).</p>",
+        "server (for example <a href=\"https://musonic.doodz.dev/app/\">Musonic Web</a>).</p>",
         "<p>Version ",
         env!("CARGO_PKG_VERSION"),
         " · <a href=\"/health\">status</a></p>",

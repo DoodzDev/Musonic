@@ -1,7 +1,8 @@
 name: Website & Web Client
 
 # Publishes the GitHub Pages site: the project website (docs/) at the root and
-# the web client under /app/ (https://doodzprog.github.io/Musonic/app/).
+# the web client under /app/ (https://musonic.doodz.dev/app/, custom domain set in
+# the repository settings → Pages).
 on:
   push:
     branches:
@@ -44,7 +45,7 @@ jobs:
       - name: Build web client
         run: npm run build --workspace apps/web
         env:
-          MUSONIC_WEB_BASE: /Musonic/app/
+          MUSONIC_WEB_BASE: /app/
 
       - name: Assemble site
         run: |
@@ -52,7 +53,7 @@ jobs:
           cp -r docs/. _site/
           cp -r apps/web/dist/. _site/app/
           # GitHub Pages has a single 404 page: serve the web client there so
-          # reloading a deep link (/Musonic/app/album/…) still opens the app.
+          # reloading a deep link (/app/album/…) still opens the app.
           cp _site/app/index.html _site/404.html
 
       - name: Upload site

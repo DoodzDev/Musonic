@@ -9,13 +9,13 @@
 Apps for Android, iOS and the browser, and **Musonic Server** to host your library yourself.
 Also works with Navidrome and any Subsonic-compatible server.
 
-<a href="https://doodzprog.github.io/Musonic/"><img src="docs/assets/img/badges/website.png" alt="Learn more about Musonic on its website" height="64" /></a>
+<a href="https://musonic.doodz.dev/"><img src="docs/assets/img/badges/website.png" alt="Learn more about Musonic on its website" height="64" /></a>
 
 <a href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.apk"><img src="docs/assets/img/badges/download-android.png" alt="Download Musonic for Android" height="64" /></a>
 &nbsp;
 <a href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.ipa"><img src="docs/assets/img/badges/install-ios.png" alt="Install Musonic on iOS (sideload)" height="64" /></a>
 
-<a href="https://doodzprog.github.io/Musonic/app/"><img src="docs/assets/img/badges/web.png" alt="Try Musonic on the web" height="64" /></a>
+<a href="https://musonic.doodz.dev/app/"><img src="docs/assets/img/badges/web.png" alt="Try Musonic on the web" height="64" /></a>
 &nbsp;
 <a href="apps/server/README.md#build-and-run"><img src="docs/assets/img/badges/server.png" alt="Install Musonic Server on your own server" height="64" /></a>
 
@@ -55,7 +55,7 @@ A calm, fast music app: full-screen player with synced lyrics, a queue you can r
 → [`apps/mobile`](apps/mobile) · [changelog](apps/mobile/CHANGELOG.md)
 
 ### Musonic Web
-The complete Musonic in a desktop browser: home, search, library, synced lyrics, full-screen player, floating mini player, keyboard and media keys. **Import a Spotify or Deezer playlist** from its address (with Musonic Server). Use it [online](https://doodzprog.github.io/Musonic/app/), nothing to install, or host it yourself.
+The complete Musonic in a desktop browser: home, search, library, synced lyrics, full-screen player, floating mini player, keyboard and media keys. **Import a Spotify or Deezer playlist** from its address (with Musonic Server). Use it [online](https://musonic.doodz.dev/app/), nothing to install, or host it yourself.
 → [`apps/web`](apps/web) · [changelog](apps/web/CHANGELOG.md)
 
 ### Musonic Server
@@ -74,7 +74,7 @@ Served by Musonic Server at its own address: accounts by invitation link (the ad
 |---|---|
 | **Android** 7.0+ | Download [`Musonic.apk`](https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.apk) and open it. The app tells you when a new version is out. |
 | **iOS** 15.1+ | Unsigned [`Musonic.ipa`](https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.ipa), to install with AltStore or Sideloadly. No App Store release is planned. |
-| **Web** | **Online** at [doodzprog.github.io/Musonic/app](https://doodzprog.github.io/Musonic/app/), or **self-hosted**: `Musonic-Web.zip` from the latest [`web-v` release](https://github.com/DoodzProg/Musonic/releases?q=web-v&expanded=true), see [`SELF-HOSTING.md`](apps/web/SELF-HOSTING.md). Musonic Server can also install it for you at `/app`. |
+| **Web** | **Online** at [musonic.doodz.dev/app](https://musonic.doodz.dev/app/), or **self-hosted**: `Musonic-Web.zip` from the latest [`web-v` release](https://github.com/DoodzProg/Musonic/releases?q=web-v&expanded=true), see [`SELF-HOSTING.md`](apps/web/SELF-HOSTING.md). Musonic Server can also install it for you at `/app`. |
 | **Server** | Docker or a single binary: see [Musonic Server, build and run](apps/server/README.md#build-and-run). Coming from Navidrome? Your playlists, likes and plays [come along](apps/server/README.md#coming-from-navidrome). |
 
 No Musonic account, no cloud, no API key: the apps only talk to your own server, plus a few public services described in [Privacy](#privacy).
@@ -110,7 +110,7 @@ On first launch, enter your server's address, username and password. Musonic tel
 |---|---|---|
 | ![Search results](docs/assets/img/screenshots/search_results.jpg) | ![Library](docs/assets/img/screenshots/library.jpg) | ![Magic Mix](docs/assets/img/screenshots/magic_mix.jpg) |
 
-More on the [website](https://doodzprog.github.io/Musonic/).
+More on the [website](https://musonic.doodz.dev/).
 
 ---
 

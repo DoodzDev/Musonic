@@ -63,7 +63,7 @@ export function NotAdminPage({ onSignOut }: { onSignOut: () => void }) {
         <div className="logo"><Icon name="logo" size={64} /></div>
         <h1>{t.login.notAdmin}</h1>
         <p className="sub muted">{t.login.notAdminSub}</p>
-        <a className="btn primary block" href="https://doodzprog.github.io/Musonic/app/">{t.login.openWeb}</a>
+        <a className="btn primary block" href="https://musonic.doodz.dev/app/">{t.login.openWeb}</a>
         <a className="btn ghost block" href="/login" style={{ marginTop: 8 }} onClick={onSignOut}>{t.login.switchAccount}</a>
       </div>
     </div>

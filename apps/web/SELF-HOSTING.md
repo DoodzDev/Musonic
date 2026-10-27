@@ -46,4 +46,4 @@ Use HTTPS on both: browsers block an HTTP server from an HTTPS page.
 
 ## Updating
 
-Download `Musonic-Web.zip` from the latest `web-v…` release and replace the files. The online version (https://doodzprog.github.io/Musonic/app/) is always up to date.
+Download `Musonic-Web.zip` from the latest `web-v…` release and replace the files. The online version (https://musonic.doodz.dev/app/) is always up to date.

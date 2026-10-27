@@ -169,7 +169,7 @@ export default function ProfileSheet({visible, onClose}: Props) {
         <ListItem
           label={t.ui.website}
           accessory="chevron"
-          onPress={() => Linking.openURL('https://doodzprog.github.io/Musonic/')}
+          onPress={() => Linking.openURL('https://musonic.doodz.dev/')}
         />
         <ListItem label="GitHub" accessory="chevron" onPress={() => Linking.openURL('https://github.com/DoodzProg/Musonic')} />
         <ListItem label="doodz.dev" accessory="chevron" onPress={() => Linking.openURL('https://doodz.dev')} />

@@ -2,7 +2,7 @@
  * @file vite.config.ts
  * @description Vite configuration for the Musonic web client, with a development relay.
  *   `MUSONIC_WEB_BASE` sets the path the client is served under (default `/`;
- *   `/Musonic/app/` for the GitHub Pages build). The version of package.json
+ *   `/app/` for the GitHub Pages build). The version of package.json
  *   is given to the app as `__MUSONIC_WEB_VERSION__`.
  * @author DoodzProg
  * @version 0.5.0

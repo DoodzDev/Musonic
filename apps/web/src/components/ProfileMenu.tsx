@@ -118,7 +118,7 @@ export function ProfileMenu() {
 
           <span className="menu-caption">{t.about}</span>
           <div className="menu-group">
-            <LinkRow href="https://doodzprog.github.io/Musonic/" label={t.website} />
+            <LinkRow href="https://musonic.doodz.dev/" label={t.website} />
             <LinkRow href="https://github.com/DoodzProg/Musonic" label="GitHub" />
             <LinkRow href="https://doodz.dev" label="doodz.dev" />
           </div>
