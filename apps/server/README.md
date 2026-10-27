@@ -10,17 +10,17 @@ the Musonic apps and for any Subsonic client.
 With Docker, in the folder where its data will live:
 
 ```sh
-curl -o compose.yml https://raw.githubusercontent.com/DoodzProg/Musonic/main/apps/server/compose.example.yml
+curl -o compose.yml https://raw.githubusercontent.com/DoodzDev/Musonic/main/apps/server/compose.example.yml
 # set the path of your music folder and its owner (user: "1000:1000"), then:
 docker compose up -d
 docker compose exec musonic-server musonic-server user add <name> --admin
 ```
 
-The image is `ghcr.io/doodzprog/musonic-server` (tags `1`, `1.0`, `1.0.0`, `latest`);
+The image is `ghcr.io/doodzdev/musonic-server` (tags `1`, `1.0`, `1.0.0`, `latest`);
 `docker compose pull && docker compose up -d` updates it. Put a reverse proxy with HTTPS in
 front: the server listens on `127.0.0.1:4533`.
 
-Without Docker: each [release](https://github.com/DoodzProg/Musonic/releases) tagged
+Without Docker: each [release](https://github.com/DoodzDev/Musonic/releases) tagged
 `server-v…` has the program for Linux x86 and ARM (`musonic-server-…-linux-x86_64.tar.gz`,
 `…-aarch64.tar.gz`), with its console in `admin/` next to it. Install ffmpeg for transcoding.
 

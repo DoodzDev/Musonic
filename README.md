@@ -11,19 +11,19 @@ Also works with Navidrome and any Subsonic-compatible server.
 
 <a href="https://musonic.doodz.dev/"><img src="docs/assets/img/badges/website.png" alt="Learn more about Musonic on its website" height="64" /></a>
 
-<a href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.apk"><img src="docs/assets/img/badges/download-android.png" alt="Download Musonic for Android" height="64" /></a>
+<a href="https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.apk"><img src="docs/assets/img/badges/download-android.png" alt="Download Musonic for Android" height="64" /></a>
 &nbsp;
-<a href="https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.ipa"><img src="docs/assets/img/badges/install-ios.png" alt="Install Musonic on iOS (sideload)" height="64" /></a>
+<a href="https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.ipa"><img src="docs/assets/img/badges/install-ios.png" alt="Install Musonic on iOS (sideload)" height="64" /></a>
 
 <a href="https://musonic.doodz.dev/app/"><img src="docs/assets/img/badges/web.png" alt="Try Musonic on the web" height="64" /></a>
 &nbsp;
 <a href="apps/server/README.md#build-and-run"><img src="docs/assets/img/badges/server.png" alt="Install Musonic Server on your own server" height="64" /></a>
 
-[![Mobile release](https://img.shields.io/github/v/release/DoodzProg/Musonic?filter=mobile-v*&label=mobile&color=FF6B35)](https://github.com/DoodzProg/Musonic/releases/latest)
-[![Web release](https://img.shields.io/github/v/release/DoodzProg/Musonic?filter=web-v*&label=web&color=FF6B35)](https://github.com/DoodzProg/Musonic/releases?q=web-v&expanded=true)
-[![Mobile CI](https://github.com/DoodzProg/Musonic/actions/workflows/ci.yml/badge.svg)](https://github.com/DoodzProg/Musonic/actions/workflows/ci.yml)
-[![Web CI](https://github.com/DoodzProg/Musonic/actions/workflows/ci-web.yml/badge.svg)](https://github.com/DoodzProg/Musonic/actions/workflows/ci-web.yml)
-[![Server CI](https://github.com/DoodzProg/Musonic/actions/workflows/server-ci.yml/badge.svg)](https://github.com/DoodzProg/Musonic/actions/workflows/server-ci.yml)
+[![Mobile release](https://img.shields.io/github/v/release/DoodzDev/Musonic?filter=mobile-v*&label=mobile&color=FF6B35)](https://github.com/DoodzDev/Musonic/releases/latest)
+[![Web release](https://img.shields.io/github/v/release/DoodzDev/Musonic?filter=web-v*&label=web&color=FF6B35)](https://github.com/DoodzDev/Musonic/releases?q=web-v&expanded=true)
+[![Mobile CI](https://github.com/DoodzDev/Musonic/actions/workflows/ci.yml/badge.svg)](https://github.com/DoodzDev/Musonic/actions/workflows/ci.yml)
+[![Web CI](https://github.com/DoodzDev/Musonic/actions/workflows/ci-web.yml/badge.svg)](https://github.com/DoodzDev/Musonic/actions/workflows/ci-web.yml)
+[![Server CI](https://github.com/DoodzDev/Musonic/actions/workflows/server-ci.yml/badge.svg)](https://github.com/DoodzDev/Musonic/actions/workflows/server-ci.yml)
 
 <img src="docs/assets/img/screenshots/home.jpg" alt="Home" width="200" />
 <img src="docs/assets/img/screenshots/player.jpg" alt="Player" width="200" />
@@ -72,9 +72,9 @@ Served by Musonic Server at its own address: accounts by invitation link (the ad
 
 | What | How |
 |---|---|
-| **Android** 7.0+ | Download [`Musonic.apk`](https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.apk) and open it. The app tells you when a new version is out. |
-| **iOS** 15.1+ | Unsigned [`Musonic.ipa`](https://github.com/DoodzProg/Musonic/releases/latest/download/Musonic.ipa), to install with AltStore or Sideloadly. No App Store release is planned. |
-| **Web** | **Online** at [musonic.doodz.dev/app](https://musonic.doodz.dev/app/), or **self-hosted**: `Musonic-Web.zip` from the latest [`web-v` release](https://github.com/DoodzProg/Musonic/releases?q=web-v&expanded=true), see [`SELF-HOSTING.md`](apps/web/SELF-HOSTING.md). Musonic Server can also install it for you at `/app`. |
+| **Android** 7.0+ | Download [`Musonic.apk`](https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.apk) and open it. The app tells you when a new version is out. |
+| **iOS** 15.1+ | Unsigned [`Musonic.ipa`](https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.ipa), to install with AltStore or Sideloadly. No App Store release is planned. |
+| **Web** | **Online** at [musonic.doodz.dev/app](https://musonic.doodz.dev/app/), or **self-hosted**: `Musonic-Web.zip` from the latest [`web-v` release](https://github.com/DoodzDev/Musonic/releases?q=web-v&expanded=true), see [`SELF-HOSTING.md`](apps/web/SELF-HOSTING.md). Musonic Server can also install it for you at `/app`. |
 | **Server** | Docker or a single binary: see [Musonic Server, build and run](apps/server/README.md#build-and-run). Coming from Navidrome? Your playlists, likes and plays [come along](apps/server/README.md#coming-from-navidrome). |
 
 No Musonic account, no cloud, no API key: the apps only talk to your own server, plus a few public services described in [Privacy](#privacy).
@@ -170,7 +170,7 @@ The in-app update prompt only looks at its own app's tags. Every push and pull r
 
 ## Contributing
 
-Bug reports and ideas are welcome: open an [issue](https://github.com/DoodzProg/Musonic/issues/new/choose). For code, read [CONTRIBUTING.md](CONTRIBUTING.md) first: branches, commit style and checks.
+Bug reports and ideas are welcome: open an [issue](https://github.com/DoodzDev/Musonic/issues/new/choose). For code, read [CONTRIBUTING.md](CONTRIBUTING.md) first: branches, commit style and checks.
 
 ## License
 
@@ -183,7 +183,7 @@ Free to use and adapt for personal, non-commercial purposes. Commercial use is p
 
 <div align="center">
 
-**[DoodzProg](https://github.com/DoodzProg)**: designed, built, and shipped from scratch.
+**[DoodzDev](https://github.com/DoodzDev)**: designed, built, and shipped from scratch.
 
 *Built with passion. Debugged with patience. Shipped with pride.*
 

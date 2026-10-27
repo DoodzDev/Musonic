@@ -113,8 +113,8 @@ export function parseLrc(lrc: string): LyricLine[] {
 
 const LRCLIB_HEADERS = {
   // LRCLIB sits behind Cloudflare, which rejects the default OkHttp User-Agent (HTTP 520).
-  'User-Agent': 'Musonic (https://github.com/DoodzProg/Musonic)',
-  'Lrclib-Client': 'Musonic (https://github.com/DoodzProg/Musonic)',
+  'User-Agent': 'Musonic (https://github.com/DoodzDev/Musonic)',
+  'Lrclib-Client': 'Musonic (https://github.com/DoodzDev/Musonic)',
 };
 const LRCLIB_DURATION_TOLERANCE_S = 3;
 

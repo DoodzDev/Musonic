@@ -11,7 +11,7 @@ import { compareVersions, isNewerVersion, latestRelease, parseReleaseTag, type G
 
 const rel = (tag_name: string, extra: Partial<GitHubRelease> = {}): GitHubRelease => ({
   tag_name,
-  html_url: `https://github.com/DoodzProg/Musonic/releases/tag/${tag_name}`,
+  html_url: `https://github.com/DoodzDev/Musonic/releases/tag/${tag_name}`,
   ...extra,
 });
 
@@ -52,7 +52,7 @@ describe('latestRelease', () => {
       app: 'mobile',
       version: '1.0.10',
       tag: 'mobile-v1.0.10',
-      url: 'https://github.com/DoodzProg/Musonic/releases/tag/mobile-v1.0.10',
+      url: 'https://github.com/DoodzDev/Musonic/releases/tag/mobile-v1.0.10',
     });
     expect(latestRelease(list, 'web')?.version).toBe('0.4.0');
   });

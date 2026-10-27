@@ -1,7 +1,7 @@
 name: Server Release
 
 # A `server-vX.Y.Z` tag builds Musonic Server (with ffmpeg and its console) for x86 and ARM,
-# pushes the image ghcr.io/doodzprog/musonic-server (tags X.Y.Z, X.Y, X, latest) and publishes
+# pushes the image ghcr.io/doodzdev/musonic-server (tags X.Y.Z, X.Y, X, latest) and publishes
 # the release "Musonic Server X.Y.Z" with compose.yml and the program for each architecture
 # (the console next to it), its notes taken from apps/server/CHANGELOG.md.
 on:
@@ -14,7 +14,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE: ghcr.io/doodzprog/musonic-server
+  IMAGE: ghcr.io/doodzdev/musonic-server
 
 jobs:
   build:
@@ -51,7 +51,7 @@ jobs:
           file: apps/server/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: |
-            org.opencontainers.image.source=https://github.com/DoodzProg/Musonic
+            org.opencontainers.image.source=https://github.com/DoodzDev/Musonic
             org.opencontainers.image.title=Musonic Server
             org.opencontainers.image.licenses=PolyForm-Noncommercial-1.0.0
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true

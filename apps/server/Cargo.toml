@@ -6,7 +6,7 @@ edition = "2024"
 rust-version = "1.88"
 license-file = "LICENSE"
 authors = ["DoodzProg"]
-repository = "https://github.com/DoodzProg/Musonic"
+repository = "https://github.com/DoodzDev/Musonic"
 publish = false
 
 [lib]

@@ -7,7 +7,7 @@
     @author  DoodzProg
     @version 3.0.0
     @license CC-BY-NC-4.0
-    @see     https://github.com/DoodzProg/Musonic
+    @see     https://github.com/DoodzDev/Musonic
   -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -55,7 +55,7 @@
           <button type="button" data-lang="en" aria-pressed="true">EN</button>
           <button type="button" data-lang="fr" aria-pressed="false">FR</button>
         </div>
-        <a class="round" href="https://github.com/DoodzProg/Musonic" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+        <a class="round" href="https://github.com/DoodzDev/Musonic" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
         </a>
       </div>
@@ -129,20 +129,20 @@
           <p data-l="en">You need a Linux machine (a home server, a Raspberry Pi, a VPS) with Docker, and your music in a folder.</p>
           <p data-l="fr">Il vous faut une machine Linux (un serveur maison, un Raspberry Pi, un VPS) avec Docker, et votre musique dans un dossier.</p>
           <ol class="list" data-l="en">
-            <li>In the folder where your data will live, get <code>compose.yml</code>: <code>curl -o compose.yml https://raw.githubusercontent.com/DoodzProg/Musonic/main/apps/server/compose.example.yml</code></li>
+            <li>In the folder where your data will live, get <code>compose.yml</code>: <code>curl -o compose.yml https://raw.githubusercontent.com/DoodzDev/Musonic/main/apps/server/compose.example.yml</code></li>
             <li>Set the path of your music folder, and the user owning it (<code>user: "1000:1000"</code>).</li>
             <li>Start it: <code>docker compose up -d</code>. The server, ffmpeg and its console are downloaded and started.</li>
             <li>Put a reverse proxy with HTTPS in front (Caddy, nginx, a Cloudflare tunnel…): the server listens on <code>127.0.0.1:4533</code>.</li>
           </ol>
           <ol class="list" data-l="fr">
-            <li>Dans le dossier où vivront vos données, récupérez <code>compose.yml</code> : <code>curl -o compose.yml https://raw.githubusercontent.com/DoodzProg/Musonic/main/apps/server/compose.example.yml</code></li>
+            <li>Dans le dossier où vivront vos données, récupérez <code>compose.yml</code> : <code>curl -o compose.yml https://raw.githubusercontent.com/DoodzDev/Musonic/main/apps/server/compose.example.yml</code></li>
             <li>Indiquez le chemin de votre dossier de musique, et l'utilisateur qui en est propriétaire (<code>user: "1000:1000"</code>).</li>
             <li>Lancez : <code>docker compose up -d</code>. Le serveur, ffmpeg et sa console sont téléchargés et démarrés.</li>
             <li>Placez un reverse proxy en HTTPS devant (Caddy, nginx, un tunnel Cloudflare…) : le serveur écoute sur <code>127.0.0.1:4533</code>.</li>
           </ol>
           <pre><code>services:
   musonic-server:
-    image: ghcr.io/doodzprog/musonic-server:1
+    image: ghcr.io/doodzdev/musonic-server:1
     restart: unless-stopped
     user: "1000:1000"
     ports:
@@ -150,7 +150,7 @@
     volumes:
       - ./data:/data              # database, caches, daily backups
       - /path/to/music:/music     # :ro if you do not want imports</code></pre>
-          <p class="note"><span data-l="en">Without Docker: download the program for Linux x86 or ARM from the <a href="https://github.com/DoodzProg/Musonic/releases">releases</a> (<code>server-v…</code>), it is a single program, its console next to it. </span><span data-l="fr">Sans Docker : téléchargez le programme pour Linux x86 ou ARM dans les <a href="https://github.com/DoodzProg/Musonic/releases">versions</a> (<code>server-v…</code>), c'est un seul programme, avec sa console à côté. </span><a href="https://github.com/DoodzProg/Musonic/blob/main/apps/server/README.md#install"><span data-l="en">Details</span><span data-l="fr">Détails</span></a></p>
+          <p class="note"><span data-l="en">Without Docker: download the program for Linux x86 or ARM from the <a href="https://github.com/DoodzDev/Musonic/releases">releases</a> (<code>server-v…</code>), it is a single program, its console next to it. </span><span data-l="fr">Sans Docker : téléchargez le programme pour Linux x86 ou ARM dans les <a href="https://github.com/DoodzDev/Musonic/releases">versions</a> (<code>server-v…</code>), c'est un seul programme, avec sa console à côté. </span><a href="https://github.com/DoodzDev/Musonic/blob/main/apps/server/README.md#install"><span data-l="en">Details</span><span data-l="fr">Détails</span></a></p>
         </section>
 
         <section id="first">
@@ -175,12 +175,12 @@
           <p data-l="fr">La recherche montre ensemble votre bibliothèque et le catalogue en ligne (le catalogue public de Deezer : titres, albums, artistes, pochettes). Le parcourir n'écrit rien. Dès que vous likez un titre en ligne, l'ajoutez à une playlist ou likez son album, il entre dans votre bibliothèque sous un seul identifiant, et il est <strong>importé</strong> en fichier dans votre dossier de musique (<code>Musonic/Artiste/Album/</code>), tagué, avec sa pochette. Likes et playlists restent où ils sont.</p>
           <ul class="list" data-l="en">
             <li>Without anything else, online songs play as <strong>30-second previews</strong>.</li>
-            <li>Full songs and imports come from <strong>audio providers</strong> plugged into the server, for instance another Subsonic server to relay audio from (documented interface: <a href="https://github.com/DoodzProg/Musonic/blob/main/apps/server/docs/PROVIDERS.md">PROVIDERS.md</a>).</li>
+            <li>Full songs and imports come from <strong>audio providers</strong> plugged into the server, for instance another Subsonic server to relay audio from (documented interface: <a href="https://github.com/DoodzDev/Musonic/blob/main/apps/server/docs/PROVIDERS.md">PROVIDERS.md</a>).</li>
             <li>Imports run in the background, retry on their own, and follow each account's rights and quotas. Quality: MP3 128, MP3 320 or FLAC.</li>
           </ul>
           <ul class="list" data-l="fr">
             <li>Sans rien d'autre, les titres en ligne se lisent en <strong>extraits de 30 secondes</strong>.</li>
-            <li>Les titres complets et les imports viennent de <strong>fournisseurs audio</strong> branchés sur le serveur, par exemple un autre serveur Subsonic dont il relaie l'audio (interface documentée : <a href="https://github.com/DoodzProg/Musonic/blob/main/apps/server/docs/PROVIDERS.md">PROVIDERS.md</a>).</li>
+            <li>Les titres complets et les imports viennent de <strong>fournisseurs audio</strong> branchés sur le serveur, par exemple un autre serveur Subsonic dont il relaie l'audio (interface documentée : <a href="https://github.com/DoodzDev/Musonic/blob/main/apps/server/docs/PROVIDERS.md">PROVIDERS.md</a>).</li>
             <li>Les imports tournent en arrière-plan, réessaient seuls, et suivent les droits et quotas de chaque compte. Qualité : MP3 128, MP3 320 ou FLAC.</li>
           </ul>
         </section>
@@ -226,7 +226,7 @@ musonic-server import-navidrome navidrome-copy.db</code></pre>
               <tr><td><span data-l="en">Daily backups kept</span><span data-l="fr">Sauvegardes quotidiennes gardées</span></td><td><code>MUSONIC_BACKUP_DAYS</code></td><td><code>14</code></td></tr>
             </tbody>
           </table></div>
-          <p class="note"><a href="https://github.com/DoodzProg/Musonic/blob/main/apps/server/README.md#build-and-run"><span data-l="en">Every setting</span><span data-l="fr">Tous les réglages</span></a></p>
+          <p class="note"><a href="https://github.com/DoodzDev/Musonic/blob/main/apps/server/README.md#build-and-run"><span data-l="en">Every setting</span><span data-l="fr">Tous les réglages</span></a></p>
         </section>
 
         <section id="security">
@@ -355,7 +355,7 @@ musonic-server import-navidrome navidrome-copy.db</code></pre>
           <h2><span data-l="en">License</span><span data-l="fr">Licence</span></h2>
           <p data-l="en">Musonic Server is free to use and adapt for personal, non-commercial purposes (<a href="https://polyformproject.org/licenses/noncommercial/1.0.0">PolyForm Noncommercial 1.0.0</a>). Selling it, or a service built on it, is not allowed.</p>
           <p data-l="fr">Musonic Server est libre d'utilisation et d'adaptation pour un usage personnel et non commercial (<a href="https://polyformproject.org/licenses/noncommercial/1.0.0">PolyForm Noncommercial 1.0.0</a>). Le vendre, ou vendre un service construit dessus, est interdit.</p>
-          <p class="note"><a href="https://github.com/DoodzProg/Musonic/blob/main/apps/server/CHANGELOG.md"><span data-l="en">What changed</span><span data-l="fr">Ce qui a changé</span></a> · <a href="https://github.com/DoodzProg/Musonic/tree/main/apps/server"><span data-l="en">Source code</span><span data-l="fr">Code source</span></a></p>
+          <p class="note"><a href="https://github.com/DoodzDev/Musonic/blob/main/apps/server/CHANGELOG.md"><span data-l="en">What changed</span><span data-l="fr">Ce qui a changé</span></a> · <a href="https://github.com/DoodzDev/Musonic/tree/main/apps/server"><span data-l="en">Source code</span><span data-l="fr">Code source</span></a></p>
         </section>
 
       </div>
@@ -369,10 +369,10 @@ musonic-server import-navidrome navidrome-copy.db</code></pre>
         <span>Musonic</span>
       </a>
       <nav class="footer__links" aria-label="Links">
-        <a href="https://github.com/DoodzProg/Musonic" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <a href="https://github.com/DoodzProg/Musonic/releases" target="_blank" rel="noopener noreferrer"><span data-l="en">Releases</span><span data-l="fr">Versions</span></a>
-        <a href="https://github.com/DoodzProg/Musonic/issues/new/choose" target="_blank" rel="noopener noreferrer"><span data-l="en">Report an issue</span><span data-l="fr">Signaler un problème</span></a>
-        <a href="https://github.com/DoodzProg/Musonic#license" target="_blank" rel="noopener noreferrer"><span data-l="en">License</span><span data-l="fr">Licence</span></a>
+        <a href="https://github.com/DoodzDev/Musonic" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://github.com/DoodzDev/Musonic/releases" target="_blank" rel="noopener noreferrer"><span data-l="en">Releases</span><span data-l="fr">Versions</span></a>
+        <a href="https://github.com/DoodzDev/Musonic/issues/new/choose" target="_blank" rel="noopener noreferrer"><span data-l="en">Report an issue</span><span data-l="fr">Signaler un problème</span></a>
+        <a href="https://github.com/DoodzDev/Musonic#license" target="_blank" rel="noopener noreferrer"><span data-l="en">License</span><span data-l="fr">Licence</span></a>
       </nav>
       <p class="note"><span data-l="en">Made by</span><span data-l="fr">Fait par</span> <a href="https://doodz.dev/" target="_blank" rel="noopener noreferrer">Doodz</a></p>
     </div>

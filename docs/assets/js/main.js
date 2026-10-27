@@ -37,7 +37,7 @@ function initLanguage() {
 /** Latest published releases: tags `mobile-vX.Y.Z` and `web-vX.Y.Z` (one repository, several apps). */
 async function loadVersions() {
   try {
-    const res = await fetch('https://api.github.com/repos/DoodzProg/Musonic/releases?per_page=30');
+    const res = await fetch('https://api.github.com/repos/DoodzDev/Musonic/releases?per_page=30');
     if (!res.ok) return;
     const releases = await res.json();
     const pick = (prefix) => releases.find((r) => !r.draft && !r.prerelease && r.tag_name.startsWith(prefix));

@@ -119,7 +119,7 @@ export function ProfileMenu() {
           <span className="menu-caption">{t.about}</span>
           <div className="menu-group">
             <LinkRow href="https://musonic.doodz.dev/" label={t.website} />
-            <LinkRow href="https://github.com/DoodzProg/Musonic" label="GitHub" />
+            <LinkRow href="https://github.com/DoodzDev/Musonic" label="GitHub" />
             <LinkRow href="https://doodz.dev" label="doodz.dev" />
           </div>
           <span className="menu-note">Musonic Web {__MUSONIC_WEB_VERSION__} · made by Doodz</span>

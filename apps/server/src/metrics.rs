@@ -20,7 +20,7 @@ const SLOW: Duration = Duration::from_secs(60);
 const RELEASES: Duration = Duration::from_secs(6 * 3600);
 /// Where releases are published (tags `server-v*`, `web-v*`).
 pub const RELEASES_URL: &str =
-    "https://api.github.com/repos/DoodzProg/Musonic/releases?per_page=50";
+    "https://api.github.com/repos/DoodzDev/Musonic/releases?per_page=50";
 
 #[derive(Debug, Clone, Default, Serialize, TS)]
 #[serde(rename_all = "camelCase")]

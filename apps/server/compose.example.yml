@@ -4,7 +4,7 @@
 #   docker compose exec musonic-server musonic-server user add <name> --admin
 services:
   musonic-server:
-    image: ghcr.io/doodzprog/musonic-server:1   # x86 and ARM; updates within 1.x
+    image: ghcr.io/doodzdev/musonic-server:1   # x86 and ARM; updates within 1.x
     # Or built from source, from this folder of the repository:
     # build:
     #   context: ../..

@@ -19,7 +19,7 @@ import {getT} from '../i18n';
 
 const LOCAL_VERSION: string = require('../../package.json').version;
 // `releases/latest` may point to a web or desktop release: read the list instead.
-const GITHUB_API = 'https://api.github.com/repos/DoodzProg/Musonic/releases?per_page=50';
+const GITHUB_API = 'https://api.github.com/repos/DoodzDev/Musonic/releases?per_page=50';
 const FETCH_TIMEOUT_MS = 8000;
 
 /** Newest published mobile release, or null if there is none. Throws on network/HTTP errors. */

@@ -171,7 +171,7 @@ export default function ProfileSheet({visible, onClose}: Props) {
           accessory="chevron"
           onPress={() => Linking.openURL('https://musonic.doodz.dev/')}
         />
-        <ListItem label="GitHub" accessory="chevron" onPress={() => Linking.openURL('https://github.com/DoodzProg/Musonic')} />
+        <ListItem label="GitHub" accessory="chevron" onPress={() => Linking.openURL('https://github.com/DoodzDev/Musonic')} />
         <ListItem label="doodz.dev" accessory="chevron" onPress={() => Linking.openURL('https://doodz.dev')} />
       </ListGroup>
 
