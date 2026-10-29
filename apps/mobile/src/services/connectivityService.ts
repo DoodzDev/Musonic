@@ -7,7 +7,7 @@
  *   answers but refuses the account sends it back to sign in (ADR-021)
  *   instead of switching to offline mode.
  * @author DoodzProg
- * @version 1.6.0
+ * @version 1.7.0
  * @license CC-BY-NC-4.0
  */
 import {getActiveServer, pingServer, PingError, reportAuthProblem} from '../api/client';
@@ -15,6 +15,7 @@ import {useNetworkStore} from '../store/networkStore';
 import {useDownloadStore} from '../store/downloadStore';
 import {syncPlaylistCovers} from './offlinePlaylistCovers';
 import {useSettingsStore} from '../store/settingsStore';
+import {checkShortIds} from './shortIds/live';
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
@@ -52,7 +53,7 @@ async function tick(): Promise<boolean> {
   }
   const startedAt = Date.now();
   try {
-    await withTimeout(pingServer(server), PING_TIMEOUT_MS);
+    const {musonic} = await withTimeout(pingServer(server), PING_TIMEOUT_MS);
     if (consecutiveFailures > 0) {
       console.log(`[connectivity] ping ok after ${consecutiveFailures} failure(s), ${Date.now() - startedAt} ms`);
     }
@@ -60,9 +61,12 @@ async function tick(): Promise<boolean> {
     useNetworkStore.getState().setServerReachable(true);
     if (!lastPingOk) {
       lastPingOk = true;
-      // Covers of tracks downloaded offline or before ISS-034, then of the playlists
-      // holding downloaded tracks (runs in the background).
-      useDownloadStore.getState().backfillCovers().then(syncPlaylistCovers);
+      // Short ids first (ADR-026): the covers are saved under the ids. Then covers of tracks
+      // downloaded offline or before ISS-034, and of the playlists holding downloaded tracks
+      // (runs in the background).
+      checkShortIds(musonic)
+        .then(() => useDownloadStore.getState().backfillCovers())
+        .then(syncPlaylistCovers);
     }
     const s = useSettingsStore.getState();
     if (s.isOfflineMode && s.autoOnlineMode) {

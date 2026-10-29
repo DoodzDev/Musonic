@@ -4,9 +4,11 @@
  *   RNTP headless playback service that keeps audio running in the background,
  *   and the task Android Auto uses to start the player while the app is closed.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
+// First: saved ids converted before any store loads them (ADR-026).
+import './src/services/shortIds/launch';
 import {AppRegistry} from 'react-native';
 import App from './App';
 import {name as appName} from './app.json';

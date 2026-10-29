@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Lighter in the background** — the app no longer redraws or polls the playback position when nothing is on screen: much less battery used with the screen off.
 - **The mini player is there from the start** — it shows the last track as soon as the app opens; Back closes the queue first.
 - **Black launch screen** instead of a grey flash.
+- **Short ids of Musonic Server 1.0.3** — the app converts what it saved (downloads, their covers, the queue, likes, recent plays, search history, pinned items) once, by itself, when the server starts using them. Nothing is downloaded again.
 
 ### Removed
 - **The optional “Musonic API” setting** — Musonic Server now does what it did (online tracks start fast on their own); its address and key are cleared from the phone.
