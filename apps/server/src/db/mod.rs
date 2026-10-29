@@ -15,7 +15,7 @@ use std::{
 };
 
 use anyhow::{Context, Result, anyhow};
-use rusqlite::Connection;
+use rusqlite::{Connection, functions::FunctionFlags};
 
 pub use migrations::{MIGRATIONS, SCHEMA_VERSION};
 
@@ -76,6 +76,7 @@ impl Db {
     /// Opens (or creates) the database and brings its schema up to date.
     pub fn open(path: &Path) -> Result<Self> {
         let conn = Connection::open(path).with_context(|| format!("opening {}", path.display()))?;
+        copy_before_migrating(&conn, path)?;
         Self::setup(conn)
     }
 
@@ -100,6 +101,17 @@ impl Db {
              PRAGMA synchronous = NORMAL;
              PRAGMA foreign_keys = ON;
              PRAGMA busy_timeout = 5000;",
+        )?;
+        // For migration 0008 (short ids, ADR-026): the same conversion as the server's.
+        conn.create_scalar_function(
+            "musonic_short_id",
+            1,
+            FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
+            |ctx| {
+                Ok(ctx
+                    .get::<Option<String>>(0)?
+                    .map(|id| crate::ids::shorten(&id).into_owned()))
+            },
         )?;
         migrations::apply(&mut conn)?;
         let seen = Arc::new(Seen::default());
@@ -239,6 +251,24 @@ impl Db {
         }
         Ok(dest)
     }
+}
+
+/// A copy of the database as it was (`<name>.before-schema-<n>`) before a migration changes
+/// it, so an update that goes wrong can be undone by hand. Not for a new database.
+fn copy_before_migrating(conn: &Connection, path: &Path) -> Result<()> {
+    let current: u32 = conn.pragma_query_value(None, "user_version", |r| r.get(0))?;
+    if current == 0 || current >= SCHEMA_VERSION {
+        return Ok(());
+    }
+    let mut dest = path.as_os_str().to_owned();
+    dest.push(format!(".before-schema-{}", current + 1));
+    let dest = PathBuf::from(dest);
+    if !dest.exists() {
+        conn.execute("VACUUM INTO ?1", [dest.to_string_lossy()])
+            .context("copy of the database before migrating")?;
+        tracing::info!("database copied to {} before migrating", dest.display());
+    }
+    Ok(())
 }
 
 #[cfg(test)]

@@ -40,7 +40,7 @@ notify = "8"
 rand = "0.8"
 reqwest = { version = "0.12", default-features = false, features = ["json", "gzip", "rustls-tls"] }
 zip = { version = "2", default-features = false, features = ["deflate"] }
-rusqlite = { version = "0.37", features = ["bundled", "hooks"] }
+rusqlite = { version = "0.37", features = ["bundled", "hooks", "functions"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"

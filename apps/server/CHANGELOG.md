@@ -16,6 +16,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   providers, alerts, imports) told anyone which providers a server had: it moves to
   `GET /v1/admin/health`, for administrators.
 
+### Changed
+- **Short ids** (11 characters instead of 36): songs, albums, artists, folders and playlists.
+  Lists of thousands of items repeat them and random ids do not compress: the list of artists
+  is 42 % lighter, 500 albums 24 %, a search about 20 %. Migration `0008` converts the
+  database at the first start (about a second for 2 000 songs) and keeps a copy of it before
+  (`musonic.db.before-schema-8`, also done before any later migration). Ids kept from a
+  Navidrome import (22 characters) are shortened too.
+- Old ids keep working: a short id is computed from the old one (the first 64 bits of its
+  UUID, or the first 11 characters of a Navidrome id), so the server converts any old id a
+  client sends. Musonic's apps convert what they saved by themselves (`musonicServer`
+  extension version 3). Other Subsonic apps (Symfonium, Substreamer…) see new ids and refresh
+  their copy of the library; their downloads and playlists keep working.
+- Accounts, API keys, invitations and reset links keep their long ids.
+
 ## [1.0.2] - 2026-10-25
 
 ### Added

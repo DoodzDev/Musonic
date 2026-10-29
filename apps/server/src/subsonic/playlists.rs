@@ -317,7 +317,7 @@ pub async fn create_playlist(ctx: &Ctx) -> Reply {
                     id
                 }
                 None => {
-                    let id = crate::ids::new_id();
+                    let id = crate::ids::new_playlist_id();
                     tx.prepare_cached(
                         "INSERT INTO playlist(id, owner_id, name) VALUES (?1, ?2, ?3)",
                     )?

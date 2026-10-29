@@ -8,7 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./releases": "./src/releases/releases.ts",
-    "./playback": "./src/playback/buildQueue.ts"
+    "./playback": "./src/playback/buildQueue.ts",
+    "./ids": "./src/ids/shortId.ts"
   },
   "scripts": {
     "test": "vitest run",

@@ -322,3 +322,48 @@ async fn a_suspended_account_is_told_so_only_with_its_own_password() {
         "a wrong password is not told the account is suspended"
     );
 }
+
+#[tokio::test]
+async fn ids_kept_from_before_short_ids_still_work() {
+    let (app, st) = setup().await;
+    // A song as clients knew it before version 1.0.3 (ADR-026).
+    let old = "5220a049-bd94-47ae-8d35-2ca090cfb168";
+    let short = crate::ids::shorten(old).into_owned();
+    st.db
+        .call(move |c| {
+            c.execute(
+                "INSERT INTO track(id, title, norm_title, artist_display, duration_ms)
+                 VALUES (?1, 'Hoppípolla', 'hoppipolla', 'Sigur Rós', 276000)",
+                [&short],
+            )?;
+            c.execute(
+                "INSERT INTO library(id, name, path) VALUES (1, 'Music', '/music');",
+                [],
+            )?;
+            c.execute(
+                "INSERT INTO track_file(id, track_id, library_id, path, size, modified_at, format)
+                 VALUES ('f1', ?1, 1, 'Sigur Rós/03.mp3', 1, 0, 'mp3')",
+                [&short],
+            )?;
+            Ok(())
+        })
+        .await
+        .unwrap();
+    let auth = "u=Doodz&p=correct%20horse&v=1.16.1&c=Musonic&f=json";
+    let r = get(&app, &format!("/rest/getSong.view?id={old}&{auth}")).await;
+    assert_eq!(r["status"], "ok", "{r}");
+    assert_eq!(r["song"]["id"], "73A4WPDHD9a", "answered with the short id");
+    let r = get(&app, &format!("/rest/star.view?id={old}&{auth}")).await;
+    assert_eq!(r["status"], "ok");
+    let r = get(&app, &format!("/rest/getStarred2.view?{auth}")).await;
+    assert_eq!(r["starred2"]["song"][0]["id"], "73A4WPDHD9a");
+    let r = get(&app, "/rest/getOpenSubsonicExtensions.view?f=json").await;
+    let musonic = r["openSubsonicExtensions"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["name"] == "musonicServer")
+        .unwrap()
+        .clone();
+    assert!(musonic["versions"].as_array().unwrap().contains(&3.into()));
+}

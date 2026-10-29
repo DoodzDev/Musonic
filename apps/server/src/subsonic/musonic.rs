@@ -139,7 +139,12 @@ async fn similar_artist_albums(ctx: &Ctx, artist: &str) -> Vec<Value> {
 }
 
 pub async fn home_more(ctx: &Ctx) -> Reply {
-    let artist = ctx.params.get("artist").filter(|v| !v.is_empty());
+    // An id here (a name for `getLyrics`): old ids still work (ADR-026).
+    let artist = ctx
+        .params
+        .get("artist")
+        .filter(|v| !v.is_empty())
+        .map(crate::ids::shorten);
     let song = ctx.params.get("song").filter(|v| !v.is_empty());
     let genres: Vec<String> = ctx
         .params
@@ -155,7 +160,7 @@ pub async fn home_more(ctx: &Ctx) -> Reply {
     let (albums, similar, mixes) = tokio::join!(
         async {
             match artist {
-                Some(a) => similar_artist_albums(ctx, a).await,
+                Some(a) => similar_artist_albums(ctx, &a).await,
                 None => Vec::new(),
             }
         },

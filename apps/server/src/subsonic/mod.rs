@@ -103,6 +103,19 @@ impl From<anyhow::Error> for ApiError {
 
 pub type Reply = Result<Map<String, Value>, ApiError>;
 
+/// Parameters that are always ids. `artist` is a name for `getLyrics`, an id for
+/// `getMusonicHomeMore`: that route converts it itself.
+const ID_PARAMS: [&str; 8] = [
+    "id",
+    "albumId",
+    "artistId",
+    "songId",
+    "songIdToAdd",
+    "playlistId",
+    "current",
+    "song",
+];
+
 /// Request parameters, in order, repeated keys kept (`id=1&id=2`).
 #[derive(Debug, Default, Clone)]
 pub struct Params(Vec<(String, String)>);
@@ -112,6 +125,14 @@ impl Params {
         let mut all = Vec::new();
         for part in [query.unwrap_or_default().as_bytes(), body] {
             all.extend(form_urlencoded(part));
+        }
+        // Ids kept by clients from before short ids (ADR-026) become the current ones here.
+        for (k, v) in &mut all {
+            if ID_PARAMS.contains(&k.as_str())
+                && let std::borrow::Cow::Owned(short) = crate::ids::shorten(v)
+            {
+                *v = short;
+            }
         }
         Self(all)
     }

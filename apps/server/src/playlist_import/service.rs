@@ -384,7 +384,7 @@ async fn finish(state: &AppState, id: &str, job: &Job, total: u32) -> Result<()>
                 tx.execute("UPDATE playlist SET updated_at = unixepoch() WHERE id = ?1", [&p])?;
                 (p, PlaylistAction::Updated)
             } else {
-                let p = crate::ids::new_id();
+                let p = crate::ids::new_playlist_id();
                 tx.execute(
                     "INSERT INTO playlist(id, owner_id, name) VALUES (?1, ?2, ?3)",
                     params![p, user, name],

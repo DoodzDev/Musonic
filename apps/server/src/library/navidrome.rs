@@ -17,7 +17,7 @@ use rusqlite::{Connection, OptionalExtension, Transaction, params};
 use serde::Serialize;
 use unicode_normalization::UnicodeNormalization;
 
-use crate::{ids, ids::new_id};
+use crate::ids;
 
 #[derive(Debug, Default, Serialize)]
 pub struct NavidromeReport {
@@ -240,7 +240,11 @@ fn playlists(tx: &Transaction, opts: NavidromeOptions, report: &mut NavidromeRep
         })?
         .collect::<rusqlite::Result<_>>()?;
     for (nd, owner, name, comment, public, created, updated) in lists {
-        let id = if opts.keep_ids { nd.clone() } else { new_id() };
+        let id = if opts.keep_ids {
+            nd.clone()
+        } else {
+            ids::new_playlist_id()
+        };
         // Imported before: by id, or (new ids) by owner and name.
         let existing: Option<String> = tx
             .query_row(
