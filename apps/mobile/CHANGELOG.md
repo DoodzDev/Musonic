@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Android Auto: a Home in sections** — Resume (the track playing, one tap to go on), Recently played, then your playlists.
+
 ## [2.1.0] - 2026-10-29
 
 ### Security

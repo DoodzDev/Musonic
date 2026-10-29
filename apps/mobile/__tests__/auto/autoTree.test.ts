@@ -2,9 +2,10 @@
  * @file autoTree.test.ts
  * @description Unit tests of the Android Auto browse tree (ADR-015): node and
  *   track ids round-trip, and anything else is ignored; Liked songs comes
- *   first with its drawn tile, playlists and albums carry Play and Shuffle.
+ *   first with its drawn tile, playlists and albums carry Play and Shuffle;
+ *   the car's Home resumes the queue and lists what was played lately.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import {
@@ -16,6 +17,8 @@ import {
   parseTrackRef,
   playlistItems,
   playlistNodeId,
+  recentItems,
+  resumeItems,
   trackItems,
   trackMediaId,
 } from '../../src/services/auto/autoTree';
@@ -121,5 +124,36 @@ describe('liked songs', () => {
 
   it('plays a tapped track from the whole list', () => {
     expect(parseTrackRef(trackMediaId('liked', '7'))).toEqual({list: {kind: 'liked'}, trackId: '7'});
+  });
+});
+
+describe('car Home', () => {
+  const art = (c?: string) => (c ? {key: c, uri: `https://music.example/${c}`} : undefined);
+
+  it('resumes the queue in one row, under the name of what plays', () => {
+    expect(resumeItems(undefined, 'Country', art)).toEqual([]);
+    const [row] = resumeItems({id: 't1', title: 'Wake Me Up', artist: 'Wham!', coverArt: 'al1'}, 'Make It Big', art);
+    expect(row).toMatchObject({id: 'resume', title: 'Wake Me Up', subtitle: 'Wham! · Make It Big', art: {key: 'al1'}});
+    expect(row.browsable).toBeUndefined();
+    expect(parseNode('resume')).toEqual({kind: 'resume'});
+  });
+
+  it('lists recent albums, playlists, artists and Liked songs, not songs or mixes', () => {
+    const plays = [
+      {kind: 'album', id: 'al1', name: 'Discovery', artist: 'Daft Punk', coverArt: 'al1'},
+      {kind: 'song', id: 't1', name: 'One More Time'},
+      {kind: 'playlist', id: 'p1', name: 'Country'},
+      {kind: 'mix', id: 'Rock', name: 'Rock'},
+      {kind: 'artist', id: 'ar1', name: 'Wham!'},
+      {kind: 'liked', id: 'liked', name: ''},
+    ];
+    const liked = {title: 'Titres likés', subtitle: '12 titres'};
+    const items = recentItems(plays, liked, false, art);
+    expect(items.map(i => i.id)).toEqual([albumNodeId('al1'), playlistNodeId('p1'), 'artist:ar1', 'liked']);
+    expect(items[0]).toMatchObject({browsable: true, actions: ['play', 'shuffle'], subtitle: 'Daft Punk'});
+    expect(items[2]).toMatchObject({grid: true});
+    // Offline: only what can play without the server.
+    expect(recentItems(plays, liked, true, art).map(i => i.id)).toEqual([playlistNodeId('p1'), 'liked']);
+    expect(parseNode('recent')).toEqual({kind: 'recent'});
   });
 });

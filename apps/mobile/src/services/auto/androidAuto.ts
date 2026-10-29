@@ -13,7 +13,7 @@
  *   closed, and only an album's tracks or an artist's albums ask JS.
  *   Started by the playback service, so it also runs without the app's screens.
  * @author DoodzProg
- * @version 1.5.0
+ * @version 1.6.0
  * @license CC-BY-NC-4.0
  */
 import {AppState, NativeEventEmitter, NativeModules, Platform} from 'react-native';
@@ -41,6 +41,8 @@ import {
   LIBRARY,
   LIKED,
   PLAYLISTS,
+  RECENT,
+  RESUME,
   ROOT,
   albumItems,
   albumNodeId,
@@ -50,6 +52,8 @@ import {
   parseTrackRef,
   playlistItems,
   playlistNodeId,
+  recentItems,
+  resumeItems,
   trackItems,
   type ArtOf,
   type AutoAction,
@@ -226,6 +230,23 @@ const artistsItems = (): AutoItem[] =>
   isOffline() ? [] : artistItems(inLibraryOrder('artist', useLibraryCacheStore.getState().artists), artOf);
 const downloadsItems = (): AutoItem[] => trackItems(DOWNLOADS, downloadedSongs(), isTrackDownloaded, artOf);
 
+/** Home of the car: the track to resume, under the name of what it plays. */
+function homeResumeItems(): AutoItem[] {
+  const {queue, currentPlaylistName} = usePlayerStore.getState();
+  const current = queue[0];
+  return resumeItems(current && {...current, id: String(current.id)}, currentPlaylistName ?? undefined, artOf);
+}
+
+/** Home of the car: the lists played lately, at most one screen of them. */
+function homeRecentItems(): AutoItem[] {
+  const t = getT().likedSongs;
+  const liked = playable(usePlaylistCacheStore.getState().cachedLikedSongs);
+  const items = recentItems(useRecentPlaysStore.getState().plays, {title: t.title, subtitle: t.trackCount(liked.length)}, isOffline(), artOf);
+  return items.slice(0, RECENT_SHOWN);
+}
+
+const RECENT_SHOWN = 8;
+
 async function children(parentId: string): Promise<AutoItem[]> {
   const node = parseNode(parentId);
   switch (node.kind) {
@@ -257,6 +278,10 @@ async function children(parentId: string): Promise<AutoItem[]> {
       return downloadsItems();
     case 'liked':
       return likedTracks(await loadLiked());
+    case 'resume':
+      return homeResumeItems();
+    case 'recent':
+      return homeRecentItems();
     default:
       return [];
   }
@@ -271,6 +296,8 @@ function snapshotNodes(): Record<string, AutoItem[]> {
     [PLAYLISTS]: playlistsItems(cache.cachedPlaylists),
     [DOWNLOADS]: downloadsItems(),
     [LIKED]: likedTracks(cache.cachedLikedSongs),
+    [RESUME]: homeResumeItems(),
+    [RECENT]: homeRecentItems(),
   };
   for (const p of cache.cachedPlaylists) {
     const songs = cache.cachedPlaylistSongs[String(p.id)];
@@ -338,6 +365,12 @@ async function loadList(list: AutoList): Promise<{source: PlaySource; songs: Sub
 
 /** Plays a track tapped in the car: its whole list, starting on it. */
 export async function playAutoMediaId(mediaId: string): Promise<void> {
+  // Resume on the car's Home: the queue as it is (loaded first if the car started the app).
+  if (mediaId === RESUME) {
+    await playbackEngine.restore();
+    await TrackPlayer.play();
+    return;
+  }
   const ref = parseTrackRef(mediaId);
   if (!ref) return;
   const {source, songs} = await loadList(ref.list);
@@ -446,7 +479,7 @@ export function startAndroidAuto(): void {
   // Last played lists come first with the Recent sort.
   useRecentPlaysStore.subscribe(dirty);
   usePlayerStore.subscribe((s, prev) => {
-    if (s.lastPlayedPlaylists !== prev.lastPlayedPlaylists) dirty();
+    if (s.lastPlayedPlaylists !== prev.lastPlayedPlaylists || s.queue[0]?.id !== prev.queue[0]?.id) dirty();
   });
   emitter.addListener('musonic-auto-connected', () => publishSnapshot(module));
   AppState.addEventListener('change', state => {

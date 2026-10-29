@@ -2,6 +2,9 @@ package com.musonic
 
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.net.Uri
+import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.session.MediaControllerCompat
 import androidx.car.app.CarAppService
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
@@ -77,6 +80,8 @@ private object Nodes {
   const val ROOT = "root"
   const val PLAYLISTS = "playlists"
   const val DOWNLOADS = "downloads"
+  const val RESUME = "resume"
+  const val RECENT = "recent"
 }
 
 /** Pictures of the car screens: a cover served by [MusonicArtworkProvider], or an app icon. */
@@ -116,6 +121,12 @@ private fun Screen.nowPlayingAction(): Action =
 private class Loader(private val screen: Screen, private val nodeId: String) {
   var entries: List<AutoEntry>? = null
     private set
+
+  /** Asks again at the next draw (the list changes while the car shows it). */
+  fun refresh() {
+    requested = false
+    load()
+  }
 
   fun load(): List<AutoEntry>? {
     if (entries == null && !requested) {
@@ -167,12 +178,57 @@ private fun Screen.rowSection(title: CharSequence?, entries: List<AutoEntry>): R
   return builder.build()
 }
 
-/** Home, Library and Downloaded, as in the mockups (ADR-025, steps 1-2). */
+/**
+ * What the player plays, read from its session: the Resume row follows each track at once,
+ * without waiting for the app's next snapshot.
+ */
+private class NowPlaying(private val screen: Screen) {
+  private var controller: MediaControllerCompat? = null
+  private var stopWaiting: () -> Unit = {}
+  private val callback = object : MediaControllerCompat.Callback() {
+    override fun onMetadataChanged(metadata: MediaMetadataCompat?) = screen.invalidate()
+  }
+
+  val metadata: MediaMetadataCompat? get() = controller?.metadata
+
+  fun start() {
+    stopWaiting = MusonicCarPlayer.withToken(screen.carContext) { token ->
+      controller?.unregisterCallback(callback)
+      controller = MediaControllerCompat(screen.carContext, token).also { it.registerCallback(callback) }
+      screen.invalidate()
+    }
+  }
+
+  fun stop() {
+    stopWaiting()
+    controller?.unregisterCallback(callback)
+    controller = null
+  }
+}
+
+/** Home (in sections), Library and Downloaded, as in the mockups (ADR-025, steps 1-3). */
 private class TabsScreen(context: CarContext) : Screen(context) {
   private var active = HOME
   private val root = Loader(this, Nodes.ROOT)
   private val playlists = Loader(this, Nodes.PLAYLISTS)
   private val downloads = Loader(this, Nodes.DOWNLOADS)
+  private val resume = Loader(this, Nodes.RESUME)
+  private val recent = Loader(this, Nodes.RECENT)
+  private val nowPlaying = NowPlaying(this)
+
+  init {
+    lifecycle.addObserver(object : DefaultLifecycleObserver {
+      override fun onCreate(owner: LifecycleOwner) = nowPlaying.start()
+
+      // Back from a list or the playback screen: recent lists may have changed.
+      override fun onStart(owner: LifecycleOwner) {
+        resume.refresh()
+        recent.refresh()
+      }
+
+      override fun onDestroy(owner: LifecycleOwner) = nowPlaying.stop()
+    })
+  }
 
   override fun onGetTemplate(): Template {
     val tabs = TabTemplate.Builder(object : TabTemplate.TabCallback {
@@ -187,14 +243,43 @@ private class TabsScreen(context: CarContext) : Screen(context) {
     return tabs.setTabContents(TabContents.Builder(content()).build()).setActiveTabContentId(active).build()
   }
 
+  /** The track playing now (from the session), else the one the app saved; tap = resume. */
+  private fun resumeSection(): RowSection? {
+    val saved = resume.load()?.firstOrNull()
+    val playing = nowPlaying.metadata
+    val title = playing?.getString(MediaMetadataCompat.METADATA_KEY_TITLE) ?: saved?.title ?: return null
+    val row = Row.Builder().setTitle(title).setOnClickListener {
+      MusonicAutoBridge.play(Nodes.RESUME)
+      screenManager.push(PlaybackScreen(carContext))
+    }
+    (playing?.getString(MediaMetadataCompat.METADATA_KEY_ARTIST) ?: saved?.subtitle)
+        ?.takeIf { it.isNotEmpty() }?.let { row.addText(it) }
+    val art = playing?.let(::coverOf) ?: saved?.let { carContext.cover(it) }
+    art?.let { row.setImage(it, Row.IMAGE_TYPE_LARGE) }
+    return RowSection.Builder().setTitle(carContext.getString(R.string.car_home_resume)).addItem(row.build()).build()
+  }
+
+  /** The session's cover is one the app serves (`content://…artwork/<key>`): its car version. */
+  private fun coverOf(metadata: MediaMetadataCompat): CarIcon? {
+    val uri = (metadata.getString(MediaMetadataCompat.METADATA_KEY_ART_URI)
+        ?: metadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI))?.let(Uri::parse) ?: return null
+    val key = uri.lastPathSegment?.takeIf { uri.authority == "${carContext.packageName}.artwork" } ?: return null
+    return CarIcon.Builder(IconCompat.createWithContentUri(MusonicArtwork.carUriOf(carContext, key))).build()
+  }
+
   private fun tab(id: String, title: Int, icon: Int): Tab =
       Tab.Builder().setContentId(id).setTitle(carContext.getString(title)).setIcon(carContext.icon(icon)).build()
 
   private fun content(): Template {
     val template = SectionedItemTemplate.Builder().addAction(nowPlayingAction())
     when (active) {
+      // Resume, then Recently played, then the playlists (ADR-025 step 3); empty sections stay out.
       HOME -> {
         val list = playlists.load() ?: return template.setLoading(true).build()
+        resumeSection()?.let(template::addSection)
+        recent.load()?.takeIf { it.isNotEmpty() }?.let {
+          template.addSection(gridSection(carContext.getString(R.string.car_home_recent), it))
+        }
         val title = root.load()?.firstOrNull { it.id == Nodes.PLAYLISTS }?.title
         template.addSection(gridSection(title, list))
       }

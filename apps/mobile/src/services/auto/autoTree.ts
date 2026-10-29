@@ -8,7 +8,7 @@
  *   `res:<name>` is drawn by the app itself (the Liked songs tile). Playlists
  *   and albums carry the car's Play and Shuffle buttons (browse actions).
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.4.0
  * @license CC-BY-NC-4.0
  */
 
@@ -41,6 +41,10 @@ export const ALBUMS = 'albums';
 export const ARTISTS = 'artists';
 export const DOWNLOADS = 'downloads';
 export const LIKED = 'liked';
+/** Home of the car (ADR-025 step 3): what is playing, to resume it in one tap. */
+export const RESUME = 'resume';
+/** Home of the car: lists played lately (the app's Recently played). */
+export const RECENT = 'recent';
 /** Drawn by the app: the Liked songs tile. */
 export const LIKED_ART: AutoArt = {key: 'res:liked', uri: ''};
 
@@ -54,6 +58,8 @@ export type AutoNode =
   | {kind: 'albums'}
   | {kind: 'artists'}
   | {kind: 'artist'; id: string}
+  | {kind: 'resume'}
+  | {kind: 'recent'}
   | AutoList
   | {kind: 'unknown'};
 
@@ -85,6 +91,8 @@ export function parseNode(id: string): AutoNode {
   if (id === ARTISTS) return {kind: 'artists'};
   if (id === DOWNLOADS) return {kind: 'downloads'};
   if (id === LIKED) return {kind: 'liked'};
+  if (id === RESUME) return {kind: 'resume'};
+  if (id === RECENT) return {kind: 'recent'};
   if (id.includes('|')) return {kind: 'unknown'};
   for (const kind of PREFIXED) {
     const prefix = `${kind}:`;
@@ -160,6 +168,42 @@ export function artistItems(artists: ArtistLike[], artOf: ArtOf): AutoItem[] {
     browsable: true,
     grid: true,
   }, artOf(a.coverArt || String(a.id))));
+}
+
+type QueuedTrack = {id: string; title: string; artist?: string; coverArt?: string};
+
+/** The track to resume, tapped as one row (nothing when the queue is empty). */
+export function resumeItems(current: QueuedTrack | undefined, from: string | undefined, artOf: ArtOf): AutoItem[] {
+  if (!current) return [];
+  const subtitle = [current.artist, from].filter(Boolean).join(' · ');
+  return [withArt({id: RESUME, title: current.title, subtitle}, artOf(current.coverArt || String(current.id)))];
+}
+
+type RecentLike = {kind: string; id: string; name: string; artist?: string; coverArt?: string};
+
+/**
+ * Lists played lately, as the app's Recently played: albums, playlists, artists and Liked songs.
+ * Songs and Magic Mixes stay out (no list to open in the car). Offline, only what can play.
+ */
+export function recentItems(
+  plays: RecentLike[],
+  liked: {title: string; subtitle: string},
+  offline: boolean,
+  artOf: ArtOf,
+): AutoItem[] {
+  const items: AutoItem[] = [];
+  for (const p of plays) {
+    if (p.kind === 'liked') items.push(likedItem(liked.title, liked.subtitle, false));
+    else if (p.kind === 'playlist') {
+      items.push(withArt({id: playlistNodeId(p.id), title: p.name, browsable: true, actions: LIST_ACTIONS}, artOf(p.coverArt)));
+    } else if (offline) continue;
+    else if (p.kind === 'album') {
+      items.push(withArt({id: albumNodeId(p.id), title: p.name, subtitle: p.artist, browsable: true, actions: LIST_ACTIONS}, artOf(p.coverArt || p.id)));
+    } else if (p.kind === 'artist') {
+      items.push(withArt({id: artistNodeId(p.id), title: p.name, browsable: true, grid: true}, artOf(p.coverArt || p.id)));
+    }
+  }
+  return items;
 }
 
 function withArt(item: AutoItem, art: AutoArt | undefined): AutoItem {

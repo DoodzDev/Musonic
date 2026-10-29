@@ -6,4 +6,6 @@
     <string name="car_tab_downloads">Téléchargés</string>
     <string name="car_now_playing">Lecture en cours</string>
     <string name="car_empty">Rien ici pour l\'instant</string>
+    <string name="car_home_resume">Reprendre</string>
+    <string name="car_home_recent">Écoutés récemment</string>
 </resources>

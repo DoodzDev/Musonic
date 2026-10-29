@@ -9,4 +9,6 @@
     <string name="car_tab_downloads">Downloaded</string>
     <string name="car_now_playing">Now playing</string>
     <string name="car_empty">Nothing here yet</string>
+    <string name="car_home_resume">Resume</string>
+    <string name="car_home_recent">Recently played</string>
 </resources>
