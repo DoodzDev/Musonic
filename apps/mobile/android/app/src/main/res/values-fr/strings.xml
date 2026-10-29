@@ -8,4 +8,7 @@
     <string name="car_empty">Rien ici pour l\'instant</string>
     <string name="car_home_resume">Reprendre</string>
     <string name="car_home_recent">Écoutés récemment</string>
+    <string name="car_queue">File d\'attente</string>
+    <string name="car_lyrics">Paroles</string>
+    <string name="car_lyrics_none">Pas de paroles synchronisées</string>
 </resources>

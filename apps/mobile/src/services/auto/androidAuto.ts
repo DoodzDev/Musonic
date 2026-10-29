@@ -19,7 +19,7 @@
 import {AppState, NativeEventEmitter, NativeModules, Platform} from 'react-native';
 import TrackPlayer, {Event} from '../player';
 import {getCoverArtUrl} from '../../api/client';
-import {getAlbum, getAlbumsByArtist, getStarred} from '../../api/endpoints/library';
+import {getAlbum, getAlbumsByArtist, getLyricsBySongId, getStarred} from '../../api/endpoints/library';
 import {getPlaylist, getPlaylists} from '../../api/endpoints/playlists';
 import type {SubsonicPlaylist, SubsonicSong} from '../../api/types';
 import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
@@ -41,6 +41,7 @@ import {
   LIBRARY,
   LIKED,
   PLAYLISTS,
+  QUEUE,
   RECENT,
   RESUME,
   ROOT,
@@ -48,6 +49,7 @@ import {
   albumNodeId,
   artistItems,
   likedItem,
+  lyricsItems,
   parseNode,
   parseTrackRef,
   playlistItems,
@@ -247,6 +249,21 @@ function homeRecentItems(): AutoItem[] {
 
 const RECENT_SHOWN = 8;
 
+/** What comes after the track playing, as the app's queue shows it. */
+function queueItems(): AutoItem[] {
+  const songs = usePlayerStore.getState().upcoming.slice(0, QUEUE_SHOWN).map(t => ({...t, id: String(t.id)}));
+  return trackItems(QUEUE, songs, isTrackDownloaded, artOf);
+}
+
+const QUEUE_SHOWN = 30;
+
+/** Lyrics of a track, as the app's player loads them (embedded, then the server, then LRCLIB). */
+async function lyricsOf(trackId: string): Promise<AutoItem[]> {
+  const track = usePlayerStore.getState().queue.find(t => String(t.id) === trackId);
+  // Slower than lists: the online sources may be needed.
+  return lyricsItems(await getLyricsBySongId(trackId, track?.artist, track?.title, track?.duration));
+}
+
 async function children(parentId: string): Promise<AutoItem[]> {
   const node = parseNode(parentId);
   switch (node.kind) {
@@ -282,6 +299,10 @@ async function children(parentId: string): Promise<AutoItem[]> {
       return homeResumeItems();
     case 'recent':
       return homeRecentItems();
+    case 'queue':
+      return queueItems();
+    case 'lyrics':
+      return lyricsOf(node.id);
     default:
       return [];
   }

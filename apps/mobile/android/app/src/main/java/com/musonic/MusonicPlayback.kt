@@ -72,6 +72,11 @@ object MusonicPlayback {
     lastTrack = null
   }
 
+  /** A line shown in place of the artist (car lyrics mode), or null for the artist. */
+  fun showLine(line: String?) {
+    (session?.player as? MusonicPlayerService.RemoteControls)?.line = line
+  }
+
   /** Runs [block] with the player, at once or as soon as the service has created it. */
   fun withPlayer(block: (ExoPlayer) -> Unit) {
     val current = player

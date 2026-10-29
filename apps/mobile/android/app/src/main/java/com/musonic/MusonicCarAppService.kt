@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import androidx.car.app.CarAppService
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
@@ -68,6 +69,7 @@ private class MusonicCarSession : Session() {
 
       override fun onDestroy(owner: LifecycleOwner) {
         stopWaiting()
+        MusonicCarLyrics.stop()
       }
     })
   }
@@ -82,6 +84,9 @@ private object Nodes {
   const val DOWNLOADS = "downloads"
   const val RESUME = "resume"
   const val RECENT = "recent"
+  const val QUEUE = "queue"
+
+  fun lyrics(trackId: String) = "lyrics:$trackId"
 }
 
 /** Pictures of the car screens: a cover served by [MusonicArtworkProvider], or an app icon. */
@@ -190,14 +195,18 @@ private fun Screen.rowSection(title: CharSequence?, entries: List<AutoEntry>, pl
  * What the player plays, read from its session: the Resume row follows each track at once,
  * without waiting for the app's next snapshot.
  */
-private class NowPlaying(private val screen: Screen) {
+private class NowPlaying(private val screen: Screen, private val onChange: () -> Unit = screen::invalidate) {
   private var controller: MediaControllerCompat? = null
   private var stopWaiting: () -> Unit = {}
   private val callback = object : MediaControllerCompat.Callback() {
-    override fun onMetadataChanged(metadata: MediaMetadataCompat?) = screen.invalidate()
+    override fun onMetadataChanged(metadata: MediaMetadataCompat?) = onChange()
+
+    override fun onPlaybackStateChanged(state: PlaybackStateCompat?) = onChange()
   }
 
   val metadata: MediaMetadataCompat? get() = controller?.metadata
+
+  val trackId: String? get() = metadata?.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
 
   fun start() {
     stopWaiting = MusonicCarPlayer.withToken(screen.carContext) { token ->
@@ -331,7 +340,7 @@ private class ListScreen(context: CarContext, private val list: AutoEntry) : Scr
     }
     val template = SectionedItemTemplate.Builder().setHeader(header.build()).addAction(nowPlayingAction())
     val entries = loader.load() ?: return template.setLoading(true).build()
-    val playing = nowPlaying.metadata?.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
+    val playing = nowPlaying.trackId
     val section = if (list.grid && entries.isNotEmpty()) gridSection(null, entries) else rowSection(null, entries, playing)
     return template.addSection(section).build()
   }
@@ -347,7 +356,10 @@ private class ListScreen(context: CarContext, private val list: AutoEntry) : Scr
           .build()
 }
 
-/** Now playing: drawn by Android Auto from the player's session. */
+/**
+ * Now playing: drawn by Android Auto from the player's session. On top: the queue, and the
+ * lyrics mode (the line sung in place of the artist, [MusonicCarLyrics]), orange while on.
+ */
 private class PlaybackScreen(context: CarContext) : Screen(context) {
   override fun onGetTemplate(): Template =
       MediaPlaybackTemplate.Builder()
@@ -355,7 +367,56 @@ private class PlaybackScreen(context: CarContext) : Screen(context) {
               Header.Builder()
                   .setStartHeaderAction(Action.BACK)
                   .setTitle(carContext.getString(R.string.car_now_playing))
+                  .addEndHeaderAction(
+                      Action.Builder()
+                          .setIcon(carContext.icon(R.drawable.ic_auto_queue))
+                          .setOnClickListener { screenManager.push(QueueScreen(carContext)) }
+                          .build(),
+                  )
+                  .addEndHeaderAction(lyricsAction())
                   .build(),
           )
           .build()
+
+  // Icons only: the car refuses titles on header buttons.
+  private fun lyricsAction(): Action {
+    val icon = CarIcon.Builder(IconCompat.createWithResource(carContext, R.drawable.ic_auto_lyrics))
+    if (MusonicCarLyrics.on) icon.setTint(MUSONIC_ORANGE)
+    return Action.Builder()
+        .setIcon(icon.build())
+        .setOnClickListener {
+          MusonicCarLyrics.toggle(carContext)
+          invalidate()
+        }
+        .build()
+  }
 }
+
+/** What comes next (ADR-025 step 7): a list to read, the playback screen stays one tap away. */
+private class QueueScreen(context: CarContext) : Screen(context) {
+  private val loader = Loader(this, Nodes.QUEUE)
+  private val nowPlaying = NowPlaying(this) { loader.refresh() }
+
+  init {
+    lifecycle.addObserver(object : DefaultLifecycleObserver {
+      override fun onCreate(owner: LifecycleOwner) = nowPlaying.start()
+
+      override fun onDestroy(owner: LifecycleOwner) = nowPlaying.stop()
+    })
+  }
+
+  override fun onGetTemplate(): Template {
+    val header = Header.Builder().setStartHeaderAction(Action.BACK).setTitle(carContext.getString(R.string.car_queue))
+    val template = SectionedItemTemplate.Builder().setHeader(header.build()).addAction(nowPlayingAction())
+    val entries = loader.entries ?: loader.load() ?: return template.setLoading(true).build()
+    val section = RowSection.Builder().setNoItemsMessage(carContext.getString(R.string.car_empty))
+    entries.take(carContext.limit(ConstraintManager.CONTENT_LIMIT_TYPE_LIST)).forEach { entry ->
+      val row = Row.Builder().setTitle(entry.title)
+      entry.subtitle?.takeIf { it.isNotEmpty() }?.let { row.addText(it) }
+      carContext.cover(entry)?.let { row.setImage(it, Row.IMAGE_TYPE_LARGE) }
+      section.addItem(row.build())
+    }
+    return template.addSection(section.build()).build()
+  }
+}
+

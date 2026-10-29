@@ -13,6 +13,8 @@ import {
   albumNodeId,
   artistItems,
   likedItem,
+  lyricsItems,
+  lyricsNodeId,
   parseNode,
   parseTrackRef,
   playlistItems,
@@ -155,5 +157,16 @@ describe('car Home', () => {
     // Offline: only what can play without the server.
     expect(recentItems(plays, liked, true, art).map(i => i.id)).toEqual([playlistNodeId('p1'), 'liked']);
     expect(parseNode('recent')).toEqual({kind: 'recent'});
+  });
+});
+
+describe('car playback', () => {
+  it('gives synced lyrics their start, plain ones their rank', () => {
+    expect(lyricsItems(null)).toEqual([]);
+    expect(lyricsItems({synced: true, lines: [{start: 1200.4, value: 'Hello'}, {start: 3000, value: 'World'}]}))
+      .toEqual([{id: 'line:1200', title: 'Hello'}, {id: 'line:3000', title: 'World'}]);
+    expect(lyricsItems({synced: false, lines: [{value: 'Hello'}]})).toEqual([{id: 'text:0', title: 'Hello'}]);
+    expect(parseNode(lyricsNodeId('73A4WPDHD9a'))).toEqual({kind: 'lyrics', id: '73A4WPDHD9a'});
+    expect(parseNode('queue')).toEqual({kind: 'queue'});
   });
 });

@@ -8,6 +8,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionParameters.AudioOffloadPreferences
 import androidx.media3.common.util.UnstableApi
@@ -95,7 +96,37 @@ class MusonicPlayerService : MediaSessionService() {
    * What other apps see of the player. The JS engine owns the queue, so next and previous are
    * its call; play, pause and seeks act at once and JS is told.
    */
-  private class RemoteControls(player: Player) : ForwardingPlayer(player) {
+  class RemoteControls(player: Player) : ForwardingPlayer(player) {
+    private val listeners = mutableListOf<Player.Listener>()
+
+    /**
+     * Shown in place of the artist while set (the car's lyrics mode, ADR-025): the car draws
+     * its playback screen from the session's metadata, nothing else can go there.
+     */
+    var line: String? = null
+      set(value) {
+        if (field == value) return
+        field = value
+        val metadata = mediaMetadata
+        listeners.toList().forEach { it.onMediaMetadataChanged(metadata) }
+      }
+
+    override fun getMediaMetadata(): MediaMetadata {
+      val metadata = super.getMediaMetadata()
+      val shown = line ?: return metadata
+      return metadata.buildUpon().setArtist(shown).setSubtitle(shown).build()
+    }
+
+    override fun addListener(listener: Player.Listener) {
+      listeners.add(listener)
+      super.addListener(listener)
+    }
+
+    override fun removeListener(listener: Player.Listener) {
+      listeners.remove(listener)
+      super.removeListener(listener)
+    }
+
     override fun seekToNext() = MusonicPlayback.emit("remote-next")
     override fun seekToNextMediaItem() = MusonicPlayback.emit("remote-next")
     override fun seekToPrevious() = MusonicPlayback.emit("remote-previous")

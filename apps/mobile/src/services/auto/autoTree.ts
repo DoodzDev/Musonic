@@ -45,6 +45,8 @@ export const LIKED = 'liked';
 export const RESUME = 'resume';
 /** Home of the car: lists played lately (the app's Recently played). */
 export const RECENT = 'recent';
+/** Playback screen of the car: what comes next (ADR-025 step 7). */
+export const QUEUE = 'queue';
 /** Drawn by the app: the Liked songs tile. */
 export const LIKED_ART: AutoArt = {key: 'res:liked', uri: ''};
 
@@ -60,6 +62,8 @@ export type AutoNode =
   | {kind: 'artist'; id: string}
   | {kind: 'resume'}
   | {kind: 'recent'}
+  | {kind: 'queue'}
+  | {kind: 'lyrics'; id: string}
   | AutoList
   | {kind: 'unknown'};
 
@@ -77,7 +81,7 @@ export function artistNodeId(id: string): string {
   return `artist:${id}`;
 }
 
-const PREFIXED = ['playlist', 'album', 'artist'] as const;
+const PREFIXED = ['playlist', 'album', 'artist', 'lyrics'] as const;
 
 export function trackMediaId(listNodeId: string, trackId: string): string {
   return `${listNodeId}|${trackId}`;
@@ -93,6 +97,7 @@ export function parseNode(id: string): AutoNode {
   if (id === LIKED) return {kind: 'liked'};
   if (id === RESUME) return {kind: 'resume'};
   if (id === RECENT) return {kind: 'recent'};
+  if (id === QUEUE) return {kind: 'queue'};
   if (id.includes('|')) return {kind: 'unknown'};
   for (const kind of PREFIXED) {
     const prefix = `${kind}:`;
@@ -171,6 +176,23 @@ export function artistItems(artists: ArtistLike[], artOf: ArtOf): AutoItem[] {
 }
 
 type QueuedTrack = {id: string; title: string; artist?: string; coverArt?: string};
+
+/** Lyrics of a track for the car (ADR-025 step 6), asked by its id. */
+export function lyricsNodeId(trackId: string): string {
+  return `lyrics:${trackId}`;
+}
+
+/**
+ * One row per line. A synced line's id carries its start (`line:<ms>`), so the car follows
+ * the music; a plain line only its rank (`text:<n>`).
+ */
+export function lyricsItems(lyrics: {synced: boolean; lines: {start?: number; value: string}[]} | null): AutoItem[] {
+  if (!lyrics) return [];
+  return lyrics.lines.map((l, i) => ({
+    id: lyrics.synced && l.start != null ? `line:${Math.round(l.start)}` : `text:${i}`,
+    title: l.value,
+  }));
+}
 
 /** The track to resume, tapped as one row (nothing when the queue is empty). */
 export function resumeItems(current: QueuedTrack | undefined, from: string | undefined, artOf: ArtOf): AutoItem[] {
