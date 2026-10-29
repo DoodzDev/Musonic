@@ -4,7 +4,10 @@
 //!
 //! | Route | |
 //! |---|---|
-//! | `GET /v1/events` | WebSocket of real-time events for the signed-in account (ADR-018); token also as `?token=`, device id as `?device=` |
+//! | `GET /v1/events` | WebSocket of real-time events for the signed-in account (ADR-018); token also as `?token=`, device id as `?device=`. Musonic Connect (ADR-019) goes both ways on it: `register`, `player`, `command` |
+//! | `GET/PUT /v1/me/settings` | `{connectSync}`: synced playback (Musonic Connect) |
+//! | `GET /v1/me/player` | The account's last listening (Musonic Connect state), to resume it on any device |
+//! | `GET /v1/admin/connect` | Every account's devices online and what they play |
 //! | `/v1/admin/imports…`, `/v1/admin/providers…` | « Imports » page ([`imports`]) |
 //! | `/v1/admin/library…` | « Bibliothèque » page ([`library_admin`]) |
 //! | `/v1/admin/devices`, `/v1/admin/blocked` | « Appareils et sécurité » page ([`security`]) |
@@ -130,6 +133,9 @@ pub fn router() -> Router<AppState> {
         .route("/v1/auth/logout", post(logout))
         .route("/v1/me", get(me))
         .route("/v1/me/password", put(change_password))
+        .route("/v1/me/settings", get(my_settings).put(set_my_settings))
+        .route("/v1/me/player", get(my_player))
+        .route("/v1/admin/connect", get(connect_overview))
         .route("/v1/me/api-keys", get(list_keys).post(create_key))
         .route("/v1/me/api-keys/{id}", delete(revoke_key))
         .route("/v1/users", get(admin::list_accounts).post(create_user))
@@ -155,7 +161,7 @@ pub const API_VERSION: u32 = 1;
 
 /// What this server can do, as listed by `/v1/info` (see ADR-018).
 pub fn features(state: &AppState) -> Vec<String> {
-    let mut f = vec!["events"];
+    let mut f = vec!["events", "connect"];
     if state.online.is_some() {
         f.push("online");
     }
@@ -220,6 +226,13 @@ async fn stream_events(mut socket: WebSocket, state: AppState, user: User, devic
     if socket.send(send(&hello)).await.is_err() {
         return;
     }
+    // Musonic Connect: this connection's device (the client's id, else one of its own).
+    static CONNECTIONS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let conn = CONNECTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let me = device
+        .clone()
+        .unwrap_or_else(|| format!("connection-{conn}"));
+    let mut registered = false;
     let mut ping = tokio::time::interval(EVENTS_PING);
     ping.tick().await;
     loop {
@@ -243,11 +256,187 @@ async fn stream_events(mut socket: WebSocket, state: AppState, user: User, devic
             }
             incoming = socket.recv() => match incoming {
                 None | Some(Err(_)) | Some(Ok(Message::Close(_))) => break,
-                // Nothing to receive yet (Connect commands come with S8).
+                Some(Ok(Message::Text(text))) => {
+                    let replies = connect_message(&state, &user, conn, &me, &text, &mut registered);
+                    for reply in replies {
+                        if socket.send(send(&typed(reply))).await.is_err() {
+                            break;
+                        }
+                    }
+                }
                 Some(Ok(_)) => {}
             },
         }
     }
+    if registered && let Some(last) = state.connect.leave(&state.events, &user.id, conn) {
+        keep_last_listening(&state, &user.id, last);
+    }
+}
+
+/// Saves the account's last listening (`GET /v1/me/player`), in the background.
+fn keep_last_listening(state: &AppState, user: &str, player: crate::connect::Player) {
+    let Ok(json) = serde_json::to_string(&player) else {
+        return;
+    };
+    let (db, user) = (state.db.clone(), user.to_owned());
+    tokio::spawn(async move {
+        let saved = db
+            .call(move |c| {
+                c.prepare_cached(
+                    "INSERT INTO connect_state(user_id, state, updated_at) VALUES (?1, ?2, unixepoch())
+                     ON CONFLICT(user_id) DO UPDATE SET state = excluded.state, updated_at = excluded.updated_at",
+                )?
+                .execute([&user, &json])?;
+                Ok(())
+            })
+            .await;
+        if let Err(e) = saved {
+            tracing::warn!("last listening not saved: {e}");
+        }
+    });
+}
+
+/// `GET /v1/me/player`: the account's last listening, or `null`.
+async fn my_player(State(state): State<AppState>, auth: Auth) -> Reply {
+    use rusqlite::OptionalExtension;
+    let id = auth.user.id.clone();
+    let saved: Option<(String, i64)> = state
+        .db
+        .call(move |c| {
+            Ok(c.query_row(
+                "SELECT state, updated_at FROM connect_state WHERE user_id = ?1",
+                [&id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()?)
+        })
+        .await?;
+    let player = saved
+        .as_ref()
+        .and_then(|(s, _)| serde_json::from_str::<crate::connect::Player>(s).ok());
+    Ok(Json(
+        json!({ "player": player, "updatedAt": saved.map(|(_, at)| at) }),
+    ))
+}
+
+/// A Musonic Connect message from a device (ADR-019); returns what to answer that device only.
+/// Anything else (or malformed) is ignored, as before Connect.
+fn connect_message(
+    state: &AppState,
+    user: &User,
+    conn: u64,
+    me: &str,
+    text: &str,
+    registered: &mut bool,
+) -> Vec<crate::events::Event> {
+    use crate::connect::{Incoming, Refused, now_ms};
+    use crate::events::Event;
+    let Ok(message) = serde_json::from_str::<Incoming>(text) else {
+        return vec![];
+    };
+    match message {
+        Incoming::Register(mut device) => {
+            device.id = me.to_owned();
+            device.name = device.name.chars().take(64).collect();
+            *registered = true;
+            state
+                .connect
+                .register(&state.events, &user.id, conn, device)
+                .into_iter()
+                .map(|player| Event::Player {
+                    player,
+                    now: now_ms(),
+                })
+                .collect()
+        }
+        // A device that did not register is not listed: what it plays is not kept either.
+        Incoming::Player(player) if *registered => {
+            if let Some(last) = state.connect.player(&state.events, &user.id, me, player) {
+                keep_last_listening(state, &user.id, last);
+            }
+            vec![]
+        }
+        Incoming::Player(_) => vec![],
+        Incoming::Command(command) => {
+            match state
+                .connect
+                .command(&state.events, &user.id, user.is_admin, me, command.clone())
+            {
+                Ok(()) => vec![],
+                Err(refused) => vec![Event::CommandFailed {
+                    command,
+                    reason: match refused {
+                        Refused::Offline => "offline",
+                        Refused::NotAllowed => "notAllowed",
+                    }
+                    .to_owned(),
+                }],
+            }
+        }
+    }
+}
+
+/// `GET /v1/me/settings`: the account's settings.
+async fn my_settings(State(state): State<AppState>, auth: Auth) -> Reply {
+    let id = auth.user.id.clone();
+    let sync: bool = state
+        .db
+        .call(move |c| {
+            Ok(
+                c.query_row("SELECT connect_sync FROM user WHERE id = ?1", [&id], |r| {
+                    r.get::<_, i64>(0)
+                })? != 0,
+            )
+        })
+        .await?;
+    Ok(Json(json!({ "connectSync": sync })))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MySettings {
+    connect_sync: bool,
+}
+
+/// `PUT /v1/me/settings`: `{connectSync}`; the account's devices learn it at once.
+async fn set_my_settings(
+    State(state): State<AppState>,
+    auth: Auth,
+    Json(body): Json<MySettings>,
+) -> Reply {
+    let (id, sync) = (auth.user.id.clone(), body.connect_sync);
+    state
+        .db
+        .call(move |c| {
+            Ok(c.execute(
+                "UPDATE user SET connect_sync = ?2 WHERE id = ?1",
+                rusqlite::params![id, sync as i64],
+            )?)
+        })
+        .await?;
+    state.events.emit(
+        &auth.user.id,
+        None,
+        crate::events::Event::Settings { connect_sync: sync },
+    );
+    Ok(Json(json!({ "connectSync": sync })))
+}
+
+/// `GET /v1/admin/connect`: every account with a device online (console, ADR-019 § 7).
+async fn connect_overview(State(state): State<AppState>, auth: Auth) -> Reply {
+    if !auth.user.is_admin {
+        return Err(ApiError(
+            StatusCode::FORBIDDEN,
+            "administrators only".into(),
+        ));
+    }
+    let accounts: Vec<Value> = state
+        .connect
+        .overview()
+        .into_iter()
+        .map(|(user, devices, players)| json!({ "user": user, "devices": devices, "players": players }))
+        .collect();
+    Ok(Json(json!({ "accounts": accounts })))
 }
 
 async fn info(State(state): State<AppState>) -> Reply {

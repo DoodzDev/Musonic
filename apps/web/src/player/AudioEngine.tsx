@@ -16,7 +16,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { useApp } from '../context/AppContext.tsx';
 import { usePlayer } from './PlayerContext.tsx';
-import { onSeekRequest, publishPosition } from './position.ts';
+import { onSeekRequest, publishPosition, takeStartAt, takeStartPaused } from './position.ts';
 import { handleShortcut, TransportContext, type Transport } from './transport.ts';
 import { registerSleepPause, takeEndOfTrack } from './sleepTimer.ts';
 import { useScrobbler } from './useScrobbler.ts';
@@ -74,10 +74,15 @@ export function AudioEngine({ children }: { children: ReactNode }) {
     setFailed(false);
     publishPosition(0);
     setDuration(song.duration ?? 0);
-    pendingSeek.current = isEpisode(song.id) ? (song.position ?? 0) / 1000 : 0;
+    // A transfer (Musonic Connect) resumes where the other device was; an episode where the account stopped.
+    pendingSeek.current = takeStartAt() ?? (isEpisode(song.id) ? (song.position ?? 0) / 1000 : 0);
     savedAt.current = pendingSeek.current;
     audio.src = client.streamUrl(song.id);
     audio.playbackRate = isEpisode(song.id) ? speed : 1;
+    if (takeStartPaused()) {
+      setPlaying(false);
+      return;
+    }
     if (Date.now() - holdNext.current < 2000) {
       holdNext.current = 0;
       setPlaying(false);

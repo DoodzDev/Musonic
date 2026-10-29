@@ -890,3 +890,41 @@ async fn answers_carry_browser_protections() {
     assert_eq!(h[header::REFERRER_POLICY], "no-referrer");
     assert_eq!(h[header::X_CONTENT_TYPE_OPTIONS], "nosniff");
 }
+
+#[tokio::test]
+async fn synced_playback_is_an_account_setting() {
+    let app = router(state());
+    let (_, r) = call(
+        &app,
+        "POST",
+        "/v1/setup",
+        None,
+        Some(json!({"username": "Doodz", "password": "correct horse"})),
+    )
+    .await;
+    let admin = r["token"].as_str().unwrap().to_owned();
+    let get = call(&app, "GET", "/v1/me/settings", Some(&admin), None).await;
+    assert_eq!(get.1["connectSync"], true);
+    let (s, r) = call(
+        &app,
+        "PUT",
+        "/v1/me/settings",
+        Some(&admin),
+        Some(json!({"connectSync": false})),
+    )
+    .await;
+    assert_eq!(
+        (s, r["connectSync"].clone()),
+        (StatusCode::OK, json!(false))
+    );
+    let get = call(&app, "GET", "/v1/me/settings", Some(&admin), None).await;
+    assert_eq!(get.1["connectSync"], false);
+    let (s, r) = call(&app, "GET", "/v1/me/player", Some(&admin), None).await;
+    assert_eq!((s, r["player"].clone()), (StatusCode::OK, Value::Null));
+    let (s, r) = call(&app, "GET", "/v1/admin/connect", Some(&admin), None).await;
+    assert_eq!((s, r["accounts"].clone()), (StatusCode::OK, json!([])));
+    assert_eq!(
+        call(&app, "GET", "/v1/me/settings", None, None).await.0,
+        StatusCode::UNAUTHORIZED
+    );
+}

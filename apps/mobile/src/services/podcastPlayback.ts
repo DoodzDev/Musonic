@@ -15,6 +15,7 @@ import {isEpisode, savePodcastPosition, type PodcastEpisode, type PodcastShow} f
 import {storage} from '../store/storage';
 import type {Track} from '../store/playerStore';
 import {getT} from '../i18n';
+import {notifyJump} from './connect/jumps';
 
 const SAVE_EVERY_MS = 10_000;
 const SPEED_KEY = 'podcast-speed';
@@ -74,6 +75,7 @@ export async function skipBy(seconds: number): Promise<void> {
   const {position, duration} = await TrackPlayer.getProgress();
   const target = Math.max(0, duration > 0 ? Math.min(position + seconds, duration - 1) : position + seconds);
   await TrackPlayer.seekTo(target);
+  notifyJump();
 }
 
 let current: string | null = null;

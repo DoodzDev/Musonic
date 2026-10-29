@@ -7,6 +7,7 @@
 
 pub mod api;
 pub mod config;
+pub mod connect;
 pub mod db;
 pub mod events;
 pub mod ids;

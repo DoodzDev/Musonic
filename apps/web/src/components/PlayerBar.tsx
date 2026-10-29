@@ -15,10 +15,12 @@ import { tr } from '../i18n/index.ts';
 import { useTransport } from '../player/transport.ts';
 import { usePlayer } from '../player/PlayerContext.tsx';
 import { colors } from '../theme/tokens.ts';
+import { Icon } from '@musonic/icons';
 import { Cover } from './Cover.tsx';
 import { FullscreenIcon, MiniPlayerIcon } from './Icons.tsx';
 import { NowPlayingActions } from './NowPlayingActions.tsx';
 import { SleepTimerButton } from './SleepTimerButton.tsx';
+import { ConnectButton } from './ConnectButton.tsx';
 import { TrackMenu, type TrackMenuTarget } from './TrackMenu.tsx';
 import { claimContextMenu } from '../player/contextMenu.ts';
 import { ProgressBar, TransportButtons, VolumeControl } from './PlayerControls.tsx';
@@ -37,7 +39,7 @@ interface Props {
 
 export function PlayerBar({ onExpand, onToggleMini, miniOpen }: Props) {
   const player = usePlayer();
-  const { failed } = useTransport();
+  const { failed, remoteDevice } = useTransport();
   const { current: song, panel } = player;
   const [menu, setMenu] = useState<TrackMenuTarget | null>(null);
 
@@ -56,7 +58,14 @@ export function PlayerBar({ onExpand, onToggleMini, miniOpen }: Props) {
             {song?.albumId ? (
               <Link to={`/album/${song.albumId}`} className="item-title link">{song.title}</Link>
             ) : (
-              <span className="item-title">{song ? song.title : t.idle}</span>
+              <span className="item-title">
+                {song ? song.title : t.idle}
+                {remoteDevice && (
+                  <span className="remote-device" title={tr.connect.playingOn(remoteDevice.name)} aria-label={tr.connect.playingOn(remoteDevice.name)}>
+                    <Icon name={remoteDevice.kind === 'phone' || remoteDevice.kind === 'car' ? 'phone' : 'computer'} size={14} />
+                  </span>
+                )}
+              </span>
             )}
             {song &&
               (song.artistId ? (
@@ -81,6 +90,7 @@ export function PlayerBar({ onExpand, onToggleMini, miniOpen }: Props) {
         </div>
 
         <div className="player-side">
+          <ConnectButton />
           <SleepTimerButton />
           <button
             type="button"

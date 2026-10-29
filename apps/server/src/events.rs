@@ -84,6 +84,31 @@ pub enum Event {
         total: u32,
         playlist: Option<String>,
     },
+    /// Musonic Connect (ADR-019): the account's devices online, sent when the list changes.
+    Devices {
+        devices: Vec<crate::connect::Device>,
+    },
+    /// What a device plays now; `now`: server time of the message, ms (with
+    /// `player.positionAt`, gives the position without comparing clocks).
+    Player {
+        player: crate::connect::Player,
+        #[ts(type = "number")]
+        now: i64,
+    },
+    /// A remote command for the device `command.to` (the others ignore it).
+    Command {
+        command: crate::connect::Command,
+    },
+    /// A command did not reach its device: `reason` `offline` or `notAllowed`.
+    CommandFailed {
+        command: crate::connect::Command,
+        reason: String,
+    },
+    /// The account's settings changed (`connectSync`: synced playback).
+    #[serde(rename_all = "camelCase")]
+    Settings {
+        connect_sync: bool,
+    },
     /// Keep-alive, every 30 seconds.
     Ping,
     /// Some events were missed: reload what is shown.

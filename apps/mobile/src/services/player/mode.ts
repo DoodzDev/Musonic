@@ -14,7 +14,8 @@ const NATIVE_PLAYER_KEY = 'player.native';
 
 function savedChoice(): boolean {
   try {
-    return storage.getBoolean(NATIVE_PLAYER_KEY) === true;
+    // On unless turned off (ADR-022: lighter, the phone's audio chip decodes the music).
+    return storage.getBoolean(NATIVE_PLAYER_KEY) ?? true;
   } catch {
     return false;
   }

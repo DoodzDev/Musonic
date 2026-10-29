@@ -56,6 +56,15 @@ export function useMusonicServer(session: SubsonicSession): boolean | undefined 
   return is;
 }
 
+/**
+ * The server's address and a credential for its live connection (`/v1/events`, Musonic Connect).
+ * Always the server itself: the development relay does not carry WebSockets, and browsers let
+ * a page open one to another address.
+ */
+export async function liveAccess(session: SubsonicSession): Promise<{ baseUrl: string; token: string }> {
+  return { baseUrl: session.baseUrl.replace(/\/+$/, ''), token: session.apiKey ?? savedToken(session) ?? (await signIn(session)) };
+}
+
 function tokenKey(session: SubsonicSession): string {
   return `${TOKEN_KEY}|${session.baseUrl}|${session.username}`;
 }

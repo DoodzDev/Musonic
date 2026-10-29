@@ -88,6 +88,9 @@ type SettingsState = {
   /** Date above the Home title. */
   showHomeDate: boolean;
   setShowHomeDate: (show: boolean) => void;
+  /** Player: the time left (« −8:24 ») instead of the track's length, on the right of the bar. */
+  showRemainingTime: boolean;
+  setShowRemainingTime: (show: boolean) => void;
   /** Downloads wait for Wi-Fi; on mobile data the user is asked each time. */
   downloadWifiOnly: boolean;
   setDownloadWifiOnly: (only: boolean) => void;
@@ -164,6 +167,8 @@ export const useSettingsStore = create<SettingsState>()(
       setStartTab: tab => set({startTab: tab}),
       showHomeDate: true,
       setShowHomeDate: show => set({showHomeDate: show}),
+      showRemainingTime: false,
+      setShowRemainingTime: show => set({showRemainingTime: show}),
       downloadWifiOnly: true,
       setDownloadWifiOnly: only => set({downloadWifiOnly: only}),
       streamQualityWifi: 0,

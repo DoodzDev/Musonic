@@ -53,6 +53,9 @@ export const t = {
     storage: 'Stockage',
     about: 'À propos',
     website: 'Site de Musonic',
+    projectSite: 'Site du projet',
+    creatorSite: 'Site du créateur',
+    version: 'Version',
   },
 
   // ─── Server Setup ──────────────────────────────────────────────────────────
@@ -160,6 +163,21 @@ export const t = {
   },
 
   // ─── Search ────────────────────────────────────────────────────────────────
+  connect: {
+    button: 'Appareils',
+    title: 'Écouter sur',
+    thisDevice: 'Ce téléphone',
+    playing: 'En lecture',
+    playingOn: (name: string) => `Lecture sur ${name}`,
+    listenHere: 'Écouter ici',
+    alone: 'Joue seul',
+    none: 'Aucun autre appareil connecté. Ouvrez Musonic Web ou l’app sur un autre appareil.',
+    settings: 'Réglages',
+    sync: 'Lecture synchronisée',
+    syncOn: 'Un seul appareil joue à la fois : lancer la lecture sur l’un met les autres en pause.',
+    syncOff: 'Chaque appareil joue de son côté, sans mettre les autres en pause.',
+    adminNotice: 'L’administrateur du serveur peut voir votre lecture pour vous aider en cas de souci.',
+  },
   podcasts: {
     shows: 'Podcasts',
     foundEpisodes: 'Épisodes où cette personne intervient',
@@ -528,8 +546,11 @@ export const t = {
       downloads: 'Téléchargements',
       display: 'Affichage',
       offline: 'Mode hors ligne',
+      connect: 'Musonic Connect',
     },
+    advanced: 'Options avancées',
     player: {
+      showRemaining: 'Afficher le temps restant',
       progressLabel: 'Style de la barre de progression',
       progressDesc:
         "Choisissez comment visualiser l'avancement de la musique dans le lecteur complet.",
@@ -545,8 +566,8 @@ export const t = {
       autoplayDesc: "Lance automatiquement des titres similaires à la fin de la file d'attente.",
       alwaysPreviousLabel: "Précédent revient toujours au titre d'avant",
       alwaysPreviousDesc: 'Sinon, après 3 secondes, Précédent redémarre le titre.',
-      nativePlayerLabel: 'Nouveau lecteur (test)',
-      nativePlayerDesc: "Lecteur natif d'Android, plus économe écran éteint. En cours de test.",
+      nativePlayerLabel: 'Lecteur natif d’Android',
+      nativePlayerDesc: 'Plus économe, écran éteint. À désactiver seulement en cas de souci de lecture.',
       nativePlayerRestartTitle: 'Relancez Musonic',
       nativePlayerRestartMessage: "Le changement s'applique au prochain lancement : fermez Musonic (glissez-le hors des applis récentes), puis rouvrez-le.",
       autoDownloadLabel: 'Téléchargement automatique',

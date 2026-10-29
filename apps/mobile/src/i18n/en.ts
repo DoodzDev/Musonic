@@ -50,6 +50,9 @@ export const en = {
     storage: 'Storage',
     about: 'About',
     website: 'Musonic website',
+    projectSite: 'Project website',
+    creatorSite: 'Creator’s website',
+    version: 'Version',
   },
 
   // ─── Server Setup ──────────────────────────────────────────────────────────
@@ -157,6 +160,21 @@ export const en = {
   },
 
   // ─── Search ────────────────────────────────────────────────────────────────
+  connect: {
+    button: 'Devices',
+    title: 'Listen on',
+    thisDevice: 'This phone',
+    playing: 'Playing',
+    playingOn: (name: string) => `Playing on ${name}`,
+    listenHere: 'Listen here',
+    alone: 'Plays alone',
+    none: 'No other device connected. Open Musonic Web or the app on another device.',
+    settings: 'Settings',
+    sync: 'Synced playback',
+    syncOn: 'One device plays at a time: starting playback on one pauses the others.',
+    syncOff: 'Each device plays on its own, without pausing the others.',
+    adminNotice: 'The server’s administrator can see your playback to help you if something goes wrong.',
+  },
   podcasts: {
     shows: 'Podcasts',
     foundEpisodes: 'Episodes with this person',
@@ -523,8 +541,11 @@ export const en = {
       downloads: 'Downloads',
       display: 'Display',
       offline: 'Offline mode',
+      connect: 'Musonic Connect',
     },
+    advanced: 'Advanced options',
     player: {
+      showRemaining: 'Show the time left',
       progressLabel: 'Progress bar style',
       progressDesc: 'Choose how playback progress is shown in the full player.',
       classic: 'Classic',
@@ -539,8 +560,8 @@ export const en = {
       autoplayDesc: 'Automatically plays similar tracks when the queue ends.',
       alwaysPreviousLabel: 'Previous always goes back',
       alwaysPreviousDesc: 'Otherwise, after 3 seconds, Previous restarts the track.',
-      nativePlayerLabel: 'New player (test)',
-      nativePlayerDesc: "Android's native player, lighter with the screen off. Being tested.",
+      nativePlayerLabel: 'Android’s native player',
+      nativePlayerDesc: 'Lighter with the screen off. Turn it off only if playback has trouble.',
       nativePlayerRestartTitle: 'Restart Musonic',
       nativePlayerRestartMessage: 'The change applies at the next launch: close Musonic (swipe it out of the recent apps), then open it again.',
       autoDownloadLabel: 'Automatic download',

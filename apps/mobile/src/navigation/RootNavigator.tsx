@@ -25,7 +25,7 @@ import {useSearchHistoryStore} from '../store/searchHistoryStore';
 import TabNavigator from './TabNavigator';
 import ProfileProvider from '../components/ProfileProvider';
 import ServerSetupScreen from '../screens/ServerSetup';
-import SettingsScreen from '../screens/Settings';
+import SettingsScreen, {AdvancedSettingsScreen} from '../screens/Settings';
 import DesignScreen from '../screens/Design';
 import DesignTrackListTest from '../screens/Design/TrackListTest';
 import DesignHeaderTest from '../screens/Design/HeaderTest';
@@ -96,6 +96,7 @@ export default function RootNavigator() {
         <>
           <Stack.Screen name="Main" component={MainWithProfile} />
           <Stack.Screen name="Settings" component={SettingsScreen} options={{animation: 'slide_from_right'}} />
+          <Stack.Screen name="SettingsAdvanced" component={AdvancedSettingsScreen} options={{animation: 'slide_from_right'}} />
           {/* Design v2 reference screen: debug builds (Musonic Dev) only. */}
           {__DEV__ && <Stack.Screen name="Design" component={DesignScreen} />}
           {__DEV__ && <Stack.Screen name="DesignTrackList" component={DesignTrackListTest} />}

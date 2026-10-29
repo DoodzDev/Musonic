@@ -60,6 +60,10 @@ import QueueSheet from './QueueSheet';
 import AddToPlaylistSheet from './AddToPlaylistSheet';
 import SongOptionsSheet from './SongOptionsSheet';
 import SleepTimerSheet from './SleepTimerSheet';
+import DevicesSheet from './DevicesSheet';
+import {useConnectSnapshot} from '../services/connect/useConnect';
+import {elsewhereNow} from '../services/connect/connectService';
+import {useRemotePlayback} from '../services/connect/useConnect';
 import Toast from './Toast';
 import {useT, getT} from '../i18n';
 import type {SubsonicSong} from '../api/types';
@@ -161,13 +165,23 @@ function FullScreenPlayerContent() {
     ? Math.min(winW * 0.4 - 32, winH - 64) * 0.85
     : Math.min(winW - 48, winH * 0.4);
   // RNTP native hooks — react directly to native engine
-  const currentTrack = useActiveTrack();
+  const localTrack = useActiveTrack();
+  // Musonic Connect (ADR-019): another device plays, not the phone: its track and position,
+  // and the controls act on it.
+  const remote = useRemotePlayback();
+  const currentTrack = remote ? (remote.track as unknown as typeof localTrack) : localTrack;
   // A podcast episode (ADR-023): speed and short jumps instead of shuffle and repeat.
   const episode = isEpisode(currentTrack?.id);
   const [speed, setSpeed] = useState(podcastSpeed);
   const {state} = usePlaybackState();
-  const isPlaying = state === State.Playing;
-  const {position, duration: playerDuration} = useForegroundProgress();
+  const isPlaying = remote ? remote.playing : state === State.Playing;
+  const {position: localPosition, duration: localDuration} = useForegroundProgress();
+  const position = remote ? remote.position : localPosition;
+  const playerDuration = remote ? 0 : localDuration;
+  const seek = remote ? remote.seek : seekTo;
+  const goNext = remote ? remote.next : skipNext;
+  const goPrevious = remote ? remote.previous : skipPrev;
+  const jumpBy = (seconds: number) => (remote ? remote.skipBy(seconds) : skipBy(seconds).catch(() => {}));
   const shuffleMode = usePlayerStore(s => s.shuffleMode);
   const repeatMode = usePlayerStore(s => s.repeatMode);
   const isFullScreenOpen = usePlayerStore(s => s.isFullScreenOpen);
@@ -176,7 +190,8 @@ function FullScreenPlayerContent() {
   const savedSet = usePlaylistCacheStore(s => s.savedSet);
   const currentPlaylistName = usePlayerStore(s => s.currentPlaylistName);
   const dominantColor = usePlayerStore(s => s.dominantColor);
-  const togglePlay = usePlayerStore(s => s.togglePlay);
+  const localTogglePlay = usePlayerStore(s => s.togglePlay);
+  const togglePlay = remote ? remote.toggle : localTogglePlay;
   const toggleShuffle = usePlayerStore(s => s.toggleShuffle);
   const isFetchingMagic = usePlayerStore(s => s.isFetchingMagic);
   const cycleRepeat = usePlayerStore(s => s.cycleRepeat);
@@ -293,6 +308,11 @@ function FullScreenPlayerContent() {
   // Queue sheet
   const [queueVisible, setQueueVisible] = useState(false);
   const [sleepTimerVisible, setSleepTimerVisible] = useState(false);
+  // Musonic Connect (ADR-019): the account's devices, and the one playing elsewhere.
+  const [devicesVisible, setDevicesVisible] = useState(false);
+  const connect = useConnectSnapshot();
+  const elsewhere = elsewhereNow(connect);
+  const elsewhereName = connect.devices.find(d => d.id === elsewhere?.device)?.name ?? '';
   const queueSlideY = useRef(new Animated.Value(winH)).current;
 
 
@@ -489,7 +509,7 @@ function FullScreenPlayerContent() {
   // Swipe the cover left / right for the next / previous track, like the mini player.
   const coverNode = (
     <View ref={coverRef} onLayout={measureCover} style={{width: COVER_SIZE, height: COVER_SIZE}}>
-      <SwipeSurface onSwipeLeft={skipNext} onSwipeRight={skipPrevForce}>
+      <SwipeSurface onSwipeLeft={goNext} onSwipeRight={remote ? remote.previous : skipPrevForce}>
         <Animated.View style={[styles.coverWrapper, {transform: [{scale: coverScale}]}]}>
           <CoverArt id={currentTrack.coverArt} size={COVER_SIZE} borderRadius={radii.tile} />
         </Animated.View>
@@ -503,24 +523,24 @@ function FullScreenPlayerContent() {
         trackId={currentTrack.id}
         duration={dur}
         currentTime={position}
-        onSeek={seekTo}
+        onSeek={seek}
       />
       {quality ? <View style={styles.waveformBadge}><Badge kind="quality" label={quality} size="small" /></View> : null}
     </View>
   ) : (
-    <PlayerProgress position={position} duration={dur} quality={quality} onSeek={seekTo} />
+    <PlayerProgress position={position} duration={dur} quality={quality} onSeek={seek} />
   );
 
   const controlsNode = (
     <PlayerControls
       isPlaying={isPlaying}
       onTogglePlay={togglePlay}
-      onPrev={skipPrev}
-      onNext={skipNext}
+      onPrev={goPrevious}
+      onNext={goNext}
       compact={isLandscape}
       jumps={episode ? {
-        onBack: () => { skipBy(-15).catch(() => {}); },
-        onForward: () => { skipBy(30).catch(() => {}); },
+        onBack: () => { jumpBy(-15); },
+        onForward: () => { jumpBy(30); },
         backLabel: t.podcasts.back15,
         forwardLabel: t.podcasts.forward30,
       } : undefined}
@@ -539,10 +559,11 @@ function FullScreenPlayerContent() {
       onRepeat={cycleRepeat}
       onQueue={openQueue}
       speed={episode ? {value: speed, label: t.podcasts.speed, onPress: () => { cycleSpeed().then(setSpeed).catch(() => {}); }} : undefined}
+      devices={connect.connected ? {elsewhere: !!elsewhere?.playing, label: elsewhere?.playing ? t.connect.playingOn(elsewhereName) : t.connect.button, onPress: () => setDevicesVisible(true)} : undefined}
     />
   );
 
-  const lyricsNode = <PlayerLyrics lyrics={lyricsData} onSeek={seekTo} compact={isLandscape} />;
+  const lyricsNode = <PlayerLyrics lyrics={lyricsData} onSeek={seek} compact={isLandscape} />;
 
   // In lyrics mode the cover folds into a small thumbnail at the start of the title row.
   const infoNode = (
@@ -623,7 +644,9 @@ function FullScreenPlayerContent() {
                 <View style={styles.header}>
                   {chevronBtn}
                   <View style={styles.headerCenter}>
-                    <Text style={styles.headerSub} numberOfLines={1}>{t.playlistDetail.contextLabel}</Text>
+                    <Text style={[styles.headerSub, remote && styles.headerRemote]} numberOfLines={1}>
+                      {remote ? t.connect.playingOn(remote.device.name) : t.playlistDetail.contextLabel}
+                    </Text>
                     <Text style={styles.headerTitle} numberOfLines={1}>
                       {currentPlaylistName || currentTrack.album || t.library.title}
                     </Text>
@@ -681,6 +704,7 @@ function FullScreenPlayerContent() {
         />
 
         <SleepTimerSheet visible={sleepTimerVisible} onClose={() => setSleepTimerVisible(false)} />
+        <DevicesSheet visible={devicesVisible} onClose={() => setDevicesVisible(false)} />
 
       </Animated.View>
 
@@ -727,6 +751,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.65)',
     letterSpacing: 0.6,
   },
+  headerRemote: {color: colors.accent},
   headerTitle: {
     fontSize: 15,
     fontWeight: '600',

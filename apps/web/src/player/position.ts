@@ -19,6 +19,44 @@ export function publishPosition(seconds: number): void {
   for (const listener of listeners) listener();
 }
 
+/** Calls `listener` at each position update, without re-rendering anything. */
+export function subscribePosition(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+/** The position now, seconds (read once, without following it). */
+export function currentPosition(): number {
+  return position;
+}
+
+let startAt: number | null = null;
+
+/** The next track loaded starts at `seconds` (Musonic Connect: a transfer resumes there). */
+export function setStartAt(seconds: number): void {
+  startAt = seconds;
+}
+
+let startPaused = false;
+
+/** The next track loaded waits, paused (the last listening, restored when the page opens). */
+export function setStartPaused(): void {
+  startPaused = true;
+}
+
+export function takeStartPaused(): boolean {
+  const s = startPaused;
+  startPaused = false;
+  return s;
+}
+
+/** Read once by the player when it loads a track. */
+export function takeStartAt(): number | null {
+  const s = startAt;
+  startAt = null;
+  return s;
+}
+
 export function usePosition(): number {
   return useSyncExternalStore(
     (listener) => {

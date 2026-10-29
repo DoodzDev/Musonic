@@ -21,6 +21,7 @@ module.exports = {
           '@musonic/core/playback': '../../packages/core/src/playback/buildQueue.ts',
           '@musonic/core/listen': '../../packages/core/src/playback/listenTracker.ts',
           '@musonic/core/ids': '../../packages/core/src/ids/shortId.ts',
+          '@musonic/core/connect': '../../packages/core/src/connect/connect.ts',
         },
       },
     ],

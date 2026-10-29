@@ -18,4 +18,5 @@ export * from './releases/releases.ts';
 export * from './lyrics/lrclib.ts';
 export * from './playback/listenTracker.ts';
 export * from './ids/shortId.ts';
+export * from './connect/connect.ts';
 export type * from './server/index.ts';

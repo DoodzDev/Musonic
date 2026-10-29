@@ -41,6 +41,8 @@ import { LikedPage } from './pages/LikedPage.tsx';
 import { PlaylistPage } from './pages/PlaylistPage.tsx';
 import { SearchPage } from './pages/SearchPage.tsx';
 import { AudioEngine } from './player/AudioEngine.tsx';
+import { ConnectProvider } from './player/connect.tsx';
+import { RemoteControl } from './player/RemoteControl.tsx';
 import { PlayerContext, usePlayer } from './player/PlayerContext.tsx';
 import { useMiniPlayerWindow } from './player/useMiniPlayerWindow.ts';
 import { usePlaybackEngine } from './player/usePlaybackEngine.ts';
@@ -56,6 +58,7 @@ function Shell() {
   useScrollMemory(mainRef);
   return (
     <AudioEngine>
+      <ConnectProvider>
       <div className="app">
         <div className="app-body">
           <aside className="side-panel" style={{ width: sideWidth.width }}>
@@ -93,10 +96,13 @@ function Shell() {
         </div>
         <ToastHost />
         <PageMenu />
-        <PlayerBar onExpand={() => setFull(true)} onToggleMini={toggleMini} miniOpen={!!mini.win} />
-        {full && current && <FullPlayer onClose={() => setFull(false)} onToggleMini={toggleMini} miniOpen={!!mini.win} />}
+        <RemoteControl>
+          <PlayerBar onExpand={() => setFull(true)} onToggleMini={toggleMini} miniOpen={!!mini.win} />
+          {full && current && <FullPlayer onClose={() => setFull(false)} onToggleMini={toggleMini} miniOpen={!!mini.win} />}
+        </RemoteControl>
       </div>
       {mini.win && createPortal(<MiniPlayer win={mini.win} />, mini.win.document.body)}
+      </ConnectProvider>
     </AudioEngine>
   );
 }

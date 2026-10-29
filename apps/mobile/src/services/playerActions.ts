@@ -15,6 +15,7 @@ import {useDownloadStore} from '../store/downloadStore';
 import {useSettingsStore} from '../store/settingsStore';
 import type {Track} from '../store/playerStore';
 import {playerArtwork} from './playerArtwork';
+import {notifyJump} from './connect/jumps';
 
 /**
  * Converts an internal Track object to an RNTP-compatible track descriptor.
@@ -72,7 +73,7 @@ export function skipPrevForce(): void {
 }
 
 export function seekTo(seconds: number): void {
-  TrackPlayer.seekTo(seconds);
+  TrackPlayer.seekTo(seconds).then(notifyJump, () => {});
 }
 
 export async function fetchAutoplayTracks(

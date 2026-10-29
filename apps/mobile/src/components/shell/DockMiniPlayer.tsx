@@ -27,6 +27,8 @@ import PlayIcon from '../icons/PlayIcon';
 import PauseIcon from '../icons/PauseIcon';
 import NextIcon from '../icons/NextIcon';
 import PrevIcon from '../icons/PrevIcon';
+import {ComputerIcon, PhoneIcon} from '../icons';
+import {useRemotePlayback} from '../../services/connect/useConnect';
 import {usePlayerStore} from '../../store/playerStore';
 import {skipNext, skipPrev, skipPrevForce} from '../../services/playerActions';
 import {haptic} from '../../services/haptics';
@@ -43,8 +45,10 @@ function savedTrack(): Track | null {
   return account ? loadQueue<Track & {id: string}>(account, t => t)?.current ?? null : null;
 }
 
-function ProgressLine({duration}: {duration: number}) {
-  const {position} = useForegroundProgress();
+/** `remote`: the position of the device playing elsewhere (Musonic Connect). */
+function ProgressLine({duration, remote}: {duration: number; remote?: number}) {
+  const {position: local} = useForegroundProgress();
+  const position = remote ?? local;
   const fraction = duration > 0 ? Math.min(position / duration, 1) : 0;
   return (
     <View style={styles.progressTrack} pointerEvents="none">
@@ -67,15 +71,21 @@ export default function DockMiniPlayer() {
       mounted = false;
     };
   }, []);
-  const track = restored ? live : live ?? saved ?? undefined;
   const {state} = usePlaybackState();
-  const togglePlay = usePlayerStore(s => s.togglePlay);
+  const localToggle = usePlayerStore(s => s.togglePlay);
   const openFullScreen = usePlayerStore(s => s.openFullScreen);
   const visible = usePlayerStore(s => s.isMiniPlayerVisible);
+  // Musonic Connect: another device plays, not the phone: its track, and the buttons control it.
+  const remote = useRemotePlayback();
+  const track = remote ? remote.track : restored ? live : live ?? saved ?? undefined;
+  const togglePlay = remote ? remote.toggle : localToggle;
+  const next = remote ? remote.next : skipNext;
+  const previous = remote ? remote.previous : skipPrev;
 
   // Before the restore, the store does not know the queue yet: the saved track decides.
-  if (!(visible || (!restored && saved)) || !track?.id) return null;
-  const playing = state === State.Playing;
+  if (!(remote || visible || (!restored && saved)) || !track?.id) return null;
+  const playing = remote ? remote.playing : state === State.Playing;
+  const DeviceIcon = remote?.device.kind === 'phone' || remote?.device.kind === 'car' ? PhoneIcon : ComputerIcon;
   let washUri: string | undefined;
   try {
     washUri = track.coverArt
@@ -86,7 +96,7 @@ export default function DockMiniPlayer() {
   }
 
   return (
-    <SwipeSurface onSwipeUp={openFullScreen} onSwipeLeft={skipNext} onSwipeRight={skipPrevForce}>
+    <SwipeSurface onSwipeUp={openFullScreen} onSwipeLeft={next} onSwipeRight={remote ? remote.previous : skipPrevForce}>
       {/* Not ready yet (saved track shown): taps would reach an empty player. */}
       <GlassSurface style={styles.capsule} pointerEvents={restored || live ? 'auto' : 'none'}>
         <CoverWash uri={washUri} />
@@ -103,8 +113,8 @@ export default function DockMiniPlayer() {
             {name: 'previous', label: t.ui.previousTrack},
           ]}
           onAccessibilityAction={e => {
-            if (e.nativeEvent.actionName === 'next') skipNext();
-            else if (e.nativeEvent.actionName === 'previous') skipPrev();
+            if (e.nativeEvent.actionName === 'next') next();
+            else if (e.nativeEvent.actionName === 'previous') previous();
             else openFullScreen();
           }}>
           <Cover
@@ -117,15 +127,24 @@ export default function DockMiniPlayer() {
             <Text variant="subhead" numberOfLines={1} style={styles.title}>
               {track.title ?? ''}
             </Text>
-            <Text variant="footnote" color="textSecondary" numberOfLines={1}>
-              {track.artist ?? ''}
-            </Text>
+            {remote ? (
+              <View style={styles.device}>
+                <DeviceIcon size={13} color={colors.accent} />
+                <Text variant="footnote" numberOfLines={1} style={styles.deviceName}>
+                  {remote.device.name}
+                </Text>
+              </View>
+            ) : (
+              <Text variant="footnote" color="textSecondary" numberOfLines={1}>
+                {track.artist ?? ''}
+              </Text>
+            )}
           </View>
         </Pressable>
         <Pressable
           onPress={() => {
             haptic('light');
-            skipPrev();
+            previous();
           }}
           hitSlop={4}
           accessibilityRole="button"
@@ -147,7 +166,7 @@ export default function DockMiniPlayer() {
         <Pressable
           onPress={() => {
             haptic('light');
-            skipNext();
+            next();
           }}
           hitSlop={4}
           accessibilityRole="button"
@@ -155,7 +174,7 @@ export default function DockMiniPlayer() {
           style={styles.control}>
           <NextIcon size={22} color={colors.textPrimary} />
         </Pressable>
-        <ProgressLine duration={track.duration ?? 0} />
+        <ProgressLine duration={track.duration ?? 0} remote={remote?.position} />
       </GlassSurface>
     </SwipeSurface>
   );
@@ -190,4 +209,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.fill,
   },
   progressFill: {height: 2, borderRadius: 1, backgroundColor: colors.accent},
+  device: {flexDirection: 'row', alignItems: 'center', gap: 4},
+  deviceName: {color: colors.accent, flexShrink: 1},
 });

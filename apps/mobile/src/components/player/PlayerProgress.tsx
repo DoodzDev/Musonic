@@ -14,6 +14,7 @@ import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import {formatTime} from '../../utils/colorUtils';
 import {useT} from '../../i18n';
 import Badge from '../ui/Badge';
+import {useSettingsStore} from '../../store/settingsStore';
 
 /** Seconds moved by a screen reader's increment / decrement. */
 const A11Y_STEP_S = 10;
@@ -27,6 +28,7 @@ type Props = {
 
 export default function PlayerProgress({position, duration, quality, onSeek}: Props) {
   const t = useT();
+  const showRemaining = useSettingsStore(s => s.showRemainingTime);
   const [width, setWidth] = useState(0);
   /** Position under the finger while dragging, else null. */
   const [dragAt, setDragAt] = useState<number | null>(null);
@@ -84,7 +86,7 @@ export default function PlayerProgress({position, duration, quality, onSeek}: Pr
         <Text style={styles.time} maxFontSizeMultiplier={1.2}>{formatTime(shown)}</Text>
         {quality ? <Badge kind="quality" label={quality} size="small" /> : null}
         <Text style={[styles.time, styles.timeRight]} maxFontSizeMultiplier={1.2}>
-          {`-${formatTime(dur - shown)}`}
+          {showRemaining ? `-${formatTime(dur - shown)}` : formatTime(dur)}
         </Text>
       </View>
     </View>

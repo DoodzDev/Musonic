@@ -368,8 +368,11 @@ export const playbackEngine = {
     Snapshot.flushQueueSave();
   },
 
-  /** Single entry point to start playback from a list (A1-A8, A11, E1). */
-  playContext(context: Q.PlayContext<Track>): Promise<void> {
+  /**
+   * Single entry point to start playback from a list (A1-A8, A11, E1). `start`: paused and
+   * at a position, for a queue taken over from another device (Musonic Connect).
+   */
+  playContext(context: Q.PlayContext<Track>, start: {play?: boolean; position?: number} = {}): Promise<void> {
     return run('playContext', async () => {
       active = true;
       token++;
@@ -378,7 +381,7 @@ export const playbackEngine = {
       // Home "Recently played" (ADR-010 C1): the album / playlist launched, or the track alone.
       useRecentPlaysStore.getState().record(describePlay(context.source, context.tracks, context.startTrackId, Date.now()));
       publish();
-      await loadNative();
+      await loadNative(start.play ?? true, start.position ?? 0);
       await native(TrackPlayer.setRepeatMode(nativeRepeat(modes().repeat)));
       afterChange(true);
     });

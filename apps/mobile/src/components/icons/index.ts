@@ -17,6 +17,7 @@ export {default as ClockIcon} from './ClockIcon';
 export {default as CloseIcon} from './CloseIcon';
 export {default as CloudIcon} from './CloudIcon';
 export {default as ComputerIcon} from './ComputerIcon';
+export {default as DevicesIcon} from './DevicesIcon';
 export {default as DiscIcon} from './DiscIcon';
 export {default as DotsHorizontalIcon} from './DotsHorizontalIcon';
 export {default as DotsVerticalIcon} from './DotsVerticalIcon';

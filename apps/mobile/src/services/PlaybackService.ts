@@ -25,6 +25,8 @@ import {onSleepTimerTrackChanged} from './sleepTimer';
 import {playAutoMediaId, playAutoSearch, startAndroidAuto} from './auto/androidAuto';
 import {isEpisode} from '../api/endpoints/podcasts';
 import {startPodcastTracking} from './podcastPlayback';
+import {startConnect} from './connect/connectService';
+import {notifyJump} from './connect/jumps';
 
 let wasPlayingBeforeDuck = false;
 let fadeInTimer: ReturnType<typeof setInterval> | null = null;
@@ -202,7 +204,7 @@ export async function PlaybackService() {
   TrackPlayer.addEventListener(Event.RemoteSeek, ({position}) => {
     // A jump is not listening: the next position starts a new stretch.
     listen?.interrupt();
-    TrackPlayer.seekTo(position);
+    TrackPlayer.seekTo(position).then(notifyJump, () => {});
   });
   // Android Auto: a track tapped in the car plays its whole list (ADR-015).
   TrackPlayer.addEventListener(Event.RemotePlayId, ({id}) => {
@@ -214,6 +216,8 @@ export async function PlaybackService() {
   });
   startAndroidAuto();
   startPodcastTracking();
+  // Musonic Connect (ADR-019): the other devices of the account see and control the phone.
+  startConnect();
   TrackPlayer.addEventListener(Event.PlaybackQueueEnded, () => {
     // Last track in queue finished — no further PlaybackActiveTrackChanged
     // will fire to trigger the submission scrobble, so flush it here.
