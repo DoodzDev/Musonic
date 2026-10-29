@@ -10,10 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-10-29
+
+**Android Auto, Musonic's own screens.**
+
 ### Added
 - **Android Auto: a Home in sections** — Resume (the track playing, one tap to go on), Recently played, then your playlists.
 - **Android Auto: the track playing stands out** in playlists and albums (level bars in place of its cover).
 - **Android Auto: queue and lyrics on the playback screen** — see what comes next; the lyrics button shows the line sung live in place of the artist, on the car's own playback screen.
+- **Android Auto: search** — a search button on the Home (typed when parked), and « Play … on Musonic » said to the car's assistant.
 
 ## [2.1.0] - 2026-10-29
 
