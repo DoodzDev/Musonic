@@ -17,4 +17,5 @@ export * from './home/home.ts';
 export * from './releases/releases.ts';
 export * from './lyrics/lrclib.ts';
 export * from './playback/listenTracker.ts';
+export * from './playback/crossfade.ts';
 export type * from './server/index.ts';

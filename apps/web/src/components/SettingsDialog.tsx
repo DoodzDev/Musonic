@@ -1,16 +1,20 @@
 /**
  * @file SettingsDialog.tsx
- * @description Settings of the web client, opened from the profile menu.
- *   For now: the language (English / French), shared with the website.
+ * @description Settings of the web client, opened from the profile menu:
+ *   the language (English / French), shared with the website, and the
+ *   crossfade between tracks (0 to 12 s, remembered in the browser).
  *   Escape or a click outside closes it.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
 import { useEffect } from 'react';
+import { MAX_CROSSFADE } from '@musonic/core';
 import { lang, setLang, tr, type Lang } from '../i18n/index.ts';
+import { setCrossfade, useCrossfade } from '../player/crossfade.ts';
 import { CloseIcon } from './icons/CloseIcon.tsx';
+import { Slider } from './Slider.tsx';
 
 const t = tr.settings;
 // Each language is named in itself, so it can be found whatever the current one.
@@ -20,6 +24,9 @@ const LANGUAGES: { id: Lang; name: string }[] = [
 ];
 
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
+  const crossfade = useCrossfade();
+  const crossfadeText = crossfade > 0 ? t.crossfadeSeconds(crossfade) : t.crossfadeOff;
+
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose();
@@ -54,6 +61,14 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             ))}
           </div>
           <p className="setting-hint">{t.languageHint}</p>
+        </div>
+        <div className="setting">
+          <span className="setting-label">{t.crossfade}</span>
+          <div className="setting-slider">
+            <Slider value={crossfade} max={MAX_CROSSFADE} step={1} label={t.crossfade} valueText={crossfadeText} onChange={setCrossfade} />
+            <span className="setting-value" aria-hidden="true">{crossfadeText}</span>
+          </div>
+          <p className="setting-hint">{t.crossfadeHint}</p>
         </div>
       </div>
     </div>

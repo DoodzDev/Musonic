@@ -438,6 +438,8 @@ h1, h2, p { margin: 0; }
 .setting { display: flex; flex-direction: column; gap: 10px; }
 .setting-label { font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.4px; }
 .setting-hint { font-size: 13px; line-height: 18px; color: var(--text-2); }
+.setting-slider { display: flex; align-items: center; gap: 12px; }
+.setting-value { flex: none; min-width: 72px; font-size: 14px; font-weight: 500; color: var(--text-3); font-variant-numeric: tabular-nums; text-align: right; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .dialog-title-icon { display: flex; align-items: center; gap: 10px; }
 .dialog-title-icon svg { flex: none; color: var(--accent); }
