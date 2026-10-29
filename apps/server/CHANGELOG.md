@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-10-29
+
 ### Security
 - `/health` now only answers `{"status":"ok"}` (or `"degraded"` with a 503 when the database
   does not answer), for Docker and uptime monitors. Its detail (version, schema, last scan,

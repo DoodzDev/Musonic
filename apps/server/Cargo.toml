@@ -1,7 +1,7 @@
 [package]
 name = "musonic-server"
 description = "Musonic Server: music library server, Subsonic-compatible, with a native API and pluggable audio providers"
-version = "1.0.2"
+version = "1.0.3"
 edition = "2024"
 rust-version = "1.88"
 license-file = "LICENSE"

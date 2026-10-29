@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-10-29
+
 ### Security
 - **Your password no longer stays on the phone.** On a Musonic Server, signing in now gives this phone its own device key: the password is used once and forgotten, and the key alone goes with each request (no more username and password in the addresses of songs and covers). The key is listed in the server's console, where it can be revoked. Accounts already saved switch over by themselves at the next launch. The password they kept is then wiped from the app's storage, not just replaced. On other Subsonic servers the app keeps a sign-in token instead of the password.
 
