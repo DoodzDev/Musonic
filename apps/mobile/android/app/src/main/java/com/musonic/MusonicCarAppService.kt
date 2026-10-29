@@ -102,6 +102,9 @@ private val ICONS = mapOf(
 
 private val MUSONIC_ORANGE = CarColor.createCustom(0xFFFF6B35.toInt(), 0xFFFF6B35.toInt())
 
+private fun CarContext.nowPlayingIcon(): CarIcon =
+    CarIcon.Builder(IconCompat.createWithResource(this, R.drawable.ic_auto_now_playing)).setTint(MUSONIC_ORANGE).build()
+
 /** How many items a list or a grid may hold on this car. */
 private fun CarContext.limit(type: Int): Int =
     (getCarService(CarContext.CONSTRAINT_SERVICE) as ConstraintManager).getContentLimit(type)
@@ -164,14 +167,19 @@ private fun Screen.gridSection(title: CharSequence?, entries: List<AutoEntry>): 
   return builder.build()
 }
 
-private fun Screen.rowSection(title: CharSequence?, entries: List<AutoEntry>): RowSection {
+/** Id of the track behind a playable entry (`<list>|<track id>`). */
+private fun AutoEntry.trackId(): String? = id.substringAfterLast('|', "").takeIf { it.isNotEmpty() }
+
+/** [playing]: id of the track playing now, its row shows the level bars instead of its cover. */
+private fun Screen.rowSection(title: CharSequence?, entries: List<AutoEntry>, playing: String? = null): RowSection {
   val builder = RowSection.Builder()
   title?.let { builder.setTitle(it) }
   builder.setNoItemsMessage(carContext.getString(R.string.car_empty))
   entries.take(carContext.limit(ConstraintManager.CONTENT_LIMIT_TYPE_LIST)).forEach { entry ->
     val row = Row.Builder().setTitle(entry.title).setOnClickListener { open(entry) }
     entry.subtitle?.takeIf { it.isNotEmpty() }?.let { row.addText(it) }
-    carContext.cover(entry)?.let { row.setImage(it, Row.IMAGE_TYPE_LARGE) }
+    val image = if (playing != null && entry.trackId() == playing) carContext.nowPlayingIcon() else carContext.cover(entry)
+    image?.let { row.setImage(it, Row.IMAGE_TYPE_LARGE) }
     if (entry.browsable) row.setBrowsable(true)
     builder.addItem(row.build())
   }
@@ -305,6 +313,15 @@ private class TabsScreen(context: CarContext) : Screen(context) {
 /** A playlist, an album, an artist or a library list: big covers or rows, Play and Shuffle on top. */
 private class ListScreen(context: CarContext, private val list: AutoEntry) : Screen(context) {
   private val loader = Loader(this, list.id)
+  private val nowPlaying = NowPlaying(this)
+
+  init {
+    lifecycle.addObserver(object : DefaultLifecycleObserver {
+      override fun onCreate(owner: LifecycleOwner) = nowPlaying.start()
+
+      override fun onDestroy(owner: LifecycleOwner) = nowPlaying.stop()
+    })
+  }
 
   override fun onGetTemplate(): Template {
     val header = Header.Builder().setStartHeaderAction(Action.BACK).setTitle(list.title)
@@ -314,7 +331,8 @@ private class ListScreen(context: CarContext, private val list: AutoEntry) : Scr
     }
     val template = SectionedItemTemplate.Builder().setHeader(header.build()).addAction(nowPlayingAction())
     val entries = loader.load() ?: return template.setLoading(true).build()
-    val section = if (list.grid && entries.isNotEmpty()) gridSection(null, entries) else rowSection(null, entries)
+    val playing = nowPlaying.metadata?.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
+    val section = if (list.grid && entries.isNotEmpty()) gridSection(null, entries) else rowSection(null, entries, playing)
     return template.addSection(section).build()
   }
 
