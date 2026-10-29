@@ -28,6 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `searchPodcasts`. `getPodcastShow?url=` opens a show before following it. Transcripts
   (`podcast:transcript`, VTT or SRT) are served as synced lyrics by `getLyricsBySongId`.
 
+
+### Security
+- Every answer carries browser protections: the console and Musonic Web cannot be shown
+  inside another site (`X-Frame-Options`, `frame-ancestors`), and addresses carrying a token
+  are never sent to other sites (`Referrer-Policy: no-referrer`).
+- Dependencies: `tokio` 1.54.1 (1.54.0 was withdrawn: timer race), `zip` 9 (advisories
+  RUSTSEC-2026-0367/0368/0369 on `extract()`, which Musonic does not call). The CI runs
+  `cargo audit`.
 ## [1.0.3] - 2026-10-29
 
 ### Security

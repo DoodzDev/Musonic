@@ -11,9 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Install Musonic Web as an app** (computer or phone): its own window and icon, from the browser's install button.
 - **Podcasts** (with Musonic Server): search shows and the episodes where someone speaks, open a show before following it, follow it and find it in the Library. Episodes resume where you stopped (on every device), play faster (up to 2×), jump back 15 s or forward 30 s; their transcript shows like lyrics when the show publishes one. A found episode opens its show and plays.
 
 ### Security
+- Cover and audio addresses (which carry the sign-in) are never sent to other sites as the page they come from.
 - **On a Musonic Server, the browser keeps a device key instead of a token made from your password.** The password is used once at sign-in; the key, named after the browser, is listed in the server's console and can be revoked there. Other Subsonic servers keep the token as before.
 
 ### Changed

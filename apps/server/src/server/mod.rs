@@ -9,7 +9,7 @@ use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 use axum::{
     Json, Router,
     extract::State,
-    http::{HeaderMap, Method, header},
+    http::{HeaderMap, HeaderValue, Method, header},
     response::Html,
     routing::get,
 };
@@ -183,7 +183,25 @@ pub fn router(state: AppState) -> Router {
             ),
         None => app.route("/", get(home)),
     };
-    app.layer(compression()).layer(cors).with_state(state)
+    app.layer(compression())
+        .layer(cors)
+        .layer(axum::middleware::map_response(security_headers))
+        .with_state(state)
+}
+
+/// Browser protections on every answer: the console and Musonic Web cannot be framed by
+/// another site (clickjacking), and addresses carrying a token are never sent as Referer.
+async fn security_headers(mut res: axum::response::Response) -> axum::response::Response {
+    let h = res.headers_mut();
+    for (name, value) in [
+        (header::X_CONTENT_TYPE_OPTIONS, "nosniff"),
+        (header::X_FRAME_OPTIONS, "DENY"),
+        (header::CONTENT_SECURITY_POLICY, "frame-ancestors 'none'"),
+        (header::REFERRER_POLICY, "no-referrer"),
+    ] {
+        h.entry(name).or_insert(HeaderValue::from_static(value));
+    }
+    res
 }
 
 /// Text answers (Subsonic, `/v1`, the console's files) compressed for the clients that accept

@@ -34,6 +34,9 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --all-targets --locked -- -D warnings
       - run: cargo test --locked
+      # Known vulnerabilities of the dependencies (RustSec database).
+      - uses: taiki-e/install-action@cargo-audit
+      - run: cargo audit
       # `cargo test` writes the TypeScript types of the native API (ADR-018): they must be
       # committed as generated.
       - name: TypeScript types are up to date

@@ -876,3 +876,17 @@ async fn the_subsonic_token_opens_a_session() {
     .await;
     assert_eq!(s, StatusCode::UNAUTHORIZED);
 }
+
+#[tokio::test]
+async fn answers_carry_browser_protections() {
+    let req = Request::builder()
+        .uri("/health")
+        .body(Body::empty())
+        .unwrap();
+    let res = router(state()).oneshot(req).await.unwrap();
+    let h = res.headers();
+    assert_eq!(h[header::X_FRAME_OPTIONS], "DENY");
+    assert_eq!(h[header::CONTENT_SECURITY_POLICY], "frame-ancestors 'none'");
+    assert_eq!(h[header::REFERRER_POLICY], "no-referrer");
+    assert_eq!(h[header::X_CONTENT_TYPE_OPTIONS], "nosniff");
+}

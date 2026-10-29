@@ -133,7 +133,10 @@ fn unpack(zip: &[u8], data_dir: &Path, version: &str) -> Result<()> {
         let mut entry = archive.by_index(i)?;
         // Paths inside the folder only (no `..`, no absolute path).
         let Some(rel) = entry.enclosed_name() else {
-            bail!("unsafe path in {ASSET}: {}", entry.name());
+            bail!(
+                "unsafe path in {ASSET}: {}",
+                entry.name().unwrap_or_default()
+            );
         };
         let path = fresh.join(rel);
         if entry.is_dir() {

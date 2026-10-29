@@ -78,11 +78,13 @@ export function SwipeSurface({onSwipeUp, onSwipeLeft, onSwipeRight, onPress, sty
     else onSwipeRight?.();
   };
 
+  // Built in two steps, so the Reanimated plugin does not see the chain: callbacks marked by hand.
   const base = Gesture.Pan();
   const pan = (onSwipeUp
     ? base.minDistance(SWIPE.activation)
     : base.activeOffsetX([-SWIPE.activation, SWIPE.activation]).failOffsetY([-SWIPE.activation, SWIPE.activation]))
     .onUpdate(e => {
+      'worklet';
       const horizontal = Math.abs(e.translationX) > Math.abs(e.translationY);
       x.value = horizontal ? rubberBand(e.translationX, SWIPE.distance) : 0;
       y.value = horizontal ? 0 : rubberBand(Math.min(0, e.translationY), SWIPE.distance);
@@ -95,6 +97,7 @@ export function SwipeSurface({onSwipeUp, onSwipeLeft, onSwipeRight, onPress, sty
       }
     })
     .onEnd(e => {
+      'worklet';
       const horizontal = Math.abs(e.translationX) > Math.abs(e.translationY);
       let dir: Direction | null = null;
       if (horizontal) {
