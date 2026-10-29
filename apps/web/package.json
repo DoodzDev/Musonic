@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@musonic/core": "0.1.0",
+    "@musonic/icons": "1.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router": "8.4.0"

@@ -97,6 +97,23 @@ object MusonicAutoBridge {
     return true
   }
 
+  /** A podcast episode is playing (set by JS with the buttons): the car's playback screen adapts. */
+  var episode = false
+    private set
+
+  private val episodeListeners = mutableSetOf<() -> Unit>()
+
+  fun onEpisodeChanged(listener: () -> Unit): () -> Unit {
+    episodeListeners.add(listener)
+    return { episodeListeners.remove(listener) }
+  }
+
+  fun setEpisode(value: Boolean) {
+    if (value == episode) return
+    episode = value
+    episodeListeners.toList().forEach { it() }
+  }
+
   /** The car (or the system's media controls) connected: JS sends a fresh snapshot. */
   fun connected() {
     module?.notifyConnected()
@@ -172,10 +189,24 @@ class MusonicAutoModule(context: ReactApplicationContext) : ReactContextBaseJava
     MusonicPlayback.onAction = onAction
   }
 
-  /** `{shuffle: off|on|magic, repeat: none|all|one, liked: boolean|null, labels: {...}}` */
+  /**
+   * `{shuffle: off|on|magic, repeat: none|all|one, liked: boolean|null, episode: boolean, speed: number, labels: {...}}`.
+   * A podcast episode gets back 15 s, forward 30 s and its speed instead (ADR-023): the car shows
+   * no label, so the icons carry the numbers.
+   */
   @ReactMethod
   fun setActions(state: ReadableMap) {
     val labels = state.getMap("labels") ?: return
+    val episode = state.hasKey("episode") && state.getBoolean("episode")
+    UiThreadUtil.runOnUiThread { MusonicAutoBridge.setEpisode(episode) }
+    if (episode) {
+      publishActions(listOf(
+          MusonicCustomActions.Action(ACTION_BACK, labels.getString("back") ?: "", R.drawable.ic_auto_back15),
+          MusonicCustomActions.Action(ACTION_FORWARD, labels.getString("forward") ?: "", R.drawable.ic_auto_forward30),
+          MusonicCustomActions.Action(ACTION_SPEED, labels.getString("speed") ?: "", speedIcon(state.getDouble("speed"))),
+      ))
+      return
+    }
     val shuffle = when (state.getString("shuffle")) {
       "on" -> R.drawable.ic_auto_shuffle_on to "shuffleOn"
       "magic" -> R.drawable.ic_auto_shuffle_magic to "shuffleMagic"
@@ -199,6 +230,19 @@ class MusonicAutoModule(context: ReactApplicationContext) : ReactContextBaseJava
           if (liked) R.drawable.ic_auto_liked else R.drawable.ic_auto_like,
       ))
     }
+    publishActions(actions)
+  }
+
+  private fun speedIcon(speed: Double): Int = when (speed) {
+    0.75 -> R.drawable.ic_auto_speed_075
+    1.25 -> R.drawable.ic_auto_speed_125
+    1.5 -> R.drawable.ic_auto_speed_150
+    1.75 -> R.drawable.ic_auto_speed_175
+    2.0 -> R.drawable.ic_auto_speed_200
+    else -> R.drawable.ic_auto_speed_100
+  }
+
+  private fun publishActions(actions: List<MusonicCustomActions.Action>) {
     UiThreadUtil.runOnUiThread {
       MusonicCustomActions.set(actions)
       MusonicPlayback.setActions(actions.map { MusonicPlayback.Action(it.name, it.label, it.icon) })
@@ -253,6 +297,9 @@ class MusonicAutoModule(context: ReactApplicationContext) : ReactContextBaseJava
     const val ACTION_SHUFFLE = "musonic.shuffle"
     const val ACTION_REPEAT = "musonic.repeat"
     const val ACTION_LIKE = "musonic.like"
+    const val ACTION_BACK = "musonic.back15"
+    const val ACTION_FORWARD = "musonic.forward30"
+    const val ACTION_SPEED = "musonic.speed"
     const val CONTENT_STYLE_BROWSABLE_HINT = "android.media.browse.CONTENT_STYLE_BROWSABLE_HINT"
     const val CONTENT_STYLE_PLAYABLE_HINT = "android.media.browse.CONTENT_STYLE_PLAYABLE_HINT"
     const val CONTENT_STYLE_SUPPORTED = "android.media.browse.CONTENT_STYLE_SUPPORTED"

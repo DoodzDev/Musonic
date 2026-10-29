@@ -22,19 +22,13 @@ import EmptyState from '../../components/ui/EmptyState';
 import CoverArt from '../../components/CoverArt';
 import {showToast} from '../../components/Toast';
 import {followPodcast, getPodcastShow, unfollowPodcast, type PodcastEpisode, type PodcastShow} from '../../api/endpoints/podcasts';
-import {playEpisode} from '../../services/podcastPlayback';
+import {episodeSummary, playEpisode} from '../../services/podcastPlayback';
 import {colors, radii, spacing} from '../../theme';
 import {useT} from '../../i18n';
 import type {LibraryStackParams} from '../../navigation/types';
 
 const COVER = 220;
 const ROW = 64;
-
-function published(iso: string | undefined): string {
-  if (!iso) return '';
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'});
-}
 
 export default function PodcastDetailScreen() {
   const t = useT();
@@ -82,13 +76,6 @@ export default function PodcastDetailScreen() {
     }
   }, [show, busy, t]);
 
-  const state = (e: PodcastEpisode) => {
-    if (e.played) return t.podcasts.played;
-    const minutes = (s: number) => Math.max(1, Math.round(s / 60));
-    if (e.duration && e.position) return t.podcasts.left(minutes(e.duration - e.position / 1000));
-    return e.duration ? t.podcasts.minutes(minutes(e.duration)) : '';
-  };
-
   const renderItem = useCallback(({item}: {item: PodcastEpisode}) => {
     const playing = String(active?.id) === item.id;
     const wanted = item.id === episodeId;
@@ -100,7 +87,7 @@ export default function PodcastDetailScreen() {
         <View style={styles.rowText}>
           <Text variant="body" numberOfLines={2} style={[playing && styles.playing, item.played && !playing && styles.played]}>{item.title}</Text>
           <Text variant="footnote" color="textSecondary" numberOfLines={1}>
-            {[published(item.publishDate), state(item)].filter(Boolean).join(' · ')}
+            {episodeSummary(item)}
           </Text>
         </View>
       </PressableScale>

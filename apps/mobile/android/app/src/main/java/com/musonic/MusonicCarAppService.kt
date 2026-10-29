@@ -82,6 +82,7 @@ private class MusonicCarSession : Session() {
 /** Ids of the lists in the snapshot (`autoTree.ts`). */
 private object Nodes {
   const val ROOT = "root"
+  const val LIBRARY = "library"
   const val PLAYLISTS = "playlists"
   const val DOWNLOADS = "downloads"
   const val RESUME = "resume"
@@ -108,6 +109,7 @@ private val ICONS = mapOf(
     "icon:tab_albums" to R.drawable.ic_auto_tab_albums,
     "icon:tab_artists" to R.drawable.ic_auto_tab_artists,
     "icon:tab_downloads" to R.drawable.ic_auto_tab_downloads,
+    "icon:tab_podcasts" to R.drawable.ic_auto_tab_podcasts,
 )
 
 private val MUSONIC_ORANGE = CarColor.createCustom(0xFFFF6B35.toInt(), 0xFFFF6B35.toInt())
@@ -232,6 +234,8 @@ private class NowPlaying(private val screen: Screen, private val onChange: () ->
 private class TabsScreen(context: CarContext) : Screen(context) {
   private var active = HOME
   private val root = Loader(this, Nodes.ROOT)
+  // The Library tab: the same lists as the root, plus Podcasts (ADR-023).
+  private val library = Loader(this, Nodes.LIBRARY)
   private val playlists = Loader(this, Nodes.PLAYLISTS)
   private val downloads = Loader(this, Nodes.DOWNLOADS)
   private val resume = Loader(this, Nodes.RESUME)
@@ -246,6 +250,7 @@ private class TabsScreen(context: CarContext) : Screen(context) {
       override fun onStart(owner: LifecycleOwner) {
         resume.refresh()
         recent.refresh()
+        library.refresh()
       }
 
       override fun onDestroy(owner: LifecycleOwner) = nowPlaying.stop()
@@ -256,6 +261,8 @@ private class TabsScreen(context: CarContext) : Screen(context) {
     val tabs = TabTemplate.Builder(object : TabTemplate.TabCallback {
       override fun onTabSelected(tabContentId: String) {
         active = tabContentId
+        // The saved copy may predate this version of the app: asked again once JS has sent its own.
+        if (tabContentId == LIBRARY) library.refresh()
         invalidate()
       }
     }).setHeaderAction(Action.APP_ICON)
@@ -314,7 +321,7 @@ private class TabsScreen(context: CarContext) : Screen(context) {
         template.addSection(gridSection(title, list))
       }
       LIBRARY -> {
-        val list = root.load() ?: return template.setLoading(true).build()
+        val list = library.load() ?: return template.setLoading(true).build()
         template.addSection(rowSection(null, list.filter { it.id != Nodes.DOWNLOADS }))
       }
       else -> {
@@ -372,24 +379,37 @@ private class ListScreen(context: CarContext, private val list: AutoEntry) : Scr
 /**
  * Now playing: drawn by Android Auto from the player's session. On top: the queue, and the
  * lyrics mode (the line sung in place of the artist, [MusonicCarLyrics]), orange while on.
+ * A podcast episode plays alone and is listened to, not sung: neither is shown then.
  */
 private class PlaybackScreen(context: CarContext) : Screen(context) {
-  override fun onGetTemplate(): Template =
-      MediaPlaybackTemplate.Builder()
-          .setHeader(
-              Header.Builder()
-                  .setStartHeaderAction(Action.BACK)
-                  .setTitle(carContext.getString(R.string.car_now_playing))
-                  .addEndHeaderAction(
-                      Action.Builder()
-                          .setIcon(carContext.icon(R.drawable.ic_auto_queue))
-                          .setOnClickListener { screenManager.push(QueueScreen(carContext)) }
-                          .build(),
-                  )
-                  .addEndHeaderAction(lyricsAction())
-                  .build(),
-          )
-          .build()
+  // The session does not carry the track's id: JS says when an episode plays.
+  private var stopListening: () -> Unit = {}
+
+  init {
+    lifecycle.addObserver(object : DefaultLifecycleObserver {
+      override fun onCreate(owner: LifecycleOwner) {
+        stopListening = MusonicAutoBridge.onEpisodeChanged(::invalidate)
+      }
+
+      override fun onDestroy(owner: LifecycleOwner) = stopListening()
+    })
+  }
+
+  override fun onGetTemplate(): Template {
+    val header = Header.Builder()
+        .setStartHeaderAction(Action.BACK)
+        .setTitle(carContext.getString(R.string.car_now_playing))
+    if (!MusonicAutoBridge.episode) {
+      header.addEndHeaderAction(
+          Action.Builder()
+              .setIcon(carContext.icon(R.drawable.ic_auto_queue))
+              .setOnClickListener { screenManager.push(QueueScreen(carContext)) }
+              .build(),
+      )
+      header.addEndHeaderAction(lyricsAction())
+    }
+    return MediaPlaybackTemplate.Builder().setHeader(header.build()).build()
+  }
 
   // Icons only: the car refuses titles on header buttons.
   private fun lyricsAction(): Action {

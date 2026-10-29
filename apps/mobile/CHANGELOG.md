@@ -13,9 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Podcasts** (needs Musonic Server 1.1.0) — search shows and the episodes where a person speaks (in All and in a Podcasts tab), a show page with Follow, a Podcasts tab in the Library.
 - **Episodes resume where you stopped**, on any device; speed (0.75× to 2×) and −15 s / +30 s jumps in the player; transcripts shown as lyrics.
+- **Podcasts in Android Auto** — Library → Podcasts: the shows you follow, then their episodes (date, time left); an episode resumes where you stopped. On the car's playback screen, an episode gets −15 s, +30 s and its speed (the number on the button) instead of shuffle, repeat and like; no queue nor lyrics.
 
 ### Changed
 - The search loses its « My library » filter: the Library has its own search.
+- **Previous and Next are a triangle and a bar**, the same icons as Musonic Web and the console.
+
+### Fixed
+- An episode whose feed gives no duration showed a progress bar stuck at 0:01 in the full player: the player's own duration is used.
 
 ## [2.2.0] - 2026-10-29
 

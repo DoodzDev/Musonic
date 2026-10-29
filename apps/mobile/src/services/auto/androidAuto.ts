@@ -12,8 +12,12 @@
  *   snapshot (ADR-022 step 2): the car opens them at once, even with the app
  *   closed, and only an album's tracks or an artist's albums ask JS.
  *   Started by the playback service, so it also runs without the app's screens.
+ *   Podcasts (ADR-023): the Library lists the followed shows, then their
+ *   episodes; an episode plays where the account stopped, and the playback
+ *   screen gets back 15 s, forward 30 s and the speed in place of the
+ *   shuffle / repeat / like buttons.
  * @author DoodzProg
- * @version 1.6.0
+ * @version 1.7.0
  * @license CC-BY-NC-4.0
  */
 import {AppState, NativeEventEmitter, NativeModules, Platform} from 'react-native';
@@ -34,6 +38,8 @@ import {songToTrack} from '../../utils/songToTrack';
 import {playbackEngine} from '../playback/engine';
 import {getT} from '../../i18n';
 import {withoutHaptics} from '../haptics';
+import {getFollowedPodcasts, getPodcastShow, isEpisode} from '../../api/endpoints/podcasts';
+import {cycleSpeed, episodeSummary, playEpisode, podcastSpeed, skipBy} from '../podcastPlayback';
 import {
   ALBUMS,
   ARTISTS,
@@ -41,6 +47,7 @@ import {
   LIBRARY,
   LIKED,
   PLAYLISTS,
+  PODCASTS,
   QUEUE,
   RECENT,
   RESUME,
@@ -48,12 +55,14 @@ import {
   albumItems,
   albumNodeId,
   artistItems,
+  episodeItems,
   likedItem,
   lyricsItems,
   parseNode,
   parseTrackRef,
   playlistItems,
   playlistNodeId,
+  podcastItems,
   recentItems,
   searchNodeId,
   resumeItems,
@@ -69,6 +78,10 @@ type ActionsState = {
   repeat: string;
   /** null: nothing playing, no like button. */
   liked: boolean | null;
+  /** A podcast episode: back, forward and speed buttons instead. */
+  episode: boolean;
+  /** Its speed, drawn on the button. */
+  speed: number;
   labels: Record<string, string>;
 };
 
@@ -196,8 +209,36 @@ function rootItems(): AutoItem[] {
   return [playlists, tab(ALBUMS, tabs.albums, 'tab_albums', true), tab(ARTISTS, tabs.artists, 'tab_artists', true), downloads];
 }
 
-/** Kept for a car that still asks for the old Library node: the same tabs, as a list. */
-const libraryItems = rootItems;
+/** The car's Library tab: the same lists, plus the followed podcasts when online. */
+function libraryItems(): AutoItem[] {
+  const tabs = rootItems();
+  if (isOffline()) return tabs;
+  const podcasts: AutoItem = {id: PODCASTS, title: getT().library.tabs.podcasts, browsable: true, art: {key: 'icon:tab_podcasts', uri: ''}};
+  return [...tabs.slice(0, -1), podcasts, ...tabs.slice(-1)];
+}
+
+/** The shows the account follows (none offline: episodes play from the network). */
+async function followedShows(): Promise<AutoItem[]> {
+  if (isOffline()) return [];
+  try {
+    return podcastItems(await withTimeout(getFollowedPodcasts()), artOf);
+  } catch {
+    return [];
+  }
+}
+
+async function showEpisodes(id: string): Promise<AutoItem[]> {
+  if (isOffline()) return [];
+  try {
+    const show = await withTimeout(getPodcastShow({id}), SEARCH_WAIT_MS);
+    return episodeItems(id, show.episode.slice(0, EPISODES_SHOWN), episodeSummary, artOf);
+  } catch {
+    return [];
+  }
+}
+
+/** Newest first: enough for a drive, the car caps it again. */
+const EPISODES_SHOWN = 50;
 
 /** Items in the order of the app's Library: its sort (Recent: last played first), pinned first. */
 function inLibraryOrder<T extends {id: string; name: string}>(kind: 'playlist' | 'album' | 'artist', items: T[]): T[] {
@@ -324,6 +365,10 @@ async function children(parentId: string): Promise<AutoItem[]> {
       }
     case 'downloads':
       return downloadsItems();
+    case 'podcasts':
+      return followedShows();
+    case 'podcast':
+      return showEpisodes(node.id);
     case 'liked':
       return likedTracks(await loadLiked());
     case 'resume':
@@ -406,7 +451,7 @@ function markSnapshotDirty(module: Native): void {
 const SNAPSHOT_DELAY_MS = 5000;
 
 /** The list behind a track tapped in the car, as the engine plays it. */
-async function loadList(list: AutoList): Promise<{source: PlaySource; songs: SubsonicSong[]}> {
+async function loadList(list: Exclude<AutoList, {kind: 'podcast'}>): Promise<{source: PlaySource; songs: SubsonicSong[]}> {
   if (list.kind === 'downloads') {
     return {source: {type: 'other', name: getT().library.tabs.downloads}, songs: downloadedSongs()};
   }
@@ -431,6 +476,13 @@ export async function playAutoMediaId(mediaId: string): Promise<void> {
   }
   const ref = parseTrackRef(mediaId);
   if (!ref) return;
+  // An episode plays alone, from where the account stopped.
+  if (ref.list.kind === 'podcast') {
+    const show = await getPodcastShow({id: ref.list.id});
+    const episode = show.episode.find(e => e.id === ref.trackId);
+    if (episode) await playEpisode(episode, show);
+    return;
+  }
   const {source, songs} = await loadList(ref.list);
   if (songs.length === 0) return;
   await playbackEngine.playContext({source, tracks: songs.map(songToTrack), startTrackId: ref.trackId});
@@ -467,11 +519,17 @@ function pushActions(module: Native, force = false): void {
   const {shuffleMode, repeatMode, likedSongIds, localLikeOverrides} = usePlayerStore.getState();
   const liked = activeTrackId ? (localLikeOverrides[activeTrackId] ?? likedSongIds.has(activeTrackId)) : null;
   const t = getT().fullScreenPlayer;
+  const p = getT().podcasts;
   const state: ActionsState = {
     shuffle: shuffleMode,
     repeat: repeatMode,
     liked,
+    episode: isEpisode(activeTrackId),
+    speed: podcastSpeed(),
     labels: {
+      back: p.back15,
+      forward: p.forward30,
+      speed: `${p.speed} : ${podcastSpeed()}×`,
       shuffleOff: t.shuffleOff,
       shuffleOn: t.shuffleOn,
       shuffleMagic: t.shuffleMagic,
@@ -493,6 +551,12 @@ async function onAction(action: string): Promise<void> {
   const player = usePlayerStore.getState();
   if (action === 'musonic.shuffle') withoutHaptics(player.toggleShuffle);
   else if (action === 'musonic.repeat') withoutHaptics(player.cycleRepeat);
+  else if (action === 'musonic.back15') await skipBy(-15);
+  else if (action === 'musonic.forward30') await skipBy(30);
+  else if (action === 'musonic.speed') {
+    await cycleSpeed();
+    if (native) pushActions(native);
+  }
   else if (action === 'musonic.like') {
     const track = await TrackPlayer.getActiveTrack();
     if (track?.id == null) return;

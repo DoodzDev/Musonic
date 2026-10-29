@@ -8,7 +8,7 @@
  *   `res:<name>` is drawn by the app itself (the Liked songs tile). Playlists
  *   and albums carry the car's Play and Shuffle buttons (browse actions).
  * @author DoodzProg
- * @version 1.4.0
+ * @version 1.5.0
  * @license CC-BY-NC-4.0
  */
 
@@ -40,6 +40,8 @@ export const PLAYLISTS = 'playlists';
 export const ALBUMS = 'albums';
 export const ARTISTS = 'artists';
 export const DOWNLOADS = 'downloads';
+/** The shows the account follows (ADR-023), in the car's Library. */
+export const PODCASTS = 'podcasts';
 export const LIKED = 'liked';
 /** Home of the car (ADR-025 step 3): what is playing, to resume it in one tap. */
 export const RESUME = 'resume';
@@ -56,7 +58,8 @@ export type AutoList =
   | {kind: 'album'; id: string}
   | {kind: 'downloads'}
   | {kind: 'liked'}
-  | {kind: 'search'; query: string};
+  | {kind: 'search'; query: string}
+  | {kind: 'podcast'; id: string};
 
 export type AutoNode =
   | {kind: 'root'}
@@ -65,6 +68,7 @@ export type AutoNode =
   | {kind: 'albums'}
   | {kind: 'artists'}
   | {kind: 'artist'; id: string}
+  | {kind: 'podcasts'}
   | {kind: 'resume'}
   | {kind: 'recent'}
   | {kind: 'queue'}
@@ -91,7 +95,12 @@ export function searchNodeId(query: string): string {
   return `search:${encodeURIComponent(query)}`;
 }
 
-const PREFIXED = ['playlist', 'album', 'artist', 'lyrics'] as const;
+/** A followed show: its episodes, newest first. */
+export function podcastNodeId(id: string): string {
+  return `podcast:${id}`;
+}
+
+const PREFIXED = ['playlist', 'album', 'artist', 'lyrics', 'podcast'] as const;
 
 export function trackMediaId(listNodeId: string, trackId: string): string {
   return `${listNodeId}|${trackId}`;
@@ -104,6 +113,7 @@ export function parseNode(id: string): AutoNode {
   if (id === ALBUMS) return {kind: 'albums'};
   if (id === ARTISTS) return {kind: 'artists'};
   if (id === DOWNLOADS) return {kind: 'downloads'};
+  if (id === PODCASTS) return {kind: 'podcasts'};
   if (id === LIKED) return {kind: 'liked'};
   if (id === RESUME) return {kind: 'resume'};
   if (id === RECENT) return {kind: 'recent'};
@@ -128,7 +138,10 @@ export function parseTrackRef(mediaId: string): AutoTrackRef | null {
   const sep = mediaId.lastIndexOf('|');
   if (sep <= 0 || sep === mediaId.length - 1) return null;
   const list = parseNode(mediaId.slice(0, sep));
-  if (list.kind !== 'playlist' && list.kind !== 'album' && list.kind !== 'downloads' && list.kind !== 'liked' && list.kind !== 'search') {
+  if (
+    list.kind !== 'playlist' && list.kind !== 'album' && list.kind !== 'downloads' && list.kind !== 'liked' &&
+    list.kind !== 'search' && list.kind !== 'podcast'
+  ) {
     return null;
   }
   return {list, trackId: mediaId.slice(sep + 1)};
@@ -245,6 +258,23 @@ export function recentItems(
     }
   }
   return items;
+}
+
+type ShowLike = {id: string; title: string; author?: string; coverArt?: string};
+type EpisodeLike = {id: string; title: string; coverArt?: string};
+
+/** Followed shows: each opens its episodes. */
+export function podcastItems(shows: ShowLike[], artOf: ArtOf): AutoItem[] {
+  return shows.map(s => withArt({id: podcastNodeId(s.id), title: s.title, subtitle: s.author, browsable: true}, artOf(s.coverArt)));
+}
+
+/** Episodes of a show; [state] says when it came out and where the account stopped. */
+export function episodeItems<E extends EpisodeLike>(showId: string, episodes: E[], state: (e: E) => string, artOf: ArtOf): AutoItem[] {
+  return episodes.map(e => withArt({
+    id: trackMediaId(podcastNodeId(showId), e.id),
+    title: e.title,
+    subtitle: state(e) || undefined,
+  }, artOf(e.coverArt)));
 }
 
 function withArt(item: AutoItem, art: AutoArt | undefined): AutoItem {

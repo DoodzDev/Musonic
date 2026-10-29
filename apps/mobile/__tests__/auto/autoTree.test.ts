@@ -3,15 +3,17 @@
  * @description Unit tests of the Android Auto browse tree (ADR-015): node and
  *   track ids round-trip, and anything else is ignored; Liked songs comes
  *   first with its drawn tile, playlists and albums carry Play and Shuffle;
- *   the car's Home resumes the queue and lists what was played lately.
+ *   the car's Home resumes the queue and lists what was played lately;
+ *   followed podcasts open their episodes, which play one by one.
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.4.0
  * @license CC-BY-NC-4.0
  */
 import {
   albumItems,
   albumNodeId,
   artistItems,
+  episodeItems,
   likedItem,
   lyricsItems,
   lyricsNodeId,
@@ -19,6 +21,8 @@ import {
   parseTrackRef,
   playlistItems,
   playlistNodeId,
+  podcastItems,
+  podcastNodeId,
   recentItems,
   resumeItems,
   trackItems,
@@ -168,5 +172,24 @@ describe('car playback', () => {
     expect(lyricsItems({synced: false, lines: [{value: 'Hello'}]})).toEqual([{id: 'text:0', title: 'Hello'}]);
     expect(parseNode(lyricsNodeId('73A4WPDHD9a'))).toEqual({kind: 'lyrics', id: '73A4WPDHD9a'});
     expect(parseNode('queue')).toEqual({kind: 'queue'});
+  });
+});
+
+describe('podcasts', () => {
+  const artOf = (c?: string) => (c ? {key: c, uri: `u/${c}`} : undefined);
+
+  it('opens a followed show, then plays one of its episodes', () => {
+    expect(podcastItems([{id: 'pc-AbCdEfGhIjK', title: 'La Méthode scientifique', author: 'France Culture', coverArt: 'pc-AbCdEfGhIjK'}], artOf)).toEqual([
+      {id: 'podcast:pc-AbCdEfGhIjK', title: 'La Méthode scientifique', subtitle: 'France Culture', browsable: true, art: {key: 'pc-AbCdEfGhIjK', uri: 'u/pc-AbCdEfGhIjK'}},
+    ]);
+    expect(parseNode('podcasts')).toEqual({kind: 'podcasts'});
+    expect(parseNode(podcastNodeId('pc-AbCdEfGhIjK'))).toEqual({kind: 'podcast', id: 'pc-AbCdEfGhIjK'});
+    const [episode] = episodeItems('pc-AbCdEfGhIjK', [{id: 'pe-ZyXwVuTsRqP', title: 'Le temps'}], () => 'Reste 12 min', artOf);
+    expect(episode).toEqual({id: 'podcast:pc-AbCdEfGhIjK|pe-ZyXwVuTsRqP', title: 'Le temps', subtitle: 'Reste 12 min'});
+    expect(parseTrackRef(episode.id)).toEqual({list: {kind: 'podcast', id: 'pc-AbCdEfGhIjK'}, trackId: 'pe-ZyXwVuTsRqP'});
+  });
+
+  it('leaves out an empty state line', () => {
+    expect(episodeItems('pc-1', [{id: 'pe-1', title: 'T'}], () => '', artOf)[0].subtitle).toBeUndefined();
   });
 });

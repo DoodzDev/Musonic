@@ -167,7 +167,7 @@ function FullScreenPlayerContent() {
   const [speed, setSpeed] = useState(podcastSpeed);
   const {state} = usePlaybackState();
   const isPlaying = state === State.Playing;
-  const {position} = useForegroundProgress();
+  const {position, duration: playerDuration} = useForegroundProgress();
   const shuffleMode = usePlayerStore(s => s.shuffleMode);
   const repeatMode = usePlayerStore(s => s.repeatMode);
   const isFullScreenOpen = usePlayerStore(s => s.isFullScreenOpen);
@@ -405,7 +405,8 @@ function FullScreenPlayerContent() {
 
   if (!currentTrack) return null;
 
-  const dur = currentTrack.duration ?? 1;
+  // A podcast feed may give no duration: the player's own, once it knows it.
+  const dur = currentTrack.duration || playerDuration || 1;
   const lyricsAvailable = !!lyricsData && lyricsData.lines.length > 0;
 
   // ── Shared pieces reused by both the portrait and landscape layouts below,

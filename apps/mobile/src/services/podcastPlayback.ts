@@ -5,7 +5,7 @@
  *   stopped (on any device), its place saved every few seconds and at pause.
  *   Speed and short jumps are for episodes only.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer, {Event, State} from './player';
@@ -14,10 +14,29 @@ import {songToTrack} from '../utils/songToTrack';
 import {isEpisode, savePodcastPosition, type PodcastEpisode, type PodcastShow} from '../api/endpoints/podcasts';
 import {storage} from '../store/storage';
 import type {Track} from '../store/playerStore';
+import {getT} from '../i18n';
 
 const SAVE_EVERY_MS = 10_000;
 const SPEED_KEY = 'podcast-speed';
 export const SPEEDS = [1, 1.25, 1.5, 1.75, 2, 0.75];
+
+function published(iso: string | undefined): string {
+  if (!iso) return '';
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'});
+}
+
+/** « 12 oct. 2026 · Reste 23 min »: when an episode came out and where the account stopped. */
+export function episodeSummary(e: PodcastEpisode): string {
+  const t = getT().podcasts;
+  const minutes = (s: number) => Math.max(1, Math.round(s / 60));
+  const state = e.played
+    ? t.played
+    : e.duration && e.position
+      ? t.left(minutes(e.duration - e.position / 1000))
+      : e.duration ? t.minutes(minutes(e.duration)) : '';
+  return [published(e.publishDate), state].filter(Boolean).join(' · ');
+}
 
 export function episodeTrack(episode: PodcastEpisode, show: Pick<PodcastShow, 'title' | 'coverArt'>): Track {
   return songToTrack({
@@ -59,6 +78,11 @@ export async function skipBy(seconds: number): Promise<void> {
 
 let current: string | null = null;
 let timer: ReturnType<typeof setInterval> | null = null;
+/**
+ * An episode started again after the sound moved (phone → car) may play silent until a seek:
+ * one seek on the spot, at its first start, wakes the audio output up.
+ */
+let wake = false;
 
 async function save(): Promise<void> {
   if (!current) return;
@@ -74,11 +98,18 @@ export function startPodcastTracking(): void {
   TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, async ({track}) => {
     await save();
     current = isEpisode(track?.id) ? String(track?.id) : null;
+    wake = current != null;
     await TrackPlayer.setRate(current ? podcastSpeed() : 1).catch(() => {});
   });
   TrackPlayer.addEventListener(Event.PlaybackState, ({state}) => {
     if (!current) return;
     if (state === State.Playing) {
+      if (wake) {
+        wake = false;
+        TrackPlayer.getProgress()
+          .then(({position}) => TrackPlayer.seekTo(position))
+          .catch(() => {});
+      }
       if (!timer) timer = setInterval(() => { save().catch(() => {}); }, SAVE_EVERY_MS);
     } else {
       if (timer) clearInterval(timer);
