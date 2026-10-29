@@ -3,12 +3,13 @@
  * @description Lyrics of a track: the music server first (embedded lyrics),
  *   then LRCLIB, like the mobile app. Cached per track.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
 import { fetchLrclibLyrics, type Song, type StructuredLyrics } from '@musonic/core';
 import { useApp } from '../context/AppContext.tsx';
+import { isEpisode } from '../lib/podcasts.ts';
 import { TTL_LONG, useCachedQuery, type QueryState } from '../hooks/useCachedQuery.ts';
 
 export function useLyrics(song: Song | undefined): QueryState<StructuredLyrics | null> {
@@ -16,7 +17,8 @@ export function useLyrics(song: Song | undefined): QueryState<StructuredLyrics |
   return useCachedQuery(song ? `lyrics:${song.id}` : null, TTL_LONG, async () => {
     const s = song!;
     const fromServer = await client.getLyrics({ id: s.id, artist: s.artist, title: s.title }).catch(() => null);
-    if (fromServer) return fromServer;
+    // A podcast episode: its transcript (from the server) or nothing, never song lyrics.
+    if (fromServer || isEpisode(s.id)) return fromServer;
     const found = await fetchLrclibLyrics({ artist: s.artist, title: s.title, duration: s.duration });
     // Several credited artists ("A • B"): LRCLIB usually knows the track under the main one.
     const main = s.artists?.[0]?.name;

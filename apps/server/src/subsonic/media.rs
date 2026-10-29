@@ -955,6 +955,20 @@ fn parse_lrc(text: &str) -> Vec<(Option<i64>, String)> {
 
 pub async fn lyrics_by_song_id(ctx: &Ctx) -> Reply {
     let id = ctx.params.require("id")?.to_owned();
+    // A podcast episode: its transcript, when the show publishes one (ADR-023).
+    if id.starts_with(crate::ids::EPISODE_PREFIX) {
+        let lines = ctx.state.podcasts.transcript(&id).await.unwrap_or_default();
+        let list: Vec<Value> = if lines.is_empty() {
+            Vec::new()
+        } else {
+            vec![json!({
+                "lang": "xxx",
+                "synced": true,
+                "line": lines.into_iter().map(|(start, value)| json!({ "start": start, "value": value })).collect::<Vec<_>>(),
+            })]
+        };
+        return Ok(one("lyricsList", json!({ "structuredLyrics": list })));
+    }
     let found = ctx
         .state
         .db

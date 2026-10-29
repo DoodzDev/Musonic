@@ -4,7 +4,7 @@
  *   authentication). An account the server refuses (key revoked, suspended,
  *   password changed) is reported through `onAuthProblem`.
  * @author DoodzProg
- * @version 0.8.0
+ * @version 0.9.0
  * @license CC-BY-NC-4.0
  */
 
@@ -18,6 +18,9 @@ import type {
   Genre,
   Playlist,
   PlaylistWithSongs,
+  PodcastChannel,
+  PodcastEpisode,
+  PodcastFound,
   Song,
   SearchResult,
   Starred,
@@ -328,12 +331,50 @@ export class SubsonicClient {
       if (error instanceof DOMException && error.name === 'AbortError') throw error;
       // Not an OpenSubsonic server: fall back to the classic endpoint.
     }
+    // A podcast episode has its transcript or nothing: no song lyrics under its show's name.
+    if (song.id.startsWith('pe-')) return null;
     const res = await this.request<{ lyrics?: { value?: string } }>('getLyrics', { artist: song.artist, title: song.title }, signal);
     const text = res.lyrics?.value?.trim();
     return text ? { synced: false, line: text.split(/\r?\n/).map((value) => ({ value })) } : null;
   }
 
   /** Audio URL for an `<audio>` element. Contains the token: keep it in memory only. */
+  /** Musonic Server: shows in the podcast directory. `country`: the store to search (`fr`…). */
+  async searchPodcasts(query: string, country?: string, signal?: AbortSignal): Promise<PodcastFound[]> {
+    const res = await this.request<{ searchPodcasts?: { podcast?: PodcastFound[] } }>('searchPodcasts', { query, country }, signal);
+    return res.searchPodcasts?.podcast ?? [];
+  }
+
+  /** Musonic Server: a show and its episodes, followed or not (`url` reads a show the server does not know). */
+  async getPodcastShow(show: { id?: string; url?: string }, signal?: AbortSignal): Promise<PodcastChannel> {
+    const res = await this.request<{ podcastShow: PodcastChannel }>('getPodcastShow', { id: show.id, url: show.url }, signal);
+    return { ...res.podcastShow, episode: res.podcastShow.episode ?? [] };
+  }
+
+  /** The shows the account follows (without their episodes unless asked). */
+  async getPodcasts(includeEpisodes = false, signal?: AbortSignal): Promise<PodcastChannel[]> {
+    const res = await this.request<{ podcasts?: { channel?: PodcastChannel[] } }>('getPodcasts', { includeEpisodes }, signal);
+    return (res.podcasts?.channel ?? []).map((c) => ({ ...c, episode: c.episode ?? [] }));
+  }
+
+  async getNewestPodcasts(count = 20, signal?: AbortSignal): Promise<PodcastEpisode[]> {
+    const res = await this.request<{ newestPodcasts?: { episode?: PodcastEpisode[] } }>('getNewestPodcasts', { count }, signal);
+    return res.newestPodcasts?.episode ?? [];
+  }
+
+  async followPodcast(feedUrl: string, signal?: AbortSignal): Promise<void> {
+    await this.request('createPodcastChannel', { url: feedUrl }, signal);
+  }
+
+  async unfollowPodcast(id: string, signal?: AbortSignal): Promise<void> {
+    await this.request('deletePodcastChannel', { id }, signal);
+  }
+
+  /** Musonic Server: where the account stopped in an episode (ms), kept for every device. */
+  async savePodcastPosition(id: string, positionMs: number, signal?: AbortSignal): Promise<void> {
+    await this.request('savePodcastPosition', { id, position: Math.max(0, Math.round(positionMs)) }, signal);
+  }
+
   streamUrl(id: string): string {
     return this.buildUrl('stream', { id });
   }

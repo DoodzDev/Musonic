@@ -9,6 +9,7 @@
 
 pub mod feed;
 pub mod net;
+pub mod transcript;
 
 use std::{
     collections::HashMap,
@@ -79,6 +80,41 @@ impl Podcasts {
     /// The client used for feeds and episodes (same limits: timeout, redirects).
     pub fn http(&self) -> &reqwest::Client {
         &self.http
+    }
+
+    /// An episode's transcript as timed lines (none when the show publishes none).
+    pub async fn transcript(&self, episode_id: &str) -> Result<Vec<(i64, String)>> {
+        let id = episode_id.to_owned();
+        let url: Option<String> = self
+            .db
+            .call(move |c| {
+                Ok(c.query_row(
+                    "SELECT transcript_url FROM episode WHERE id = ?1",
+                    [&id],
+                    |r| r.get(0),
+                )
+                .optional()?
+                .flatten())
+            })
+            .await?;
+        let Some(url) = url else {
+            return Ok(Vec::new());
+        };
+        let url = reqwest::Url::parse(&url)?;
+        net::check(&url).await?;
+        let res = self
+            .http
+            .get(url)
+            .send()
+            .await
+            .map_err(reqwest::Error::without_url)?;
+        let text = res
+            .error_for_status()
+            .map_err(reqwest::Error::without_url)?
+            .text()
+            .await
+            .map_err(reqwest::Error::without_url)?;
+        Ok(transcript::parse(&text))
     }
 
     /// A show's or an episode's picture, from its host.
@@ -176,6 +212,36 @@ impl Podcasts {
         Ok(found)
     }
 
+    /// The show at `feed_url`, read now when unknown or last read over an hour ago (someone
+    /// is looking at it). Returns its id.
+    pub async fn ensure(&self, feed_url: &str) -> Result<String> {
+        let feed_url = feed_url.trim();
+        net::check(&reqwest::Url::parse(feed_url).context("feed address")?).await?;
+        let id = ids::podcast_id(feed_url);
+        let key = id.clone();
+        let checked: Option<Option<i64>> = self
+            .db
+            .call(move |c| {
+                Ok(c.query_row(
+                    "SELECT unixepoch() - checked_at FROM podcast WHERE id = ?1",
+                    [&key],
+                    |r| r.get(0),
+                )
+                .optional()?)
+            })
+            .await?;
+        match checked {
+            None => self.read(&id, feed_url, None, None).await?,
+            Some(age) if age.is_none_or(|a| a > 3600) => {
+                if let Err(e) = self.refresh(&id).await {
+                    tracing::warn!("podcast {id}: {e:#}");
+                }
+            }
+            Some(_) => {}
+        }
+        Ok(id)
+    }
+
     /// Follows the show at `feed_url` for `user` (read at once when new). Returns its id.
     pub async fn subscribe(&self, user: &str, feed_url: &str) -> Result<String> {
         let feed_url = feed_url.trim();
@@ -252,7 +318,21 @@ impl Podcasts {
     }
 
     /// Every show someone follows, one after the other (feeds are small, hosts are many).
+    /// Shows only looked at (never followed, nobody's position in them) go after a week.
     pub async fn refresh_all(&self) -> usize {
+        let _ = self
+            .db
+            .call(|c| {
+                c.execute(
+                    "DELETE FROM podcast WHERE checked_at < unixepoch() - 7 * 86400
+                       AND NOT EXISTS (SELECT 1 FROM podcast_subscription s WHERE s.podcast_id = podcast.id)
+                       AND NOT EXISTS (SELECT 1 FROM episode_state st JOIN episode e ON e.id = st.episode_id
+                                        WHERE e.podcast_id = podcast.id)",
+                    [],
+                )?;
+                Ok(())
+            })
+            .await;
         let ids: Vec<String> = self
             .db
             .call(|c| {

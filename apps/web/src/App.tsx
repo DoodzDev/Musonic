@@ -30,6 +30,7 @@ import { tr } from './i18n/index.ts';
 import { clearSession, loadSession, saveSession, transportBaseUrl, transportSession } from './lib/session.ts';
 import { AlbumPage } from './pages/AlbumPage.tsx';
 import { ArtistPage } from './pages/ArtistPage.tsx';
+import { PodcastPage } from './pages/PodcastPage.tsx';
 import { BrowsePage } from './pages/BrowsePage.tsx';
 import { HomePage } from './pages/HomePage.tsx';
 import { GenrePage } from './pages/GenrePage.tsx';
@@ -78,6 +79,7 @@ function Shell() {
                 <Route path="/playlist/:id" element={<PlaylistPage />} />
                 <Route path="/album/:id" element={<AlbumPage />} />
                 <Route path="/artist/:id" element={<ArtistPage />} />
+                <Route path="/podcast/:id" element={<PodcastPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </main>

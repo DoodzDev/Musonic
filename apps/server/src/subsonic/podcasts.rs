@@ -13,6 +13,7 @@
 //! | `refreshPodcasts` | reads the feeds again (in the background) |
 //! | `searchPodcasts?query=&country=` | Musonic: shows in the directory, and which are followed |
 //! | `savePodcastPosition?id=&position=` | Musonic: where the account stopped in an episode (ms) |
+//! | `getPodcastShow?id=` or `?url=` | Musonic: one show and its episodes, followed or not |
 
 use axum::{
     body::Body,
@@ -101,6 +102,77 @@ fn episodes_of(
         .collect()
 }
 
+/// Shows as `getPodcasts` describes them. `followed_only`: only those the account follows;
+/// `followed` tells which on each.
+fn channels(
+    c: &Connection,
+    user: &str,
+    only: Option<&str>,
+    followed_only: bool,
+    with_episodes: bool,
+) -> rusqlite::Result<Vec<Value>> {
+    let mut st = c.prepare_cached(
+        "SELECT p.id, p.feed_url, p.title, p.description, p.image_url, p.error, p.author,
+                s.user_id IS NOT NULL
+           FROM podcast p LEFT JOIN podcast_subscription s ON s.podcast_id = p.id AND s.user_id = ?1
+          WHERE (?2 IS NULL OR p.id = ?2) AND (?3 = 0 OR s.user_id IS NOT NULL)
+          ORDER BY p.title COLLATE NOCASE",
+    )?;
+    let rows: Vec<(ChannelRow, Option<String>, bool)> = st
+        .query_map(params![user, only, followed_only], |r| {
+            Ok((
+                (
+                    r.get(0)?,
+                    r.get(1)?,
+                    r.get(2)?,
+                    r.get(3)?,
+                    r.get(4)?,
+                    r.get(5)?,
+                ),
+                r.get(6)?,
+                r.get(7)?,
+            ))
+        })?
+        .collect::<rusqlite::Result<_>>()?;
+    let mut out = Vec::new();
+    for ((id, url, title, description, image, error), author, followed) in rows {
+        let mut m = Map::new();
+        m.insert("id".into(), json!(id));
+        m.insert("url".into(), json!(url));
+        m.insert("title".into(), json!(title));
+        if let Some(a) = author {
+            m.insert("author".into(), json!(a));
+        }
+        if let Some(d) = description {
+            m.insert("description".into(), json!(d));
+        }
+        if let Some(i) = image {
+            m.insert("originalImageUrl".into(), json!(i));
+        }
+        m.insert("coverArt".into(), json!(id));
+        m.insert(
+            "status".into(),
+            json!(if error.is_some() {
+                "error"
+            } else {
+                "completed"
+            }),
+        );
+        if let Some(e) = error {
+            m.insert("errorMessage".into(), json!(e));
+        }
+        m.insert("followed".into(), json!(followed));
+        if with_episodes {
+            m.insert(
+                "episode".into(),
+                json!(episodes_of(c, user, &id, EPISODES_SHOWN)?),
+            );
+        }
+        out.push(Value::Object(m));
+    }
+    Ok(out)
+}
+
 pub async fn get_podcasts(ctx: &Ctx) -> Reply {
     let user = ctx.user.id.clone();
     let only = ctx.params.get("id").map(str::to_owned);
@@ -108,47 +180,36 @@ pub async fn get_podcasts(ctx: &Ctx) -> Reply {
     let channels = ctx
         .state
         .db
-        .call(move |c| {
-            let mut st = c.prepare_cached(
-                "SELECT p.id, p.feed_url, p.title, p.description, p.image_url, p.error
-                   FROM podcast p JOIN podcast_subscription s ON s.podcast_id = p.id AND s.user_id = ?1
-                  WHERE ?2 IS NULL OR p.id = ?2
-                  ORDER BY p.title COLLATE NOCASE",
-            )?;
-            let rows: Vec<ChannelRow> = st
-                .query_map(params![user, only], |r| {
-                    Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?))
-                })?
-                .collect::<rusqlite::Result<_>>()?;
-            let mut out = Vec::new();
-            for (id, url, title, description, image, error) in rows {
-                let mut m = Map::new();
-                m.insert("id".into(), json!(id));
-                m.insert("url".into(), json!(url));
-                m.insert("title".into(), json!(title));
-                if let Some(d) = description {
-                    m.insert("description".into(), json!(d));
-                }
-                if let Some(i) = image {
-                    m.insert("originalImageUrl".into(), json!(i));
-                }
-                m.insert("coverArt".into(), json!(id));
-                m.insert("status".into(), json!(if error.is_some() { "error" } else { "completed" }));
-                if let Some(e) = error {
-                    m.insert("errorMessage".into(), json!(e));
-                }
-                if with_episodes {
-                    m.insert("episode".into(), json!(episodes_of(c, &user, &id, EPISODES_SHOWN)?));
-                }
-                out.push(Value::Object(m));
-            }
-            Ok(out)
-        })
+        .call(move |c| Ok(channels(c, &user, only.as_deref(), true, with_episodes)?))
         .await?;
     if ctx.params.has("id") && channels.is_empty() {
         return Err(ApiError::not_found("Podcast"));
     }
     Ok(one("podcasts", json!({ "channel": channels })))
+}
+
+/// Musonic: one show with its episodes, followed or not (opened from a search). `url` reads
+/// a show not known yet; known shows are read again when last read over an hour ago.
+pub async fn get_show(ctx: &Ctx) -> Reply {
+    let id =
+        match (ctx.params.get("id"), ctx.params.get("url")) {
+            (_, Some(url)) => ctx.state.podcasts.ensure(url).await.map_err(|e| {
+                ApiError::new(Code::Generic, format!("Podcast feed unavailable: {e}"))
+            })?,
+            (Some(id), None) => id.to_owned(),
+            (None, None) => return Err(ApiError::missing("id")),
+        };
+    let user = ctx.user.id.clone();
+    let found = ctx
+        .state
+        .db
+        .call(move |c| Ok(channels(c, &user, Some(&id), false, true)?))
+        .await?;
+    found
+        .into_iter()
+        .next()
+        .map(|show| one("podcastShow", show))
+        .ok_or_else(|| ApiError::not_found("Podcast"))
 }
 
 pub async fn get_newest(ctx: &Ctx) -> Reply {

@@ -4,11 +4,12 @@
  *   mini player: transport buttons (shuffle, previous, play, next, repeat),
  *   progress bar with times, and volume.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
 import { tr } from '../i18n/index.ts';
+import { isEpisode } from '../lib/podcasts.ts';
 import { formatTime } from '../lib/format.ts';
 import { useTransport } from '../player/transport.ts';
 import { usePlayer } from '../player/PlayerContext.tsx';
@@ -32,10 +33,21 @@ export function TransportButtons({ size = 1, modes = true }: { size?: number; mo
   const shuffleLabel = t.shuffle[player.modes.shuffle];
   const repeatLabel = t.repeat[player.modes.repeat];
   const px = (n: number) => Math.round(n * size);
+  // A podcast episode: speed and short jumps instead of shuffle and repeat.
+  const episode = isEpisode(song?.id);
+  const p = tr.podcasts;
 
   return (
     <div className="player-controls" style={size !== 1 ? { gap: px(14) } : undefined}>
-      {modes && (
+      {modes && episode && (
+        <button type="button" className="ctrl ctrl-mode ctrl-text" onClick={transport.cycleSpeed} aria-label={`${p.speed} : ${transport.speed}×`} title={p.speed}>
+          {transport.speed.toLocaleString()}×
+        </button>
+      )}
+      {episode && (
+        <button type="button" className="ctrl ctrl-text" onClick={() => transport.skipBy(-15)} aria-label={p.back15} title={p.back15}>−15</button>
+      )}
+      {modes && !episode && (
         <button type="button" className="ctrl ctrl-mode" onClick={player.cycleShuffle} aria-label={shuffleLabel} title={shuffleLabel}>
           <ShuffleIcon mode={player.modes.shuffle} size={px(20)} />
         </button>
@@ -56,7 +68,10 @@ export function TransportButtons({ size = 1, modes = true }: { size?: number; mo
       <button type="button" className="ctrl" onClick={player.next} disabled={!hasNext} aria-label={t.next} title={`${t.next} (Ctrl →)`}>
         <NextIcon size={px(24)} />
       </button>
-      {modes && (
+      {episode && (
+        <button type="button" className="ctrl ctrl-text" onClick={() => transport.skipBy(30)} aria-label={p.forward30} title={p.forward30}>+30</button>
+      )}
+      {modes && !episode && (
         <button type="button" className="ctrl ctrl-mode" onClick={player.cycleRepeat} aria-label={repeatLabel} title={repeatLabel}>
           <RepeatIcon mode={player.modes.repeat} size={px(20)} />
         </button>

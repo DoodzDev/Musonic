@@ -14,6 +14,7 @@ import type { CardItem } from '@musonic/core';
 import { PageStatus } from '../components/CollectionHeader.tsx';
 import { GenreGrid } from '../components/GenreGrid.tsx';
 import { ImportPlaylistDialog } from '../components/ImportPlaylistDialog.tsx';
+import { PodcastShelf } from '../components/PodcastShelf.tsx';
 import { TextDialog } from '../components/TextDialog.tsx';
 import { Shelf } from '../components/Shelf.tsx';
 import { MusicNoteIcon } from '../components/icons/MusicNoteIcon.tsx';
@@ -30,8 +31,8 @@ import { keys } from '../player/usePlayItem.ts';
 import { usePlaylistActions } from '../player/usePlaylistActions.ts';
 
 const t = tr.library;
-type Tab = 'playlists' | 'albums' | 'artists';
-const TABS: Tab[] = ['playlists', 'albums', 'artists'];
+type Tab = 'playlists' | 'albums' | 'artists' | 'podcasts';
+const TABS: Tab[] = ['playlists', 'albums', 'artists', 'podcasts'];
 
 /** "Ma Musique" card: the whole library, like the mobile app. */
 function MyMusicCard() {
@@ -88,6 +89,20 @@ function Artists() {
   return <Shelf title={t.tabs.artists} items={artists.data.map((artist): CardItem => ({ type: 'artist', artist }))} wrap />;
 }
 
+/** Shows the account follows (Musonic Server), with the newest episodes on top. */
+function Podcasts() {
+  const { client } = useApp();
+  const shows = useCachedQuery('podcasts', TTL_SHORT, () => client.getPodcasts());
+  if (shows.status !== 'ready') return <PageStatus status={shows.status} />;
+  if (!shows.data.length) return <p className="muted">{tr.podcasts.none}</p>;
+  return (
+    <PodcastShelf
+      title={t.tabs.podcasts}
+      shows={shows.data.map((s) => ({ id: s.id, title: s.title, subtitle: s.author, coverArt: s.coverArt }))}
+    />
+  );
+}
+
 export function LibraryPage() {
   const [tab, setTab] = useState<Tab>('playlists');
   const [creating, setCreating] = useState(false);
@@ -120,7 +135,7 @@ export function LibraryPage() {
         </div>
       </div>
       <nav aria-label={t.title} className="chips">
-        {TABS.map((tb) => (
+        {TABS.filter((tb) => tb !== 'podcasts' || musonic).map((tb) => (
           <button key={tb} type="button" className={'chip' + (tb === tab ? ' is-on' : '')} aria-pressed={tb === tab} onClick={() => setTab(tb)}>
             {t.tabs[tb]}
           </button>
@@ -129,6 +144,7 @@ export function LibraryPage() {
       {tab === 'playlists' && <Playlists />}
       {tab === 'albums' && <Albums />}
       {tab === 'artists' && <Artists />}
+      {tab === 'podcasts' && <Podcasts />}
       {importing && <ImportPlaylistDialog onClose={() => setImporting(false)} />}
       {creating && (
         <TextDialog

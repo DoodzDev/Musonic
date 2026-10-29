@@ -18,14 +18,19 @@ import { Shelf } from '../components/Shelf.tsx';
 import { BROWSE_KINDS, browseKind } from '../lib/browse.ts';
 import { TrackTable } from '../components/TrackTable.tsx';
 import { SearchIcon } from '../components/icons/SearchIcon.tsx';
+import { PodcastShelf } from '../components/PodcastShelf.tsx';
 import { useApp } from '../context/AppContext.tsx';
+import { lang, tr as i18n } from '../i18n/index.ts';
+import { useMusonicServer } from '../lib/musonicApi.ts';
 import { TTL_SHORT, useCachedQuery } from '../hooks/useCachedQuery.ts';
 import { useHomeFeed } from '../hooks/useHomeFeed.ts';
-import { tr } from '../i18n/index.ts';
 
+const tr = i18n;
 const t = tr.search;
-type Filter = 'all' | 'songs' | 'albums' | 'artists';
-const FILTERS: Filter[] = ['all', 'songs', 'albums', 'artists'];
+/** Podcasts shown with the other results before « See all ». */
+const PODCASTS_PREVIEW = 6;
+type Filter = 'all' | 'songs' | 'albums' | 'artists' | 'podcasts';
+const FILTERS: Filter[] = ['all', 'songs', 'albums', 'artists', 'podcasts'];
 const DEBOUNCE_MS = 250;
 const PAGE = { songs: 100, albums: 50, artists: 50 };
 const PREVIEW = { songs: 8, albums: 12, artists: 12 };
@@ -68,7 +73,8 @@ function Proposals() {
 }
 
 export function SearchPage() {
-  const { client } = useApp();
+  const { client, session } = useApp();
+  const musonic = useMusonicServer(session);
   const [params, setParams] = useSearchParams();
   const [text, setText] = useState(params.get('q') ?? '');
   const [filter, setFilter] = useState<Filter>('all');
@@ -85,6 +91,8 @@ export function SearchPage() {
   }, [text, setParams]);
 
   const first = useCachedQuery(query ? `search:${query}` : null, TTL_SHORT, () => client.search(query, PAGE));
+  // The directory of Musonic Server, searched in the listener's country (local shows first).
+  const shows = useCachedQuery(query && musonic ? `searchPodcasts:${query}` : null, TTL_SHORT, () => client.searchPodcasts(query, lang === 'fr' ? 'fr' : 'us'));
   const base: SearchResult | null = first.status === 'ready' ? first.data : null;
   const extra = more.query === query ? more : { songs: [], albums: [], artists: [], done: { songs: false, albums: false, artists: false } };
   const lists = base && {
@@ -133,7 +141,7 @@ export function SearchPage() {
 
       {query && (
         <nav aria-label={t.filtersLabel} className="chips">
-          {FILTERS.map((f) => (
+          {FILTERS.filter((f) => f !== 'podcasts' || musonic).map((f) => (
             <button key={f} type="button" className={'chip' + (f === filter ? ' is-on' : '')} aria-pressed={f === filter} onClick={() => setFilter(f)}>
               {t.filters[f]}
             </button>
@@ -158,6 +166,21 @@ export function SearchPage() {
           <Shelf title={t.filters.albums} items={filter === 'all' ? albums.slice(0, PREVIEW.albums) : albums} wrap action={seeAll('albums')} />
           {filter === 'albums' && !exhausted('albums') && <LoadMore onVisible={() => void loadMore('albums')} />}
         </>
+      )}
+      {shows.status === 'ready' && shows.data.length > 0 && (filter === 'all' || filter === 'podcasts') && (
+        <PodcastShelf
+          title={t.filters.podcasts}
+          shows={(filter === 'all' ? shows.data.slice(0, PODCASTS_PREVIEW) : shows.data).map((s) => ({
+            id: s.id,
+            title: s.title,
+            subtitle: s.author,
+            feedUrl: s.feedUrl,
+            imageUrl: s.imageUrl,
+          }))}
+          action={filter === 'all' && shows.data.length > PODCASTS_PREVIEW ? (
+            <button type="button" className="see-all" onClick={() => setFilter('podcasts')}>{t.seeAll}</button>
+          ) : undefined}
+        />
       )}
       {lists && (filter === 'all' || filter === 'artists') && artists.length > 0 && (
         <>

@@ -541,6 +541,7 @@ async fn dispatch(ctx: &Ctx, name: &str) -> Reply {
         "refreshPodcasts" => podcasts::refresh(ctx).await,
         "searchPodcasts" => podcasts::search(ctx).await,
         "savePodcastPosition" => podcasts::save_position(ctx).await,
+        "getPodcastShow" => podcasts::get_show(ctx).await,
         "getLyrics" => media::lyrics(ctx).await,
         "getInternetRadioStations" => Ok(one(
             "internetRadioStations",

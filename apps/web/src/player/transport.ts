@@ -23,6 +23,10 @@ export interface Transport {
   seek: (seconds: number) => void;
   setVolume: (volume: number) => void;
   setMuted: (muted: boolean) => void;
+  /** Podcasts (ADR-023): playback speed, and jumps of a few seconds. Songs always play at 1×. */
+  speed: number;
+  cycleSpeed: () => void;
+  skipBy: (seconds: number) => void;
 }
 
 export const TransportContext = createContext<Transport | null>(null);
