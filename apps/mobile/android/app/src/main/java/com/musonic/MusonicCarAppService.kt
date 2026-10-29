@@ -19,8 +19,10 @@ import androidx.car.app.model.CarIcon
 import androidx.car.app.model.GridItem
 import androidx.car.app.model.GridSection
 import androidx.car.app.model.Header
+import androidx.car.app.model.ItemList
 import androidx.car.app.model.Row
 import androidx.car.app.model.RowSection
+import androidx.car.app.model.SearchTemplate
 import androidx.car.app.model.SectionedItemTemplate
 import androidx.car.app.model.Tab
 import androidx.car.app.model.TabContents
@@ -87,6 +89,9 @@ private object Nodes {
   const val QUEUE = "queue"
 
   fun lyrics(trackId: String) = "lyrics:$trackId"
+
+  /** Same encoding as `searchNodeId` (JS `decodeURIComponent`). */
+  fun search(query: String) = "search:${Uri.encode(query)}"
 }
 
 /** Pictures of the car screens: a cover served by [MusonicArtworkProvider], or an app icon. */
@@ -284,11 +289,19 @@ private class TabsScreen(context: CarContext) : Screen(context) {
     return CarIcon.Builder(IconCompat.createWithContentUri(MusonicArtwork.carUriOf(carContext, key))).build()
   }
 
+  // Floating button, icon only (the car's rule), next to Now playing.
+  private fun searchAction(): Action =
+      Action.Builder()
+          .setIcon(carContext.icon(R.drawable.ic_auto_search))
+          .setBackgroundColor(MUSONIC_ORANGE)
+          .setOnClickListener { screenManager.push(SearchScreen(carContext)) }
+          .build()
+
   private fun tab(id: String, title: Int, icon: Int): Tab =
       Tab.Builder().setContentId(id).setTitle(carContext.getString(title)).setIcon(carContext.icon(icon)).build()
 
   private fun content(): Template {
-    val template = SectionedItemTemplate.Builder().addAction(nowPlayingAction())
+    val template = SectionedItemTemplate.Builder().addAction(searchAction()).addAction(nowPlayingAction())
     when (active) {
       // Resume, then Recently played, then the playlists (ADR-025 step 3); empty sections stay out.
       HOME -> {
@@ -389,6 +402,42 @@ private class PlaybackScreen(context: CarContext) : Screen(context) {
           invalidate()
         }
         .build()
+  }
+}
+
+/**
+ * Search (ADR-025 step 8): typed when the car allows it (parked), else said to the assistant
+ * (« Play … on Musonic », handled by the session). Songs first, then albums and artists.
+ */
+private class SearchScreen(context: CarContext) : Screen(context) {
+  private var query = ""
+  private var loader: Loader? = null
+
+  override fun onGetTemplate(): Template {
+    val template = SearchTemplate.Builder(object : SearchTemplate.SearchCallback {
+      override fun onSearchSubmitted(searchText: String) {
+        val text = searchText.trim()
+        if (text.isEmpty() || text == query) return
+        query = text
+        loader = Loader(this@SearchScreen, Nodes.search(text))
+        invalidate()
+      }
+    })
+        .setHeaderAction(Action.BACK)
+        .setSearchHint(carContext.getString(R.string.car_search_hint))
+        .setInitialSearchText(query)
+        .setShowKeyboardByDefault(query.isEmpty())
+    val current = loader ?: return template.build()
+    val entries = current.load() ?: return template.setLoading(true).build()
+    val list = ItemList.Builder().setNoItemsMessage(carContext.getString(R.string.car_empty))
+    entries.take(carContext.limit(ConstraintManager.CONTENT_LIMIT_TYPE_LIST)).forEach { entry ->
+      val row = Row.Builder().setTitle(entry.title).setOnClickListener { open(entry) }
+      entry.subtitle?.takeIf { it.isNotEmpty() }?.let { row.addText(it) }
+      carContext.cover(entry)?.let { row.setImage(it, Row.IMAGE_TYPE_LARGE) }
+      if (entry.browsable) row.setBrowsable(true)
+      list.addItem(row.build())
+    }
+    return template.setItemList(list.build()).build()
   }
 }
 

@@ -179,8 +179,12 @@ class MusonicPlayerService : MediaSessionService() {
         controller: MediaSession.ControllerInfo,
         mediaItems: MutableList<MediaItem>,
     ): ListenableFuture<MutableList<MediaItem>> {
-      mediaItems.firstOrNull()?.mediaId?.takeIf { it.isNotEmpty() }?.let { id ->
-        MusonicPlayback.emit("remote-play-id", Bundle().apply { putString("id", id) })
+      val item = mediaItems.firstOrNull()
+      val query = item?.requestMetadata?.searchQuery
+      when {
+        // « Play … on Musonic »: JS searches and plays what it finds.
+        !query.isNullOrBlank() -> MusonicPlayback.emit("remote-play-search", Bundle().apply { putString("query", query) })
+        !item?.mediaId.isNullOrEmpty() -> MusonicPlayback.emit("remote-play-id", Bundle().apply { putString("id", item?.mediaId) })
       }
       return Futures.immediateFailedFuture(UnsupportedOperationException("Played by the JS engine"))
     }

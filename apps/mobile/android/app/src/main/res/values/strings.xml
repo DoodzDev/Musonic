@@ -14,4 +14,6 @@
     <string name="car_queue">Queue</string>
     <string name="car_lyrics">Lyrics</string>
     <string name="car_lyrics_none">No synced lyrics</string>
+    <string name="car_search">Search</string>
+    <string name="car_search_hint">Songs, albums, artists</string>
 </resources>

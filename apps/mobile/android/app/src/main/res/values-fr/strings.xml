@@ -11,4 +11,6 @@
     <string name="car_queue">File d\'attente</string>
     <string name="car_lyrics">Paroles</string>
     <string name="car_lyrics_none">Pas de paroles synchronisées</string>
+    <string name="car_search">Rechercher</string>
+    <string name="car_search_hint">Titres, albums, artistes</string>
 </resources>

@@ -18,10 +18,10 @@
  */
 import {AppState, NativeEventEmitter, NativeModules, Platform} from 'react-native';
 import TrackPlayer, {Event} from '../player';
-import {getCoverArtUrl} from '../../api/client';
+import {getCoverArtUrl, subsonicGet} from '../../api/client';
 import {getAlbum, getAlbumsByArtist, getLyricsBySongId, getStarred} from '../../api/endpoints/library';
 import {getPlaylist, getPlaylists} from '../../api/endpoints/playlists';
-import type {SubsonicPlaylist, SubsonicSong} from '../../api/types';
+import type {SubsonicAlbum, SubsonicArtist, SubsonicPlaylist, SubsonicSong} from '../../api/types';
 import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
 import {useDownloadStore} from '../../store/downloadStore';
 import {usePlayerStore} from '../../store/playerStore';
@@ -55,6 +55,7 @@ import {
   playlistItems,
   playlistNodeId,
   recentItems,
+  searchNodeId,
   resumeItems,
   trackItems,
   type ArtOf,
@@ -85,9 +86,9 @@ let started = false;
 /** Past this, a slow network answers from the caches instead: the car must not hang. */
 const NETWORK_WAIT_MS = 3000;
 
-function withTimeout<T>(promise: Promise<T>): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, waitMs = NETWORK_WAIT_MS): Promise<T> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('timeout')), NETWORK_WAIT_MS);
+    const timer = setTimeout(() => reject(new Error('timeout')), waitMs);
     promise.then(
       value => { clearTimeout(timer); resolve(value); },
       error => { clearTimeout(timer); reject(error); },
@@ -257,6 +258,36 @@ function queueItems(): AutoItem[] {
 
 const QUEUE_SHOWN = 30;
 
+type Found = {songs: SubsonicSong[]; albums: SubsonicAlbum[]; artists: SubsonicArtist[]};
+
+/**
+ * Only what the car shows, so the answer is fast; online results may need more time than a
+ * list, but the car gives up after 8 s.
+ */
+async function carSearch(query: string): Promise<Found> {
+  const res = await withTimeout(
+    subsonicGet<any>('search3.view', {query, songCount: SEARCH_SONGS, albumCount: SEARCH_OTHERS, artistCount: SEARCH_OTHERS}),
+    SEARCH_WAIT_MS,
+  );
+  const found = res.searchResult3 ?? {};
+  return {songs: found.song ?? [], albums: found.album ?? [], artists: found.artist ?? []};
+}
+
+const SEARCH_WAIT_MS = 7000;
+
+/** Search in the car: songs first (a tap plays them all from there), then albums and artists. */
+async function searchItems(query: string): Promise<AutoItem[]> {
+  const found = await carSearch(query);
+  return [
+    ...trackItems(searchNodeId(query), playable(found.songs).slice(0, SEARCH_SONGS), isTrackDownloaded, artOf),
+    ...(isOffline() ? [] : albumItems(found.albums.slice(0, SEARCH_OTHERS), artOf)),
+    ...(isOffline() ? [] : artistItems(found.artists.slice(0, SEARCH_OTHERS), artOf)),
+  ];
+}
+
+const SEARCH_SONGS = 10;
+const SEARCH_OTHERS = 5;
+
 /** Lyrics of a track, as the app's player loads them (embedded, then the server, then LRCLIB). */
 async function lyricsOf(trackId: string): Promise<AutoItem[]> {
   const track = usePlayerStore.getState().queue.find(t => String(t.id) === trackId);
@@ -303,6 +334,8 @@ async function children(parentId: string): Promise<AutoItem[]> {
       return queueItems();
     case 'lyrics':
       return lyricsOf(node.id);
+    case 'search':
+      return searchItems(node.query);
     default:
       return [];
   }
@@ -380,6 +413,10 @@ async function loadList(list: AutoList): Promise<{source: PlaySource; songs: Sub
   if (list.kind === 'liked') {
     return {source: {type: 'other', name: getT().likedSongs.title}, songs: playable(await loadLiked())};
   }
+  if (list.kind === 'search') {
+    const found = await carSearch(list.query);
+    return {source: {type: 'other', name: list.query}, songs: playable(found.songs).slice(0, SEARCH_SONGS)};
+  }
   const {name, songs} = list.kind === 'playlist' ? await loadPlaylist(list.id) : await loadAlbum(list.id);
   return {source: {type: list.kind, id: list.id, name}, songs: playable(songs)};
 }
@@ -397,6 +434,14 @@ export async function playAutoMediaId(mediaId: string): Promise<void> {
   const {source, songs} = await loadList(ref.list);
   if (songs.length === 0) return;
   await playbackEngine.playContext({source, tracks: songs.map(songToTrack), startTrackId: ref.trackId});
+}
+
+/** « Play … on Musonic », said to the car's assistant: the songs found, from the first. */
+export async function playAutoSearch(query: string): Promise<void> {
+  if (!query.trim()) return;
+  const {source, songs} = await loadList({kind: 'search', query});
+  if (songs.length === 0) return;
+  await playbackEngine.playContext({source, tracks: songs.map(songToTrack)});
 }
 
 /**

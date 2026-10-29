@@ -9,7 +9,7 @@
  *   go to the engine, which skips the unplayable track. Android Auto browsing
  *   and taps (`remote-play-id`) start here too, so they work without the screens.
  * @author DoodzProg
- * @version 1.4.0
+ * @version 1.5.0
  * @license CC-BY-NC-4.0
  */
 import {AppState} from 'react-native';
@@ -22,7 +22,7 @@ import {skipNext, skipPrev} from './playerActions';
 import {playbackEngine} from './playback/engine';
 import {ListenTracker} from '@musonic/core/listen';
 import {onSleepTimerTrackChanged} from './sleepTimer';
-import {playAutoMediaId, startAndroidAuto} from './auto/androidAuto';
+import {playAutoMediaId, playAutoSearch, startAndroidAuto} from './auto/androidAuto';
 
 let wasPlayingBeforeDuck = false;
 let fadeInTimer: ReturnType<typeof setInterval> | null = null;
@@ -203,6 +203,10 @@ export async function PlaybackService() {
   // Android Auto: a track tapped in the car plays its whole list (ADR-015).
   TrackPlayer.addEventListener(Event.RemotePlayId, ({id}) => {
     playAutoMediaId(id).catch(() => console.warn('[auto] play failed'));
+  });
+  // « Play … on Musonic » said to the car's (or the phone's) assistant.
+  TrackPlayer.addEventListener(Event.RemotePlaySearch, ({query}) => {
+    playAutoSearch(String(query ?? '')).catch(() => console.warn('[auto] search failed'));
   });
   startAndroidAuto();
   TrackPlayer.addEventListener(Event.PlaybackQueueEnded, () => {

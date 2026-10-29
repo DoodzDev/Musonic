@@ -51,7 +51,12 @@ export const QUEUE = 'queue';
 export const LIKED_ART: AutoArt = {key: 'res:liked', uri: ''};
 
 /** A list whose tracks can be played from the car. */
-export type AutoList = {kind: 'playlist'; id: string} | {kind: 'album'; id: string} | {kind: 'downloads'} | {kind: 'liked'};
+export type AutoList =
+  | {kind: 'playlist'; id: string}
+  | {kind: 'album'; id: string}
+  | {kind: 'downloads'}
+  | {kind: 'liked'}
+  | {kind: 'search'; query: string};
 
 export type AutoNode =
   | {kind: 'root'}
@@ -81,6 +86,11 @@ export function artistNodeId(id: string): string {
   return `artist:${id}`;
 }
 
+/** Results of a search in the car (ADR-025 step 8); the words are encoded (no `|` left). */
+export function searchNodeId(query: string): string {
+  return `search:${encodeURIComponent(query)}`;
+}
+
 const PREFIXED = ['playlist', 'album', 'artist', 'lyrics'] as const;
 
 export function trackMediaId(listNodeId: string, trackId: string): string {
@@ -99,6 +109,13 @@ export function parseNode(id: string): AutoNode {
   if (id === RECENT) return {kind: 'recent'};
   if (id === QUEUE) return {kind: 'queue'};
   if (id.includes('|')) return {kind: 'unknown'};
+  if (id.startsWith('search:') && id.length > 'search:'.length) {
+    try {
+      return {kind: 'search', query: decodeURIComponent(id.slice('search:'.length))};
+    } catch {
+      return {kind: 'unknown'};
+    }
+  }
   for (const kind of PREFIXED) {
     const prefix = `${kind}:`;
     if (id.startsWith(prefix) && id.length > prefix.length) return {kind, id: id.slice(prefix.length)};
@@ -111,7 +128,9 @@ export function parseTrackRef(mediaId: string): AutoTrackRef | null {
   const sep = mediaId.lastIndexOf('|');
   if (sep <= 0 || sep === mediaId.length - 1) return null;
   const list = parseNode(mediaId.slice(0, sep));
-  if (list.kind !== 'playlist' && list.kind !== 'album' && list.kind !== 'downloads' && list.kind !== 'liked') return null;
+  if (list.kind !== 'playlist' && list.kind !== 'album' && list.kind !== 'downloads' && list.kind !== 'liked' && list.kind !== 'search') {
+    return null;
+  }
   return {list, trackId: mediaId.slice(sep + 1)};
 }
 
