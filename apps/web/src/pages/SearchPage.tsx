@@ -167,20 +167,39 @@ export function SearchPage() {
           {filter === 'albums' && !exhausted('albums') && <LoadMore onVisible={() => void loadMore('albums')} />}
         </>
       )}
-      {shows.status === 'ready' && shows.data.length > 0 && (filter === 'all' || filter === 'podcasts') && (
+      {/^https?:\/\//i.test(query) && musonic && (
+        <PodcastShelf title={tr.podcasts.feed} shows={[{ id: 'feed', title: tr.podcasts.openFeed, subtitle: query, feedUrl: query }]} />
+      )}
+      {shows.status === 'ready' && shows.data.shows.length > 0 && (filter === 'all' || filter === 'podcasts') && (
         <PodcastShelf
           title={t.filters.podcasts}
-          shows={(filter === 'all' ? shows.data.slice(0, PODCASTS_PREVIEW) : shows.data).map((s) => ({
+          shows={(filter === 'all' ? shows.data.shows.slice(0, PODCASTS_PREVIEW) : shows.data.shows).map((s) => ({
             id: s.id,
             title: s.title,
             subtitle: s.author,
             feedUrl: s.feedUrl,
             imageUrl: s.imageUrl,
           }))}
-          action={filter === 'all' && shows.data.length > PODCASTS_PREVIEW ? (
+          action={filter === 'all' && shows.data.shows.length > PODCASTS_PREVIEW ? (
             <button type="button" className="see-all" onClick={() => setFilter('podcasts')}>{t.seeAll}</button>
           ) : undefined}
         />
+      )}
+      {shows.status === 'ready' && shows.data.episodes.length > 0 && (filter === 'all' || filter === 'podcasts') && (
+        <section className="shelf">
+          <header className="shelf-head"><h2>{tr.podcasts.foundEpisodes}</h2></header>
+          <ol className="episode-list">
+            {(filter === 'all' ? shows.data.episodes.slice(0, PODCASTS_PREVIEW) : shows.data.episodes).map((e) => (
+              <li key={`${e.feedUrl}|${e.title}`}>
+                <Link className="episode-row" to={`/podcast/${e.showId}?feed=${encodeURIComponent(e.feedUrl)}${e.id ? `&episode=${e.id}` : ''}`}>
+                  <span className="episode-date">{e.publishDate ? new Date(e.publishDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</span>
+                  <span className="episode-title">{e.title}</span>
+                  <span className="episode-state">{e.showTitle}</span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </section>
       )}
       {lists && (filter === 'all' || filter === 'artists') && artists.length > 0 && (
         <>

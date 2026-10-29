@@ -8,7 +8,7 @@
  * @license CC-BY-NC-4.0
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import type { PodcastChannel, PodcastEpisode } from '@musonic/core';
 import { CollectionHeader, PageStatus } from '../components/CollectionHeader.tsx';
@@ -34,9 +34,20 @@ function state(episode: PodcastEpisode): string {
   return episode.duration ? t.minutes(minutes(episode.duration)) : '';
 }
 
-function Episodes({ show }: { show: PodcastChannel }) {
+/** `wanted`: the episode opened from a search, shown and played once the show is loaded. */
+function Episodes({ show, wanted }: { show: PodcastChannel; wanted?: string }) {
   const { playSongs, current } = usePlayer();
   const songs = show.episode.map((e) => episodeSong(e, show));
+  const wantedRow = useRef<HTMLButtonElement>(null);
+  const started = useRef(false);
+  useEffect(() => {
+    const index = show.episode.findIndex((e) => e.id === wanted);
+    if (index < 0 || started.current) return;
+    started.current = true;
+    wantedRow.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    playSongs([songs[index]], 0, `podcast:${show.id}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show, wanted]);
   if (!show.episode.length) return <p className="muted">{t.noEpisodes}</p>;
   return (
     <section className="shelf">
@@ -46,7 +57,10 @@ function Episodes({ show }: { show: PodcastChannel }) {
           <li key={episode.id}>
             <button
               type="button"
-              className={'episode-row' + (current?.id === episode.id ? ' is-current' : '') + (episode.played ? ' is-played' : '')}
+              ref={episode.id === wanted ? wantedRow : undefined}
+              className={
+                'episode-row' + (current?.id === episode.id ? ' is-current' : '') + (episode.played ? ' is-played' : '') + (episode.id === wanted ? ' is-wanted' : '')
+              }
               // Only this episode: the next one is the listener's choice.
               onClick={() => playSongs([songs[i]], 0, `podcast:${show.id}`)}
             >
@@ -105,7 +119,7 @@ export function PodcastPage() {
         }
       />
       {show.description && <p className="podcast-description">{show.description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</p>}
-      <Episodes show={show} />
+      <Episodes show={show} wanted={params.get('episode') ?? undefined} />
     </div>
   );
 

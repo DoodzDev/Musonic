@@ -83,6 +83,9 @@ export const en: typeof fr = {
     failed: 'The show could not be read. Try again later.',
     speed: 'Playback speed',
     back15: 'Back 15 seconds',
+    openFeed: 'Open this feed',
+    feed: 'RSS feed',
+    foundEpisodes: 'Episodes with this person',
     forward30: 'Forward 30 seconds',
   },
   browse: {

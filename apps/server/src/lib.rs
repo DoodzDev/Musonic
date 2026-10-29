@@ -203,6 +203,7 @@ pub async fn run(mut config: Config, mut ext: Extensions) -> Result<()> {
         let state = state.clone();
         tokio::spawn(async move { api::restore_credentials(&state).await });
     }
+    state.podcasts.load_index().await;
     tracing::info!(
         providers = ?state.providers.iter().map(|p| p.id()).collect::<Vec<_>>(),
         "audio providers"

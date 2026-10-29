@@ -12,6 +12,7 @@
 //! | `GET /v1/admin/journal`, `PUT /v1/admin/journal/settings` | « Activité » and administration journal of the console ([`journal`]) |
 //! | `POST /v1/admin/measures`, `PUT /v1/admin/traffic-quota` | « Données » page of the console: traffic, processor, memory, disk over time ([`measures`]) |
 //! | `GET /v1/admin/status` | Dashboard and event bar of the console (administrators): live figures, disk, library, now playing, alerts, releases |
+//! | `GET /v1/admin/podcasts`, `PUT /v1/admin/podcasts/index` | Podcast Index key ([`podcasts`]) |
 //! | `GET /v1/admin/health` | The server's state in detail (administrators): version, schema, last scan, providers, alerts, imports; the public `/health` only says `ok` |
 //! | `GET /v1/info` | What this server is and can do (no sign-in): clients tell Musonic Server from another Subsonic server with it |
 //! | `GET /v1/setup` | `{"needed": true}` until the first account exists |
@@ -47,6 +48,7 @@ mod journal;
 mod library_admin;
 mod measures;
 mod playlist_imports;
+mod podcasts;
 mod security;
 mod status;
 mod system;
@@ -145,6 +147,7 @@ pub fn router() -> Router<AppState> {
         .merge(security::router())
         .merge(system::router())
         .merge(playlist_imports::router())
+        .merge(podcasts::router())
 }
 
 /// Version of the native API; raised when it changes in a way clients must know.

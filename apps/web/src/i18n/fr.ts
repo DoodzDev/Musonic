@@ -83,6 +83,9 @@ export const fr = {
     failed: 'L’émission n’a pas pu être lue. Réessayez plus tard.',
     speed: 'Vitesse de lecture',
     back15: 'Reculer de 15 secondes',
+    openFeed: 'Ouvrir ce flux',
+    feed: 'Flux RSS',
+    foundEpisodes: 'Épisodes où cette personne intervient',
     forward30: 'Avancer de 30 secondes',
   },
   browse: {

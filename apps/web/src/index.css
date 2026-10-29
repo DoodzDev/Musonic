@@ -685,6 +685,7 @@ p.lyrics-line { font-size: 17px; line-height: 26px; font-weight: 600; padding: 0
 .episode-row { width: 100%; display: grid; grid-template-columns: 110px 1fr auto; align-items: center; gap: 16px; min-height: 52px; padding: 8px 12px; border-radius: var(--radius-md); text-align: left; color: var(--text); }
 .episode-row:hover { background: var(--surface-1); }
 .episode-row.is-current .episode-title { color: var(--accent); }
+.episode-row.is-wanted { background: var(--surface-1); }
 .episode-row.is-played .episode-title { color: var(--text-2); }
 .episode-date { font-size: 13px; color: var(--text-2); white-space: nowrap; }
 .episode-title { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

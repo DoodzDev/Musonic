@@ -21,6 +21,7 @@ import type {
   PodcastChannel,
   PodcastEpisode,
   PodcastFound,
+  PodcastFoundEpisode,
   Song,
   SearchResult,
   Starred,
@@ -339,10 +340,21 @@ export class SubsonicClient {
   }
 
   /** Audio URL for an `<audio>` element. Contains the token: keep it in memory only. */
-  /** Musonic Server: shows in the podcast directory. `country`: the store to search (`fr`…). */
-  async searchPodcasts(query: string, country?: string, signal?: AbortSignal): Promise<PodcastFound[]> {
-    const res = await this.request<{ searchPodcasts?: { podcast?: PodcastFound[] } }>('searchPodcasts', { query, country }, signal);
-    return res.searchPodcasts?.podcast ?? [];
+  /**
+   * Musonic Server: shows in the podcast directories, and episodes where the person searched
+   * speaks (when the server has a Podcast Index key). `country`: the store to search (`fr`…).
+   */
+  async searchPodcasts(
+    query: string,
+    country?: string,
+    signal?: AbortSignal,
+  ): Promise<{ shows: PodcastFound[]; episodes: PodcastFoundEpisode[] }> {
+    const res = await this.request<{ searchPodcasts?: { podcast?: PodcastFound[]; episode?: PodcastFoundEpisode[] } }>(
+      'searchPodcasts',
+      { query, country },
+      signal,
+    );
+    return { shows: res.searchPodcasts?.podcast ?? [], episodes: res.searchPodcasts?.episode ?? [] };
   }
 
   /** Musonic Server: a show and its episodes, followed or not (`url` reads a show the server does not know). */

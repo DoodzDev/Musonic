@@ -76,6 +76,47 @@ function CredentialModal({ p, onClose, onSaved }: { p: ProviderInfo; onClose: ()
   );
 }
 
+/** Podcast Index key: two values from podcastindex.org, tested by the server before being kept. */
+function PodcastIndexModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [key, setKey] = useState('');
+  const [secret, setSecret] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const p = t.podcasts;
+  const save = () => {
+    setBusy(true);
+    setError(null);
+    api('/v1/admin/podcasts/index', { method: 'PUT', body: { key, secret } })
+      .then(() => {
+        onSaved();
+        onClose();
+      })
+      .catch((e: ApiError) => setError(e.status === 422 ? p.refused : e.message))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <Modal title={p.keyTitle} onClose={onClose}>
+      <p className="muted small">{p.keyHelp}</p>
+      <div className="field">
+        <label>{p.key}</label>
+        <input className="input" autoComplete="off" spellCheck={false} value={key} onChange={(e) => setKey(e.target.value)} autoFocus />
+      </div>
+      <div className="field">
+        <label>{p.secret}</label>
+        <input className="input" type="password" autoComplete="off" spellCheck={false} value={secret} onChange={(e) => setSecret(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && key.trim() && secret.trim() && !busy && save()} />
+      </div>
+      <p className="note">{t.imports.credStored}</p>
+      <ErrorLine error={error} />
+      <div className="actions">
+        <button className="btn ghost" onClick={onClose}>{t.common.cancel}</button>
+        <button className="btn primary" disabled={!key.trim() || !secret.trim() || busy} onClick={save}>{busy ? t.imports.credChecking : t.imports.credSave}</button>
+      </div>
+    </Modal>
+  );
+}
+
+type PodcastStatus = { indexConfigured: boolean; shows: number; episodes: number };
+
 export function ImportsPage() {
   const [state, setState] = useState<State>('all');
   const [search, setSearch] = useState('');
@@ -83,11 +124,14 @@ export function ImportsPage() {
   const [list, setList] = useState<ImportList | null>(null);
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [changing, setChanging] = useState<ProviderInfo | null>(null);
+  const [podcasts, setPodcasts] = useState<PodcastStatus | null>(null);
+  const [indexKey, setIndexKey] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const settings = useServerSettings();
 
   const load = useCallback(() => {
+    api<PodcastStatus>('/v1/admin/podcasts').then(setPodcasts).catch(() => setPodcasts(null));
     const q = new URLSearchParams({ limit: String(limit) });
     if (state !== 'all') q.set('state', state);
     if (search.trim()) q.set('q', search.trim());
@@ -210,6 +254,19 @@ export function ImportsPage() {
         </div>
       </div>
 
+      {podcasts && (
+        <div className="card mt">
+          <h2>{t.podcasts.title}</h2>
+          <div className="list-item">
+            <div className="small">
+              <b>Podcast Index</b> · {t.podcasts.counts(podcasts.shows, podcasts.episodes)}
+              <div className="muted">{podcasts.indexConfigured ? t.podcasts.on : t.podcasts.off}</div>
+            </div>
+            <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => setIndexKey(true)}>{podcasts.indexConfigured ? t.podcasts.change : t.podcasts.add}</button>
+          </div>
+        </div>
+      )}
+      {indexKey && <PodcastIndexModal onClose={() => setIndexKey(false)} onSaved={() => { setNotice(t.podcasts.saved); load(); }} />}
       {changing && <CredentialModal p={changing} onClose={() => setChanging(null)} onSaved={() => { setNotice(t.imports.credDone); load(); }} />}
     </>
   );

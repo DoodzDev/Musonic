@@ -165,6 +165,19 @@ export interface PodcastFound {
   followed: boolean;
 }
 
+/** An episode found by person (Podcast Index), opened through its show. */
+export interface PodcastFoundEpisode {
+  /** Its id once the show is read (when the directory gives the episode's guid). */
+  id?: string;
+  title: string;
+  showTitle: string;
+  showId: string;
+  feedUrl: string;
+  imageUrl?: string;
+  publishDate?: string;
+  duration?: number;
+}
+
 /** A podcast episode (Subsonic `PodcastEpisode`, plus Musonic's `position` and `played`). */
 export interface PodcastEpisode {
   id: string;

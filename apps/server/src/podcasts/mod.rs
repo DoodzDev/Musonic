@@ -8,6 +8,7 @@
 //! - [`Podcasts::search`]: the iTunes directory (no key needed), kept a day.
 
 pub mod feed;
+pub mod index;
 pub mod net;
 pub mod transcript;
 
@@ -29,6 +30,9 @@ const FEED_MAX_BYTES: usize = 20 * 1024 * 1024;
 const PICTURE_MAX_BYTES: usize = 15 * 1024 * 1024;
 const SEARCH_KEPT: Duration = Duration::from_secs(24 * 3600);
 const SEARCH_RESULTS: usize = 25;
+const SEARCH_EPISODES: usize = 20;
+/// Shows listed without their feed looked up per search (one request each).
+const MISSING_LOOKUPS: usize = 8;
 
 #[derive(Clone)]
 pub struct Podcasts {
@@ -37,10 +41,22 @@ pub struct Podcasts {
     /// Directory searches, by query (the directory changes slowly).
     searches: Arc<Mutex<HashMap<String, Searched>>>,
     directory_url: String,
+    /// Podcast Index, when an administrator gave a key.
+    index: Arc<std::sync::RwLock<Option<index::Key>>>,
 }
 
 /// When a search was made, and what it found.
-type Searched = (Instant, Vec<Found>);
+type Searched = (Instant, Search);
+
+/// Shows found, and episodes where the person searched speaks (Podcast Index).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct Search {
+    pub shows: Vec<Found>,
+    pub episodes: Vec<index::FoundEpisode>,
+}
+
+/// Where the Podcast Index key is kept (`key` + U+001F + `secret`).
+const INDEX_PROPERTY: &str = "secret.podcastindex";
 
 /// A show found in the directory, not yet followed.
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -74,6 +90,17 @@ impl Podcasts {
                 .build()?,
             searches: Arc::default(),
             directory_url: directory_url.to_owned(),
+            index: Arc::new(std::sync::RwLock::new(
+                match (
+                    std::env::var("MUSONIC_PODCASTINDEX_KEY"),
+                    std::env::var("MUSONIC_PODCASTINDEX_SECRET"),
+                ) {
+                    (Ok(key), Ok(secret)) if !key.is_empty() && !secret.is_empty() => {
+                        Some(index::Key { key, secret })
+                    }
+                    _ => None,
+                },
+            )),
         })
     }
 
@@ -145,10 +172,10 @@ impl Podcasts {
 
     /// Shows matching `query` in the iTunes directory. `country`: the store to search
     /// (two letters, `fr`…), where local shows are listed.
-    pub async fn search(&self, query: &str, country: Option<&str>) -> Result<Vec<Found>> {
+    pub async fn search(&self, query: &str, country: Option<&str>) -> Result<Search> {
         let query = query.trim();
         if query.is_empty() {
-            return Ok(Vec::new());
+            return Ok(Search::default());
         }
         let country = country
             .filter(|c| c.len() == 2 && c.chars().all(|ch| ch.is_ascii_alphabetic()))
@@ -163,13 +190,92 @@ impl Podcasts {
         {
             return Ok(found.clone());
         }
+        let index = self.index.read().unwrap().clone();
+        // Both directories at once; Podcast Index also finds the episodes a person is in.
+        let (itunes, shows, episodes) = tokio::join!(
+            self.itunes(query, country.as_deref()),
+            async {
+                match &index {
+                    Some(k) => index::shows(&self.http, k, query, SEARCH_RESULTS).await,
+                    None => Ok(Vec::new()),
+                }
+            },
+            async {
+                match &index {
+                    Some(k) => index::episodes_with(&self.http, k, query, SEARCH_EPISODES).await,
+                    None => Ok(Vec::new()),
+                }
+            },
+        );
+        let (mut found, missing) = match (itunes, &index) {
+            (Ok(it), _) => it,
+            // The directory is down: Podcast Index alone, if there is one.
+            (Err(e), Some(_)) => {
+                tracing::warn!("iTunes directory: {e:#}");
+                (Vec::new(), Vec::new())
+            }
+            (Err(e), None) => return Err(e),
+        };
+        // Shows iTunes lists without their feed (Radio France…): Podcast Index knows it.
+        if let Some(k) = &index {
+            let lookups = missing
+                .iter()
+                .take(MISSING_LOOKUPS)
+                .map(|(id, show)| async move {
+                    index::feed_of_itunes_id(&self.http, k, *id)
+                        .await
+                        .ok()
+                        .flatten()
+                        .map(|url| Found {
+                            feed_url: url,
+                            ..show.clone()
+                        })
+                });
+            found.extend(
+                futures_util::future::join_all(lookups)
+                    .await
+                    .into_iter()
+                    .flatten(),
+            );
+        }
+        for show in shows.unwrap_or_else(|e| {
+            tracing::warn!("Podcast Index: {e:#}");
+            Vec::new()
+        }) {
+            if !found
+                .iter()
+                .any(|f| index::same_feed(&f.feed_url, &show.feed_url))
+            {
+                found.push(show);
+            }
+        }
+        let result = Search {
+            shows: found,
+            episodes: episodes.unwrap_or_else(|e| {
+                tracing::warn!("Podcast Index: {e:#}");
+                Vec::new()
+            }),
+        };
+        self.searches
+            .lock()
+            .unwrap()
+            .insert(key, (Instant::now(), result.clone()));
+        Ok(result)
+    }
+
+    /// The iTunes directory: shows with their feed, and those listed without it (its id).
+    async fn itunes(
+        &self,
+        query: &str,
+        country: Option<&str>,
+    ) -> Result<(Vec<Found>, Vec<(i64, Found)>)> {
         let mut url = reqwest::Url::parse(&self.directory_url)?;
         url.query_pairs_mut()
             .append_pair("media", "podcast")
             .append_pair("entity", "podcast")
             .append_pair("limit", &SEARCH_RESULTS.to_string())
             .append_pair("term", query);
-        if let Some(c) = &country {
+        if let Some(c) = country {
             url.query_pairs_mut().append_pair("country", c);
         }
         let body: serde_json::Value = self
@@ -189,27 +295,93 @@ impl Podcasts {
                 .filter(|s| !s.is_empty())
                 .map(str::to_owned)
         };
-        let found: Vec<Found> = body["results"]
+        let (mut found, mut missing) = (Vec::new(), Vec::new());
+        for r in body["results"]
             .as_array()
             .map(Vec::as_slice)
             .unwrap_or_default()
-            .iter()
-            .filter_map(|r| {
-                Some(Found {
-                    feed_url: text(r, "feedUrl")?,
-                    title: text(r, "collectionName")?,
-                    author: text(r, "artistName"),
-                    image_url: text(r, "artworkUrl600").or_else(|| text(r, "artworkUrl100")),
-                    genre: text(r, "primaryGenreName"),
-                    episode_count: r["trackCount"].as_i64(),
-                })
+        {
+            let Some(title) = text(r, "collectionName") else {
+                continue;
+            };
+            let show = Found {
+                feed_url: text(r, "feedUrl").unwrap_or_default(),
+                title,
+                author: text(r, "artistName"),
+                image_url: text(r, "artworkUrl600").or_else(|| text(r, "artworkUrl100")),
+                genre: text(r, "primaryGenreName"),
+                episode_count: r["trackCount"].as_i64(),
+            };
+            match (show.feed_url.is_empty(), r["collectionId"].as_i64()) {
+                (false, _) => found.push(show),
+                (true, Some(id)) => missing.push((id, show)),
+                (true, None) => {}
+            }
+        }
+        Ok((found, missing))
+    }
+
+    /// Whether Podcast Index is set up (key from the console or the environment).
+    pub fn has_index(&self) -> bool {
+        self.index.read().unwrap().is_some()
+    }
+
+    /// At start: the key last set from the console (over the environment).
+    pub async fn load_index(&self) {
+        let saved: Option<String> = self
+            .db
+            .call(|c| {
+                Ok(c.query_row(
+                    "SELECT value FROM property WHERE key = ?1",
+                    [INDEX_PROPERTY],
+                    |r| r.get(0),
+                )
+                .optional()?)
             })
-            .collect();
-        self.searches
-            .lock()
-            .unwrap()
-            .insert(key, (Instant::now(), found.clone()));
-        Ok(found)
+            .await
+            .ok()
+            .flatten();
+        if let Some((key, secret)) = saved.as_deref().and_then(|v| v.split_once('\u{1f}')) {
+            *self.index.write().unwrap() = Some(index::Key {
+                key: key.to_owned(),
+                secret: secret.to_owned(),
+            });
+        }
+    }
+
+    /// Sets the Podcast Index key after a test request; empty values remove it.
+    pub async fn set_index(&self, key: &str, secret: &str) -> Result<()> {
+        let (key, secret) = (key.trim(), secret.trim());
+        if key.is_empty() || secret.is_empty() {
+            self.db
+                .call(|c| {
+                    Ok(
+                        c.execute("DELETE FROM property WHERE key = ?1", [INDEX_PROPERTY])
+                            .map(|_| ())?,
+                    )
+                })
+                .await?;
+            *self.index.write().unwrap() = None;
+            return Ok(());
+        }
+        let candidate = index::Key {
+            key: key.to_owned(),
+            secret: secret.to_owned(),
+        };
+        index::shows(&self.http, &candidate, "music", 1).await?;
+        let value = format!("{key}\u{1f}{secret}");
+        self.db
+            .call(move |c| {
+                c.execute(
+                    "INSERT INTO property(key, value) VALUES (?1, ?2) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                    params![INDEX_PROPERTY, value],
+                )?;
+                Ok(())
+            })
+            .await?;
+        *self.index.write().unwrap() = Some(candidate);
+        self.searches.lock().unwrap().clear();
+        Ok(())
     }
 
     /// The show at `feed_url`, read now when unknown or last read over an hour ago (someone
@@ -591,7 +763,8 @@ mod tests {
         let found = podcasts
             .search("Michael Jackson", Some("fr"))
             .await
-            .unwrap();
+            .unwrap()
+            .shows;
         assert!(!found.is_empty(), "the directory answers");
         let started = Instant::now();
         let id = podcasts.subscribe("u1", &found[0].feed_url).await.unwrap();

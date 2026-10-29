@@ -296,7 +296,7 @@ pub async fn search(ctx: &Ctx) -> Reply {
         .await
         .map_err(|e| ApiError::new(Code::Generic, format!("Podcast directory unavailable: {e}")))?;
     let user = ctx.user.id.clone();
-    let urls: Vec<String> = found.iter().map(|f| f.feed_url.clone()).collect();
+    let urls: Vec<String> = found.shows.iter().map(|f| f.feed_url.clone()).collect();
     let followed: Vec<bool> = ctx
         .state
         .db
@@ -312,6 +312,7 @@ pub async fn search(ctx: &Ctx) -> Reply {
         })
         .await?;
     let shows: Vec<Value> = found
+        .shows
         .into_iter()
         .zip(followed)
         .map(|(f, followed)| {
@@ -321,7 +322,38 @@ pub async fn search(ctx: &Ctx) -> Reply {
             v
         })
         .collect();
-    Ok(one("searchPodcasts", json!({ "podcast": shows })))
+    // Episodes where the person searched speaks (Podcast Index): opened through their show.
+    let episodes: Vec<Value> = found
+        .episodes
+        .into_iter()
+        .map(|e| {
+            let show = crate::ids::podcast_id(&e.feed_url);
+            let mut v = json!({
+                "title": e.title,
+                "showTitle": e.show_title,
+                "showId": show,
+                "feedUrl": e.feed_url,
+            });
+            // Its id in the show (same `guid` as in the feed): the client plays it once opened.
+            if let Some(g) = &e.guid {
+                v["id"] = json!(crate::ids::episode_id(&show, g));
+            }
+            if let Some(i) = e.image_url {
+                v["imageUrl"] = json!(i);
+            }
+            if let Some(t) = e.published_at {
+                v["publishDate"] = json!(model::iso(t));
+            }
+            if let Some(d) = e.duration_s {
+                v["duration"] = json!(d);
+            }
+            v
+        })
+        .collect();
+    Ok(one(
+        "searchPodcasts",
+        json!({ "podcast": shows, "episode": episodes }),
+    ))
 }
 
 /// Listened to the end: past 95 %, or less than a minute left.
