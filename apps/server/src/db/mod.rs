@@ -96,11 +96,14 @@ impl Db {
     }
 
     fn setup(mut conn: Connection) -> Result<Self> {
+        // Temporary tables and sorts in memory: the container's file system is read-only
+        // (`read_only: true`), SQLite would find nowhere to write them.
         conn.execute_batch(
             "PRAGMA journal_mode = WAL;
              PRAGMA synchronous = NORMAL;
              PRAGMA foreign_keys = ON;
-             PRAGMA busy_timeout = 5000;",
+             PRAGMA busy_timeout = 5000;
+             PRAGMA temp_store = MEMORY;",
         )?;
         // For migration 0008 (short ids, ADR-026): the same conversion as the server's.
         conn.create_scalar_function(
