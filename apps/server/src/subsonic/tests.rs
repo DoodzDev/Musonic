@@ -244,7 +244,7 @@ async fn token_auth_can_be_turned_off() {
 #[tokio::test]
 async fn unknown_endpoints_fail_politely() {
     let (app, _) = setup().await;
-    let r = get(&app, "/rest/getPodcasts?u=Doodz&p=correct%20horse&f=json").await;
+    let r = get(&app, "/rest/getVideos?u=Doodz&p=correct%20horse&f=json").await;
     assert_eq!(r["status"], "failed");
     assert_eq!(r["error"]["code"], 0);
     let r = get(&app, "/rest/ping?f=json").await;
@@ -366,4 +366,101 @@ async fn ids_kept_from_before_short_ids_still_work() {
         .unwrap()
         .clone();
     assert!(musonic["versions"].as_array().unwrap().contains(&3.into()));
+    assert!(musonic["versions"].as_array().unwrap().contains(&4.into()));
+}
+
+#[tokio::test]
+async fn podcasts_followed_by_an_account() {
+    let (app, st) = setup().await;
+    let doodz = st
+        .users
+        .list()
+        .await
+        .unwrap()
+        .into_iter()
+        .find(|u| u.username == "Doodz")
+        .unwrap()
+        .id;
+    let feed = "https://example.org/rock.xml";
+    let show = crate::podcasts::feed::Show {
+        title: "Rock Stories".into(),
+        image_url: Some("https://example.org/cover.jpg".into()),
+        episodes: vec![
+            crate::podcasts::feed::Item {
+                guid: "1".into(),
+                title: "Older".into(),
+                published_at: Some(1_000),
+                audio_url: "https://cdn.example.org/1.mp3".into(),
+                ..Default::default()
+            },
+            crate::podcasts::feed::Item {
+                guid: "2".into(),
+                title: "Newer".into(),
+                published_at: Some(2_000),
+                duration_s: Some(95),
+                audio_url: "https://cdn.example.org/2.mp3".into(),
+                ..Default::default()
+            },
+        ],
+        ..Default::default()
+    };
+    let id = crate::ids::podcast_id(feed);
+    let pid = id.clone();
+    st.db
+        .call(move |c| {
+            crate::podcasts::store(c, &pid, feed, &show, None, None)?;
+            c.execute(
+                "INSERT INTO podcast_subscription(user_id, podcast_id) VALUES (?1, ?2)",
+                [&doodz, &pid],
+            )?;
+            Ok(())
+        })
+        .await
+        .unwrap();
+    let doodz_auth = "u=Doodz&p=correct%20horse&v=1.16.1&c=Musonic&f=json";
+    let guest_auth = "u=guest&p=battery%20staple&v=1.16.1&c=Musonic&f=json";
+    let r = get(&app, &format!("/rest/getPodcasts.view?{doodz_auth}")).await;
+    let channel = &r["podcasts"]["channel"][0];
+    assert_eq!(channel["title"], "Rock Stories");
+    assert_eq!(channel["coverArt"], id.as_str());
+    assert_eq!(channel["episode"][0]["title"], "Newer", "newest first");
+    assert_eq!(channel["episode"][0]["status"], "completed", "playable");
+    assert_eq!(channel["episode"][0]["duration"], 95);
+    let episode = channel["episode"][0]["id"].as_str().unwrap().to_owned();
+    assert!(episode.starts_with("pe-"));
+    let r = get(
+        &app,
+        &format!("/rest/getNewestPodcasts.view?count=1&{doodz_auth}"),
+    )
+    .await;
+    assert_eq!(r["newestPodcasts"]["episode"][0]["id"], episode.as_str());
+    let r = get(
+        &app,
+        &format!("/rest/getPodcastEpisode.view?id={episode}&{doodz_auth}"),
+    )
+    .await;
+    assert_eq!(r["podcastEpisode"]["channelId"], id.as_str());
+    // Another account follows nothing.
+    let r = get(&app, &format!("/rest/getPodcasts.view?{guest_auth}")).await;
+    assert!(r["podcasts"]["channel"].as_array().unwrap().is_empty());
+    // A feed on the server's own network is refused.
+    let r = get(
+        &app,
+        &format!("/rest/createPodcastChannel.view?url=http://127.0.0.1:4533/feed&{doodz_auth}"),
+    )
+    .await;
+    assert_eq!(r["status"], "failed");
+    // Unfollowed by its only listener: the show goes.
+    let r = get(
+        &app,
+        &format!("/rest/deletePodcastChannel.view?id={id}&{doodz_auth}"),
+    )
+    .await;
+    assert_eq!(r["status"], "ok");
+    let left: i64 = st
+        .db
+        .call(|c| Ok(c.query_row("SELECT count(*) FROM episode", [], |r| r.get(0))?))
+        .await
+        .unwrap();
+    assert_eq!(left, 0);
 }

@@ -18,6 +18,7 @@ pub mod metrics;
 pub mod model;
 pub mod online;
 pub mod playlist_import;
+pub mod podcasts;
 pub mod providers;
 pub mod remote;
 pub mod server;
@@ -258,6 +259,15 @@ pub async fn run(mut config: Config, mut ext: Extensions) -> Result<()> {
         });
     }
     playlist_import::PlaylistImports::start(state.clone());
+    // Followed podcasts: their feeds read every hour (an unchanged feed answers « 304 »).
+    let podcasts = state.podcasts.clone();
+    tokio::spawn(async move {
+        let mut every = tokio::time::interval(Duration::from_secs(3600));
+        loop {
+            every.tick().await;
+            podcasts.refresh_all().await;
+        }
+    });
     let sessions = state.sessions.clone();
     tokio::spawn(async move {
         let mut every = tokio::time::interval(Duration::from_secs(300));

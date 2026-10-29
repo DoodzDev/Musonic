@@ -126,6 +126,23 @@ pub fn track_pid(
     }
 }
 
+/// A podcast show: derived from its feed address, so the same feed is one show for everyone.
+pub fn podcast_id(feed_url: &str) -> String {
+    format!("{PODCAST_PREFIX}{}", derived("podcast", feed_url.trim()))
+}
+
+/// An episode: derived from its show and its `guid` (stable across reads of the feed).
+pub fn episode_id(podcast_id: &str, guid: &str) -> String {
+    format!(
+        "{EPISODE_PREFIX}{}",
+        derived("episode", &format!("{podcast_id}\u{1f}{guid}"))
+    )
+}
+
+/// Prefixes of podcast ids: `stream`, `getCoverArt`… tell them from library ids at a glance.
+pub const PODCAST_PREFIX: &str = "pc-";
+pub const EPISODE_PREFIX: &str = "pe-";
+
 pub fn folder_id(library_id: i64, path: &str) -> String {
     derived("folder", &format!("{library_id}\u{1f}{path}"))
 }

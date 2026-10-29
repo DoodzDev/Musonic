@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Podcasts** (first part, ADR-023). Shows are read from their RSS feed (iTunes and
+  Podcasting 2.0 tags: duration, chapters, transcripts) and found in the iTunes directory
+  (`searchPodcasts?query=&country=`, kept a day, no key needed). The standard Subsonic routes
+  work for every client: `getPodcasts`, `getNewestPodcasts`, `getPodcastEpisode`,
+  `createPodcastChannel`, `deletePodcastChannel`, `refreshPodcasts`. Episodes play through
+  `stream` (relayed from the host, seeking included: the host never sees the listener) and
+  their pictures through `getCoverArt`. Each account follows its own shows and keeps its place
+  in each episode (`savePodcastPosition`, listened to the end past 95 %). Followed feeds are
+  read every hour; an unchanged feed costs one short answer. `musonicServer` extension
+  version 4.
+- Feeds, audio and pictures of podcasts are only fetched from public addresses: a feed cannot
+  make the server read its own network.
+
 ## [1.0.3] - 2026-10-29
 
 ### Security

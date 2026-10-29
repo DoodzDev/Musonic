@@ -84,7 +84,7 @@ fn parse_range(value: &str, size: u64) -> Option<(u64, u64)> {
 }
 
 /// A file with HTTP range support.
-async fn send_file(
+pub(super) async fn send_file(
     ctx: &Ctx,
     path: &Path,
     content_type: &str,
@@ -346,6 +346,9 @@ fn ffmpeg_bin() -> String {
 
 pub async fn stream(ctx: &Ctx, download: bool) -> Result<Response, ApiError> {
     let id = ctx.params.require("id")?.to_owned();
+    if id.starts_with(crate::ids::EPISODE_PREFIX) {
+        return super::podcasts::stream(ctx, &id).await;
+    }
     if download && !ctx.limits().await.can_download {
         return Err(ApiError::forbidden());
     }
@@ -519,6 +522,8 @@ enum Cover {
     },
     /// An online picture (albums and artists known only online).
     Remote(String),
+    /// A podcast's picture, on its host (ADR-023).
+    Podcast(String),
 }
 
 /// Where a cover id's picture is: a playlist (`pl-…`), an album, a track (its album's cover,
@@ -529,6 +534,21 @@ async fn cover_source(state: &AppState, id: &str) -> Result<Option<Cover>, ApiEr
     Ok(state
         .db
         .call(move |c| {
+            // A podcast show or episode: its picture on the host (an episode's own, else its show's).
+            if id.starts_with(crate::ids::PODCAST_PREFIX) || id.starts_with(crate::ids::EPISODE_PREFIX) {
+                let url: Option<String> = c
+                    .query_row(
+                        "SELECT image_url FROM podcast WHERE id = ?1
+                         UNION ALL
+                         SELECT coalesce(e.image_url, p.image_url) FROM episode e JOIN podcast p ON p.id = e.podcast_id
+                          WHERE e.id = ?1",
+                        [&id],
+                        |r| r.get(0),
+                    )
+                    .optional()?
+                    .flatten();
+                return Ok(url.map(Cover::Podcast));
+            }
             if let Some(pl) = id.strip_prefix("pl-") {
                 let path: Option<String> = c
                     .query_row("SELECT cover_path FROM playlist WHERE id = ?1", [pl], |r| {
@@ -821,7 +841,9 @@ async fn cover_response(
                 path.display()
             )
         }
-        Cover::Remote(url) => format!("url\u{1f}{url}\u{1f}{size:?}\u{1f}{COVER_VERSION}"),
+        Cover::Remote(url) | Cover::Podcast(url) => {
+            format!("url\u{1f}{url}\u{1f}{size:?}\u{1f}{COVER_VERSION}")
+        }
     }));
     let cached = state
         .data_dir
@@ -832,7 +854,7 @@ async fn cover_response(
     // Where the original is, to make a cached picture smaller later.
     let local = match &source {
         Cover::Local { kind, path, .. } => Some((kind.clone(), path.clone())),
-        Cover::Remote(_) => None,
+        Cover::Remote(_) | Cover::Podcast(_) => None,
     };
     // None: already cached.
     let original = match source {
@@ -846,6 +868,7 @@ async fn cover_response(
             Some(dz) => dz.picture(&url).await,
             None => Err(anyhow::anyhow!("online catalog disabled")),
         }),
+        Cover::Podcast(url) => Some(state.podcasts.picture(&url).await),
     };
     let bytes = tokio::task::spawn_blocking(move || -> anyhow::Result<Vec<u8>> {
         let Some(original) = original else {

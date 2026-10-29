@@ -13,6 +13,7 @@ mod model;
 mod musonic;
 mod online;
 mod playlists;
+mod podcasts;
 mod queue;
 mod search;
 mod system;
@@ -532,6 +533,14 @@ async fn dispatch(ctx: &Ctx, name: &str) -> Reply {
         "updatePlaylist" => playlists::update_playlist(ctx).await,
         "deletePlaylist" => playlists::delete_playlist(ctx).await,
         "getLyricsBySongId" => media::lyrics_by_song_id(ctx).await,
+        "getPodcasts" => podcasts::get_podcasts(ctx).await,
+        "getNewestPodcasts" => podcasts::get_newest(ctx).await,
+        "getPodcastEpisode" => podcasts::get_episode(ctx).await,
+        "createPodcastChannel" => podcasts::create_channel(ctx).await,
+        "deletePodcastChannel" => podcasts::delete_channel(ctx).await,
+        "refreshPodcasts" => podcasts::refresh(ctx).await,
+        "searchPodcasts" => podcasts::search(ctx).await,
+        "savePodcastPosition" => podcasts::save_position(ctx).await,
         "getLyrics" => media::lyrics(ctx).await,
         "getInternetRadioStations" => Ok(one(
             "internetRadioStations",

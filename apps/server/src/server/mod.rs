@@ -81,11 +81,15 @@ pub struct AppState {
     /// Services playlists can be imported from (ADR-020).
     pub playlist_sources: Arc<Vec<Arc<dyn crate::playlist_import::PlaylistSource>>>,
     pub playlist_imports: crate::playlist_import::PlaylistImports,
+    /// Podcast shows, episodes and the directory (ADR-023).
+    pub podcasts: crate::podcasts::Podcasts,
 }
 
 impl AppState {
     pub fn new(db: Db, library: Option<LibraryService>, users: Users, data_dir: PathBuf) -> Self {
+        let podcasts = crate::podcasts::Podcasts::new(db.clone()).expect("HTTP client");
         Self {
+            podcasts,
             db,
             library,
             users,

@@ -39,6 +39,10 @@ pub const MIGRATIONS: &[(&str, &str)] = &[
         "0008_short_ids",
         include_str!("../../migrations/0008_short_ids.sql"),
     ),
+    (
+        "0009_podcasts",
+        include_str!("../../migrations/0009_podcasts.sql"),
+    ),
 ];
 
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
