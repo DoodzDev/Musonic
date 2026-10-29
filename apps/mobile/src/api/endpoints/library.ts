@@ -171,6 +171,9 @@ export async function getLyricsBySongId(
     }
   } catch { /* fall through */ }
 
+  // A podcast episode: its transcript (above) or nothing, never song lyrics (ADR-023).
+  if (songId.startsWith('pe-')) return null;
+
   // 2. Legacy Subsonic getLyrics (plain text fallback)
   if (artistName && trackTitle) {
     try {

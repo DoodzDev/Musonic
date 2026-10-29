@@ -7,7 +7,7 @@
  *   once the player is set up; a headless task only keeps JS timers running
  *   in the background while music plays.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import {useEffect, useRef, useState} from 'react';
@@ -66,6 +66,7 @@ const TrackPlayer = {
   pause: (): Promise<void> => Native.pause(),
   seekTo: (position: number): Promise<void> => Native.seekTo(position),
   setVolume: (volume: number): Promise<void> => Native.setVolume(volume),
+  setRate: (rate: number): Promise<void> => Native.setRate(rate),
   setRepeatMode: (mode: RepeatMode): Promise<void> => Native.setRepeatMode(mode),
   getActiveTrack: async (): Promise<Track | undefined> => (await Native.getActiveTrack()) ?? undefined,
   getActiveTrackIndex: async (): Promise<number | undefined> => (await Native.getActiveTrackIndex()) ?? undefined,

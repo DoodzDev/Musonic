@@ -15,6 +15,7 @@ import SearchHome from '../screens/Search/SearchHome';
 import SearchActive from '../screens/Search/SearchActive';
 import AlbumDetailScreen from '../screens/AlbumDetail';
 import ArtistDetailScreen from '../screens/ArtistDetail';
+import PodcastDetailScreen from '../screens/PodcastDetail';
 import MixDetailScreen from '../screens/MixDetail';
 
 const Stack = createNativeStackNavigator();
@@ -26,6 +27,7 @@ export default function SearchStack() {
       <Stack.Screen name="SearchActive" component={SearchActive} options={{animation: 'fade'}} />
       <Stack.Screen name="AlbumDetail" component={AlbumDetailScreen} />
       <Stack.Screen name="ArtistDetail" component={ArtistDetailScreen} />
+      <Stack.Screen name="PodcastDetail" component={PodcastDetailScreen} />
       <Stack.Screen name="MixDetail" component={MixDetailScreen} />
     </Stack.Navigator>
   );

@@ -13,6 +13,8 @@ export type LibraryStackParams = {
   PlaylistDetail: {playlistId: string; autoEdit?: boolean};
   AlbumDetail: {albumId: string};
   ArtistDetail: {artistId?: string; artistName?: string};
+  /** A podcast show: by id, or by its feed when found in a search (ADR-023). */
+  PodcastDetail: {showId: string; feedUrl?: string; episodeId?: string};
 };
 
 export type SearchStackParams = {
@@ -20,4 +22,5 @@ export type SearchStackParams = {
   SearchActive: undefined;
   ArtistDetail: {artistId?: string; artistName?: string};
   AlbumDetail: {albumId: string};
+  PodcastDetail: {showId: string; feedUrl?: string; episodeId?: string};
 };

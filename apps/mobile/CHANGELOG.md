@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Podcasts** (needs Musonic Server 1.1.0) — search shows and the episodes where a person speaks (in All and in a Podcasts tab), a show page with Follow, a Podcasts tab in the Library.
+- **Episodes resume where you stopped**, on any device; speed (0.75× to 2×) and −15 s / +30 s jumps in the player; transcripts shown as lyrics.
+
+### Changed
+- The search loses its « My library » filter: the Library has its own search.
+
 ## [2.2.0] - 2026-10-29
 
 **Android Auto, Musonic's own screens.**

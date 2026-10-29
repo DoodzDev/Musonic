@@ -7,10 +7,10 @@
  *   a grid. Pinned items stay on top of their tab. Long press opens the
  *   options of an item. Offline, only what was downloaded is listed.
  * @author DoodzProg
- * @version 2.0.0
+ * @version 2.1.0
  * @license CC-BY-NC-4.0
  */
-import React, {useCallback, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -60,8 +60,9 @@ import {useDockInset} from '../../navigation/dockLayout';
 import {colors, radii, spacing} from '../../theme';
 import {useT, getT} from '../../i18n';
 import {filterEntries, sortEntries, type LibraryEntry, type LibraryTab} from './libraryModel';
+import {getFollowedPodcasts, type PodcastShow} from '../../api/endpoints/podcasts';
 
-const TABS: LibraryTab[] = ['playlists', 'albums', 'artists', 'downloads'];
+const TABS: LibraryTab[] = ['playlists', 'albums', 'artists', 'podcasts', 'downloads'];
 const SORTS: LibrarySortMode[] = ['recent', 'added', 'alpha'];
 const GUTTER = spacing.gutter;
 const GRID_GAP = 14;
@@ -89,6 +90,12 @@ export default function LibraryScreen() {
   const togglePinned = useSettingsStore(s => s.togglePinnedLibraryId);
   const pinned = useMemo(() => new Set(pinnedIds), [pinnedIds]);
   const isOfflineMode = useSettingsStore(s => s.isOfflineMode);
+  // Shows the account follows, loaded when their tab opens (Musonic Server, ADR-023).
+  const [podcasts, setPodcasts] = useState<PodcastShow[] | null>(null);
+  useEffect(() => {
+    if (tab !== 'podcasts' || isOfflineMode) return;
+    getFollowedPodcasts().then(setPodcasts).catch(() => setPodcasts([]));
+  }, [tab, isOfflineMode]);
   const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
   const lastPlayedPlaylists = useSettingsStore(s => s.lastPlayedPlaylists);
   const plays = useRecentPlaysStore(s => s.plays);
@@ -145,10 +152,12 @@ export default function LibraryScreen() {
         return isOfflineMode ? [] : lib.albums.map(a => ({kind: 'album', id: a.id, name: a.name, artist: a.artist, songCount: a.songCount, coverId: a.coverArt}));
       case 'artists':
         return isOfflineMode ? [] : lib.artists.map(a => ({kind: 'artist', id: a.id, name: a.name, coverId: a.coverArt}));
+      case 'podcasts':
+        return isOfflineMode ? [] : (podcasts ?? []).map(p => ({kind: 'podcast', id: p.id, name: p.title, artist: p.author, coverId: p.coverArt}));
       case 'downloads':
         return withDownloads;
     }
-  }, [tab, isOfflineMode, playlistEntries, lib.albums, lib.artists]);
+  }, [tab, isOfflineMode, playlistEntries, lib.albums, lib.artists, podcasts]);
 
   // Search (magnifier in the header): filters the current tab.
   const [searchOpen, setSearchOpen] = useState(false);
@@ -161,6 +170,7 @@ export default function LibraryScreen() {
   );
 
   const subtitleOf = useCallback((e: LibraryEntry): string => {
+    if (e.kind === 'podcast') return e.artist ?? t.library.tabs.podcasts;
     if (e.kind === 'album') return t.home.kindLine(t.home.typeAlbum, e.artist);
     if (e.kind === 'artist') return t.home.typeArtist;
     const count = tab === 'downloads' || isOfflineMode
@@ -176,6 +186,7 @@ export default function LibraryScreen() {
   const open = useCallback((e: LibraryEntry) => {
     if (e.kind === 'playlist') navigation.navigate('PlaylistDetail', {playlistId: e.id});
     else if (e.kind === 'album') navigation.navigate('AlbumDetail', {albumId: e.id});
+    else if (e.kind === 'podcast') navigation.navigate('PodcastDetail', {showId: e.id});
     else navigation.navigate('ArtistDetail', {artistId: e.id, artistName: e.name});
   }, [navigation]);
 
@@ -190,7 +201,7 @@ export default function LibraryScreen() {
 
   const onLongPress = useCallback((e: LibraryEntry) => {
     if (e.kind === 'playlist') setPlaylistOptions(e);
-    else setItemOptions(e);
+    else if (e.kind !== 'podcast') setItemOptions(e);
   }, []);
 
   const [infoVisible, setInfoVisible] = useState(false);
@@ -314,7 +325,7 @@ export default function LibraryScreen() {
   const renderItem = useCallback(({item}: {item: LibraryEntry}) => (
     grid ? (
       <LibraryGridCard
-        kind={item.kind}
+        kind={item.kind === 'podcast' ? 'album' : item.kind}
         name={item.name}
         subtitle={subtitleOf(item)}
         coverId={item.coverId}
@@ -327,7 +338,7 @@ export default function LibraryScreen() {
       />
     ) : (
       <CollectionRow
-        kind={item.kind}
+        kind={item.kind === 'podcast' ? 'album' : item.kind}
         name={item.name}
         subtitle={subtitleOf(item)}
         coverId={item.coverId}

@@ -11,13 +11,14 @@
 import type {SubsonicAlbum, SubsonicArtist, SubsonicSong} from '../../api/types';
 import type {LibrarySortMode} from '../../store/settingsStore';
 
-export type LibraryTab = 'playlists' | 'albums' | 'artists' | 'downloads';
+export type LibraryTab = 'playlists' | 'albums' | 'artists' | 'podcasts' | 'downloads';
 
 export type LibraryEntry = {
-  kind: 'playlist' | 'album' | 'artist';
+  /** `podcast`: a show the account follows (ADR-023). */
+  kind: 'playlist' | 'album' | 'artist' | 'podcast';
   id: string;
   name: string;
-  /** Album artist. */
+  /** Album artist; a show's author. */
   artist?: string;
   songCount?: number;
   coverId?: string;

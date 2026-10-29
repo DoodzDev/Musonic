@@ -23,6 +23,8 @@ import {playbackEngine} from './playback/engine';
 import {ListenTracker} from '@musonic/core/listen';
 import {onSleepTimerTrackChanged} from './sleepTimer';
 import {playAutoMediaId, playAutoSearch, startAndroidAuto} from './auto/androidAuto';
+import {isEpisode} from '../api/endpoints/podcasts';
+import {startPodcastTracking} from './podcastPlayback';
 
 let wasPlayingBeforeDuck = false;
 let fadeInTimer: ReturnType<typeof setInterval> | null = null;
@@ -51,6 +53,8 @@ async function saveCurrentPosition() {
 }
 
 function resolveScrobbleId(trackId: string): string | undefined {
+  // A podcast episode is not a play of the library (its place is saved apart, ADR-023).
+  if (isEpisode(trackId)) return undefined;
   if (!trackId.startsWith('ext-')) return trackId;
   // Only scrobble Deezer tracks that were already imported into Navidrome
   // via the stream+poll flow (like/playlist-add) — never force an import
@@ -209,6 +213,7 @@ export async function PlaybackService() {
     playAutoSearch(String(query ?? '')).catch(() => console.warn('[auto] search failed'));
   });
   startAndroidAuto();
+  startPodcastTracking();
   TrackPlayer.addEventListener(Event.PlaybackQueueEnded, () => {
     // Last track in queue finished — no further PlaybackActiveTrackChanged
     // will fire to trigger the submission scrobble, so flush it here.

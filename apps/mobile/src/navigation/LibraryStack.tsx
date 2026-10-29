@@ -15,6 +15,7 @@ import AllSongsScreen from '../screens/AllSongs';
 import PlaylistDetailScreen from '../screens/PlaylistDetail';
 import AlbumDetailScreen from '../screens/AlbumDetail';
 import ArtistDetailScreen from '../screens/ArtistDetail';
+import PodcastDetailScreen from '../screens/PodcastDetail';
 import type {LibraryStackParams} from './types';
 
 const Stack = createNativeStackNavigator<LibraryStackParams>();
@@ -30,6 +31,7 @@ export default function LibraryStack() {
       <Stack.Screen name="PlaylistDetail" component={PlaylistDetailScreen} />
       <Stack.Screen name="AlbumDetail" component={AlbumDetailScreen} />
       <Stack.Screen name="ArtistDetail" component={ArtistDetailScreen} />
+      <Stack.Screen name="PodcastDetail" component={PodcastDetailScreen} />
     </Stack.Navigator>
   );
 }

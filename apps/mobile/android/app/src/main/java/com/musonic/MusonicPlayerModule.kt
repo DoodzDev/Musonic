@@ -127,6 +127,13 @@ class MusonicPlayerModule(context: ReactApplicationContext) : ReactContextBaseJa
     promise.resolve(null)
   }
 
+  // Podcast speed (ADR-023); the pitch stays the voice's.
+  @ReactMethod
+  fun setRate(rate: Double, promise: Promise) = withPlayer(promise) { player ->
+    player.setPlaybackSpeed(rate.toFloat().coerceIn(0.5f, 3f))
+    promise.resolve(null)
+  }
+
   /** track-player's values (off 0, track 1, queue 2) are ExoPlayer's. */
   @ReactMethod
   fun setRepeatMode(mode: Double, promise: Promise) = withPlayer(promise) { player ->

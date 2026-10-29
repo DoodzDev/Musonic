@@ -9,7 +9,8 @@
  */
 import type {SubsonicAlbum, SubsonicArtist, SubsonicSong} from '../../api/types';
 
-export type SearchScope = 'all' | 'library' | 'online';
+/** `podcasts`: the podcast directories instead of the music (ADR-023). */
+export type SearchScope = 'all' | 'library' | 'online' | 'podcasts';
 
 export type SearchResults = {
   artists: SubsonicArtist[];
@@ -29,7 +30,7 @@ export function isOnline(id: string | number): boolean {
 
 /** Only the results of the chosen scope. */
 export function filterScope(results: SearchResults, scope: SearchScope): SearchResults {
-  if (scope === 'all') return results;
+  if (scope === 'all' || scope === 'podcasts') return results;
   const keep = (id: string | number) => (scope === 'online' ? isOnline(id) : !isOnline(id));
   return {
     artists: results.artists.filter(a => keep(a.id)),

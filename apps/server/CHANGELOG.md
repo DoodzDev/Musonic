@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   version 4.
 - Feeds, audio and pictures of podcasts are only fetched from public addresses: a feed cannot
   make the server read its own network.
+- Podcasts: **Podcast Index** (free key set in the console, Imports page): shows the iTunes
+  directory misses or lists without their feed, and episodes by person (host or guest) in
+  `searchPodcasts`. `getPodcastShow?url=` opens a show before following it. Transcripts
+  (`podcast:transcript`, VTT or SRT) are served as synced lyrics by `getLyricsBySongId`.
 
 ## [1.0.3] - 2026-10-29
 

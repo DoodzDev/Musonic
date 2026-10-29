@@ -9,7 +9,7 @@
  *   counter to prevent race conditions. Tapped results play alone, then
  *   autoplay (playback engine, ADR-009 A8).
  * @author DoodzProg
- * @version 2.1.1
+ * @version 2.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -18,6 +18,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {State, useActiveTrack, usePlaybackState} from '../../services/player';
 import Text from '../../components/ui/Text';
+import PressableScale from '../../components/ui/PressableScale';
 import SearchField from '../../components/ui/SearchField';
 import SegmentedControl from '../../components/ui/SegmentedControl';
 import TrackRow from '../../components/ui/TrackRow';
@@ -27,6 +28,8 @@ import Cover from '../../components/ui/Cover';
 import Badge from '../../components/ui/Badge';
 import EmptyState from '../../components/ui/EmptyState';
 import {SkeletonList} from '../../components/ui/Skeleton';
+import PodcastResults from './PodcastResults';
+import {searchPodcasts, type PodcastFound, type PodcastFoundEpisode} from '../../api/endpoints/podcasts';
 import SectionHeader from '../../components/ui/SectionHeader';
 import {AlbumCard, ArtistBubble, HomeShelf} from '../../components/home/HomeCards';
 import SongOptionsSheet from '../../components/SongOptionsSheet';
@@ -49,6 +52,10 @@ import type {SubsonicSong} from '../../api/types';
 import {bestResult, filterScope, isOnline, withoutBest, type BestResult, type SearchResults, type SearchScope} from './searchModel';
 
 const EMPTY: SearchResults = {artists: [], albums: [], songs: []};
+const NO_PODS = {shows: [] as PodcastFound[], episodes: [] as PodcastFoundEpisode[]};
+/** Podcasts shown with the music; the Podcasts tab has them all. */
+const PODS_SHOWN = 10;
+const EPISODES_SHOWN = 3;
 const BEST_IMAGE = 88;
 
 export default function SearchActive() {
@@ -70,6 +77,7 @@ export default function SearchActive() {
 
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState<SearchScope>('all');
+  const [pods, setPods] = useState<{shows: PodcastFound[]; episodes: PodcastFoundEpisode[]}>(NO_PODS);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResults>(EMPTY);
   const [artistImages, setArtistImages] = useState<Map<string, string>>(new Map());
@@ -94,6 +102,7 @@ export default function SearchActive() {
     genRef.current += 1;
     const myGen = genRef.current;
     if (!query.trim()) {
+      setPods(NO_PODS);
       setResults(EMPTY);
       setArtistImages(new Map());
       setLoading(false);
@@ -103,6 +112,10 @@ export default function SearchActive() {
     setFailed(false);
     const debounce = setTimeout(async () => {
       try {
+        // Podcasts beside the music (the « All » results); their failure hides only them.
+        searchPodcasts(query.trim())
+          .then(found => genRef.current === myGen && setPods(found))
+          .catch(() => genRef.current === myGen && setPods(NO_PODS));
         const data = await search(query);
         if (genRef.current !== myGen) return;
         setResults({artists: data.artists, albums: data.albums, songs: data.songs});
@@ -256,12 +269,42 @@ export default function SearchActive() {
           />
         )}
       />
+      {scope === 'all' ? (
+        <HomeShelf
+          title={t.podcasts.shows}
+          data={pods.shows.slice(0, PODS_SHOWN)}
+          keyOf={s => `pc-${s.id}`}
+          renderItem={s => (
+            <AlbumCard
+              name={s.title}
+              subtitle={s.author}
+              coverUrl={s.imageUrl}
+              onPress={() => navigation.push('PodcastDetail', {showId: s.id, feedUrl: s.feedUrl})}
+            />
+          )}
+        />
+      ) : null}
+      {scope === 'all' && pods.episodes.length > 0 ? (
+        <View>
+          <View style={styles.sectionTitle}><SectionHeader title={t.podcasts.foundEpisodes} /></View>
+          {pods.episodes.slice(0, EPISODES_SHOWN).map(e => (
+            <PressableScale
+              key={`${e.feedUrl}|${e.title}`}
+              style={styles.episode}
+              onPress={() => navigation.push('PodcastDetail', {showId: e.showId, feedUrl: e.feedUrl, episodeId: e.id})}
+              accessibilityLabel={e.title}>
+              <Text variant="body" numberOfLines={2}>{e.title}</Text>
+              <Text variant="footnote" color="textSecondary" numberOfLines={1}>{e.showTitle}</Text>
+            </PressableScale>
+          ))}
+        </View>
+      ) : null}
       {rest.songs.length > 0 ? <View style={styles.sectionTitle}><SectionHeader title={t.search.sections.songs} /></View> : null}
     </View>
   );
 
   const typing = query.trim().length > 0;
-  const nothing = !loading && typing && !best;
+  const nothing = !loading && typing && !best && !(scope === 'all' && (pods.shows.length || pods.episodes.length));
 
   const historyList = history.length > 0 ? (
     <View>
@@ -303,8 +346,8 @@ export default function SearchActive() {
           <SegmentedControl
             options={[
               {value: 'all', label: t.search.scope.all},
-              {value: 'library', label: t.search.scope.library},
               {value: 'online', label: t.search.scope.online},
+              {value: 'podcasts', label: t.search.scope.podcasts},
             ]}
             value={scope}
             onChange={setScope}
@@ -312,7 +355,9 @@ export default function SearchActive() {
         </View>
       ) : null}
 
-      {!typing ? (
+      {typing && scope === 'podcasts' ? (
+        <PodcastResults query={query} bottomInset={dockInset} />
+      ) : !typing ? (
         <FlatList
           data={[]}
           renderItem={null}
@@ -424,6 +469,7 @@ function HistoryRow({item, onPress}: {item: HistoryItem; onPress: () => void}) {
 }
 
 const styles = StyleSheet.create({
+  episode: {paddingHorizontal: spacing.gutter, paddingVertical: 10, gap: 2},
   root: {flex: 1, backgroundColor: colors.background},
   searchRow: {flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: spacing.gutter, paddingTop: spacing.s, paddingBottom: 12},
   searchField: {flex: 1},

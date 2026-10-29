@@ -17,7 +17,7 @@
  *   The heavy player body only mounts while the player is open; a light shell
  *   stays mounted to preload adjacent cover art.
  * @author DoodzProg
- * @version 2.4.0
+ * @version 2.5.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -73,6 +73,8 @@ import {DISMISS, SWIPE, SwipeSurface} from './ui/gestures';
 import PlayerBackground, {type Point} from './player/PlayerBackground';
 import PlayerProgress from './player/PlayerProgress';
 import PlayerControls from './player/PlayerControls';
+import {isEpisode} from '../api/endpoints/podcasts';
+import {cycleSpeed, podcastSpeed, skipBy} from '../services/podcastPlayback';
 import PlayerActionsRow from './player/PlayerActionsRow';
 import PlayerLyrics from './player/PlayerLyrics';
 import Badge from './ui/Badge';
@@ -160,6 +162,9 @@ function FullScreenPlayerContent() {
     : Math.min(winW - 48, winH * 0.4);
   // RNTP native hooks — react directly to native engine
   const currentTrack = useActiveTrack();
+  // A podcast episode (ADR-023): speed and short jumps instead of shuffle and repeat.
+  const episode = isEpisode(currentTrack?.id);
+  const [speed, setSpeed] = useState(podcastSpeed);
   const {state} = usePlaybackState();
   const isPlaying = state === State.Playing;
   const {position} = useForegroundProgress();
@@ -512,6 +517,12 @@ function FullScreenPlayerContent() {
       onPrev={skipPrev}
       onNext={skipNext}
       compact={isLandscape}
+      jumps={episode ? {
+        onBack: () => { skipBy(-15).catch(() => {}); },
+        onForward: () => { skipBy(30).catch(() => {}); },
+        backLabel: t.podcasts.back15,
+        forwardLabel: t.podcasts.forward30,
+      } : undefined}
     />
   );
 
@@ -526,6 +537,7 @@ function FullScreenPlayerContent() {
       repeatMode={repeatMode}
       onRepeat={cycleRepeat}
       onQueue={openQueue}
+      speed={episode ? {value: speed, label: t.podcasts.speed, onPress: () => { cycleSpeed().then(setSpeed).catch(() => {}); }} : undefined}
     />
   );
 
