@@ -1292,13 +1292,7 @@ async fn rescan(lib: &Lib) {
 }
 
 async fn health(lib: &Lib) -> Value {
-    let res = lib
-        .app
-        .clone()
-        .oneshot(Request::get("/health").body(Body::empty()).unwrap())
-        .await
-        .unwrap();
-    serde_json::from_slice(&res.into_body().collect().await.unwrap().to_bytes()).unwrap()
+    crate::server::health_details(&lib.st).await
 }
 
 #[tokio::test]

@@ -635,6 +635,38 @@ async fn the_dashboard_status_is_for_administrators() {
 }
 
 #[tokio::test]
+async fn the_health_detail_is_for_administrators() {
+    let (app, st, admin) = admin_app().await;
+    let (s, r) = call(&app, "GET", "/v1/admin/health", Some(&admin), None).await;
+    assert_eq!(s, StatusCode::OK, "{r}");
+    assert_eq!(r["schema"], crate::db::SCHEMA_VERSION);
+    assert!(r["providers"].is_array());
+    let (s, _) = call(&app, "GET", "/v1/admin/health", None, None).await;
+    assert_eq!(s, StatusCode::UNAUTHORIZED);
+    st.users
+        .create("Hugo", "his password", false)
+        .await
+        .unwrap();
+    let (_, hugo) = call(
+        &app,
+        "POST",
+        "/v1/auth/login",
+        None,
+        Some(json!({"username": "Hugo", "password": "his password"})),
+    )
+    .await;
+    let (s, _) = call(
+        &app,
+        "GET",
+        "/v1/admin/health",
+        hugo["token"].as_str(),
+        None,
+    )
+    .await;
+    assert_eq!(s, StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
 async fn the_measures_page_adds_up_hours() {
     let (app, st, admin) = admin_app().await;
     st.db

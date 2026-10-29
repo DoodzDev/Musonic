@@ -1,4 +1,5 @@
-//! HTTP server: `/health`, the Subsonic API (`/rest`) and the native API (`/v1`).
+//! HTTP server: `/health` (public liveness only), the Subsonic API (`/rest`) and the native
+//! API (`/v1`).
 //!
 //! CORS is open (any origin, no cookies): browsers clients such as Musonic Web call the server
 //! from another address, with credentials in parameters or an `Authorization` header.
@@ -241,7 +242,21 @@ async fn home() -> Html<&'static str> {
     ))
 }
 
-async fn health(State(state): State<AppState>) -> Json<Value> {
+/// Liveness check for anyone (Docker, uptime monitors): whether the server and its database
+/// answer, nothing more. The detail would tell anyone which providers and imports this server
+/// has, so it is for administrators: [`health_details`], at `GET /v1/admin/health`.
+async fn health(State(state): State<AppState>) -> (axum::http::StatusCode, Json<Value>) {
+    match state.db.version().await {
+        Ok(_) => (axum::http::StatusCode::OK, Json(json!({ "status": "ok" }))),
+        Err(_) => (
+            axum::http::StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({ "status": "degraded" })),
+        ),
+    }
+}
+
+/// The server's state in detail: version, schema, last scan, providers, alerts, imports.
+pub async fn health_details(state: &AppState) -> Value {
     let schema = state.db.version().await.ok();
     let imports = state
         .db
@@ -249,7 +264,7 @@ async fn health(State(state): State<AppState>) -> Json<Value> {
         .await
         .ok();
     let alerts = state.provider_health.alerts();
-    Json(json!({
+    json!({
         "status": if schema.is_none() { "degraded" } else if alerts.is_empty() { "ok" } else { "warning" },
         "version": env!("CARGO_PKG_VERSION"),
         "schema": schema,
@@ -257,7 +272,7 @@ async fn health(State(state): State<AppState>) -> Json<Value> {
         "providers": state.providers.iter().map(|p| p.id()).collect::<Vec<_>>(),
         "alerts": alerts,
         "imports": imports,
-    }))
+    })
 }
 
 #[cfg(test)]
@@ -313,12 +328,12 @@ pub mod tests {
         let (status, body) = get("/v1/nope").await;
         assert_eq!(status, 404);
         assert!(body.contains("error"), "the API keeps JSON errors");
-        assert!(get("/health").await.1.contains("schema"));
+        assert!(get("/health").await.1.contains("\"ok\""));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[tokio::test]
-    async fn health_reports_version_and_schema() {
+    async fn public_health_says_only_whether_the_server_answers() {
         let app = router(state());
         let res = app
             .oneshot(Request::get("/health").body(Body::empty()).unwrap())
@@ -327,7 +342,18 @@ pub mod tests {
         assert_eq!(res.status(), 200);
         let body: Value =
             serde_json::from_slice(&res.into_body().collect().await.unwrap().to_bytes()).unwrap();
+        assert_eq!(
+            body,
+            json!({ "status": "ok" }),
+            "no providers, imports or version"
+        );
+    }
+
+    #[tokio::test]
+    async fn health_details_report_version_and_schema() {
+        let body = health_details(&state()).await;
         assert_eq!(body["status"], "ok");
         assert_eq!(body["schema"], crate::db::SCHEMA_VERSION);
+        assert!(body["providers"].is_array());
     }
 }

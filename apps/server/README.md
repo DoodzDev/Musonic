@@ -51,7 +51,7 @@ rates on mobile data); without it, files are sent as they are. `MUSONIC_FFMPEG` 
 
 ```sh
 cargo run --release
-# then: curl http://127.0.0.1:4533/health
+# then: curl http://127.0.0.1:4533/health   (`{"status":"ok"}`; detail: GET /v1/admin/health)
 ```
 
 | Setting | Environment | Default |

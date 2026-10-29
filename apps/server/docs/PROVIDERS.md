@@ -24,7 +24,8 @@ pub trait AudioProvider: Send + Sync {
   - `Ok(None)`: the provider does not have this track; the server tries the next provider.
   - `Err(..)`: something failed (network, authentication…); the server logs it and moves on.
     Return `CredentialsExpired` when the provider's account or key no longer works: the server
-    shows an alert (`/health`: `"status": "warning"`, `alerts`) until it works again.
+    shows an alert (console, and `GET /v1/admin/health`: `"status": "warning"`, `alerts`) until it
+    works again.
 - **`imports`** (default `true`): whether its files may be imported into the library. A
   provider of previews or excerpts returns `false`.
 

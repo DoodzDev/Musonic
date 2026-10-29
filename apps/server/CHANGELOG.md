@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- `/health` now only answers `{"status":"ok"}` (or `"degraded"` with a 503 when the database
+  does not answer), for Docker and uptime monitors. Its detail (version, schema, last scan,
+  providers, alerts, imports) told anyone which providers a server had: it moves to
+  `GET /v1/admin/health`, for administrators.
+
 ## [1.0.2] - 2026-10-25
 
 ### Added

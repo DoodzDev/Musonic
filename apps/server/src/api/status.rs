@@ -280,6 +280,15 @@ pub async fn status(State(state): State<AppState>, auth: Auth) -> Reply {
     })))
 }
 
+/// `GET /v1/admin/health`: the detail behind the public `/health` (providers, alerts, imports,
+/// last scan, schema), for administrators only.
+pub async fn health(State(state): State<AppState>, auth: Auth) -> Reply {
+    if !auth.user.is_admin {
+        return Err(ApiError::forbidden());
+    }
+    Ok(Json(crate::server::health_details(&state).await))
+}
+
 fn now() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
