@@ -211,6 +211,10 @@ export const en: typeof fr = {
     languageHint: 'Shared with the Musonic website. The page reloads to apply it.',
     player: 'Playback',
     showRemaining: 'Show the time left',
+    crossfade: 'Crossfade',
+    crossfadeOff: 'Off',
+    crossfadeSeconds: (seconds: number) => `${seconds} s`,
+    crossfadeHint: 'The next track fades in over the end of the current one. Never when you skip a track yourself.',
   },
   connect: {
     button: 'Devices',

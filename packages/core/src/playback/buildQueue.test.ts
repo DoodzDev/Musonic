@@ -20,6 +20,7 @@ import {
   moveById,
   needsAutoplay,
   next,
+  peekNext,
   playNextTrack,
   previous,
   removeById,
@@ -247,6 +248,19 @@ describe('C. Navigation', () => {
     expect(r.state.current?.id).toBe('1');
     s = r.state;
     expect(ids(s.upcoming)).toEqual(['2', '3', '4', '5', '6', '7', '8', '9', '10']);
+  });
+
+  it('C8 peekNext names the entry Next will play, without moving (crossfade)', () => {
+    const s = playNextTrack(start(OFF), track('mine'));
+    expect(peekNext(s, OFF)).toBe(next(s, OFF, seeded()).state.current);
+    expect(s.current?.id).toBe('1');
+    const atEnd = start(OFF, '10');
+    expect(peekNext(atEnd, OFF)).toBeNull();
+    expect(peekNext(setAutoplay(atEnd, list('s1'), OFF), OFF)?.id).toBe('s1');
+    expect(peekNext(atEnd, {...OFF, repeat: 'all'})?.id).toBe('1');
+    // A shuffled round restarting is drawn at random: unknown in advance.
+    const shuffledAll: Modes = {...ON, repeat: 'all'};
+    expect(peekNext({...start(shuffledAll), upcoming: []}, shuffledAll)).toBeNull();
   });
 
   it('C7 repeat off at the end: autoplay if any, otherwise stop on the last track', () => {

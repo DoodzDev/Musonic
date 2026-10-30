@@ -1,19 +1,23 @@
 /**
  * @file SettingsDialog.tsx
- * @description Settings of the web client, opened from the profile menu.
- *   The language (English / French), shared with the website, and Musonic
- *   Connect on a Musonic Server.
+ * @description Settings of the web client, opened from the profile menu:
+ *   the language (English / French), shared with the website; playback (time
+ *   left, crossfade between tracks, 0 to 12 s, remembered in the browser);
+ *   Musonic Connect on a Musonic Server.
  *   Escape or a click outside closes it.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
 import { useEffect, useState } from 'react';
+import { MAX_CROSSFADE } from '@musonic/core';
 import { lang, setLang, tr, type Lang } from '../i18n/index.ts';
 import { useConnect } from '../player/ConnectContext.ts';
+import { setCrossfade, useCrossfade } from '../player/crossfade.ts';
 import { setShowRemaining, useShowRemaining } from '../player/timeDisplay.ts';
 import { CloseIcon } from './icons/CloseIcon.tsx';
+import { Slider } from './Slider.tsx';
 
 const t = tr.settings;
 // Each language is named in itself, so it can be found whatever the current one.
@@ -51,6 +55,9 @@ function ConnectSettings() {
 
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const showRemaining = useShowRemaining();
+  const crossfade = useCrossfade();
+  const crossfadeText = crossfade > 0 ? t.crossfadeSeconds(crossfade) : t.crossfadeOff;
+
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose();
@@ -92,6 +99,12 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             <span>{t.showRemaining}</span>
             <input type="checkbox" role="switch" aria-checked={showRemaining} checked={showRemaining} onChange={(e) => setShowRemaining(e.target.checked)} />
           </label>
+          <span>{t.crossfade}</span>
+          <div className="setting-slider">
+            <Slider value={crossfade} max={MAX_CROSSFADE} step={1} label={t.crossfade} valueText={crossfadeText} onChange={setCrossfade} />
+            <span className="setting-value" aria-hidden="true">{crossfadeText}</span>
+          </div>
+          <p className="setting-hint">{t.crossfadeHint}</p>
         </div>
         <ConnectSettings />
       </div>

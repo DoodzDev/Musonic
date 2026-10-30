@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Musonic Connect** (beta, with Musonic Server): the « Devices » button lists your devices (each tab is one) and moves playback to any of them at the same second. While another device plays, the player bar becomes its remote: its track, position, buttons and volume, with its icon (« Playing on Pixel 10 » on hover). Synced playback (one device at a time) is a switch in the same window.
 - **Your last listening comes back** when the page opens, paused where you stopped, on this device or another one.
 - **Show the time left** (Settings): the track's length is shown by default.
+- **Crossfade between tracks** (Settings, 0 to 12 s, off by default): the next track fades in over the end of the current one, which stays shown until it ends; never on a track you skip yourself nor between podcast episodes. Contributed by flumz-tv (#12).
 
 ### Changed
 - **The profile menu** keeps Settings, About (version, the project's and the creator's websites) and Log out, now asked first. No more account switching.

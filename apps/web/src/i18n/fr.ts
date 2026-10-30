@@ -211,6 +211,10 @@ export const fr = {
     languageHint: 'Partagée avec le site de Musonic. La page se recharge pour l’appliquer.',
     player: 'Lecture',
     showRemaining: 'Afficher le temps restant',
+    crossfade: 'Fondu enchaîné',
+    crossfadeOff: 'Désactivé',
+    crossfadeSeconds: (seconds: number) => `${seconds} s`,
+    crossfadeHint: 'Le titre suivant démarre en fondu sur la fin du titre en cours. Jamais quand vous passez un titre vous-même.',
   },
   connect: {
     button: 'Appareils',
