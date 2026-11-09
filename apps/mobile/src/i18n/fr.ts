@@ -4,7 +4,7 @@
  *   Add keys here first, then mirror them in en.ts. The i18n/index.ts hook
  *   selects the active locale based on settingsStore.language.
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.4.0
  * @license CC-BY-NC-4.0
  */
 // French UI strings — single source of truth for all user-visible text.
@@ -559,7 +559,7 @@ export const t = {
     },
     transitions: {
       crossfadeLabel: 'Fondu entre les titres',
-      crossfadeDesc: 'Baisse le volume en fin de titre et remonte en début du suivant.',
+      crossfadeDesc: 'Le titre suivant monte pendant que celui en cours descend. Consomme un peu plus de batterie.',
     },
     playback: {
       autoplayLabel: 'Lecture automatique',

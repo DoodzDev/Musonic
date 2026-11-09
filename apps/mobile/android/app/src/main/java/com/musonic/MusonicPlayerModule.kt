@@ -127,6 +127,19 @@ class MusonicPlayerModule(context: ReactApplicationContext) : ReactContextBaseJa
     promise.resolve(null)
   }
 
+  @ReactMethod
+  fun setCrossfade(seconds: Double, promise: Promise) = onMain(promise) {
+    MusonicPlayback.setCrossfade(seconds.toInt())
+    promise.resolve(null)
+  }
+
+  /** The sleep timer stops playback at the end of this track: no fade into the next one. */
+  @ReactMethod
+  fun setCrossfadeHold(hold: Boolean, promise: Promise) = onMain(promise) {
+    MusonicPlayback.setCrossfadeHold(hold)
+    promise.resolve(null)
+  }
+
   // Podcast speed (ADR-023); the pitch stays the voice's.
   @ReactMethod
   fun setRate(rate: Double, promise: Promise) = withPlayer(promise) { player ->

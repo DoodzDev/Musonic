@@ -36,29 +36,15 @@ import com.google.common.util.concurrent.ListenableFuture
 class MusonicPlayerService : MediaSessionService() {
 
   private var session: MediaSession? = null
+  private var crossfade: MusonicCrossfade? = null
 
   override fun onCreate() {
     super.onCreate()
-    val http = DefaultHttpDataSource.Factory()
-        .setUserAgent("Musonic")
-        .setAllowCrossProtocolRedirects(true)
-    val player = ExoPlayer.Builder(this)
-        .setAudioAttributes(
-            AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),
-            true, // audio focus: ducks and pauses for calls and navigation, like any media app
-        )
-        .setHandleAudioBecomingNoisy(true)
-        .setWakeMode(C.WAKE_MODE_NETWORK)
-        .setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSource.Factory(this, http)))
-        .build()
-    player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
-        .setAudioOffloadPreferences(
-            AudioOffloadPreferences.Builder()
-                .setAudioOffloadMode(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED)
-                .setIsGaplessSupportRequired(true)
-                .build(),
-        )
-        .build()
+    val player = newPlayer(true)
+    val crossfade = MusonicCrossfade({ newPlayer(false).also { setOffload(it, false) } }, ::setOffload)
+    crossfade.attach(player)
+    this.crossfade = crossfade
+    MusonicPlayback.crossfade = crossfade
     val openApp = packageManager.getLaunchIntentForPackage(packageName)?.let {
       PendingIntent.getActivity(this, 0, it, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
@@ -68,6 +54,38 @@ class MusonicPlayerService : MediaSessionService() {
         .build()
     session = built
     MusonicPlayback.attach(player, built)
+  }
+
+  /**
+   * [leading]: the player the session shows, which holds audio focus (ducks and pauses for calls
+   * and navigation, like any media app). The other one, rising during a crossfade, follows it.
+   */
+  private fun newPlayer(leading: Boolean): ExoPlayer {
+    val http = DefaultHttpDataSource.Factory()
+        .setUserAgent("Musonic")
+        .setAllowCrossProtocolRedirects(true)
+    return ExoPlayer.Builder(this)
+        .setAudioAttributes(
+            AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),
+            leading,
+        )
+        .setHandleAudioBecomingNoisy(leading)
+        .setWakeMode(C.WAKE_MODE_NETWORK)
+        .setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSource.Factory(this, http)))
+        .build()
+  }
+
+  /** Off while crossfade is set: two offloaded streams at once are not guaranteed (ADR-028). */
+  private fun setOffload(player: ExoPlayer, on: Boolean) {
+    val mode = if (on) AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED else AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED
+    player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
+        .setAudioOffloadPreferences(
+            AudioOffloadPreferences.Builder()
+                .setAudioOffloadMode(mode)
+                .setIsGaplessSupportRequired(on)
+                .build(),
+        )
+        .build()
   }
 
   override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
@@ -83,6 +101,9 @@ class MusonicPlayerService : MediaSessionService() {
   }
 
   override fun onDestroy() {
+    crossfade?.release()
+    crossfade = null
+    MusonicPlayback.crossfade = null
     MusonicPlayback.detach()
     session?.run {
       player.release()

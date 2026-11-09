@@ -7,7 +7,7 @@
  *   once the player is set up; a headless task only keeps JS timers running
  *   in the background while music plays.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import {useEffect, useRef, useState} from 'react';
@@ -76,6 +76,12 @@ const TrackPlayer = {
 };
 
 export default TrackPlayer;
+
+/** Crossfade length in seconds, 0 = off; the native side times the fade (ADR-028). */
+export const setCrossfade = (seconds: number): Promise<void> => Native.setCrossfade(seconds);
+
+/** The sleep timer stops playback at the end of this track: no fade into the next one. */
+export const setCrossfadeHold = (hold: boolean): Promise<void> => Native.setCrossfadeHold(hold);
 
 export function useTrackPlayerEvents(events: Event[], handler: (payload: any) => void): void {
   const saved = useRef(handler);

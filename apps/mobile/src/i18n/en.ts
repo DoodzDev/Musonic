@@ -3,7 +3,7 @@
  * @description English UI strings. Mirrors the structure of fr.ts exactly.
  *   Swap the active locale in i18n/index.ts to enable English.
  * @author DoodzProg
- * @version 1.3.0
+ * @version 1.4.0
  * @license CC-BY-NC-4.0
  */
 export const en = {
@@ -553,7 +553,7 @@ export const en = {
     },
     transitions: {
       crossfadeLabel: 'Crossfade',
-      crossfadeDesc: 'Fades out the ending track and fades in the next one.',
+      crossfadeDesc: 'The next track rises while the current one falls. Uses a little more battery.',
     },
     playback: {
       autoplayLabel: 'Autoplay',

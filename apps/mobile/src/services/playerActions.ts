@@ -3,7 +3,7 @@
  * @description Imperative playback action helpers used across screens. Every list now starts through the playback engine (launchers.ts); the
  *   legacy loaders are gone. Skips always go through the engine.
  * @author DoodzProg
- * @version 2.3.0
+ * @version 2.4.0
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer from './player';
@@ -16,6 +16,7 @@ import {useSettingsStore} from '../store/settingsStore';
 import type {Track} from '../store/playerStore';
 import {playerArtwork} from './playerArtwork';
 import {notifyJump} from './connect/jumps';
+import {isEpisode} from '../api/endpoints/podcasts';
 
 /**
  * Converts an internal Track object to an RNTP-compatible track descriptor.
@@ -56,6 +57,7 @@ export function toRNTPTrack(t: Track) {
     artistId: t.artistId,
     isMagic: t.isMagic,
     isAutoplay: t.isAutoplay,
+    noFade: isEpisode(trackId) || undefined,
   };
 }
 
