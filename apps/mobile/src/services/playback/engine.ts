@@ -22,7 +22,7 @@
  *   - Offline, the native player only holds downloaded tracks; the others
  *     stay in the model and come back online. No Magic nor autoplay (E1).
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.2.1
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer, {RepeatMode as NativeRepeat} from '../player';
@@ -64,6 +64,13 @@ let networkDown = false;
 /** Unplayable tracks in a row; reset as soon as a track actually plays (E4). */
 let failures = 0;
 const MAX_FAILURES = 3;
+/**
+ * The counter starts again only after this much real playback: a reloaded track reports
+ * "playing" for an instant before its stream error, which reset the counter every time and
+ * skipped through unplayable tracks endlessly.
+ */
+const FAILURES_RESET_MS = 3000;
+let failuresReset: ReturnType<typeof setTimeout> | null = null;
 /** Zones emptied by the last "Clear queue", kept for its Undo. */
 let cleared: {currentKey: string; userQueue: Track[]; upcoming: Track[]; autoplay: Track[]} | null = null;
 /** Unique even across restarts (restored entries keep their ids). */
@@ -480,7 +487,11 @@ export const playbackEngine = {
 
   /** A track really plays: the unplayable-track counter starts again (E4). */
   onPlaying(): void {
-    failures = 0;
+    if (failuresReset) clearTimeout(failuresReset);
+    failuresReset = setTimeout(() => {
+      failuresReset = null;
+      failures = 0;
+    }, FAILURES_RESET_MS);
   },
 
   /**
@@ -492,6 +503,10 @@ export const playbackEngine = {
    */
   onPlaybackError(code?: string): Promise<void> {
     if (!active) return Promise.resolve();
+    if (failuresReset) {
+      clearTimeout(failuresReset);
+      failuresReset = null;
+    }
     return run('playbackError', async () => {
       const t = getT().queue;
       const foreground = AppState.currentState === 'active';
@@ -508,7 +523,7 @@ export const playbackEngine = {
       if (failures >= MAX_FAILURES || result.ended) {
         failures = 0;
         await native(TrackPlayer.pause());
-        if (foreground) toast.error(t.playbackFailedToast);
+        if (foreground) toast.error(network ? t.playbackFailedToast : t.unplayableStopToast);
         return;
       }
       state = result.state;
