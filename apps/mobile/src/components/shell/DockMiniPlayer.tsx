@@ -9,7 +9,7 @@
  *   Behind the cover and titles, a heavily zoomed, blurred piece of the cover
  *   fades into the glass.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.2.1
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useState} from 'react';
@@ -52,7 +52,8 @@ function ProgressLine({duration, remote}: {duration: number; remote?: number}) {
   const fraction = duration > 0 ? Math.min(position / duration, 1) : 0;
   return (
     <View style={styles.progressTrack} pointerEvents="none">
-      <View style={[styles.progressFill, {width: `${fraction * 100}%`}]} />
+      {/* A scale, not a width: no layout pass every second. */}
+      <View style={[styles.progressFill, {transform: [{scaleX: fraction}]}]} />
     </View>
   );
 }
@@ -208,7 +209,7 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     backgroundColor: colors.fill,
   },
-  progressFill: {height: 2, borderRadius: 1, backgroundColor: colors.accent},
+  progressFill: {height: 2, width: '100%', borderRadius: 1, backgroundColor: colors.accent, transformOrigin: 'left'},
   device: {flexDirection: 'row', alignItems: 'center', gap: 4},
   deviceName: {color: colors.accent, flexShrink: 1},
 });
