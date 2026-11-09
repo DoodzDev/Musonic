@@ -132,7 +132,17 @@ pub async fn get_artist(ctx: &Ctx) -> Reply {
             Ok(Some(artist))
         })
         .await?;
-    if let Some(a) = found {
+    if let Some(mut a) = found {
+        // The rest of the discography from the online catalog: searching the artist found this
+        // page, whose online twin is left out of the results as a duplicate.
+        let name = a["name"].as_str().unwrap_or_default().to_owned();
+        let mut albums = a["album"].as_array().cloned().unwrap_or_default();
+        let more = online::more_artist_albums(ctx, &name, &albums).await;
+        if !more.is_empty() {
+            albums.extend(more);
+            a["albumCount"] = json!(albums.len());
+            a["album"] = json!(albums);
+        }
         return Ok(one("artist", a));
     }
     // An artist known only online (credited on a liked song, for instance).
