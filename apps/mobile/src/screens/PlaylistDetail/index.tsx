@@ -8,10 +8,11 @@
  *   Edit mode: drag handles to reorder, red circles to remove, then Save.
  *   Play and track taps go through the playback engine (`playContext`).
  * @author DoodzProg
- * @version 2.0.1
+ * @version 2.0.2
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {deezerSongId} from '../../services/onlineIds';
 import {ActivityIndicator, Alert, Pressable, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
@@ -69,7 +70,7 @@ function dedupeById(tracks: DeezerTrack[]): DeezerTrack[] {
 }
 
 function deezerToTrack(t: DeezerTrack): Track {
-  const sid = `ext-deezer-song-${t.id}`;
+  const sid = deezerSongId(t.id);
   return {
     id: sid, title: t.title, artist: t.artist.name, album: t.album.title,
     duration: t.duration, coverArt: sid,
@@ -348,7 +349,7 @@ export default function PlaylistDetailScreen() {
   }, [recos, songs]);
 
   const addReco = useCallback(async (track: DeezerTrack) => {
-    const extId = `ext-deezer-song-${track.id}`;
+    const extId = deezerSongId(track.id);
     const d = getT();
     showToast(d.likes.sendingToServer);
     // The server imports an online track once it is streamed; then find its server copy.

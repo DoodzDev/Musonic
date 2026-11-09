@@ -4,10 +4,11 @@
  *   One `getSong` request per track, remembered for the session; nothing is
  *   asked offline or for tracks outside the library (`ext-`).
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import {useEffect, useState} from 'react';
+import {isOnlineId} from '../services/onlineIds';
 import {getSong} from '../api/endpoints/library';
 import {useSettingsStore} from '../store/settingsStore';
 import {qualityLabel} from '../utils/quality';
@@ -20,7 +21,7 @@ export function useTrackQuality(trackId: string | undefined): string | null {
   const [label, setLabel] = useState<string | null>(() => (trackId ? cache.get(trackId) ?? null : null));
 
   useEffect(() => {
-    if (!trackId || trackId.startsWith('ext-')) { setLabel(null); return; }
+    if (!trackId || isOnlineId(trackId)) { setLabel(null); return; }
     if (cache.has(trackId)) { setLabel(cache.get(trackId) ?? null); return; }
     setLabel(null);
     if (isOfflineMode) return;

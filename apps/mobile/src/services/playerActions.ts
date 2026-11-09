@@ -7,6 +7,7 @@
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer from './player';
+import {deezerSongId, isOnlineId} from './onlineIds';
 import {getStreamUrl, getCoverArtUrl} from '../api/client';
 import {getSimilarSongs} from '../api/endpoints/library';
 import {getDeezerArtistId, getDeezerArtistTopTracks} from '../api/deezer';
@@ -91,7 +92,7 @@ export async function fetchAutoplayTracks(
       if (!artistId) return;
       const tracks = await getDeezerArtistTopTracks(artistId, 15).catch(() => []);
       for (const t of tracks) {
-        const sid = `ext-deezer-song-${t.id}`;
+        const sid = deezerSongId(t.id);
         if (existingIds.has(sid)) continue;
         existingIds.add(sid);
         pool.push({
@@ -110,7 +111,7 @@ export async function fetchAutoplayTracks(
     })(),
     // Navidrome similar songs (skip for Deezer-sourced seeds)
     (async () => {
-      if (seedTrack.id.startsWith('ext-')) return;
+      if (isOnlineId(seedTrack.id)) return;
       const similar = await getSimilarSongs(seedTrack.id, 15).catch(() => []);
       for (const s of similar as any[]) {
         const sid = String(s.id);

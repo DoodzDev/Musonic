@@ -9,10 +9,11 @@
  *   request; automatic downloads (`auto`) are skipped. Past the storage
  *   limit, tracks are refused (checked when queued and again before each one).
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.2.1
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
+import {isOnlineId} from '../services/onlineIds';
 import {persist, createJSONStorage} from 'zustand/middleware';
 import {mmkvStorage} from './storage';
 import RNBlobUtil from 'react-native-blob-util';
@@ -477,7 +478,7 @@ useDownloadStore.subscribe((state, prev) => {
 
 /** Can be downloaded: not online (ext-), not done, not already queued or running. */
 function isEligible(trackId: string): boolean {
-  if (trackId.startsWith('ext-')) return false;
+  if (isOnlineId(trackId)) return false;
   const {downloads, activeDownloads} = useDownloadStore.getState();
   if (trackId in downloads) return false;
   const existing = activeDownloads[trackId];

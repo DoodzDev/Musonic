@@ -4,10 +4,11 @@
  *   (all, my library, online), the best result and the rows of the results
  *   list. No React, for the tests.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import type {SubsonicAlbum, SubsonicArtist, SubsonicSong} from '../../api/types';
+import {isOnlineId} from '../../services/onlineIds';
 
 /** `podcasts`: the podcast directories instead of the music (ADR-023). */
 export type SearchScope = 'all' | 'library' | 'online' | 'podcasts';
@@ -23,9 +24,9 @@ export type BestResult =
   | {type: 'album'; album: SubsonicAlbum}
   | {type: 'song'; song: SubsonicSong};
 
-/** Online catalogue items (served by the proxy) have `ext-` ids. */
+/** Online catalogue items have `ext-` (OctoFiesta) or `dz-` (Musonic Server) ids. */
 export function isOnline(id: string | number): boolean {
-  return String(id).startsWith('ext-');
+  return isOnlineId(id);
 }
 
 /** Only the results of the chosen scope. */

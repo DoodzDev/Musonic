@@ -4,10 +4,11 @@
  *   (online catalogue) mixed with the server's similar songs, random songs as
  *   a fallback. Pure fetching: the playback engine decides where they go.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import {getRandomSongs, getSimilarSongs} from '../../api/endpoints/library';
+import {deezerSongId, isOnlineId} from '../onlineIds';
 import {getCoverArtUrl, getStreamUrl} from '../../api/client';
 import {getDeezerArtistId, getDeezerArtistTopTracks, type DeezerTrack} from '../../api/deezer';
 import type {Track} from '../../store/playerStore';
@@ -34,7 +35,7 @@ function serverTrack(s: any): Track {
 }
 
 function catalogueTrack(t: DeezerTrack): Track {
-  const id = `ext-deezer-song-${t.id}`;
+  const id = deezerSongId(t.id);
   return {
     id,
     title: t.title,
@@ -57,7 +58,7 @@ export async function fetchMagicSuggestions(seeds: Track[], count: number): Prom
   if (count <= 0) return [];
   const known = new Set(seeds.map(t => t.id));
   const artists = [...new Set(seeds.slice(0, 10).map(t => t.artist).filter(Boolean))].slice(0, SEED_ARTISTS);
-  const firstServerTrack = seeds.find(t => !t.id.startsWith('ext-'));
+  const firstServerTrack = seeds.find(t => !isOnlineId(t.id));
 
   const [catalogue, similar] = await Promise.all([
     Promise.all(

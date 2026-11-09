@@ -12,7 +12,7 @@
  *   shared raised relief. The last feed is kept on the device, so the Home
  *   also shows offline. Playback goes through the playback engine.
  * @author DoodzProg
- * @version 2.2.0
+ * @version 2.2.1
  * @license MIT
  */
 
@@ -48,6 +48,7 @@ import {useSettingsStore} from '../../store/settingsStore';
 import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding';
 import {useIsLandscape} from '../../hooks/useIsLandscape';
 import {useDockInset} from '../../navigation/dockLayout';
+import {deezerAlbumId} from '../../services/onlineIds';
 
 type Filter = 'all' | 'playlists' | 'albums' | 'artists';
 const FILTERS: Filter[] = ['all', 'playlists', 'albums', 'artists'];
@@ -325,8 +326,8 @@ export default function HomeScreen() {
                 title={item.album.title}
                 subtitle={t.home.kindLine(t.home.typeAlbum, item.artist.name)}
                 imageUrl={largeDeezerCover(item.album.cover_medium)}
-                onPress={() => navigation.navigate('AlbumDetail', {albumId: `ext-deezer-album-${item.album.id}`})}
-                onPlay={() => playAlbumById(`ext-deezer-album-${item.album.id}`)}
+                onPress={() => navigation.navigate('AlbumDetail', {albumId: deezerAlbumId(item.album.id)})}
+                onPlay={() => playAlbumById(deezerAlbumId(item.album.id))}
                 playLabel={t.home.playAlbum(item.album.title)}
               />
             )}
