@@ -9,7 +9,7 @@
  *   go to the engine, which skips the unplayable track. Android Auto browsing
  *   and taps (`remote-play-id`) start here too, so they work without the screens.
  * @author DoodzProg
- * @version 1.6.0
+ * @version 1.6.1
  * @license CC-BY-NC-4.0
  */
 import {AppState} from 'react-native';
@@ -198,8 +198,15 @@ export async function PlaybackService() {
   });
 
   TrackPlayer.addEventListener(Event.PlaybackState, ({state}) => {
-    if (state === State.Paused || state === State.Stopped) saveCurrentPosition();
-    if (state === State.Playing) playbackEngine.onPlaying();
+    if (state === State.Paused || state === State.Stopped) {
+      saveCurrentPosition();
+      // Nothing to count while paused: the 1 s poll woke JS and the main thread for nothing.
+      stopScrobblePoller();
+    }
+    if (state === State.Playing) {
+      playbackEngine.onPlaying();
+      if (!scrobblePoller && scrobbleTrack) startScrobblePoller();
+    }
   });
 
   // Unplayable track (stream error): the engine skips it (E4). Only the code
