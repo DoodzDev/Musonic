@@ -17,6 +17,7 @@ import {syncPlaylistCovers} from './offlinePlaylistCovers';
 import {useSettingsStore} from '../store/settingsStore';
 import {checkShortIds} from './shortIds/live';
 import {setMusonicServer} from './onlineIds';
+import {markOnlineIdsPending} from './onlineIdsMigration';
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,7 @@ async function tick(): Promise<boolean> {
   try {
     const {musonic} = await withTimeout(pingServer(server), PING_TIMEOUT_MS);
     setMusonicServer(musonic);
+    if (musonic) markOnlineIdsPending();
     if (consecutiveFailures > 0) {
       console.log(`[connectivity] ping ok after ${consecutiveFailures} failure(s), ${Date.now() - startedAt} ms`);
     }

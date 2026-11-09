@@ -32,3 +32,14 @@ export function isOnlineId(id: string | number): boolean {
   const s = String(id);
   return s.startsWith('ext-') || s.startsWith('dz-');
 }
+
+/**
+ * Saved text with the OctoFiesta ids of Deezer items turned into Musonic Server ones, URLs
+ * included (`…?id=ext-deezer-song-1` → `…?id=dz-track-1`).
+ */
+export function toMusonicOnlineIds(text: string): string {
+  return text
+    .replace(/ext-deezer-song-(\d+)/g, 'dz-track-$1')
+    .replace(/ext-deezer-album-(\d+)/g, 'dz-album-$1')
+    .replace(/ext-deezer-artist-(\d+)/g, 'dz-artist-$1');
+}
