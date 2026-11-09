@@ -82,7 +82,9 @@ class MusonicPlayerService : MediaSessionService() {
         .setAudioOffloadPreferences(
             AudioOffloadPreferences.Builder()
                 .setAudioOffloadMode(mode)
-                .setIsGaplessSupportRequired(on)
+                // Not required: with it, Media3 refuses offload for MP3/AAC with encoder delay unless
+                // the device announces gapless offload, so playback was always decoded on the CPU.
+                .setIsGaplessSupportRequired(false)
                 .build(),
         )
         .build()
