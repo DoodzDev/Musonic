@@ -3,9 +3,10 @@
  * @description A heavily zoomed, extremely blurred piece of a cover that
  *   fills a surface from its left edge and fades out towards the right (the
  *   mini player capsule). Darkened from the cover's own colours so white text
- *   on it stays readable. Fades in when the cover changes.
+ *   on it stays readable. Fades in once; a new cover replaces it in place
+ *   (rebuilding the mask and fading again on every track was a heavy redraw).
  * @author DoodzProg
- * @version 1.0.1
+ * @version 1.0.2
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useRef, useState} from 'react';
@@ -78,7 +79,7 @@ export default function CoverWash({uri}: Props) {
       style={StyleSheet.absoluteFill}
       pointerEvents="none"
       onLayout={e => setSize({w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height})}>
-      {uri && size.w > 0 && <Wash key={uri} uri={uri} width={size.w} height={size.h} />}
+      {uri && size.w > 0 && <Wash uri={uri} width={size.w} height={size.h} />}
     </View>
   );
 }
