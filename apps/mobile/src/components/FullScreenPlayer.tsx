@@ -17,7 +17,7 @@
  *   The heavy player body only mounts while the player is open; a light shell
  *   stays mounted to preload adjacent cover art.
  * @author DoodzProg
- * @version 2.5.0
+ * @version 2.5.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -45,7 +45,7 @@ import {
   TrackMagicIcon,
 } from './icons';
 import {getCoverArtUrl} from '../api/client';
-import TrackPlayer, {useActiveTrack, usePlaybackState, State} from '../services/player';
+import {useActiveTrack, usePlaybackState, State} from '../services/player';
 import {useForegroundProgress} from '../hooks/useForegroundProgress';
 import FastImage from '@d11/react-native-fast-image';
 import {usePlayerStore} from '../store/playerStore';
@@ -135,20 +135,20 @@ export default function FullScreenPlayer() {
   const activeTrack = useActiveTrack();
   const activeTrackId = activeTrack?.id;
 
+  // Neighbours come from the JS queue: asking the native player for its whole queue on every
+  // track built thousands of objects on the main thread just to preload two covers.
+  const previousTrack = usePlayerStore(s => s.history[s.history.length - 1]);
+  const nextTrack = usePlayerStore(s => s.upcoming[0]);
   useEffect(() => {
     if (!activeTrackId) return;
-    TrackPlayer.getQueue().then(queue => {
-      const idx = queue.findIndex(qt => String(qt.id) === String(activeTrackId));
-      if (idx === -1) return;
-      const coverUris: Array<{uri: string; priority: 'low' | 'normal' | 'high'}> = [];
-      for (const adj of [queue[idx - 1], queue[idx + 1]]) {
-        if (!adj) continue;
-        if (adj.coverArt) coverUris.push({uri: getCoverArtUrl(String(adj.coverArt), 600), priority: FastImage.priority.high});
-        if (typeof adj.artwork === 'string' && adj.artwork) coverUris.push({uri: adj.artwork, priority: FastImage.priority.high});
-      }
-      if (coverUris.length > 0) FastImage.preload(coverUris);
-    }).catch(() => {});
-  }, [activeTrackId]);
+    const coverUris: Array<{uri: string; priority: 'low' | 'normal' | 'high'}> = [];
+    for (const adj of [previousTrack, nextTrack]) {
+      if (!adj) continue;
+      if (adj.coverArt) coverUris.push({uri: getCoverArtUrl(String(adj.coverArt), 600), priority: FastImage.priority.high});
+      if (typeof adj.artwork === 'string' && adj.artwork) coverUris.push({uri: adj.artwork, priority: FastImage.priority.high});
+    }
+    if (coverUris.length > 0) FastImage.preload(coverUris);
+  }, [activeTrackId, previousTrack, nextTrack]);
 
   return isFullScreenOpen ? <FullScreenPlayerContent /> : null;
 }
