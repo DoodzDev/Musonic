@@ -68,11 +68,23 @@ class MusonicPlayerModule(context: ReactApplicationContext) : ReactContextBaseJa
 
   @ReactMethod
   fun remove(indexes: ReadableArray, promise: Promise) = withPlayer(promise) { player ->
-    (0 until indexes.size()).map { indexes.getInt(it) }
+    val sorted = (0 until indexes.size()).map { indexes.getInt(it) }
         .filter { it in 0 until player.mediaItemCount }
-        .sortedDescending()
         .distinct()
-        .forEach(player::removeMediaItem)
+        .sortedDescending()
+    // Consecutive indexes go out as one range: one timeline rebuild instead of one per track.
+    // Removing thousands of tracks one by one froze the main thread (ANR on a mid-range phone).
+    var i = 0
+    while (i < sorted.size) {
+      val high = sorted[i]
+      var low = high
+      while (i + 1 < sorted.size && sorted[i + 1] == low - 1) {
+        i++
+        low = sorted[i]
+      }
+      player.removeMediaItems(low, high + 1)
+      i++
+    }
     promise.resolve(null)
   }
 
