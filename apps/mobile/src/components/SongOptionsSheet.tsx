@@ -5,10 +5,11 @@
  *   artist. Preserves last non-null track during the close animation. "Add to
  *   queue" goes through the playback engine when it drives the player.
  * @author DoodzProg
- * @version 1.2.1
+ * @version 1.2.2
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {isOnlineId} from '../services/onlineIds';
 import {
   useWindowDimensions,
   Modal,
@@ -269,7 +270,7 @@ export default function SongOptionsSheet({
                 label={t.songOptions.addToQueue}
                 onPress={handleAddToQueue}
               />
-              {tr && !String(tr.id).startsWith('ext-') && (
+              {tr && !isOnlineId(tr.id) && (
                 <ActionRow
                   icon={<DownloadIcon size={22} color={ICON_COLOR} />}
                   label={t.songOptions.download}

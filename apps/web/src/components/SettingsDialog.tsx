@@ -1,16 +1,23 @@
 /**
  * @file SettingsDialog.tsx
- * @description Settings of the web client, opened from the profile menu.
- *   For now: the language (English / French), shared with the website.
+ * @description Settings of the web client, opened from the profile menu, in the
+ *   mobile app's order: playback (crossfade between tracks, 0 to 12 s, then the
+ *   time left, remembered in the browser); the language (English / French),
+ *   shared with the website; Musonic Connect on a Musonic Server.
  *   Escape or a click outside closes it.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { MAX_CROSSFADE } from '@musonic/core';
 import { lang, setLang, tr, type Lang } from '../i18n/index.ts';
+import { useConnect } from '../player/ConnectContext.ts';
+import { setCrossfade, useCrossfade } from '../player/crossfade.ts';
+import { setShowRemaining, useShowRemaining } from '../player/timeDisplay.ts';
 import { CloseIcon } from './icons/CloseIcon.tsx';
+import { Slider } from './Slider.tsx';
 
 const t = tr.settings;
 // Each language is named in itself, so it can be found whatever the current one.
@@ -19,7 +26,38 @@ const LANGUAGES: { id: Lang; name: string }[] = [
   { id: 'fr', name: 'Français' },
 ];
 
+/** Musonic Connect (ADR-019): this browser's name (synced playback is in « Listen on »). */
+function ConnectSettings() {
+  const connect = useConnect();
+  const [name, setName] = useState(connect?.name ?? '');
+  if (!connect) return null;
+  const c = tr.connect;
+  return (
+    <div className="setting">
+      <span className="setting-label">{c.section}</span>
+      <label className="field-label">
+        <span>{c.deviceName}</span>
+        <span className="field">
+        <input
+          className="field-input"
+          value={name}
+          maxLength={64}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={() => connect.setName(name)}
+          onKeyDown={(e) => e.key === 'Enter' && connect.setName(name)}
+        />
+        </span>
+      </label>
+      <p className="setting-hint">{c.adminNotice}</p>
+    </div>
+  );
+}
+
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
+  const showRemaining = useShowRemaining();
+  const crossfade = useCrossfade();
+  const crossfadeText = crossfade > 0 ? t.crossfadeSeconds(crossfade) : t.crossfadeOff;
+
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose();
@@ -36,6 +74,19 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           <button type="button" className="icon-btn" onClick={onClose} aria-label={t.close} title={t.close}>
             <CloseIcon size={18} />
           </button>
+        </div>
+        <div className="setting">
+          <span className="setting-label">{t.player}</span>
+          <span>{t.crossfade}</span>
+          <div className="setting-slider">
+            <Slider value={crossfade} max={MAX_CROSSFADE} step={1} label={t.crossfade} valueText={crossfadeText} onChange={setCrossfade} />
+            <span className="setting-value" aria-hidden="true">{crossfadeText}</span>
+          </div>
+          <p className="setting-hint">{t.crossfadeHint}</p>
+          <label className="setting-switch">
+            <span>{t.showRemaining}</span>
+            <input type="checkbox" role="switch" aria-checked={showRemaining} checked={showRemaining} onChange={(e) => setShowRemaining(e.target.checked)} />
+          </label>
         </div>
         <div className="setting">
           <span className="setting-label" id="setting-language">{t.language}</span>
@@ -55,6 +106,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </div>
           <p className="setting-hint">{t.languageHint}</p>
         </div>
+        <ConnectSettings />
       </div>
     </div>
   );

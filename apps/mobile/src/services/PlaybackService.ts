@@ -9,11 +9,11 @@
  *   go to the engine, which skips the unplayable track. Android Auto browsing
  *   and taps (`remote-play-id`) start here too, so they work without the screens.
  * @author DoodzProg
- * @version 1.5.0
+ * @version 1.6.1
  * @license CC-BY-NC-4.0
  */
 import {AppState} from 'react-native';
-import TrackPlayer, {Event, State} from './player';
+import TrackPlayer, {Event, setCrossfade, setCrossfadeHold, State, usesNativePlayer} from './player';
 import {useSettingsStore} from '../store/settingsStore';
 import {usePlayerStore} from '../store/playerStore';
 import {useDownloadStore} from '../store/downloadStore';
@@ -21,10 +21,12 @@ import {subsonicGet} from '../api/client';
 import {skipNext, skipPrev} from './playerActions';
 import {playbackEngine} from './playback/engine';
 import {ListenTracker} from '@musonic/core/listen';
-import {onSleepTimerTrackChanged} from './sleepTimer';
+import {onSleepTimerTrackChanged, useSleepTimerStore} from './sleepTimer';
 import {playAutoMediaId, playAutoSearch, startAndroidAuto} from './auto/androidAuto';
 import {isEpisode} from '../api/endpoints/podcasts';
 import {startPodcastTracking} from './podcastPlayback';
+import {startConnect} from './connect/connectService';
+import {notifyJump} from './connect/jumps';
 
 let wasPlayingBeforeDuck = false;
 let fadeInTimer: ReturnType<typeof setInterval> | null = null;
@@ -165,7 +167,21 @@ function startProgressPoller(durationSeconds: number) {
   progressPoller = id;
 }
 
+/** The native player times the fade itself (ADR-028): it only needs the setting. */
+function followCrossfadeSettings() {
+  setCrossfade(useSettingsStore.getState().crossfadeDuration).catch(() => {});
+  useSettingsStore.subscribe((s, prev) => {
+    if (s.crossfadeDuration !== prev.crossfadeDuration) setCrossfade(s.crossfadeDuration).catch(() => {});
+  });
+  setCrossfadeHold(useSleepTimerStore.getState().endOfTrack).catch(() => {});
+  useSleepTimerStore.subscribe((s, prev) => {
+    if (s.endOfTrack !== prev.endOfTrack) setCrossfadeHold(s.endOfTrack).catch(() => {});
+  });
+}
+
 export async function PlaybackService() {
+  if (usesNativePlayer) followCrossfadeSettings();
+
   // Safety net: if the app is backgrounded while a fade is already running
   // (started while foregrounded, then the user switched to Waze mid-fade),
   // force full volume immediately instead of leaving the JS fade timer to
@@ -182,8 +198,15 @@ export async function PlaybackService() {
   });
 
   TrackPlayer.addEventListener(Event.PlaybackState, ({state}) => {
-    if (state === State.Paused || state === State.Stopped) saveCurrentPosition();
-    if (state === State.Playing) playbackEngine.onPlaying();
+    if (state === State.Paused || state === State.Stopped) {
+      saveCurrentPosition();
+      // Nothing to count while paused: the 1 s poll woke JS and the main thread for nothing.
+      stopScrobblePoller();
+    }
+    if (state === State.Playing) {
+      playbackEngine.onPlaying();
+      if (!scrobblePoller && scrobbleTrack) startScrobblePoller();
+    }
   });
 
   // Unplayable track (stream error): the engine skips it (E4). Only the code
@@ -202,7 +225,7 @@ export async function PlaybackService() {
   TrackPlayer.addEventListener(Event.RemoteSeek, ({position}) => {
     // A jump is not listening: the next position starts a new stretch.
     listen?.interrupt();
-    TrackPlayer.seekTo(position);
+    TrackPlayer.seekTo(position).then(notifyJump, () => {});
   });
   // Android Auto: a track tapped in the car plays its whole list (ADR-015).
   TrackPlayer.addEventListener(Event.RemotePlayId, ({id}) => {
@@ -214,6 +237,8 @@ export async function PlaybackService() {
   });
   startAndroidAuto();
   startPodcastTracking();
+  // Musonic Connect (ADR-019): the other devices of the account see and control the phone.
+  startConnect();
   TrackPlayer.addEventListener(Event.PlaybackQueueEnded, () => {
     // Last track in queue finished — no further PlaybackActiveTrackChanged
     // will fire to trigger the submission scrobble, so flush it here.
@@ -246,11 +271,13 @@ export async function PlaybackService() {
     // playing/advancing natively, just silently). Only fade while foregrounded,
     // where JS timers are reliable; jump straight to full volume otherwise.
     // No fade on a manual Next / Previous: the change is immediate (E3).
-    if (crossfadeDuration > 0 && AppState.currentState === 'active' && !manualSkip) {
-      startFadeIn(crossfadeDuration);
-      startProgressPoller(crossfadeDuration);
-    } else {
-      TrackPlayer.setVolume(1).catch(() => {});
+    if (!usesNativePlayer) {
+      if (crossfadeDuration > 0 && AppState.currentState === 'active' && !manualSkip) {
+        startFadeIn(crossfadeDuration);
+        startProgressPoller(crossfadeDuration);
+      } else {
+        TrackPlayer.setVolume(1).catch(() => {});
+      }
     }
 
     if (isAutoDownloadEnabled) {

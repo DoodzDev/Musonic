@@ -3,7 +3,7 @@
  * @description Design v2 search field: magnifier, text input and a clear
  *   button shown once something is typed. 40 pt high, 12 pt corners.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 import React, {forwardRef} from 'react';
@@ -42,7 +42,8 @@ const SearchField = forwardRef<TextInput, Props>(function SearchField(
           onPress={() => onChangeText('')}
           accessibilityRole="button"
           accessibilityLabel={t.ui.clearSearch}
-          hitSlop={12}
+          // 20 dp drawn + 14 on each side: the 48 dp touch target.
+          hitSlop={14}
           style={styles.clear}>
           <CloseIcon size={10} color={colors.surface1} />
         </Pressable>

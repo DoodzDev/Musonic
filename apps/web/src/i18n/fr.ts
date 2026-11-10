@@ -3,7 +3,7 @@
  * @description French strings of the web client (source of truth: en.ts
  *   must have the same shape). Pick the active language through i18n/index.ts.
  * @author DoodzProg
- * @version 0.6.0
+ * @version 0.6.1
  * @license CC-BY-NC-4.0
  */
 
@@ -195,17 +195,47 @@ export const fr = {
   profile: {
     open: 'Profil et compte',
     title: 'Profil',
-    switchAccount: 'Changer de compte',
     settings: 'Réglages',
     about: 'À propos',
-    website: 'Site de Musonic',
+    version: 'Version',
+    projectSite: 'Site du projet',
+    creatorSite: 'Site du créateur',
     logout: 'Se déconnecter',
+    logoutTitle: 'Se déconnecter ?',
+    logoutMessage: (user: string, server: string) => `Voulez-vous vraiment déconnecter ${user} de ${server} ? Il faudra vous reconnecter avec votre mot de passe.`,
   },
   settings: {
     title: 'Réglages',
     close: 'Fermer les réglages',
     language: 'Langue',
     languageHint: 'Partagée avec le site de Musonic. La page se recharge pour l’appliquer.',
+    player: 'Lecture',
+    showRemaining: 'Afficher le temps restant',
+    crossfade: 'Fondu entre les titres',
+    crossfadeOff: 'Désactivé',
+    crossfadeSeconds: (seconds: number) => `${seconds} s`,
+    crossfadeHint: 'Le titre suivant démarre en fondu sur la fin du titre en cours. Jamais quand vous passez un titre vous-même.',
+  },
+  connect: {
+    button: 'Appareils',
+    title: 'Écouter sur',
+    thisDevice: 'Cet appareil',
+    playingOn: (name: string) => `Lecture sur ${name}`,
+    listenHere: 'Écouter ici',
+    none: 'Aucun autre appareil connecté. Ouvrez Musonic sur votre téléphone ou dans un autre navigateur.',
+    playing: 'En lecture',
+    alone: 'Joue seul',
+    failed: 'Cet appareil ne répond plus.',
+    section: 'Musonic Connect',
+    deviceName: 'Nom de cet appareil',
+    sync: 'Lecture synchronisée',
+    syncOn: 'Un seul appareil joue à la fois : lancer la lecture sur l’un met les autres en pause.',
+    syncOff: 'Chaque appareil joue de son côté, sans mettre les autres en pause.',
+    adminNotice: 'L’administrateur du serveur peut voir votre lecture pour vous aider en cas de souci.',
+    play: 'Lecture',
+    pause: 'Pause',
+    next: 'Suivant',
+    previous: 'Précédent',
   },
   nav: {
     main: 'Navigation principale',

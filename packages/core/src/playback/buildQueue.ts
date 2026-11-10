@@ -326,6 +326,20 @@ export function next<T extends QueueTrack>(
   return result;
 }
 
+/**
+ * The entry `next` will play, without moving to it (crossfade: the next track
+ * starts while the current one is still shown). Null when nothing follows, or
+ * when it is drawn at random (repeat all restarting a shuffled round).
+ */
+export function peekNext<T extends QueueTrack>(state: QueueState<T>, modes: Modes): T | null {
+  if (state.userQueue.length > 0) return state.userQueue[0] ?? null;
+  if (state.upcoming.length > 0) return state.upcoming[0] ?? null;
+  if (modes.repeat === 'all' && state.contextTracks.length > 0) {
+    return modes.shuffle === 'off' ? (state.contextTracks[0] ?? null) : null;
+  }
+  return state.autoplay[0] ?? null;
+}
+
 function nextOnce<T extends QueueTrack>(state: QueueState<T>, modes: Modes, rng: Rng): NextResult<T> {
   const history = pushHistory(state.history, state.current);
   if (state.userQueue.length > 0) {

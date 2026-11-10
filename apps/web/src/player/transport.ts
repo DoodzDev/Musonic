@@ -27,6 +27,10 @@ export interface Transport {
   speed: number;
   cycleSpeed: () => void;
   skipBy: (seconds: number) => void;
+  /** Musonic Connect: the position of the device playing elsewhere (seconds); none for this one. */
+  position?: number;
+  /** Musonic Connect: the device the controls act on, when it is another one. */
+  remoteDevice?: { name: string; kind: string };
 }
 
 export const TransportContext = createContext<Transport | null>(null);

@@ -9,11 +9,11 @@
  *   counter to prevent race conditions. Tapped results play alone, then
  *   autoplay (playback engine, ADR-009 A8).
  * @author DoodzProg
- * @version 2.2.0
+ * @version 2.2.2
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {FlatList, Pressable, StatusBar, StyleSheet, TextInput, View} from 'react-native';
+import {BackHandler, FlatList, Keyboard, Pressable, StatusBar, StyleSheet, TextInput, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {State, useActiveTrack, usePlaybackState} from '../../services/player';
@@ -62,6 +62,28 @@ export default function SearchActive() {
   const t = useT();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+
+  // The first Back only closes the keyboard: it used to close it and leave the search too,
+  // losing what was typed.
+  useEffect(() => {
+    let keyboardOpen = false;
+    const shown = Keyboard.addListener('keyboardDidShow', () => {
+      keyboardOpen = true;
+    });
+    const hidden = Keyboard.addListener('keyboardDidHide', () => {
+      keyboardOpen = false;
+    });
+    const back = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (!keyboardOpen) return false;
+      Keyboard.dismiss();
+      return true;
+    });
+    return () => {
+      shown.remove();
+      hidden.remove();
+      back.remove();
+    };
+  }, []);
   const dockInset = useDockInset();
   const landscapePadding = useLandscapeSidebarPadding();
   const isFullscreenMode = useSettingsStore(s => s.isFullscreenMode);
@@ -370,7 +392,7 @@ export default function SearchActive() {
       ) : failed ? (
         <EmptyState title={t.common.loadError} message={t.common.loadErrorMessage} action={{label: t.common.retry, onPress: retry}} />
       ) : nothing ? (
-        <EmptyState title={t.search.noResults(query.trim())} />
+        <EmptyState title={t.search.noResults(query.trim())} message={t.search.noResultsHint} />
       ) : (
         <FlatList
           data={rest.songs}

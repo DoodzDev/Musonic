@@ -3,10 +3,11 @@
  * @description Imperative playback action helpers used across screens. Every list now starts through the playback engine (launchers.ts); the
  *   legacy loaders are gone. Skips always go through the engine.
  * @author DoodzProg
- * @version 2.3.0
+ * @version 2.4.1
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer from './player';
+import {deezerSongId, isOnlineId} from './onlineIds';
 import {getStreamUrl, getCoverArtUrl} from '../api/client';
 import {getSimilarSongs} from '../api/endpoints/library';
 import {getDeezerArtistId, getDeezerArtistTopTracks} from '../api/deezer';
@@ -15,6 +16,8 @@ import {useDownloadStore} from '../store/downloadStore';
 import {useSettingsStore} from '../store/settingsStore';
 import type {Track} from '../store/playerStore';
 import {playerArtwork} from './playerArtwork';
+import {notifyJump} from './connect/jumps';
+import {isEpisode} from '../api/endpoints/podcasts';
 
 /**
  * Converts an internal Track object to an RNTP-compatible track descriptor.
@@ -55,6 +58,7 @@ export function toRNTPTrack(t: Track) {
     artistId: t.artistId,
     isMagic: t.isMagic,
     isAutoplay: t.isAutoplay,
+    noFade: isEpisode(trackId) || undefined,
   };
 }
 
@@ -72,7 +76,7 @@ export function skipPrevForce(): void {
 }
 
 export function seekTo(seconds: number): void {
-  TrackPlayer.seekTo(seconds);
+  TrackPlayer.seekTo(seconds).then(notifyJump, () => {});
 }
 
 export async function fetchAutoplayTracks(
@@ -88,7 +92,7 @@ export async function fetchAutoplayTracks(
       if (!artistId) return;
       const tracks = await getDeezerArtistTopTracks(artistId, 15).catch(() => []);
       for (const t of tracks) {
-        const sid = `ext-deezer-song-${t.id}`;
+        const sid = deezerSongId(t.id);
         if (existingIds.has(sid)) continue;
         existingIds.add(sid);
         pool.push({
@@ -107,7 +111,7 @@ export async function fetchAutoplayTracks(
     })(),
     // Navidrome similar songs (skip for Deezer-sourced seeds)
     (async () => {
-      if (seedTrack.id.startsWith('ext-')) return;
+      if (isOnlineId(seedTrack.id)) return;
       const similar = await getSimilarSongs(seedTrack.id, 15).catch(() => []);
       for (const s of similar as any[]) {
         const sid = String(s.id);
@@ -130,9 +134,27 @@ export async function fetchAutoplayTracks(
     })(),
   ]);
 
-  for (let i = pool.length - 1; i > 0; i--) {
+  // Same song under another id (the library track and its online copy, or both sources): the
+  // suggestions used to offer the track playing right after itself.
+  const seen = new Set([songKey(seedTrack.title, seedTrack.artist)]);
+  const unique = pool.filter(t => {
+    const key = songKey(t.title, t.artist);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  for (let i = unique.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+    [unique[i], unique[j]] = [unique[j], unique[i]];
   }
-  return pool.slice(0, 10);
+  return unique.slice(0, 10);
+}
+
+/** Title and main artist, case, accents and punctuation ignored. */
+function songKey(title?: string, artist?: string): string {
+  const main = (artist ?? '').split(/,|&| feat\.? | ft\.? /i)[0];
+  return `${title ?? ''}|${main}`
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[^a-z0-9|]/g, '');
 }

@@ -7,7 +7,7 @@
  *   answers but refuses the account sends it back to sign in (ADR-021)
  *   instead of switching to offline mode.
  * @author DoodzProg
- * @version 1.7.0
+ * @version 1.7.1
  * @license CC-BY-NC-4.0
  */
 import {getActiveServer, pingServer, PingError, reportAuthProblem} from '../api/client';
@@ -16,6 +16,8 @@ import {useDownloadStore} from '../store/downloadStore';
 import {syncPlaylistCovers} from './offlinePlaylistCovers';
 import {useSettingsStore} from '../store/settingsStore';
 import {checkShortIds} from './shortIds/live';
+import {setMusonicServer} from './onlineIds';
+import {markOnlineIdsPending} from './onlineIdsMigration';
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
@@ -54,6 +56,8 @@ async function tick(): Promise<boolean> {
   const startedAt = Date.now();
   try {
     const {musonic} = await withTimeout(pingServer(server), PING_TIMEOUT_MS);
+    setMusonicServer(musonic);
+    if (musonic) markOnlineIdsPending();
     if (consecutiveFailures > 0) {
       console.log(`[connectivity] ping ok after ${consecutiveFailures} failure(s), ${Date.now() - startedAt} ms`);
     }

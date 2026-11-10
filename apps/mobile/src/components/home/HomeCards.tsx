@@ -6,7 +6,7 @@
  *   "raised" relief (soft shadow + fine light edge) for a light 3D feel, and
  *   every card says what it is (album, track, playlist).
  * @author DoodzProg
- * @version 1.1.1
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -70,7 +70,7 @@ export function QuickTile({kind, name, kindLabel, coverId, playlistId, onPress}:
 
 // ─── Cards ────────────────────────────────────────────────────────────────────
 
-export function AlbumCard({name, subtitle, coverId, coverUrl, playlistId, special, onPress}: {
+export function AlbumCard({name, subtitle, coverId, coverUrl, playlistId, special, onPress, onPlay, playLabel}: {
   name: string;
   subtitle?: string;
   coverId?: string;
@@ -80,6 +80,9 @@ export function AlbumCard({name, subtitle, coverId, coverUrl, playlistId, specia
   /** Built-in collections drawn instead of a cover. */
   special?: 'liked' | 'library';
   onPress: () => void;
+  /** A play button on the cover: plays without opening the page. */
+  onPlay?: () => void;
+  playLabel?: string;
 }) {
   return (
     <PressableScale onPress={onPress} accessibilityLabel={[name, subtitle].filter(Boolean).join(', ')} style={styles.card}>
@@ -91,6 +94,11 @@ export function AlbumCard({name, subtitle, coverId, coverUrl, playlistId, specia
         ) : (
           <Cover id={coverId} imageUrl={coverUrl} playlistId={playlistId} size="card" />
         )}
+        {onPlay ? (
+          <PressableScale onPress={onPlay} haptic="light" hitSlop={6} accessibilityLabel={playLabel} style={[styles.playDisc, styles.cardPlay]}>
+            <PlayIcon size={16} color="#000" />
+          </PressableScale>
+        ) : null}
       </Raised>
       <View style={styles.cardText}>
         <Text variant="footnote" numberOfLines={1} style={styles.bold}>{name}</Text>
@@ -268,6 +276,8 @@ const styles = StyleSheet.create({
   },
   forYouText: {flex: 1, minWidth: 0, gap: 2},
   forYouArtist: {color: 'rgba(255,255,255,0.75)'},
+  /** Play button over a card's cover, bottom right. */
+  cardPlay: {position: 'absolute', right: 8, bottom: 8},
   playDisc: {
     width: 36,
     height: 36,

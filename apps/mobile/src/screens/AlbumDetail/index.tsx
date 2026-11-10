@@ -8,10 +8,11 @@
  *   (`ext-deezer-album-…`) are imported to the server when added to the
  *   library. Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.0.3
+ * @version 2.0.4
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {isOnlineId} from '../../services/onlineIds';
 import {Alert, StyleSheet, View} from 'react-native';
 import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -233,7 +234,7 @@ export default function AlbumDetailScreen() {
 
   // ─── Downloads ────────────────────────────────────────────────────────────
 
-  const downloadable = useMemo(() => songs.filter(s => !String(s.id).startsWith('ext-')), [songs]);
+  const downloadable = useMemo(() => songs.filter(s => !isOnlineId(s.id)), [songs]);
   const allDownloaded = downloadable.length > 0 && downloadable.every(s => !!downloads[String(s.id)]);
   const download = useCallback(() => {
     const d = getT();

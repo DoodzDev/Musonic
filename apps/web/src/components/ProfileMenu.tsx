@@ -13,6 +13,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext.tsx';
 import { tr } from '../i18n/index.ts';
 import { SettingsDialog } from './SettingsDialog.tsx';
+import { ConfirmDialog } from './ConfirmDialog.tsx';
+import { CloseIcon } from './icons/CloseIcon.tsx';
 import { ChevronDownIcon } from './icons/ChevronDownIcon.tsx';
 
 const Chevron = () => <span className="chevron-right"><ChevronDownIcon size={16} /></span>;
@@ -46,10 +48,42 @@ function LinkRow({ href, label }: { href: string; label: string }) {
   );
 }
 
+/** About: the version, the project's and the creator's websites. */
+function AboutDialog({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => event.key === 'Escape' && onClose();
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="dialog-backdrop" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="dialog" role="dialog" aria-modal="true" aria-label={t.about}>
+        <div className="dialog-head">
+          <h2 className="dialog-title">{t.about}</h2>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label={tr.common.close} title={tr.common.close}>
+            <CloseIcon size={18} />
+          </button>
+        </div>
+        <div className="menu-group">
+          <div className="menu-row">
+            <span>{t.version}</span>
+            <span className="menu-value">Musonic Web {__MUSONIC_WEB_VERSION__}</span>
+          </div>
+          <LinkRow href="https://musonic.doodz.dev/" label={t.projectSite} />
+          <LinkRow href="https://doodz.dev" label={t.creatorSite} />
+        </div>
+        <span className="menu-note">Musonic · made by Doodz</span>
+      </div>
+    </div>
+  );
+}
+
 export function ProfileMenu() {
   const { session, logout } = useApp();
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState(false);
+  const [about, setAbout] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [pos, setPos] = useState({ left: 0, top: 0 });
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -99,10 +133,6 @@ export function ProfileMenu() {
           </div>
 
           <div className="menu-group">
-            <button type="button" className="menu-row" role="menuitem" onClick={logout}>
-              <span>{t.switchAccount}</span>
-              <Chevron />
-            </button>
             <button
               type="button"
               className="menu-row"
@@ -114,24 +144,40 @@ export function ProfileMenu() {
               <span>{t.settings}</span>
               <Chevron />
             </button>
+            <button
+              type="button"
+              className="menu-row"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                setAbout(true);
+              }}>
+              <span>{t.about}</span>
+              <Chevron />
+            </button>
           </div>
 
-          <span className="menu-caption">{t.about}</span>
           <div className="menu-group">
-            <LinkRow href="https://musonic.doodz.dev/" label={t.website} />
-            <LinkRow href="https://github.com/DoodzDev/Musonic" label="GitHub" />
-            <LinkRow href="https://doodz.dev" label="doodz.dev" />
-          </div>
-          <span className="menu-note">Musonic Web {__MUSONIC_WEB_VERSION__} · made by Doodz</span>
-
-          <div className="menu-group">
-            <button type="button" className="menu-row is-destructive" role="menuitem" onClick={logout}>
+            <button
+              type="button"
+              className="menu-row is-destructive"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                setLeaving(true);
+              }}>
               {t.logout}
             </button>
           </div>
         </div>
       )}
       {settings && <SettingsDialog onClose={() => setSettings(false)} />}
+      {about && <AboutDialog onClose={() => setAbout(false)} />}
+      {leaving && (
+        <ConfirmDialog title={t.logoutTitle} confirm={t.logout} warning onConfirm={logout} onClose={() => setLeaving(false)}>
+          {t.logoutMessage(session.username, serverName(session.baseUrl))}
+        </ConfirmDialog>
+      )}
     </div>
   );
 }

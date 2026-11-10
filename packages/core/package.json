@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./releases": "./src/releases/releases.ts",
     "./playback": "./src/playback/buildQueue.ts",
-    "./ids": "./src/ids/shortId.ts"
+    "./ids": "./src/ids/shortId.ts",
+    "./connect": "./src/connect/connect.ts"
   },
   "scripts": {
     "test": "vitest run",

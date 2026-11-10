@@ -43,6 +43,18 @@ object MusonicPlayback {
 
   var token: MediaSessionCompat.Token? = null
     private set
+
+  /** Crossfade length in seconds, 0 = off (ADR-028). */
+  var crossfadeSeconds = 0
+    private set
+
+  /** The sleep timer stops playback at the end of this track: no fade. */
+  var crossfadeHold = false
+    private set
+
+  /** Set by [MusonicPlayerService] while it lives. */
+  var crossfade: MusonicCrossfade? = null
+
   private val tokenListeners = mutableListOf<(MediaSessionCompat.Token) -> Unit>()
 
   private var lastState: String? = null
@@ -60,6 +72,26 @@ object MusonicPlayback {
     }
     waiting.toList().forEach { it(player) }
     waiting.clear()
+  }
+
+  fun setCrossfade(seconds: Int) {
+    crossfadeSeconds = seconds.coerceAtLeast(0)
+    crossfade?.settingsChanged()
+  }
+
+  fun setCrossfadeHold(hold: Boolean) {
+    crossfadeHold = hold
+    crossfade?.settingsChanged()
+  }
+
+  /** End of a crossfade: [next], already playing the next track, becomes the session's player. */
+  fun takeOver(next: ExoPlayer) {
+    player?.removeListener(events)
+    val line = (session?.player as? MusonicPlayerService.RemoteControls)?.line
+    player = next
+    next.addListener(events)
+    session?.player = MusonicPlayerService.RemoteControls(next).also { it.line = line }
+    announceTrack(next, next.currentMediaItem)
   }
 
   fun detach() {
@@ -136,17 +168,7 @@ object MusonicPlayback {
     }
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-      val player = player ?: return
-      val index = if (mediaItem == null) null else player.currentMediaItemIndex
-      val track = trackOf(mediaItem)
-      emit("playback-active-track-changed", Bundle().apply {
-        lastIndex?.let { putInt("lastIndex", it) }
-        lastTrack?.let { putBundle("lastTrack", it) }
-        index?.let { putInt("index", it) }
-        track?.let { putBundle("track", it) }
-      })
-      lastIndex = index
-      lastTrack = track
+      announceTrack(player ?: return, mediaItem)
     }
 
     override fun onPlaybackStateChanged(playbackState: Int) {
@@ -167,6 +189,19 @@ object MusonicPlayback {
         putString("message", error.errorCodeName)
       })
     }
+  }
+
+  private fun announceTrack(player: Player, mediaItem: MediaItem?) {
+    val index = if (mediaItem == null) null else player.currentMediaItemIndex
+    val track = trackOf(mediaItem)
+    emit("playback-active-track-changed", Bundle().apply {
+      lastIndex?.let { putInt("lastIndex", it) }
+      lastTrack?.let { putBundle("lastTrack", it) }
+      index?.let { putInt("index", it) }
+      track?.let { putBundle("track", it) }
+    })
+    lastIndex = index
+    lastTrack = track
   }
 
   /** Seconds, as track-player gives them; 0 when unknown. */

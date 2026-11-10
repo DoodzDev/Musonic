@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Musonic Connect** (ADR-019, beta). Each device of an account registers on `/v1/events`
+  (`register`), says what it plays when that changes (`player`, dated by the server's clock so
+  the others compute the position without comparing clocks) and gets the commands meant for it
+  (`command`: play, pause, next, previous, seek, volume, transfer); the account's devices learn
+  who is online (`devices`). An administrator may act on another account's devices.
+  `GET /v1/admin/connect` lists them all.
+- **Synced playback**, an account setting (`GET/PUT /v1/me/settings`, on by default): one device
+  plays at a time; the devices learn it at once (`settings`).
+- **The account's last listening** (`GET /v1/me/player`): the track or episode, its position and
+  queue, kept at each change and when a device is closed in the middle of a song, so any device
+  takes it up later. Migration `0010`.
+
 ## [1.1.0] - 2026-10-29
 
 ### Added

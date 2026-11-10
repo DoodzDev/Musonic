@@ -4,7 +4,7 @@
  *   Media3 player when it is chosen (ADR-022, `mode.ts`). Same calls, events,
  *   hooks and constants either way; the whole app imports them from here.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.1.0
  * @license CC-BY-NC-4.0
  */
 import RNTP, {
@@ -21,6 +21,10 @@ export type {AddTrack, PlaybackState, Progress, Track} from 'react-native-track-
 
 const TrackPlayer: typeof RNTP = usesNativePlayer ? (NativePlayer as unknown as typeof RNTP) : RNTP;
 export default TrackPlayer;
+
+export {usesNativePlayer};
+export const setCrossfade = native.setCrossfade;
+export const setCrossfadeHold = native.setCrossfadeHold;
 
 export const useActiveTrack: typeof rntpUseActiveTrack = usesNativePlayer ? native.useActiveTrack : rntpUseActiveTrack;
 export const usePlaybackState: typeof rntpUsePlaybackState = usesNativePlayer

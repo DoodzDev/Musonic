@@ -1,16 +1,19 @@
 /**
  * @file index.tsx
- * @description Settings screen (Design v2, R5.8). Large title, then inset
- *   grouped lists (shared `ListGroup`): Account,
- *   Language, Player, Downloads, Offline, Display, About. Each setting explains itself under its name; the visual
- *   choices (progress bar style, landscape navigation bar side, landscape
- *   player layout) show a small preview of each option.
+ * @description Settings screen (Design v2, R5.8; order of the 2026-11-10 review):
+ *   Playback (autoplay, crossfade), Quality and downloads (each quality explains
+ *   the chosen level), Musonic Connect (on a Musonic Server), Appearance
+ *   (language, haptics), then « Advanced options », a second screen for the rest:
+ *   magic shuffle, time left, Previous, the player kind, progress style, back
+ *   online by itself, start tab, rotation, Home date, full screen, landscape
+ *   layouts. Updates are checked from Profile > About. The visual choices show a
+ *   small preview of each option.
  * @author DoodzProg
- * @version 2.7.0
+ * @version 3.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
-import {ActivityIndicator, Alert, Platform, StatusBar, StyleSheet, View} from 'react-native';
+import {Alert, Platform, StatusBar, StyleSheet, View} from 'react-native';
 import Animated from 'react-native-reanimated';
 import {useNavigation} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -24,7 +27,6 @@ import PressableScale from '../../components/ui/PressableScale';
 import Button from '../../components/ui/Button';
 import Text from '../../components/ui/Text';
 import {BackArrowIcon} from '../../components/icons';
-import {checkForUpdate} from '../../services/updateChecker';
 import {chooseNativePlayer, nativePlayerChosen} from '../../services/player/mode';
 import {useSettingsStore, type StorageLimitMB, type StreamQuality} from '../../store/settingsStore';
 import {useDownloadStore} from '../../store/downloadStore';
@@ -32,8 +34,9 @@ import {formatBytes} from '../../utils/formatBytes';
 import {useDockInset} from '../../navigation/dockLayout';
 import {colors, radii, spacing} from '../../theme';
 import {useT} from '../../i18n';
-import {hostOf} from '../../utils/hostOf';
-import {version as APP_VERSION} from '../../../package.json';
+import {useConnectSnapshot} from '../../services/connect/useConnect';
+import {setSync} from '../../services/connect/connectService';
+import {playbackBridge, usePlayerStore} from '../../store/playerStore';
 
 // ─── Previews ─────────────────────────────────────────────────────────────────
 
@@ -113,13 +116,14 @@ function Choices<T extends string>({options, value, onChange, renderPreview}: {
   );
 }
 
-/** A setting whose control sits under its name (choices, slider). */
-function Block({label, description, children}: {label: string; description?: string; children: React.ReactNode}) {
+/** A setting whose control sits under its name (choices, slider); `hint` explains the current choice. */
+function Block({label, description, hint, children}: {label: string; description?: string; hint?: string; children: React.ReactNode}) {
   return (
     <View style={styles.block}>
       <Text variant="body">{label}</Text>
       {description ? <Text variant="footnote" color="textSecondary">{description}</Text> : null}
       <View style={styles.blockControl}>{children}</View>
+      {hint ? <Text variant="footnote" color="textSecondary">{hint}</Text> : null}
     </View>
   );
 }
@@ -130,7 +134,12 @@ const playerPreview = (v: 'left' | 'right', active: boolean) => <SidePreview pla
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
-export default function SettingsScreen() {
+/** The second screen: « Advanced options ». */
+export function AdvancedSettingsScreen() {
+  return <SettingsScreen advanced />;
+}
+
+export default function SettingsScreen({advanced = false}: {advanced?: boolean}) {
   const t = useT();
   const navigation = useNavigation();
   const {scrollY, onScroll} = useLargeTitleScroll();
@@ -138,8 +147,8 @@ export default function SettingsScreen() {
   const dockInset = useDockInset();
   // Settings opens over the tabs: no Rail beside it, only the side insets.
   const insets = useSafeAreaInsets();
-  const [checkingUpdate, setCheckingUpdate] = useState(false);
   const server = useSettingsStore(st => st.servers.find(x => x.id === st.activeServerId) ?? null);
+  const connect = useConnectSnapshot();
   const usedBytes = useDownloadStore(st => st.getTotalSizeBytes());
   const s = useSettingsStore(
     useShallow(st => ({
@@ -165,8 +174,8 @@ export default function SettingsScreen() {
       setAutoOnlineMode: st.setAutoOnlineMode,
       locale: st.locale,
       setLocale: st.setLocale,
-      settingsMode: st.settingsMode,
-      setSettingsMode: st.setSettingsMode,
+      showRemainingTime: st.showRemainingTime,
+      setShowRemainingTime: st.setShowRemainingTime,
       startTab: st.startTab,
       setStartTab: st.setStartTab,
       showHomeDate: st.showHomeDate,
@@ -181,11 +190,12 @@ export default function SettingsScreen() {
       setStorageLimitMB: st.setStorageLimitMB,
       hapticsEnabled: st.hapticsEnabled,
       setHapticsEnabled: st.setHapticsEnabled,
+      isMagicShuffleEnabled: st.isMagicShuffleEnabled,
+      setIsMagicShuffleEnabled: st.setIsMagicShuffleEnabled,
     })),
   );
 
-  const advanced = s.settingsMode === 'advanced';
-  // Player under test (ADR-022): saved for the next launch.
+  // The player kind (ADR-022), saved for the next launch.
   const [nativePlayer, setNativePlayerState] = useState(nativePlayerChosen);
   const setNativePlayer = (on: boolean) => {
     chooseNativePlayer(on);
@@ -205,6 +215,16 @@ export default function SettingsScreen() {
     {value: 10240, label: t.settings.playback.storageLimitGB(10)},
   ];
 
+  // Turning magic off while it plays falls back to plain shuffle.
+  const setMagicShuffle = (on: boolean) => {
+    s.setIsMagicShuffleEnabled(on);
+    if (!on && usePlayerStore.getState().shuffleMode === 'magic') {
+      const engine = playbackBridge();
+      if (engine) engine.setShuffleMode('on');
+      else usePlayerStore.getState().setShuffleMode('on');
+    }
+  };
+
   const setAutoDownload = (on: boolean) => {
     if (!on) {
       s.setIsAutoDownloadEnabled(false);
@@ -216,10 +236,163 @@ export default function SettingsScreen() {
     ]);
   };
 
-  const checkUpdate = async () => {
-    setCheckingUpdate(true);
-    try { await checkForUpdate(); } finally { setCheckingUpdate(false); }
+
+
+  const title = advanced ? t.settings.advanced : t.settings.title;
+
+  const qualityHint = (q: StreamQuality) => {
+    const h = t.settings.playback.qualityHints;
+    return q === 0 ? h.original : q === 320 ? h.high : q === 192 ? h.medium : h.low;
   };
+
+  const mainGroups = (
+    <>
+      <ListGroup caption={t.settings.sections.player}>
+        <ListItem label={t.settings.playback.autoplayLabel} description={t.settings.playback.autoplayDesc} toggle={{value: s.isAutoplayEnabled, onValueChange: s.setIsAutoplayEnabled}} />
+        <Block label={t.settings.transitions.crossfadeLabel} description={t.settings.transitions.crossfadeDesc}>
+          <View style={styles.sliderRow}>
+            <Slider
+              style={styles.slider}
+              minimumValue={0}
+              maximumValue={12}
+              step={1}
+              value={s.crossfadeDuration}
+              onValueChange={s.setCrossfadeDuration}
+              minimumTrackTintColor={colors.accent}
+              maximumTrackTintColor={colors.fill}
+              thumbTintColor={colors.textPrimary}
+              accessibilityLabel={t.settings.transitions.crossfadeLabel}
+            />
+            <Text variant="subhead" color="textSecondary" style={styles.sliderValue}>{s.crossfadeDuration} s</Text>
+          </View>
+        </Block>
+      </ListGroup>
+
+      <ListGroup caption={t.settings.sections.quality}>
+        <Block label={t.settings.playback.qualityWifiLabel} hint={qualityHint(s.streamQualityWifi)}>
+          <SegmentedControl options={qualityOptions} value={s.streamQualityWifi} onChange={s.setStreamQualityWifi} />
+        </Block>
+        <Block label={t.settings.playback.qualityMobileLabel} description={t.settings.playback.qualityDesc} hint={qualityHint(s.streamQualityMobile)}>
+          <SegmentedControl options={qualityOptions} value={s.streamQualityMobile} onChange={s.setStreamQualityMobile} />
+        </Block>
+        <ListItem label={t.settings.playback.wifiOnlyLabel} description={t.settings.playback.wifiOnlyDesc} toggle={{value: s.downloadWifiOnly, onValueChange: s.setDownloadWifiOnly}} />
+        <ListItem label={t.settings.playback.autoDownloadLabel} description={t.settings.playback.autoDownloadDesc} toggle={{value: s.isAutoDownloadEnabled, onValueChange: setAutoDownload}} />
+        <Block label={t.settings.playback.storageLimitLabel} description={t.settings.playback.storageLimitDesc(formatBytes(usedBytes))}>
+          <SegmentedControl options={storageOptions} value={s.storageLimitMB} onChange={s.setStorageLimitMB} />
+        </Block>
+      </ListGroup>
+
+      {server?.apiKey ? (
+        <ListGroup caption={t.settings.sections.connect} note={t.connect.adminNotice}>
+          <ListItem
+            label={t.connect.sync}
+            description={connect.sync ? t.connect.syncOn : t.connect.syncOff}
+            toggle={{value: connect.sync, onValueChange: setSync}}
+          />
+        </ListGroup>
+      ) : null}
+
+      <ListGroup caption={t.settings.sections.appearance}>
+        <Block label={t.settings.language.sectionTitle}>
+          <SegmentedControl
+            options={[
+              {value: 'system', label: t.settings.language.system},
+              {value: 'fr', label: 'Français'},
+              {value: 'en', label: 'English'},
+            ]}
+            value={s.locale}
+            onChange={s.setLocale}
+          />
+        </Block>
+        <ListItem label={t.settings.display.hapticsLabel} description={t.settings.display.hapticsDesc} toggle={{value: s.hapticsEnabled, onValueChange: s.setHapticsEnabled}} />
+      </ListGroup>
+
+      <ListGroup>
+        <ListItem label={t.settings.advanced} accessory="chevron" onPress={() => navigation.navigate('SettingsAdvanced' as never)} />
+      </ListGroup>
+    </>
+  );
+
+  const advancedGroups = (
+    <>
+      <ListGroup caption={t.settings.sections.player}>
+        <ListItem label={t.settings.playback.magicShuffleLabel} description={t.settings.playback.magicShuffleDesc} toggle={{value: s.isMagicShuffleEnabled, onValueChange: setMagicShuffle}} />
+        <ListItem label={t.settings.player.showRemaining} description={t.settings.player.showRemainingDesc} toggle={{value: s.showRemainingTime, onValueChange: s.setShowRemainingTime}} />
+        <ListItem
+          label={t.settings.playback.alwaysPreviousLabel}
+          description={t.settings.playback.alwaysPreviousDesc}
+          toggle={{value: s.isAlwaysPrevious, onValueChange: s.setIsAlwaysPrevious}}
+        />
+        {Platform.OS === 'android' ? (
+          <ListItem
+            label={t.settings.playback.nativePlayerLabel}
+            description={t.settings.playback.nativePlayerDesc}
+            toggle={{value: nativePlayer, onValueChange: setNativePlayer}}
+          />
+        ) : null}
+        <Block label={t.settings.player.progressLabel}>
+          <Choices
+            options={[
+              {value: 'classic', label: t.settings.player.classic},
+              {value: 'waveform', label: t.settings.player.waveform},
+            ]}
+            renderPreview={progressPreview}
+            value={s.useWaveformScrubber ? 'waveform' : 'classic'}
+            onChange={v => s.setUseWaveformScrubber(v === 'waveform')}
+          />
+        </Block>
+      </ListGroup>
+
+      <ListGroup caption={t.settings.sections.offline}>
+        <ListItem
+          label={t.settings.offline.autoOnlineLabel}
+          description={t.settings.offline.autoOnlineDesc}
+          toggle={{value: s.autoOnlineMode, onValueChange: s.setAutoOnlineMode}}
+        />
+      </ListGroup>
+
+      <ListGroup caption={t.settings.sections.display}>
+        <Block label={t.settings.display.startTabLabel} description={t.settings.display.startTabDesc}>
+          <SegmentedControl
+            options={[
+              {value: 'Home', label: t.tabs.home},
+              {value: 'Search', label: t.tabs.search},
+              {value: 'Library', label: t.tabs.library},
+            ]}
+            value={s.startTab}
+            onChange={s.setStartTab}
+          />
+        </Block>
+        <ListItem label={t.settings.display.lockRotationLabel} description={t.settings.display.lockRotationDesc} toggle={{value: s.rotationLocked, onValueChange: s.setRotationLocked}} />
+        <ListItem label={t.settings.display.homeDateLabel} description={t.settings.display.homeDateDesc} toggle={{value: s.showHomeDate, onValueChange: s.setShowHomeDate}} />
+        <ListItem label={t.settings.display.fullscreenLabel} description={t.settings.display.fullscreenDesc} toggle={{value: s.isFullscreenMode, onValueChange: s.setIsFullscreenMode}} />
+        {s.rotationLocked ? null : (
+          <Block label={t.settings.display.navBarPositionLabel}>
+            <Choices
+              options={[
+                {value: 'left', label: t.settings.display.navBarLeft},
+                {value: 'right', label: t.settings.display.navBarRight},
+              ]}
+              renderPreview={navBarPreview}
+              value={s.navBarPosition}
+              onChange={s.setNavBarPosition}
+            />
+          </Block>
+        )}
+        <Block label={t.settings.display.fullPlayerLayoutLabel}>
+          <Choices
+            options={[
+              {value: 'left', label: t.settings.display.fullPlayerCoverLeft},
+              {value: 'right', label: t.settings.display.fullPlayerCoverRight},
+            ]}
+            renderPreview={playerPreview}
+            value={s.fullPlayerCoverSide}
+            onChange={s.setFullPlayerCoverSide}
+          />
+        </Block>
+      </ListGroup>
+    </>
+  );
 
   return (
     <View style={[styles.root, {paddingLeft: insets.left, paddingRight: insets.right}]}>
@@ -229,190 +402,14 @@ export default function SettingsScreen() {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.column, {paddingTop: top, paddingBottom: dockInset + spacing.l}]}>
-        <LargeTitle title={t.settings.title} scrollY={scrollY} />
+        <LargeTitle title={title} scrollY={scrollY} />
         <View style={styles.groups}>
-          <ListGroup note={t.settings.mode.desc}>
-            <ListItem
-              label={t.settings.mode.label}
-              toggle={{value: advanced, onValueChange: v => s.setSettingsMode(v ? 'advanced' : 'basic')}}
-            />
-          </ListGroup>
-
-          {server ? (
-            <ListGroup caption={t.settings.account.sectionTitle} note={t.settings.account.note}>
-              <ListItem label={server.username} value={hostOf(server.url)} />
-            </ListGroup>
-          ) : null}
-
-          <ListGroup caption={t.settings.sections.player}>
-            <Block label={t.settings.player.progressLabel} description={t.settings.player.progressDesc}>
-              <Choices
-                options={[
-                  {value: 'classic', label: t.settings.player.classic},
-                  {value: 'waveform', label: t.settings.player.waveform},
-                ]}
-                renderPreview={progressPreview}
-                value={s.useWaveformScrubber ? 'waveform' : 'classic'}
-                onChange={v => s.setUseWaveformScrubber(v === 'waveform')}
-              />
-            </Block>
-            {advanced ? (
-              <Block label={t.settings.transitions.crossfadeLabel} description={t.settings.transitions.crossfadeDesc}>
-                <View style={styles.sliderRow}>
-                  <Slider
-                    style={styles.slider}
-                    minimumValue={0}
-                    maximumValue={12}
-                    step={1}
-                    value={s.crossfadeDuration}
-                    onValueChange={s.setCrossfadeDuration}
-                    minimumTrackTintColor={colors.accent}
-                    maximumTrackTintColor={colors.fill}
-                    thumbTintColor={colors.textPrimary}
-                    accessibilityLabel={t.settings.transitions.crossfadeLabel}
-                  />
-                  <Text variant="subhead" color="textSecondary" style={styles.sliderValue}>{s.crossfadeDuration} s</Text>
-                </View>
-              </Block>
-            ) : null}
-            <Block label={t.settings.playback.qualityWifiLabel} description={t.settings.playback.qualityDesc}>
-              <SegmentedControl options={qualityOptions} value={s.streamQualityWifi} onChange={s.setStreamQualityWifi} />
-            </Block>
-            <Block label={t.settings.playback.qualityMobileLabel}>
-              <SegmentedControl options={qualityOptions} value={s.streamQualityMobile} onChange={s.setStreamQualityMobile} />
-            </Block>
-            <ListItem
-              label={t.settings.playback.autoplayLabel}
-              description={t.settings.playback.autoplayDesc}
-              toggle={{value: s.isAutoplayEnabled, onValueChange: s.setIsAutoplayEnabled}}
-            />
-            <ListItem
-              label={t.settings.playback.alwaysPreviousLabel}
-              description={t.settings.playback.alwaysPreviousDesc}
-              toggle={{value: s.isAlwaysPrevious, onValueChange: s.setIsAlwaysPrevious}}
-            />
-            {advanced && Platform.OS === 'android' ? (
-              <ListItem
-                label={t.settings.playback.nativePlayerLabel}
-                description={t.settings.playback.nativePlayerDesc}
-                toggle={{value: nativePlayer, onValueChange: setNativePlayer}}
-              />
-            ) : null}
-          </ListGroup>
-
-          <ListGroup caption={t.settings.sections.downloads}>
-            <ListItem
-              label={t.settings.playback.wifiOnlyLabel}
-              description={t.settings.playback.wifiOnlyDesc}
-              toggle={{value: s.downloadWifiOnly, onValueChange: s.setDownloadWifiOnly}}
-            />
-            <ListItem
-              label={t.settings.playback.autoDownloadLabel}
-              description={t.settings.playback.autoDownloadDesc}
-              toggle={{value: s.isAutoDownloadEnabled, onValueChange: setAutoDownload}}
-            />
-            {advanced ? (
-              <Block label={t.settings.playback.storageLimitLabel} description={t.settings.playback.storageLimitDesc(formatBytes(usedBytes))}>
-                <SegmentedControl options={storageOptions} value={s.storageLimitMB} onChange={s.setStorageLimitMB} />
-              </Block>
-            ) : null}
-          </ListGroup>
-
-          <ListGroup caption={t.settings.sections.offline}>
-            <ListItem
-              label={t.settings.offline.autoOnlineLabel}
-              description={t.settings.offline.autoOnlineDesc}
-              toggle={{value: s.autoOnlineMode, onValueChange: s.setAutoOnlineMode}}
-            />
-          </ListGroup>
-
-          <ListGroup caption={t.settings.sections.display}>
-            <ListItem
-              label={t.settings.display.homeDateLabel}
-              description={t.settings.display.homeDateDesc}
-              toggle={{value: s.showHomeDate, onValueChange: s.setShowHomeDate}}
-            />
-            <Block label={t.settings.display.startTabLabel} description={t.settings.display.startTabDesc}>
-              <SegmentedControl
-                options={[
-                  {value: 'Home', label: t.tabs.home},
-                  {value: 'Search', label: t.tabs.search},
-                  {value: 'Library', label: t.tabs.library},
-                ]}
-                value={s.startTab}
-                onChange={s.setStartTab}
-              />
-            </Block>
-            <ListItem
-              label={t.settings.display.hapticsLabel}
-              description={t.settings.display.hapticsDesc}
-              toggle={{value: s.hapticsEnabled, onValueChange: s.setHapticsEnabled}}
-            />
-            <ListItem
-              label={t.settings.display.lockRotationLabel}
-              description={t.settings.display.lockRotationDesc}
-              toggle={{value: s.rotationLocked, onValueChange: s.setRotationLocked}}
-            />
-            {!advanced || s.rotationLocked ? null : (
-              <Block label={t.settings.display.navBarPositionLabel}>
-                <Choices
-                  options={[
-                    {value: 'left', label: t.settings.display.navBarLeft},
-                    {value: 'right', label: t.settings.display.navBarRight},
-                  ]}
-                  renderPreview={navBarPreview}
-                  value={s.navBarPosition}
-                  onChange={s.setNavBarPosition}
-                />
-              </Block>
-            )}
-            <ListItem
-              label={t.settings.display.fullscreenLabel}
-              description={t.settings.display.fullscreenDesc}
-              toggle={{value: s.isFullscreenMode, onValueChange: s.setIsFullscreenMode}}
-            />
-            {advanced ? (
-              <Block label={t.settings.display.fullPlayerLayoutLabel} description={t.settings.display.fullPlayerLayoutDesc}>
-                <Choices
-                  options={[
-                    {value: 'left', label: t.settings.display.fullPlayerCoverLeft},
-                    {value: 'right', label: t.settings.display.fullPlayerCoverRight},
-                  ]}
-                  renderPreview={playerPreview}
-                  value={s.fullPlayerCoverSide}
-                  onChange={s.setFullPlayerCoverSide}
-                />
-              </Block>
-            ) : null}
-          </ListGroup>
-
-          <ListGroup caption={t.settings.language.sectionTitle}>
-            <View style={styles.padded}>
-              <SegmentedControl
-                options={[
-                  {value: 'system', label: t.settings.language.system},
-                  {value: 'fr', label: 'Français'},
-                  {value: 'en', label: 'English'},
-                ]}
-                value={s.locale}
-                onChange={s.setLocale}
-              />
-            </View>
-          </ListGroup>
-
-          <ListGroup caption={t.settings.updates.sectionTitle}>
-            <ListItem
-              label={t.settings.updates.checkButton}
-              value={checkingUpdate ? undefined : `v${APP_VERSION}`}
-              accessory={checkingUpdate ? <ActivityIndicator size="small" color={colors.accent} /> : undefined}
-              onPress={checkingUpdate ? undefined : checkUpdate}
-            />
-          </ListGroup>
+          {advanced ? advancedGroups : mainGroups}
         </View>
       </Animated.ScrollView>
 
       <LargeTitleHeader
-        title={t.settings.title}
+        title={title}
         scrollY={scrollY}
         besideRail={false}
         left={

@@ -2,7 +2,7 @@
  * @file en.ts
  * @description English strings of the web client. Same shape as fr.ts (checked by the type).
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.2.1
  * @license CC-BY-NC-4.0
  */
 
@@ -195,17 +195,47 @@ export const en: typeof fr = {
   profile: {
     open: 'Profile and account',
     title: 'Profile',
-    switchAccount: 'Switch account',
     settings: 'Settings',
     about: 'About',
-    website: 'Musonic website',
+    version: 'Version',
+    projectSite: 'Project website',
+    creatorSite: 'Creator’s website',
     logout: 'Log out',
+    logoutTitle: 'Log out?',
+    logoutMessage: (user: string, server: string) => `Do you really want to log ${user} out of ${server}? You will sign in again with your password.`,
   },
   settings: {
     title: 'Settings',
     close: 'Close settings',
     language: 'Language',
     languageHint: 'Shared with the Musonic website. The page reloads to apply it.',
+    player: 'Playback',
+    showRemaining: 'Show the time left',
+    crossfade: 'Crossfade between tracks',
+    crossfadeOff: 'Off',
+    crossfadeSeconds: (seconds: number) => `${seconds} s`,
+    crossfadeHint: 'The next track fades in over the end of the current one. Never when you skip a track yourself.',
+  },
+  connect: {
+    button: 'Devices',
+    title: 'Listen on',
+    thisDevice: 'This device',
+    playingOn: (name: string) => `Playing on ${name}`,
+    listenHere: 'Listen here',
+    none: 'No other device connected. Open Musonic on your phone or in another browser.',
+    playing: 'Playing',
+    alone: 'Plays alone',
+    failed: 'This device no longer answers.',
+    section: 'Musonic Connect',
+    deviceName: 'Name of this device',
+    sync: 'Synced playback',
+    syncOn: 'One device plays at a time: starting playback on one pauses the others.',
+    syncOff: 'Each device plays on its own, without pausing the others.',
+    adminNotice: 'The server’s administrator can see your playback to help you if something goes wrong.',
+    play: 'Play',
+    pause: 'Pause',
+    next: 'Next',
+    previous: 'Previous',
   },
   nav: {
     main: 'Main navigation',

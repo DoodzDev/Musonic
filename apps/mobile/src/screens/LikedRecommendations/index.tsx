@@ -8,10 +8,11 @@
  *   similar songs of liked tracks, without what is already liked. Each refresh
  *   draws new seeds. Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.1.2
+ * @version 2.1.3
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {deezerSongId} from '../../services/onlineIds';
 import {StyleSheet, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {State, useActiveTrack, usePlaybackState} from '../../services/player';
@@ -59,7 +60,7 @@ async function buildRecommendations(liked: SubsonicSong[]): Promise<Recommendati
       const id = await getDeezerArtistId(name).catch(() => null);
       if (!id) return;
       for (const t of await getDeezerArtistTopTracks(id, 10).catch(() => [])) {
-        const sid = `ext-deezer-song-${t.id}`;
+        const sid = deezerSongId(t.id);
         if (seen.has(sid)) continue;
         seen.add(sid);
         pool.push({id: sid, title: t.title, artist: t.artist.name, album: t.album.title, duration: t.duration, coverArt: sid});

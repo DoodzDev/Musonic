@@ -22,6 +22,7 @@ import { PlayIcon } from './icons/PlayIcon.tsx';
 import { PrevIcon } from './icons/PrevIcon.tsx';
 import { RepeatIcon } from './icons/RepeatIcon.tsx';
 import { ShuffleIcon } from './icons/ShuffleIcon.tsx';
+import { useShowRemaining } from '../player/timeDisplay.ts';
 
 const t = tr.player;
 
@@ -30,6 +31,8 @@ export function TransportButtons({ size = 1, modes = true }: { size?: number; mo
   const player = usePlayer();
   const transport = useTransport();
   const { current: song, hasNext, playing } = player;
+  // Shuffle and repeat stay this browser's: not shown while controlling another device.
+  modes = modes && !transport.remoteDevice;
   const shuffleLabel = t.shuffle[player.modes.shuffle];
   const repeatLabel = t.repeat[player.modes.repeat];
   const px = (n: number) => Math.round(n * size);
@@ -82,8 +85,11 @@ export function TransportButtons({ size = 1, modes = true }: { size?: number; mo
 
 export function ProgressBar({ times = true }: { times?: boolean }) {
   const { current: song } = usePlayer();
-  const { duration, seek } = useTransport();
-  const position = usePosition();
+  const { duration, seek, position: remote } = useTransport();
+  const local = usePosition();
+  // Another device playing (Musonic Connect): its position, moving with it.
+  const position = remote ?? local;
+  const showRemaining = useShowRemaining();
   return (
     <div className="progress">
       {times && <span className="time time-left">{formatTime(position)}</span>}
@@ -96,7 +102,7 @@ export function ProgressBar({ times = true }: { times?: boolean }) {
         disabled={!song}
         onChange={seek}
       />
-      {times && <span className="time">{formatTime(duration)}</span>}
+      {times && <span className="time">{showRemaining ? `-${formatTime(Math.max(0, duration - position))}` : formatTime(duration)}</span>}
     </div>
   );
 }

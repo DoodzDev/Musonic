@@ -11,10 +11,10 @@
  *     the row only as far as it has moved.
  *   The Sheet's swipe-to-close uses the same thresholds.
  * @author DoodzProg
- * @version 1.2.0
+ * @version 1.2.1
  * @license CC-BY-NC-4.0
  */
-import React from 'react';
+import React, {useCallback, useMemo, useRef} from 'react';
 import {StyleSheet, View, type StyleProp, type ViewStyle} from 'react-native';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import Animated, {
@@ -72,56 +72,66 @@ export function SwipeSurface({onSwipeUp, onSwipeLeft, onSwipeRight, onPress, sty
   const y = useSharedValue(0);
   const armed = useSharedValue(false);
 
-  const fire = (dir: Direction) => {
-    if (dir === 'up') onSwipeUp?.();
-    else if (dir === 'left') onSwipeLeft?.();
-    else onSwipeRight?.();
-  };
+  // Latest callbacks in a ref: the gestures are built once instead of on every render (each
+  // rebuild re-registered both handlers and re-serialised their worklets, several times a track).
+  const handlers = useRef({onSwipeUp, onSwipeLeft, onSwipeRight, onPress});
+  handlers.current = {onSwipeUp, onSwipeLeft, onSwipeRight, onPress};
+  const fire = useCallback((dir: Direction) => {
+    const h = handlers.current;
+    if (dir === 'up') h.onSwipeUp?.();
+    else if (dir === 'left') h.onSwipeLeft?.();
+    else h.onSwipeRight?.();
+  }, []);
+  const press = useCallback(() => handlers.current.onPress?.(), []);
+  const vertical = !!onSwipeUp;
 
-  // Built in two steps, so the Reanimated plugin does not see the chain: callbacks marked by hand.
-  const base = Gesture.Pan();
-  const pan = (onSwipeUp
-    ? base.minDistance(SWIPE.activation)
-    : base.activeOffsetX([-SWIPE.activation, SWIPE.activation]).failOffsetY([-SWIPE.activation, SWIPE.activation]))
-    .onUpdate(e => {
-      'worklet';
-      const horizontal = Math.abs(e.translationX) > Math.abs(e.translationY);
-      x.value = horizontal ? rubberBand(e.translationX, SWIPE.distance) : 0;
-      y.value = horizontal ? 0 : rubberBand(Math.min(0, e.translationY), SWIPE.distance);
-      const past = horizontal
-        ? Math.abs(e.translationX) > SWIPE.distance
-        : -e.translationY > SWIPE.distance;
-      if (past !== armed.value) {
-        armed.value = past;
-        if (past) runOnJS(selectionHaptic)();
-      }
-    })
-    .onEnd(e => {
-      'worklet';
-      const horizontal = Math.abs(e.translationX) > Math.abs(e.translationY);
-      let dir: Direction | null = null;
-      if (horizontal) {
-        if (e.translationX > SWIPE.distance || e.velocityX > SWIPE.velocity) dir = 'right';
-        else if (e.translationX < -SWIPE.distance || e.velocityX < -SWIPE.velocity) dir = 'left';
-      } else if (-e.translationY > SWIPE.distance || e.velocityY < -SWIPE.velocity) {
-        dir = 'up';
-      }
-      x.value = withSpring(0, springs.sheet);
-      y.value = withSpring(0, springs.sheet);
-      armed.value = false;
-      if (dir) runOnJS(fire)(dir);
+  const gesture = useMemo(() => {
+    // Built in two steps, so the Reanimated plugin does not see the chain: callbacks marked by hand.
+    const base = Gesture.Pan();
+    const pan = (vertical
+      ? base.minDistance(SWIPE.activation)
+      : base.activeOffsetX([-SWIPE.activation, SWIPE.activation]).failOffsetY([-SWIPE.activation, SWIPE.activation]))
+      .onUpdate(e => {
+        'worklet';
+        const horizontal = Math.abs(e.translationX) > Math.abs(e.translationY);
+        x.value = horizontal ? rubberBand(e.translationX, SWIPE.distance) : 0;
+        y.value = horizontal ? 0 : rubberBand(Math.min(0, e.translationY), SWIPE.distance);
+        const past = horizontal
+          ? Math.abs(e.translationX) > SWIPE.distance
+          : -e.translationY > SWIPE.distance;
+        if (past !== armed.value) {
+          armed.value = past;
+          if (past) runOnJS(selectionHaptic)();
+        }
+      })
+      .onEnd(e => {
+        'worklet';
+        const horizontal = Math.abs(e.translationX) > Math.abs(e.translationY);
+        let dir: Direction | null = null;
+        if (horizontal) {
+          if (e.translationX > SWIPE.distance || e.velocityX > SWIPE.velocity) dir = 'right';
+          else if (e.translationX < -SWIPE.distance || e.velocityX < -SWIPE.velocity) dir = 'left';
+        } else if (-e.translationY > SWIPE.distance || e.velocityY < -SWIPE.velocity) {
+          dir = 'up';
+        }
+        x.value = withSpring(0, springs.sheet);
+        y.value = withSpring(0, springs.sheet);
+        armed.value = false;
+        if (dir) runOnJS(fire)(dir);
+      });
+
+    const tap = Gesture.Tap().onEnd((_e, ok) => {
+      if (ok) runOnJS(press)();
     });
-
-  const tap = Gesture.Tap().onEnd((_e, ok) => {
-    if (ok && onPress) runOnJS(onPress)();
-  });
+    return Gesture.Exclusive(pan, tap);
+  }, [vertical, fire, press, x, y, armed]);
 
   const style2 = useAnimatedStyle(() => ({
     transform: [{translateX: x.value}, {translateY: y.value}],
   }));
 
   return (
-    <GestureDetector gesture={Gesture.Exclusive(pan, tap)}>
+    <GestureDetector gesture={gesture}>
       <Animated.View style={[style, style2]}>{children}</Animated.View>
     </GestureDetector>
   );

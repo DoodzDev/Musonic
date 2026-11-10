@@ -5,7 +5,7 @@
  *   `ListItem` takes an icon, a label (with an optional description under
  *   it), an optional value and an accessory (chevron, toggle or any element).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -93,7 +93,24 @@ export function ListItem({label, description, icon, value, accessory, toggle, de
     </>
   );
 
-  if (!onPress || toggle) {
+  // The whole row flips a toggle (only the small switch reacted before), read as one switch.
+  if (toggle) {
+    return (
+      <Pressable
+        onPress={() => toggle.onValueChange(!toggle.value)}
+        accessibilityRole="switch"
+        accessibilityLabel={label}
+        accessibilityHint={description}
+        accessibilityState={{checked: toggle.value}}
+        android_ripple={{color: colors.fill}}
+        style={styles.item}>
+        <View style={styles.row} importantForAccessibility="no-hide-descendants">
+          {content}
+        </View>
+      </Pressable>
+    );
+  }
+  if (!onPress) {
     return <View style={styles.item}>{content}</View>;
   }
   return (
@@ -127,6 +144,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.m - 4,
   },
+  /** Content of a toggle row, laid out like `item` inside its pressable. */
+  row: {flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.m - 4},
   icon: {width: ICON_COLUMN, alignItems: 'center'},
   label: {flex: 1, gap: 2, paddingVertical: 10},
   destructive: {color: colors.destructive},

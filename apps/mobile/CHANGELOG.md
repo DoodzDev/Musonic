@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Musonic Connect** (beta, with Musonic Server): the « Devices » button of the player lists your devices and moves playback to any of them at the same second (« Listen here » brings it back). While another device plays, the mini player and the full player become its remote, with the time moving. When the phone opens, it takes up your last listening if it is newer, paused where you stopped. Synced playback (one device at a time) is a switch in the same sheet and in Settings.
+- **Show the time left** (Settings): the track's length is shown by default.
+
+### Changed
+- **Simpler Settings**: one page (Playback, Downloads, Musonic Connect, Display, Updates), the rest under « Advanced options ».
+- **Android's native player is on by default** (lighter with the screen off); it can be turned off in the advanced options.
+- **The profile sheet** keeps offline mode, storage, Settings, About (version, the project's and the creator's websites) and Log out. No more account switching.
+
 ## [2.3.0] - 2026-10-29
 
 ### Added

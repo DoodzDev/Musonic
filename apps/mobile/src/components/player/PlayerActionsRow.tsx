@@ -12,7 +12,7 @@ import React from 'react';
 import {ActivityIndicator, StyleSheet, View} from 'react-native';
 import PressableScale from '../ui/PressableScale';
 import Text from '../ui/Text';
-import {LyricsIcon, QueueIcon, RepeatIcon, ShuffleIcon} from '../icons';
+import {DevicesIcon, LyricsIcon, QueueIcon, RepeatIcon, ShuffleIcon} from '../icons';
 import {colors} from '../../theme/tokens';
 import {useT} from '../../i18n';
 import type {RepeatModeUI, ShuffleMode} from '../../store/playerStore';
@@ -33,10 +33,12 @@ type Props = {
   onQueue: () => void;
   /** A podcast episode (ADR-023): its speed in place of Shuffle and Repeat. */
   speed?: {value: number; label: string; onPress: () => void};
+  /** Musonic Connect (ADR-019), on a Musonic Server: orange while music plays on another device. */
+  devices?: {elsewhere: boolean; label: string; onPress: () => void};
 };
 
 export default function PlayerActionsRow({
-  lyricsAvailable, lyricsActive, onLyrics, shuffleMode, isFetchingMagic, onShuffle, repeatMode, onRepeat, onQueue, speed}: Props) {
+  lyricsAvailable, lyricsActive, onLyrics, shuffleMode, isFetchingMagic, onShuffle, repeatMode, onRepeat, onQueue, speed, devices}: Props) {
   const t = useT().fullScreenPlayer;
   // Always closable, even when the next track has no lyrics.
   const lyricsEnabled = lyricsAvailable || lyricsActive;
@@ -47,6 +49,12 @@ export default function PlayerActionsRow({
 
   return (
     <View style={styles.row}>
+      {devices ? (
+        <PressableScale onPress={devices.onPress} haptic="selection" style={[styles.round, devices.elsewhere && styles.on]} accessibilityLabel={devices.label}>
+          <DevicesIcon color={devices.elsewhere ? colors.accent : DIM} />
+        </PressableScale>
+      ) : null}
+
       <PressableScale
         onPress={onLyrics}
         disabled={!lyricsEnabled}

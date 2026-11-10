@@ -12,7 +12,7 @@
  *   than the password (ADR-021).
  *   Persisted across restarts; consumed by RootNavigator to gate the server-setup flow.
  * @author DoodzProg
- * @version 1.11.0
+ * @version 1.12.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -88,6 +88,9 @@ type SettingsState = {
   /** Date above the Home title. */
   showHomeDate: boolean;
   setShowHomeDate: (show: boolean) => void;
+  /** Player: the time left (« −8:24 ») instead of the track's length, on the right of the bar. */
+  showRemainingTime: boolean;
+  setShowRemainingTime: (show: boolean) => void;
   /** Downloads wait for Wi-Fi; on mobile data the user is asked each time. */
   downloadWifiOnly: boolean;
   setDownloadWifiOnly: (only: boolean) => void;
@@ -115,6 +118,9 @@ type SettingsState = {
   setIsAlwaysPrevious: (enabled: boolean) => void;
   hapticsEnabled: boolean;
   setHapticsEnabled: (enabled: boolean) => void;
+  /** The shuffle button's third state, magic (suggestions mixed in); off: on / off only. */
+  isMagicShuffleEnabled: boolean;
+  setIsMagicShuffleEnabled: (enabled: boolean) => void;
   isAutoDownloadEnabled: boolean;
   setIsAutoDownloadEnabled: (enabled: boolean) => void;
   isOfflineMode: boolean;
@@ -164,6 +170,8 @@ export const useSettingsStore = create<SettingsState>()(
       setStartTab: tab => set({startTab: tab}),
       showHomeDate: true,
       setShowHomeDate: show => set({showHomeDate: show}),
+      showRemainingTime: false,
+      setShowRemainingTime: show => set({showRemainingTime: show}),
       downloadWifiOnly: true,
       setDownloadWifiOnly: only => set({downloadWifiOnly: only}),
       streamQualityWifi: 0,
@@ -188,6 +196,8 @@ export const useSettingsStore = create<SettingsState>()(
       setIsAlwaysPrevious: enabled => set({isAlwaysPrevious: enabled}),
       hapticsEnabled: true,
       setHapticsEnabled: enabled => set({hapticsEnabled: enabled}),
+      isMagicShuffleEnabled: true,
+      setIsMagicShuffleEnabled: enabled => set({isMagicShuffleEnabled: enabled}),
       isAutoDownloadEnabled: false,
       setIsAutoDownloadEnabled: enabled => set({isAutoDownloadEnabled: enabled}),
       isOfflineMode: false,

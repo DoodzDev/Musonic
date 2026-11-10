@@ -10,7 +10,7 @@
  *   Also hosts the app-wide Design v2 toast, just above the Dock. Opens on
  *   the start tab chosen in Settings.
  * @author DoodzProg
- * @version 1.4.0
+ * @version 1.4.1
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useState} from 'react';
@@ -75,6 +75,8 @@ export default function TabNavigator() {
     <View style={styles.fill}>
       <Tab.Navigator
         initialRouteName={startTab}
+        // Back on another tab returns to the start tab before leaving the app (it left at once).
+        backBehavior="initialRoute"
         screenOptions={{headerShown: false}}
         tabBar={renderTabBar}>
         <Tab.Screen

@@ -67,6 +67,8 @@ pub struct AppState {
     pub imports: Option<crate::library::import::ImportService>,
     /// Real-time events to the devices of each account.
     pub events: crate::events::Events,
+    /// Musonic Connect: the devices online and what they play (ADR-019).
+    pub connect: Arc<crate::connect::Connect>,
     /// The built administration console (`index.html` and its files), when installed.
     pub admin_dir: Option<PathBuf>,
     pub music_dir: Option<PathBuf>,
@@ -109,6 +111,7 @@ impl AppState {
             provider_health: Arc::default(),
             imports: None,
             events: Default::default(),
+            connect: Arc::default(),
             admin_dir: None,
             music_dir: None,
             import_dir: "Musonic".to_owned(),

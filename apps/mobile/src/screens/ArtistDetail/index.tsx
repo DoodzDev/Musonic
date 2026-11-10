@@ -8,10 +8,11 @@
  *   photo and actions in a fixed column, the rest scrolls on the right.
  *   Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.1.2
+ * @version 2.1.3
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {deezerSongId} from '../../services/onlineIds';
 import {Image, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
@@ -50,7 +51,7 @@ const POPULAR = 5;
 type Popular = {song: SubsonicSong; online: boolean};
 
 function deezerToSong(t: DeezerTrack): SubsonicSong {
-  const id = `ext-deezer-song-${t.id}`;
+  const id = deezerSongId(t.id);
   return {id, title: t.title, artist: t.artist.name, album: t.album.title, duration: t.duration, coverArt: id};
 }
 

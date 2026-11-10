@@ -6,7 +6,7 @@
  *   each track end (`takeEndOfTrack`). Not saved: reloading the page cancels it.
  *   In a tab hidden for a while, the browser may fire it up to a minute late.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.1.1
  * @license CC-BY-NC-4.0
  */
 
@@ -50,6 +50,11 @@ export function registerSleepPause(fn: () => void): () => void {
   return () => {
     if (pause === fn) pause = null;
   };
+}
+
+/** "End of track" is set (without taking it): the engine then lets the track end without a crossfade. */
+export function isEndOfTrackSet(): boolean {
+  return state.endOfTrack;
 }
 
 /** True once when a track ends with "end of track" set: the engine then holds the next one. */

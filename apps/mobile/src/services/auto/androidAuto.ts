@@ -17,7 +17,7 @@
  *   screen gets back 15 s, forward 30 s and the speed in place of the
  *   shuffle / repeat / like buttons.
  * @author DoodzProg
- * @version 1.7.0
+ * @version 1.7.1
  * @license CC-BY-NC-4.0
  */
 import {AppState, NativeEventEmitter, NativeModules, Platform} from 'react-native';
@@ -609,7 +609,11 @@ export function startAndroidAuto(): void {
   // Last played lists come first with the Recent sort.
   useRecentPlaysStore.subscribe(dirty);
   usePlayerStore.subscribe((s, prev) => {
-    if (s.lastPlayedPlaylists !== prev.lastPlayedPlaylists || s.queue[0]?.id !== prev.queue[0]?.id) dirty();
+    if (s.lastPlayedPlaylists !== prev.lastPlayedPlaylists) dirty();
+    // A new track only changes the "resume" item: no rebuild of the whole tree 5 s later (it ran
+    // after every track, car or not). The snapshot goes out with the next send: car connected,
+    // app in the background, or another cache change.
+    else if (s.queue[0]?.id !== prev.queue[0]?.id) snapshotDirty = true;
   });
   emitter.addListener('musonic-auto-connected', () => publishSnapshot(module));
   AppState.addEventListener('change', state => {

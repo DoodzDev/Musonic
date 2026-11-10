@@ -12,6 +12,7 @@ import {StyleSheet, Text, View} from 'react-native';
 import Svg, {Defs, G, Line, LinearGradient, Mask, Rect, Stop} from 'react-native-svg';
 import Slider from '@react-native-community/slider';
 import {formatTime} from '../utils/colorUtils';
+import {useSettingsStore} from '../store/settingsStore';
 
 const BAR_COUNT = 45;
 const WAVE_H = 60;
@@ -104,6 +105,7 @@ interface Props {
 }
 
 export default function WaveformScrubber({trackId, duration, currentTime, onSeek}: Props) {
+  const showRemaining = useSettingsStore(s => s.showRemainingTime);
   const peaks = useMemo(() => generatePeaks(trackId, BAR_COUNT), [trackId]);
   const [containerWidth, setContainerWidth] = useState(0);
   const [seekValue, setSeekValue] = useState<number | null>(null);
@@ -166,7 +168,7 @@ export default function WaveformScrubber({trackId, duration, currentTime, onSeek
 
       <View style={styles.timeRow}>
         <Text style={styles.time}>{formatTime(displayTime)}</Text>
-        <Text style={styles.time}>{`-${formatTime(remaining)}`}</Text>
+        <Text style={styles.time}>{showRemaining ? `-${formatTime(remaining)}` : formatTime(duration)}</Text>
       </View>
     </View>
   );

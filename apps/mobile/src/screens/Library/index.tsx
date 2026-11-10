@@ -7,7 +7,7 @@
  *   a grid. Pinned items stay on top of their tab. Long press opens the
  *   options of an item. Offline, only what was downloaded is listed.
  * @author DoodzProg
- * @version 2.1.0
+ * @version 2.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -39,13 +39,13 @@ import {SkeletonList} from '../../components/ui/Skeleton';
 import CollectionRow from '../../components/ui/CollectionRow';
 import {ListGroup, ListItem} from '../../components/ui/ListGroup';
 import PressableScale from '../../components/ui/PressableScale';
-import ProfileButton from '../../components/shell/ProfileButton';
+import HeaderStart from '../../components/shell/HeaderStart';
 import {LibraryGridCard, LibraryTile} from '../../components/library/LibraryCards';
 import PlaylistOptionsSheet from '../../components/PlaylistOptionsSheet';
 import PlaylistInfoModal from '../../components/PlaylistInfoModal';
 import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
 import {showToast} from '../../components/Toast';
-import {CheckIcon, GridIcon, ListIcon, PinIcon, PlusIcon, SearchIcon, SortIcon, TrashIcon} from '../../components/icons';
+import {CheckIcon, GridIcon, ListIcon, PinIcon, PlaylistAddIcon, PlusIcon, SearchIcon, SortIcon, TrashIcon} from '../../components/icons';
 import {getPlaylist, createPlaylist} from '../../api/endpoints/playlists';
 import {unstar} from '../../api/endpoints/library';
 import {useLibraryCollections} from '../../hooks/useLibraryCollections';
@@ -61,6 +61,7 @@ import {colors, radii, spacing} from '../../theme';
 import {useT, getT} from '../../i18n';
 import {filterEntries, sortEntries, type LibraryEntry, type LibraryTab} from './libraryModel';
 import {getFollowedPodcasts, type PodcastShow} from '../../api/endpoints/podcasts';
+import {canImportPlaylists, startPlaylistImport, useImportStore} from '../../services/playlistImport';
 
 const TABS: LibraryTab[] = ['playlists', 'albums', 'artists', 'podcasts', 'downloads'];
 const SORTS: LibrarySortMode[] = ['recent', 'added', 'alpha'];
@@ -296,7 +297,33 @@ export default function LibraryScreen() {
   const [createVisible, setCreateVisible] = useState(false);
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
-  const closeCreate = useCallback(() => { setCreateVisible(false); setNewName(''); }, []);
+  // The same dialog imports a playlist from another service (ADR-029): a link instead of a name.
+  const [importMode, setImportMode] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const closeCreate = useCallback(() => {
+    setCreateVisible(false);
+    setNewName('');
+    setImportMode(false);
+    setImportError(null);
+  }, []);
+  const importFinishedAt = useImportStore(s => s.finishedAt);
+  useEffect(() => {
+    if (importFinishedAt) bumpPlaylistVersion();
+  }, [importFinishedAt, bumpPlaylistVersion]);
+  const startImport = useCallback(async () => {
+    const url = newName.trim();
+    if (!url || creating) return;
+    setCreating(true);
+    setImportError(null);
+    const error = await startPlaylistImport(url);
+    setCreating(false);
+    if (error) {
+      setImportError(error);
+      return;
+    }
+    closeCreate();
+    showToast(getT().playlistImport.started);
+  }, [newName, creating, closeCreate]);
   const create = useCallback(async () => {
     const name = newName.trim();
     if (!name || creating) return;
@@ -442,7 +469,7 @@ export default function LibraryScreen() {
         title={t.library.title}
         scrollY={scrollY}
         align="left"
-        left={<ProfileButton />}
+        left={<HeaderStart />}
         right={
           <View style={styles.actions}>
             <Button
@@ -542,27 +569,48 @@ export default function LibraryScreen() {
       <Modal visible={createVisible} transparent animationType="fade" statusBarTranslucent onRequestClose={closeCreate}>
         <Pressable accessibilityRole="button" accessibilityLabel={t.ui.close} style={styles.dialogBackdrop} onPress={closeCreate}>
           <Pressable accessible={false} style={styles.dialog} onPress={() => {}}>
-            <Text variant="headline" style={styles.dialogTitle}>{t.library.createPlaylistTitle}</Text>
+            <Text variant="headline" style={styles.dialogTitle}>{importMode ? t.playlistImport.title : t.library.createPlaylistTitle}</Text>
+            {importMode ? <Text variant="footnote" color="textSecondary" style={styles.dialogHint}>{t.playlistImport.hint}</Text> : null}
             <TextInput
               style={styles.dialogInput}
-              placeholder={t.library.createPlaylistPlaceholder}
+              placeholder={importMode ? t.playlistImport.placeholder : t.library.createPlaylistPlaceholder}
               placeholderTextColor={colors.textSecondary}
               selectionColor={colors.accent}
               value={newName}
               onChangeText={setNewName}
               autoFocus
+              autoCapitalize={importMode ? 'none' : 'sentences'}
+              autoCorrect={!importMode}
+              keyboardType={importMode ? 'url' : 'default'}
               returnKeyType="done"
-              onSubmitEditing={create}
+              onSubmitEditing={importMode ? startImport : create}
             />
+            {importError ? <Text variant="footnote" style={styles.dialogError}>{importError}</Text> : null}
+            {!importMode && canImportPlaylists() ? (
+              <Pressable
+                onPress={() => { setImportMode(true); setNewName(''); }}
+                accessibilityRole="button"
+                accessibilityLabel={`${t.playlistImport.entry}, ${t.playlistImport.entryDesc}`}
+                android_ripple={{color: colors.fill}}
+                style={styles.dialogImport}>
+                <View style={styles.dialogImportIcon}>
+                  <PlaylistAddIcon size={20} color={colors.accent} />
+                </View>
+                <View style={styles.dialogImportText}>
+                  <Text variant="subhead" style={styles.dialogImportTitle}>{t.playlistImport.entry}</Text>
+                  <Text variant="footnote" color="textSecondary" numberOfLines={2}>{t.playlistImport.entryDesc}</Text>
+                </View>
+              </Pressable>
+            ) : null}
             <View style={styles.dialogActions}>
               <Pressable onPress={closeCreate} style={styles.dialogBtn} accessibilityRole="button">
                 <Text variant="body" color="textSecondary">{t.library.createPlaylistCancel}</Text>
               </Pressable>
               <View style={styles.dialogDivider} />
-              <Pressable onPress={create} disabled={creating || !newName.trim()} style={styles.dialogBtn} accessibilityRole="button">
+              <Pressable onPress={importMode ? startImport : create} disabled={creating || !newName.trim()} style={styles.dialogBtn} accessibilityRole="button">
                 {creating
                   ? <ActivityIndicator color={colors.accent} />
-                  : <Text variant="body" style={[styles.dialogConfirm, !newName.trim() && styles.disabled]}>{t.library.createPlaylistConfirm}</Text>}
+                  : <Text variant="body" style={[styles.dialogConfirm, !newName.trim() && styles.disabled]}>{importMode ? t.playlistImport.confirm : t.library.createPlaylistConfirm}</Text>}
               </Pressable>
             </View>
           </Pressable>
@@ -603,6 +651,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   dialogActions: {flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator},
+  dialogHint: {textAlign: 'center', paddingHorizontal: 20, paddingTop: 6},
+  dialogError: {color: colors.destructive, paddingHorizontal: 16, marginTop: -10, marginBottom: 14},
+  dialogImport: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 16,
+    marginTop: -4,
+    marginBottom: 18,
+    padding: 12,
+    borderRadius: radii.cover,
+    backgroundColor: colors.fill,
+    overflow: 'hidden',
+  },
+  dialogImportIcon: {width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface2},
+  dialogImportText: {flex: 1, gap: 2},
+  dialogImportTitle: {fontWeight: '600'},
   dialogBtn: {flex: 1, height: 46, alignItems: 'center', justifyContent: 'center'},
   dialogDivider: {width: StyleSheet.hairlineWidth, backgroundColor: colors.separator},
   dialogConfirm: {color: colors.accent, fontWeight: '600'},
