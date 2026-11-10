@@ -12,21 +12,65 @@ pub fn normalize(text: &str) -> String {
     folded.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// Title without "(feat. …)", "[Remastered]", " - Radio Edit"… used as a second chance.
-pub fn core_title(title: &str) -> String {
+/// Title split into its core and the extras around it: "(feat. …)", "[Remastered]",
+/// " - Radio Edit"…
+fn split_title(title: &str) -> (String, String) {
     let mut t = title.to_owned();
+    let mut extras = String::new();
     for (open, close) in [('(', ')'), ('[', ']')] {
         while let (Some(a), Some(b)) = (t.find(open), t.find(close)) {
             if b <= a {
                 break;
             }
+            extras.push(' ');
+            extras.push_str(&t[a + 1..b]);
             t.replace_range(a..=b, " ");
         }
     }
     if let Some(i) = t.find(" - ") {
+        extras.push(' ');
+        extras.push_str(&t[i + 3..]);
         t.truncate(i);
     }
-    normalize(&t)
+    (t, extras)
+}
+
+/// Title without "(feat. …)", "[Remastered]", " - Radio Edit"… used as a second chance.
+pub fn core_title(title: &str) -> String {
+    normalize(&split_title(title).0)
+}
+
+/// Extras that name another recording: "Song (Live)" or "Song - Acoustic" is not "Song",
+/// while "(Radio Edit)", "(feat. …)" or "- Remastered" are the same song.
+const VERSION_WORDS: &[&str] = &[
+    "live",
+    "remix",
+    "rmx",
+    "acoustic",
+    "unplugged",
+    "instrumental",
+    "karaoke",
+    "acapella",
+    "demo",
+    "cover",
+    "reprise",
+    "slowed",
+    "nightcore",
+];
+const VERSION_PHRASES: &[&str] = &["a cappella", "sped up"];
+
+/// The version words found in the extras of `title` (never in its core: "Live Forever" is
+/// not a live version), sorted.
+pub fn version_tags(title: &str) -> Vec<&'static str> {
+    let extras = format!(" {} ", normalize(&split_title(title).1));
+    let mut tags: Vec<&'static str> = VERSION_WORDS
+        .iter()
+        .chain(VERSION_PHRASES)
+        .copied()
+        .filter(|w| extras.contains(&format!(" {w} ")))
+        .collect();
+    tags.sort_unstable();
+    tags
 }
 
 pub fn normalize_artists<'a>(names: impl IntoIterator<Item = &'a str>) -> Vec<String> {
@@ -52,8 +96,12 @@ pub fn ratio(a: &str, b: &str) -> f64 {
     1.0 - strsim::levenshtein(a, b) as f64 / max as f64
 }
 
-/// Same song title: close enough as-is, or once versions/featurings are removed.
+/// Same song title: the same version words, and close enough as-is or once versions and
+/// featurings are removed.
 pub fn same_title(a: &str, b: &str) -> bool {
+    if version_tags(a) != version_tags(b) {
+        return false;
+    }
     similar(&normalize(a), &normalize(b)) || {
         let (ca, cb) = (core_title(a), core_title(b));
         !ca.is_empty() && ca == cb
@@ -86,6 +134,24 @@ mod tests {
         assert_eq!(
             core_title("Get Lucky [feat. Pharrell] - Remastered 2013"),
             "get lucky"
+        );
+    }
+
+    #[test]
+    fn versions_are_other_recordings() {
+        assert!(!same_title("Song (Live)", "Song"));
+        assert!(!same_title("Song (Remix)", "Song"));
+        assert!(!same_title("Song - Acoustic", "Song"));
+        assert!(!same_title("Song (Sped Up)", "Song"));
+        assert!(!same_title("Song (Live)", "Song (Acoustic)"));
+        assert!(same_title("Song (Live)", "Song - Live"));
+        assert!(same_title("Song (Radio Edit)", "Song"));
+        assert!(same_title("Song [feat. Someone] - Remastered 2011", "Song"));
+        // A version word in the title itself is not a version.
+        assert!(same_title("Live Forever", "Live Forever - Remastered"));
+        assert_eq!(
+            version_tags("Song (A Cappella) [Live]"),
+            vec!["a cappella", "live"]
         );
     }
 
