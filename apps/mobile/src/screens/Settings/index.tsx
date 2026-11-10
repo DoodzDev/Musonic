@@ -1,17 +1,19 @@
 /**
  * @file index.tsx
- * @description Settings screen (Design v2, R5.8): one simple page, a line per
- *   setting and a few words only where they help: Playback, Downloads,
- *   Musonic Connect (on a Musonic Server), Display, Updates, then « Advanced
- *   options », a second screen for the rest (progress bar style, crossfade,
- *   Previous, Home date, full screen, landscape layouts, back online by itself,
- *   the player kind). The visual choices show a small preview of each option.
+ * @description Settings screen (Design v2, R5.8; order of the 2026-11-10 review):
+ *   Playback (autoplay, crossfade), Quality and downloads (each quality explains
+ *   the chosen level), Musonic Connect (on a Musonic Server), Appearance
+ *   (language, haptics), then « Advanced options », a second screen for the rest:
+ *   magic shuffle, time left, Previous, the player kind, progress style, back
+ *   online by itself, start tab, rotation, Home date, full screen, landscape
+ *   layouts. Updates are checked from Profile > About. The visual choices show a
+ *   small preview of each option.
  * @author DoodzProg
- * @version 3.1.0
+ * @version 3.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
-import {ActivityIndicator, Alert, Platform, StatusBar, StyleSheet, View} from 'react-native';
+import {Alert, Platform, StatusBar, StyleSheet, View} from 'react-native';
 import Animated from 'react-native-reanimated';
 import {useNavigation} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -25,7 +27,6 @@ import PressableScale from '../../components/ui/PressableScale';
 import Button from '../../components/ui/Button';
 import Text from '../../components/ui/Text';
 import {BackArrowIcon} from '../../components/icons';
-import {checkForUpdate} from '../../services/updateChecker';
 import {chooseNativePlayer, nativePlayerChosen} from '../../services/player/mode';
 import {useSettingsStore, type StorageLimitMB, type StreamQuality} from '../../store/settingsStore';
 import {useDownloadStore} from '../../store/downloadStore';
@@ -35,7 +36,6 @@ import {colors, radii, spacing} from '../../theme';
 import {useT} from '../../i18n';
 import {useConnectSnapshot} from '../../services/connect/useConnect';
 import {setSync} from '../../services/connect/connectService';
-import {version as APP_VERSION} from '../../../package.json';
 import {playbackBridge, usePlayerStore} from '../../store/playerStore';
 
 // ─── Previews ─────────────────────────────────────────────────────────────────
@@ -116,13 +116,14 @@ function Choices<T extends string>({options, value, onChange, renderPreview}: {
   );
 }
 
-/** A setting whose control sits under its name (choices, slider). */
-function Block({label, description, children}: {label: string; description?: string; children: React.ReactNode}) {
+/** A setting whose control sits under its name (choices, slider); `hint` explains the current choice. */
+function Block({label, description, hint, children}: {label: string; description?: string; hint?: string; children: React.ReactNode}) {
   return (
     <View style={styles.block}>
       <Text variant="body">{label}</Text>
       {description ? <Text variant="footnote" color="textSecondary">{description}</Text> : null}
       <View style={styles.blockControl}>{children}</View>
+      {hint ? <Text variant="footnote" color="textSecondary">{hint}</Text> : null}
     </View>
   );
 }
@@ -146,7 +147,6 @@ export default function SettingsScreen({advanced = false}: {advanced?: boolean})
   const dockInset = useDockInset();
   // Settings opens over the tabs: no Rail beside it, only the side insets.
   const insets = useSafeAreaInsets();
-  const [checkingUpdate, setCheckingUpdate] = useState(false);
   const server = useSettingsStore(st => st.servers.find(x => x.id === st.activeServerId) ?? null);
   const connect = useConnectSnapshot();
   const usedBytes = useDownloadStore(st => st.getTotalSizeBytes());
@@ -236,102 +236,19 @@ export default function SettingsScreen({advanced = false}: {advanced?: boolean})
     ]);
   };
 
-  const checkUpdate = async () => {
-    setCheckingUpdate(true);
-    try { await checkForUpdate(); } finally { setCheckingUpdate(false); }
-  };
 
 
   const title = advanced ? t.settings.advanced : t.settings.title;
 
+  const qualityHint = (q: StreamQuality) => {
+    const h = t.settings.playback.qualityHints;
+    return q === 0 ? h.original : q === 320 ? h.high : q === 192 ? h.medium : h.low;
+  };
+
   const mainGroups = (
     <>
       <ListGroup caption={t.settings.sections.player}>
-        <Block label={t.settings.playback.qualityWifiLabel}>
-          <SegmentedControl options={qualityOptions} value={s.streamQualityWifi} onChange={s.setStreamQualityWifi} />
-        </Block>
-        <Block label={t.settings.playback.qualityMobileLabel} description={t.settings.playback.qualityDesc}>
-          <SegmentedControl options={qualityOptions} value={s.streamQualityMobile} onChange={s.setStreamQualityMobile} />
-        </Block>
         <ListItem label={t.settings.playback.autoplayLabel} description={t.settings.playback.autoplayDesc} toggle={{value: s.isAutoplayEnabled, onValueChange: s.setIsAutoplayEnabled}} />
-        <ListItem label={t.settings.playback.magicShuffleLabel} description={t.settings.playback.magicShuffleDesc} toggle={{value: s.isMagicShuffleEnabled, onValueChange: setMagicShuffle}} />
-        <ListItem label={t.settings.player.showRemaining} toggle={{value: s.showRemainingTime, onValueChange: s.setShowRemainingTime}} />
-      </ListGroup>
-
-      <ListGroup caption={t.settings.sections.downloads}>
-        <ListItem label={t.settings.playback.wifiOnlyLabel} description={t.settings.playback.wifiOnlyDesc} toggle={{value: s.downloadWifiOnly, onValueChange: s.setDownloadWifiOnly}} />
-        <ListItem label={t.settings.playback.autoDownloadLabel} description={t.settings.playback.autoDownloadDesc} toggle={{value: s.isAutoDownloadEnabled, onValueChange: setAutoDownload}} />
-        <Block label={t.settings.playback.storageLimitLabel} description={t.settings.playback.storageLimitDesc(formatBytes(usedBytes))}>
-          <SegmentedControl options={storageOptions} value={s.storageLimitMB} onChange={s.setStorageLimitMB} />
-        </Block>
-      </ListGroup>
-
-      {server?.apiKey ? (
-        <ListGroup caption={t.settings.sections.connect} note={t.connect.adminNotice}>
-          <ListItem
-            label={t.connect.sync}
-            description={connect.sync ? t.connect.syncOn : t.connect.syncOff}
-            toggle={{value: connect.sync, onValueChange: setSync}}
-          />
-        </ListGroup>
-      ) : null}
-
-      <ListGroup caption={t.settings.sections.display}>
-        <Block label={t.settings.language.sectionTitle}>
-          <SegmentedControl
-            options={[
-              {value: 'system', label: t.settings.language.system},
-              {value: 'fr', label: 'Français'},
-              {value: 'en', label: 'English'},
-            ]}
-            value={s.locale}
-            onChange={s.setLocale}
-          />
-        </Block>
-        <Block label={t.settings.display.startTabLabel}>
-          <SegmentedControl
-            options={[
-              {value: 'Home', label: t.tabs.home},
-              {value: 'Search', label: t.tabs.search},
-              {value: 'Library', label: t.tabs.library},
-            ]}
-            value={s.startTab}
-            onChange={s.setStartTab}
-          />
-        </Block>
-        <ListItem label={t.settings.display.hapticsLabel} description={t.settings.display.hapticsDesc} toggle={{value: s.hapticsEnabled, onValueChange: s.setHapticsEnabled}} />
-        <ListItem label={t.settings.display.lockRotationLabel} toggle={{value: s.rotationLocked, onValueChange: s.setRotationLocked}} />
-      </ListGroup>
-
-      <ListGroup caption={t.settings.updates.sectionTitle}>
-        <ListItem
-          label={t.settings.updates.checkButton}
-          value={checkingUpdate ? undefined : `v${APP_VERSION}`}
-          accessory={checkingUpdate ? <ActivityIndicator size="small" color={colors.accent} /> : undefined}
-          onPress={checkingUpdate ? undefined : checkUpdate}
-        />
-      </ListGroup>
-
-      <ListGroup>
-        <ListItem label={t.settings.advanced} accessory="chevron" onPress={() => navigation.navigate('SettingsAdvanced' as never)} />
-      </ListGroup>
-    </>
-  );
-
-  const advancedGroups = (
-    <>
-      <ListGroup caption={t.settings.sections.player}>
-        <Block label={t.settings.player.progressLabel}>
-          <Choices
-            options={[
-              {value: 'classic', label: t.settings.player.classic},
-              {value: 'waveform', label: t.settings.player.waveform},
-            ]}
-            renderPreview={progressPreview}
-            value={s.useWaveformScrubber ? 'waveform' : 'classic'}
-            onChange={v => s.setUseWaveformScrubber(v === 'waveform')}
-          />
-        </Block>
         <Block label={t.settings.transitions.crossfadeLabel} description={t.settings.transitions.crossfadeDesc}>
           <View style={styles.sliderRow}>
             <Slider
@@ -349,6 +266,58 @@ export default function SettingsScreen({advanced = false}: {advanced?: boolean})
             <Text variant="subhead" color="textSecondary" style={styles.sliderValue}>{s.crossfadeDuration} s</Text>
           </View>
         </Block>
+      </ListGroup>
+
+      <ListGroup caption={t.settings.sections.quality}>
+        <Block label={t.settings.playback.qualityWifiLabel} hint={qualityHint(s.streamQualityWifi)}>
+          <SegmentedControl options={qualityOptions} value={s.streamQualityWifi} onChange={s.setStreamQualityWifi} />
+        </Block>
+        <Block label={t.settings.playback.qualityMobileLabel} description={t.settings.playback.qualityDesc} hint={qualityHint(s.streamQualityMobile)}>
+          <SegmentedControl options={qualityOptions} value={s.streamQualityMobile} onChange={s.setStreamQualityMobile} />
+        </Block>
+        <ListItem label={t.settings.playback.wifiOnlyLabel} description={t.settings.playback.wifiOnlyDesc} toggle={{value: s.downloadWifiOnly, onValueChange: s.setDownloadWifiOnly}} />
+        <ListItem label={t.settings.playback.autoDownloadLabel} description={t.settings.playback.autoDownloadDesc} toggle={{value: s.isAutoDownloadEnabled, onValueChange: setAutoDownload}} />
+        <Block label={t.settings.playback.storageLimitLabel} description={t.settings.playback.storageLimitDesc(formatBytes(usedBytes))}>
+          <SegmentedControl options={storageOptions} value={s.storageLimitMB} onChange={s.setStorageLimitMB} />
+        </Block>
+      </ListGroup>
+
+      {server?.apiKey ? (
+        <ListGroup caption={t.settings.sections.connect} note={t.connect.adminNotice}>
+          <ListItem
+            label={t.connect.sync}
+            description={connect.sync ? t.connect.syncOn : t.connect.syncOff}
+            toggle={{value: connect.sync, onValueChange: setSync}}
+          />
+        </ListGroup>
+      ) : null}
+
+      <ListGroup caption={t.settings.sections.appearance}>
+        <Block label={t.settings.language.sectionTitle}>
+          <SegmentedControl
+            options={[
+              {value: 'system', label: t.settings.language.system},
+              {value: 'fr', label: 'Français'},
+              {value: 'en', label: 'English'},
+            ]}
+            value={s.locale}
+            onChange={s.setLocale}
+          />
+        </Block>
+        <ListItem label={t.settings.display.hapticsLabel} description={t.settings.display.hapticsDesc} toggle={{value: s.hapticsEnabled, onValueChange: s.setHapticsEnabled}} />
+      </ListGroup>
+
+      <ListGroup>
+        <ListItem label={t.settings.advanced} accessory="chevron" onPress={() => navigation.navigate('SettingsAdvanced' as never)} />
+      </ListGroup>
+    </>
+  );
+
+  const advancedGroups = (
+    <>
+      <ListGroup caption={t.settings.sections.player}>
+        <ListItem label={t.settings.playback.magicShuffleLabel} description={t.settings.playback.magicShuffleDesc} toggle={{value: s.isMagicShuffleEnabled, onValueChange: setMagicShuffle}} />
+        <ListItem label={t.settings.player.showRemaining} description={t.settings.player.showRemainingDesc} toggle={{value: s.showRemainingTime, onValueChange: s.setShowRemainingTime}} />
         <ListItem
           label={t.settings.playback.alwaysPreviousLabel}
           description={t.settings.playback.alwaysPreviousDesc}
@@ -361,6 +330,17 @@ export default function SettingsScreen({advanced = false}: {advanced?: boolean})
             toggle={{value: nativePlayer, onValueChange: setNativePlayer}}
           />
         ) : null}
+        <Block label={t.settings.player.progressLabel}>
+          <Choices
+            options={[
+              {value: 'classic', label: t.settings.player.classic},
+              {value: 'waveform', label: t.settings.player.waveform},
+            ]}
+            renderPreview={progressPreview}
+            value={s.useWaveformScrubber ? 'waveform' : 'classic'}
+            onChange={v => s.setUseWaveformScrubber(v === 'waveform')}
+          />
+        </Block>
       </ListGroup>
 
       <ListGroup caption={t.settings.sections.offline}>
@@ -372,8 +352,20 @@ export default function SettingsScreen({advanced = false}: {advanced?: boolean})
       </ListGroup>
 
       <ListGroup caption={t.settings.sections.display}>
-        <ListItem label={t.settings.display.homeDateLabel} toggle={{value: s.showHomeDate, onValueChange: s.setShowHomeDate}} />
-        <ListItem label={t.settings.display.fullscreenLabel} toggle={{value: s.isFullscreenMode, onValueChange: s.setIsFullscreenMode}} />
+        <Block label={t.settings.display.startTabLabel} description={t.settings.display.startTabDesc}>
+          <SegmentedControl
+            options={[
+              {value: 'Home', label: t.tabs.home},
+              {value: 'Search', label: t.tabs.search},
+              {value: 'Library', label: t.tabs.library},
+            ]}
+            value={s.startTab}
+            onChange={s.setStartTab}
+          />
+        </Block>
+        <ListItem label={t.settings.display.lockRotationLabel} description={t.settings.display.lockRotationDesc} toggle={{value: s.rotationLocked, onValueChange: s.setRotationLocked}} />
+        <ListItem label={t.settings.display.homeDateLabel} description={t.settings.display.homeDateDesc} toggle={{value: s.showHomeDate, onValueChange: s.setShowHomeDate}} />
+        <ListItem label={t.settings.display.fullscreenLabel} description={t.settings.display.fullscreenDesc} toggle={{value: s.isFullscreenMode, onValueChange: s.setIsFullscreenMode}} />
         {s.rotationLocked ? null : (
           <Block label={t.settings.display.navBarPositionLabel}>
             <Choices

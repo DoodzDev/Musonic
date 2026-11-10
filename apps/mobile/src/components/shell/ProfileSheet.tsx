@@ -5,15 +5,15 @@
  *   screen (debug builds only), About and log out (asked first; revokes the
  *   device key and forgets the account, ADR-021). One account per phone: no
  *   switching. About (version, the project's and the creator's websites) is a
- *   second page of the same sheet, kept as tall as the main page. The identity
+ *   second page of the same sheet (with « Check for updates »), kept as tall as the main page. The identity
  *   block is the sheet's fixed header, so swiping down on it closes the sheet;
  *   in landscape it moves to a column on the left.
  * @author DoodzProg
- * @version 1.6.0
+ * @version 1.7.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useState} from 'react';
-import {Alert, Linking, Pressable, StyleSheet, View, type LayoutChangeEvent} from 'react-native';
+import {ActivityIndicator, Alert, Linking, Pressable, StyleSheet, View, type LayoutChangeEvent} from 'react-native';
 import Animated, {SlideInLeft, SlideInRight} from 'react-native-reanimated';
 import {ScrollView} from 'react-native-gesture-handler';
 import {useNavigation} from '@react-navigation/native';
@@ -31,6 +31,7 @@ import {pingServer} from '../../api/client';
 import {revokeDeviceKey} from '../../api/accountAuth';
 import {scrubStorage} from '../../store/scrubStorage';
 import {withTimeout} from '../../services/connectivityService';
+import {checkForUpdate} from '../../services/updateChecker';
 import {colors, spacing} from '../../theme';
 import {useT} from '../../i18n';
 import {hostOf} from '../../utils/hostOf';
@@ -53,6 +54,7 @@ export default function ProfileSheet({visible, onClose}: Props) {
   const setOfflineMode = useSettingsStore(s => s.setOfflineMode);
   const storageBytes = useDownloadStore(s => s.getTotalSizeBytes());
   const [pinging, setPinging] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [page, setPage] = useState<'main' | 'about'>('main');
   /** Set after the first page change, so the first opening does not slide. */
   const [navigated, setNavigated] = useState(false);
@@ -179,6 +181,18 @@ export default function ProfileSheet({visible, onClose}: Props) {
   const aboutPage = (
     <ListGroup raised note="Musonic · made by Doodz">
       <ListItem label={t.ui.version} value={APP_VERSION} />
+      <ListItem
+        label={t.settings.updates.checkButton}
+        accessory={checkingUpdate ? <ActivityIndicator size="small" color={colors.accent} /> : 'chevron'}
+        onPress={
+          checkingUpdate
+            ? undefined
+            : async () => {
+                setCheckingUpdate(true);
+                try { await checkForUpdate(); } finally { setCheckingUpdate(false); }
+              }
+        }
+      />
       <ListItem label={t.ui.projectSite} accessory="chevron" onPress={() => Linking.openURL('https://musonic.doodz.dev/')} />
       <ListItem label={t.ui.creatorSite} accessory="chevron" onPress={() => Linking.openURL('https://doodz.dev')} />
     </ListGroup>
