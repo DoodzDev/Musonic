@@ -265,6 +265,53 @@ pub async fn get_artist(ctx: &Ctx, n: u64, shown_id: &str) -> Result<Value, ApiE
     Ok(artist)
 }
 
+/// Albums of the online catalog for the page of a library artist, so one page shows the whole
+/// discography: the online artist with the same name, and, when the library has albums of it,
+/// one of them in common (a namesake is not mixed in). Albums already in the library are left
+/// out. Never fails: without the catalog or a match, nothing is added.
+pub async fn more_artist_albums(ctx: &Ctx, name: &str, local_albums: &[Value]) -> Vec<Value> {
+    let Some(dz) = ctx.state.online.as_deref() else {
+        return vec![];
+    };
+    let wanted = normalize(name);
+    if wanted.is_empty() || !ctx.limits().await.can_online {
+        return vec![];
+    }
+    let Ok(found) = dz.search_artists(name, 5).await else {
+        return vec![];
+    };
+    let Some(a) = found.into_iter().find(|a| normalize(&a.name) == wanted) else {
+        return vec![];
+    };
+    let Ok(albums) = dz.artist_albums(a.id).await else {
+        return vec![];
+    };
+    let local: HashSet<String> = local_albums
+        .iter()
+        .map(|v| normalize(v["name"].as_str().unwrap_or_default()))
+        .collect();
+    if !local.is_empty()
+        && !albums
+            .iter()
+            .any(|al| local.contains(&normalize(&al.title)))
+    {
+        return vec![];
+    }
+    let shown = crate::online::artist_id(a.id);
+    albums
+        .iter()
+        .filter(|al| !local.contains(&normalize(&al.title)))
+        .map(|al| {
+            let mut v = render::album(al, None);
+            if al.artist.is_none() {
+                v["artist"] = json!(a.name);
+                v["artistId"] = json!(shown);
+            }
+            v
+        })
+        .collect()
+}
+
 /// Picture of an online item: album cover, artist photo, a track's album cover.
 pub async fn cover_url(ctx: &Ctx, item: OnlineId) -> Result<Option<String>, ApiError> {
     let dz = catalog(ctx).await?;

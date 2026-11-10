@@ -788,7 +788,9 @@ async fn fake_deezer() -> (Arc<Deezer>, Arc<AtomicUsize>) {
             get(move || async move {
                 let mut a = album.clone();
                 a.as_object_mut().unwrap().remove("artist");
-                axum::Json(json!({ "data": [a] }))
+                // Also one the library has: the page of the library artist keeps its own copy.
+                let ram = json!({ "id": 302128, "title": "Random Access Memories" });
+                axum::Json(json!({ "data": [a, ram] }))
             }),
         )
         .route("/img/{name}", get(|| async { crate::testing::png() }))
@@ -863,6 +865,51 @@ async fn online_search_and_pages() {
             .all(|a| a["name"] != "Discovery"),
         "browsing stores nothing"
     );
+}
+
+#[tokio::test]
+async fn library_artist_page_shows_the_online_discography() {
+    let (dz, _) = fake_deezer().await;
+    let lib = library_with("artist-online-albums", Some(dz)).await;
+    let r = lib.get("getArtists?").await;
+    let id_of = |name: &str| {
+        r["artists"]["index"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|i| i["artist"].as_array().unwrap().iter())
+            .find(|a| a["name"] == name)
+            .map(|a| a["id"].as_str().unwrap().to_owned())
+            .unwrap()
+    };
+    let names = |page: &Value| -> Vec<String> {
+        page["artist"]["album"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| a["name"].as_str().unwrap().to_owned())
+            .collect()
+    };
+
+    // Searching "Daft Punk" leads here (its online twin is left out of the results): the page
+    // shows the library album once, then the rest of the discography.
+    let page = lib
+        .get(&format!("getArtist?id={}", id_of("Daft Punk")))
+        .await;
+    let albums = names(&page);
+    assert_eq!(
+        albums,
+        ["Random Access Memories", "Discovery"],
+        "{albums:?}"
+    );
+    assert_eq!(page["artist"]["album"][1]["id"], "dz-album-302127");
+    assert_eq!(page["artist"]["albumCount"], 2);
+
+    // Another name: nothing from the catalog is mixed in.
+    let page = lib
+        .get(&format!("getArtist?id={}", id_of("Sigur Rós")))
+        .await;
+    assert!(names(&page).iter().all(|n| n != "Discovery"));
 }
 
 #[tokio::test]
