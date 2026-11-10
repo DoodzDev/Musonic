@@ -10,13 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-10
+
 ### Added
+- **YouTube Music playlists** in « Import a playlist » (with Musonic Server 1.2.0 and a YouTube key set in its console). The preview names the service and says how many videos are no longer available (deleted or private); albums, liked songs and mixes are refused with the reason.
 - **Musonic Connect** (beta, with Musonic Server): the « Devices » button lists your devices (each tab is one) and moves playback to any of them at the same second. While another device plays, the player bar becomes its remote: its track, position, buttons and volume, with its icon (« Playing on Pixel 10 » on hover). Synced playback (one device at a time) is a switch in the same window.
 - **Your last listening comes back** when the page opens, paused where you stopped, on this device or another one.
 - **Show the time left** (Settings): the track's length is shown by default.
 - **Crossfade between tracks** (Settings, 0 to 12 s, off by default): the next track fades in over the end of the current one, which stays shown until it ends; never on a track you skip yourself nor between podcast episodes. Contributed by flumz-tv (#12).
 
 ### Changed
+- **Settings in the mobile app's order**: playback first (crossfade, then the time left), the language, Musonic Connect. « Crossfade » is now « Crossfade between tracks ».
 - **The profile menu** keeps Settings, About (version, the project's and the creator's websites) and Log out, now asked first. No more account switching.
 
 ## [1.1.0] - 2026-10-29

@@ -10,14 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-11-10
+
 ### Added
+- **Crossfade between tracks** (Settings, 0 to 12 s, off by default), done by the native player: the next track fades in over the end of the current one, which stays shown (app, notification, car) until it ends. Never on a track you skip yourself nor between podcast episodes. At 0 s, nothing more runs.
+- **Import a playlist from the app** (with Musonic Server): from « New playlist » in the Library, paste a Spotify, Deezer or YouTube Music link; the server imports it in the background and a small pill at the top shows the progress live.
+- **A play button on recent cards** of Home (albums, playlists, liked songs): it plays at once, touching the card still opens the page.
+- **A settings gear** beside the profile initial, on every tab.
+- **Magic shuffle can be turned off** (Settings > Advanced options): the shuffle button then has two positions.
 - **Musonic Connect** (beta, with Musonic Server): the « Devices » button of the player lists your devices and moves playback to any of them at the same second (« Listen here » brings it back). While another device plays, the mini player and the full player become its remote, with the time moving. When the phone opens, it takes up your last listening if it is newer, paused where you stopped. Synced playback (one device at a time) is a switch in the same sheet and in Settings.
 - **Show the time left** (Settings): the track's length is shown by default.
 
 ### Changed
-- **Simpler Settings**: one page (Playback, Downloads, Musonic Connect, Display, Updates), the rest under « Advanced options ».
+- **Settings reorganised** after a UX review: Playback (autoplay, crossfade), Quality and downloads (each quality explains the chosen level and its data use), Musonic Connect, Appearance (language, haptics); the rest under « Advanced options ». Clearer names and descriptions. « Check for updates » moved to Profile > About.
+- **Touching anywhere on a setting's row** flips it, read by TalkBack as one switch with its state and description.
+- **The player header and the queue name what is playing** (album, artist, liked songs) instead of always « playlist », among other fixes from a usability audit.
 - **Android's native player is on by default** (lighter with the screen off); it can be turned off in the advanced options.
-- **The profile sheet** keeps offline mode, storage, Settings, About (version, the project's and the creator's websites) and Log out. No more account switching.
+- **The profile sheet** keeps offline mode, storage, Settings, About (version, updates, the project's and the creator's websites) and Log out. No more account switching.
+
+### Fixed
+- **Albums and songs from For you, search, autoplay and magic mixes** opened nothing on Musonic Server and autoplay could loop on errors (old Deezer ids); saved queues, history and caches are converted once.
+- **Unplayable tracks were skipped endlessly**: playback now stops after repeated errors, with a message that no longer blames the connection.
+- **Clearing a long queue froze the app** for over 10 s on mid-range phones.
+- **Battery and smoothness**: audio offload now works on MP3 and AAC (about 13 % of a CPU core saved while playing, screen off); fewer redraws of the mini player; no position polling while paused; no car menu rebuild nor full queue reading on each track change.
 
 ## [2.3.0] - 2026-10-29
 

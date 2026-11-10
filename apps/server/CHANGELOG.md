@@ -10,7 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-10
+
 ### Added
+- **YouTube Music playlist import** (ADR-029): public playlists (`list=PL…`, also from
+  `watch?v=…&list=…` and `browse/VL…` links) read with the official YouTube Data API v3 and an
+  API key set in the console (Imports page, tested before it is kept, never sent back;
+  `GET/PUT /v1/admin/imports/youtube`). Video titles are cleaned before matching: Topic and VEVO
+  channels, « Artist - Song », emojis and « _ » as separators, presentation words, featured
+  artists; version words (Live, Remix…) kept. A video whose title names both the artist and the
+  song of a catalog result matches it even from a fan's channel, and a channel naming the artist
+  counts as that artist. Albums, liked songs, mixes and single videos are refused with a clear
+  reason (`422`).
+- **Audio providers name themselves** (`AudioProvider::name`, `ProviderInfo.name`): the console
+  shows any provider a binary adds under its own name, with its credential button, without
+  changing the console. `docs/PROVIDERS.md` documents the console side, binaries of your own and
+  relaying a Subsonic-compatible service.
 - **Musonic Connect** (ADR-019, beta). Each device of an account registers on `/v1/events`
   (`register`), says what it plays when that changes (`player`, dated by the server's clock so
   the others compute the position without comparing clocks) and gets the commands meant for it
@@ -22,6 +37,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The account's last listening** (`GET /v1/me/player`): the track or episode, its position and
   queue, kept at each change and when a device is closed in the middle of a song, so any device
   takes it up later. Migration `0010`.
+
+### Fixed
+- **Live, Remix, Acoustic… are other recordings**: « Song (Live) » no longer matches « Song »
+  when importing playlists or matching tracks; version words must agree.
+- **A library artist's page** also shows the artist's online discography (the online twin was
+  left out of search results as a duplicate, so only the library albums showed).
+
+### Changed
+- Console and documentation wording about providers' credentials is neutral.
 
 ## [1.1.0] - 2026-10-29
 
