@@ -8,7 +8,7 @@
  *   table of contents. Both languages are in the page (`data-l`), the html
  *   `lang` picks one.
  * @author DoodzProg
- * @version 3.0.0
+ * @version 3.0.1
  * @license CC-BY-NC-4.0
  */
 
@@ -261,7 +261,7 @@ html[lang="fr"] [data-l="en"], html:not([lang="fr"]) [data-l="fr"] { display: no
 .doc__body ol.list li::before { content: counter(n); position: absolute; left: 0; top: 0; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-fill); color: var(--accent); font-size: 13px; font-weight: 700; }
 .doc__body .group { margin-top: 16px; }
 .doc__body a:not(.button) { color: var(--accent); }
-code, kbd { font: 500 0.88em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface2); padding: 2px 6px; border-radius: 6px; color: var(--text); }
+code, kbd { font: 500 0.88em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface2); padding: 2px 6px; border-radius: 6px; color: var(--text); overflow-wrap: anywhere; }
 pre { margin: 14px 0 0; padding: 16px 18px; background: var(--surface1); border-radius: var(--r-tile); overflow-x: auto; box-shadow: var(--raised-edge); }
 pre code { background: none; padding: 0; font-size: 14px; line-height: 1.6; color: var(--text); }
 .table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 15px; background: var(--surface1); border-radius: var(--r-tile); overflow: hidden; box-shadow: var(--raised-edge); }
@@ -401,6 +401,8 @@ pre code { background: none; padding: 0; font-size: 14px; line-height: 1.6; colo
   .chart__label { grid-column: 1 / -1; }
   .chart__axis { margin-left: 0; }
   .bar__faq { padding: 0 10px; }
+  /* One header row on a phone: the logo alone, GitHub stays in the footer. */
+  .brand span, .bar__end .round { display: none; }
   .viewer { padding: 12px; gap: 0; }
   .viewer__nav { position: absolute; bottom: 20px; }
   .viewer__prev { left: calc(50% - 60px); }
