@@ -2,7 +2,7 @@
  * @file en.ts
  * @description English strings of the web client. Same shape as fr.ts (checked by the type).
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -321,7 +321,7 @@ export const en: typeof fr = {
   importPlaylist: {
     open: 'Import',
     title: 'Import a playlist',
-    sub: 'Paste the address of a Spotify or Deezer playlist: Musonic makes it again with songs from your library and the online catalog.',
+    sub: 'Paste the address of a Spotify, Deezer or YouTube Music playlist: Musonic makes it again with songs from your library and the online catalog.',
     urlLabel: 'Playlist address',
     urlPlaceholder: 'https://open.spotify.com/playlist/…',
     read: 'Read the playlist',
@@ -363,7 +363,12 @@ export const en: typeof fr = {
     report: 'Import report',
     another: 'Import another',
     errors: {
-      notPlaylist: 'This is not the address of a Spotify or Deezer playlist.',
+      notPlaylist: 'This is not the address of a Spotify, Deezer or YouTube Music playlist.',
+      youtubeAlbum: 'YouTube Music albums cannot be imported: import a playlist instead.',
+      youtubeLiked: 'Liked songs and Watch later are private: copy them into a public playlist first.',
+      youtubeMix: 'YouTube mixes and radios change every time: save the songs into a playlist first.',
+      youtubeKey: 'YouTube import is not enabled yet: the administrator must add a YouTube key in the console.',
+      youtubeNotPlaylist: 'This YouTube link is not a playlist: share the playlist itself.',
       notFound: 'Playlist not found or private: it must be public.',
       spotify: 'Spotify is not available on this server.',
       catalog: 'The online catalog is off on this server.',

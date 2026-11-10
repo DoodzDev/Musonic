@@ -3,7 +3,7 @@
  * @description French strings of the web client (source of truth: en.ts
  *   must have the same shape). Pick the active language through i18n/index.ts.
  * @author DoodzProg
- * @version 0.6.0
+ * @version 0.7.0
  * @license CC-BY-NC-4.0
  */
 
@@ -322,7 +322,7 @@ export const fr = {
   importPlaylist: {
     open: 'Importer',
     title: 'Importer une playlist',
-    sub: 'Collez l’adresse d’une playlist Spotify ou Deezer : Musonic la recrée avec les titres de votre bibliothèque et du catalogue en ligne.',
+    sub: 'Collez l’adresse d’une playlist Spotify, Deezer ou YouTube Music : Musonic la recrée avec les titres de votre bibliothèque et du catalogue en ligne.',
     urlLabel: 'Adresse de la playlist',
     urlPlaceholder: 'https://open.spotify.com/playlist/…',
     read: 'Lire la playlist',
@@ -364,7 +364,12 @@ export const fr = {
     report: 'Bilan de l’import',
     another: 'Importer une autre',
     errors: {
-      notPlaylist: 'Ce n’est pas une adresse de playlist Spotify ou Deezer.',
+      notPlaylist: 'Ce n’est pas une adresse de playlist Spotify, Deezer ou YouTube Music.',
+      youtubeAlbum: 'Les albums YouTube Music ne peuvent pas être importés : importez une playlist.',
+      youtubeLiked: 'Les titres likés et « À regarder plus tard » sont privés : copiez-les d’abord dans une playlist publique.',
+      youtubeMix: 'Les mix et radios YouTube changent à chaque écoute : enregistrez d’abord les titres dans une playlist.',
+      youtubeKey: 'L’import YouTube n’est pas encore activé : l’administrateur doit ajouter une clé YouTube dans la console.',
+      youtubeNotPlaylist: 'Ce lien YouTube n’est pas une playlist : partagez la playlist elle-même.',
       notFound: 'Playlist introuvable ou privée : elle doit être publique.',
       spotify: 'Spotify n’est pas disponible sur ce serveur.',
       catalog: 'Le catalogue en ligne est coupé sur ce serveur.',
