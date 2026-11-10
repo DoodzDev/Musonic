@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-10
+
+### Security
+- **SQLite updated** (`rusqlite` 0.41, `libsqlite3-sys` 0.39): fixes CVE-2026-119375 in the
+  bundled SQLite (RUSTSEC-2026-0459, medium). Rust 1.89 or later is now needed to build.
+
 ## [1.2.0] - 2026-11-10
 
 ### Added
