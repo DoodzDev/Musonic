@@ -192,6 +192,12 @@ pub async fn run(mut config: Config, mut ext: Extensions) -> Result<()> {
     if let Some(dz) = &state.online {
         sources.push(Arc::new(playlist_import::DeezerPlaylists::new(dz.clone())));
     }
+    let youtube = Arc::new(playlist_import::YouTubePlaylists::new(
+        playlist_import::youtube::API_URL,
+    )?);
+    youtube.load_key(&state.db).await;
+    sources.push(youtube.clone());
+    state.youtube = Some(youtube);
     tracing::info!(
         sources = ?sources.iter().map(|s| s.id()).collect::<Vec<_>>(),
         "playlist import sources"

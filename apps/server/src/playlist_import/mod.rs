@@ -10,11 +10,13 @@ pub mod matching;
 pub mod service;
 #[cfg(test)]
 mod tests;
+pub mod youtube;
 
 use async_trait::async_trait;
 
 pub use deezer::DeezerPlaylists;
 pub use service::PlaylistImports;
+pub use youtube::YouTubePlaylists;
 
 /// Songs read at most from one playlist.
 pub const MAX_TRACKS: usize = 2000;
@@ -61,6 +63,9 @@ pub enum SourceError {
     NotFound,
     #[error("the service does not answer: {0:#}")]
     Unavailable(#[from] anyhow::Error),
+    /// A link of the service that cannot be imported, with why (shown to the user).
+    #[error("{0}")]
+    Unsupported(String),
 }
 
 /// A service playlists can be imported from.

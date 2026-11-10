@@ -80,6 +80,8 @@ pub struct AppState {
     pub settings_now: Arc<std::collections::BTreeMap<String, serde_json::Value>>,
     /// Services playlists can be imported from (ADR-020).
     pub playlist_sources: Arc<Vec<Arc<dyn crate::playlist_import::PlaylistSource>>>,
+    /// The YouTube playlist source, whose API key is set from the console (ADR-029).
+    pub youtube: Option<Arc<crate::playlist_import::YouTubePlaylists>>,
     pub playlist_imports: crate::playlist_import::PlaylistImports,
     /// Podcast shows, episodes and the directory (ADR-023).
     pub podcasts: crate::podcasts::Podcasts,
@@ -116,6 +118,7 @@ impl AppState {
             journal: crate::journal::Journal::memory(),
             settings_now: Arc::new(crate::settings::of(&crate::config::Config::default())),
             playlist_sources: Arc::default(),
+            youtube: None,
             playlist_imports: Default::default(),
         }
     }

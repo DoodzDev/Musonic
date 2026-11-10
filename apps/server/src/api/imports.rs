@@ -31,6 +31,10 @@ pub fn router() -> Router<AppState> {
         .route("/v1/admin/imports/{track}/retry", post(retry))
         .route("/v1/admin/imports/{track}", delete(remove))
         .route("/v1/admin/providers", get(providers))
+        .route(
+            "/v1/admin/imports/youtube",
+            get(youtube_status).put(set_youtube_key),
+        )
         .route("/v1/admin/providers/{id}/credential", put(set_credential))
 }
 
@@ -359,4 +363,39 @@ pub async fn restore_credentials(state: &AppState) {
             }
         }
     }
+}
+
+/// Whether the YouTube API key is set (ADR-029); the key itself is never sent back.
+async fn youtube_status(State(state): State<AppState>, auth: Auth) -> Reply {
+    admin(&auth)?;
+    let configured = state.youtube.as_ref().is_some_and(|y| y.has_key());
+    Ok(Json(json!({ "youtubeKeyConfigured": configured })))
+}
+
+#[derive(Deserialize)]
+struct YouTubeKey {
+    key: String,
+}
+
+/// Sets the YouTube API key after a test request; an empty key removes it.
+async fn set_youtube_key(
+    State(state): State<AppState>,
+    auth: Auth,
+    Json(body): Json<YouTubeKey>,
+) -> Reply {
+    admin(&auth)?;
+    let Some(youtube) = state.youtube.clone() else {
+        return Err(ApiError(StatusCode::NOT_FOUND, "no YouTube source".into()));
+    };
+    if let Err(e) = youtube.set_key(&state.db, &body.key).await {
+        tracing::warn!("YouTube key refused: {e:#}");
+        return Err(ApiError(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "refused by YouTube".into(),
+        ));
+    }
+    state
+        .journal
+        .log(Entry::new("imports.youtube_key").by_admin(&auth.user.username));
+    Ok(Json(json!({ "youtubeKeyConfigured": youtube.has_key() })))
 }
