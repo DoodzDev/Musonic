@@ -1,11 +1,11 @@
 /**
  * @file ImportPlaylistDialog.tsx
- * @description Imports a Spotify or Deezer playlist into Musonic (ADR-020): the address is read
+ * @description Imports a Spotify, Deezer or YouTube Music playlist into Musonic (ADR-020): the address is read
  *   (name, cover, songs), the import runs on the server while its progress shows, then the
  *   report lists what was not found. A Spotify playlist of more than 100 songs is completed with
  *   the address of a second playlist holding the rest (or pasted song links). Musonic Server only.
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -18,6 +18,21 @@ import { ApiError, v1 } from '../lib/musonicApi.ts';
 import { keys } from '../player/usePlayItem.ts';
 
 const t = tr.importPlaylist;
+
+/** Display name of a playlist source. */
+function sourceName(source: string): string {
+  if (source === 'spotify') return 'Spotify';
+  if (source === 'youtube') return 'YouTube Music';
+  if (source === 'deezer') return 'Deezer';
+  return source;
+}
+
+/** Why some songs of the playlist could not be read, worded for its source. */
+function partialNote(source: string, read: number, total: number): string {
+  if (source === 'spotify') return t.partialNote(read, total);
+  if (source === 'youtube') return t.unavailableVideos(total - read);
+  return t.unavailableSongs(total - read, sourceName(source));
+}
 const POLL_MS = 1000;
 
 type Step = { kind: 'address' } | { kind: 'preview'; preview: PlaylistPreview; request: Request } | { kind: 'import'; id: string };
@@ -124,10 +139,10 @@ function Preview({ preview, request, onStarted }: { preview: PlaylistPreview; re
         {preview.coverUrl ? <img className="import-cover" src={preview.coverUrl} alt="" /> : <span className="import-cover" />}
         <div>
           <strong>{preview.name ?? t.links(preview.read)}</strong>
-          <span>{[preview.source === 'spotify' ? 'Spotify' : 'Deezer', preview.owner && t.by(preview.owner), preview.name && t.songs(preview.total ?? preview.read)].filter(Boolean).join(' · ')}</span>
+          <span>{[sourceName(preview.source), preview.owner && t.by(preview.owner), preview.name && t.songs(preview.total ?? preview.read)].filter(Boolean).join(' · ')}</span>
         </div>
       </div>
-      {partial && <p className="import-note">{t.partialNote(preview.read, preview.total ?? 0)}</p>}
+      {partial && <p className="import-note">{partialNote(preview.source, preview.read, preview.total ?? 0)}</p>}
       <label className="field-label">
         <span>{t.nameLabel}</span>
         <span className="field">

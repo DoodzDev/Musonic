@@ -2,7 +2,7 @@
  * @file en.ts
  * @description English strings of the web client. Same shape as fr.ts (checked by the type).
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
@@ -330,6 +330,8 @@ export const en: typeof fr = {
     songs: (n: number) => plural(n, 'song', 'songs'),
     links: (n: number) => plural(n, 'song link', 'song links'),
     partialNote: (read: number, total: number) => `This playlist has ${total} songs, but Spotify gives only ${read} through its address. For the other ${total - read}, the end of the import will show how to add them (with a second Spotify playlist).`,
+    unavailableVideos: (n: number) => (n === 1 ? '1 video of this playlist is no longer available on YouTube (deleted or private): it will not be imported.' : `${n} videos of this playlist are no longer available on YouTube (deleted or private): they will not be imported.`),
+    unavailableSongs: (n: number, source: string) => (n === 1 ? `1 song of this playlist is no longer available on ${source}: it will not be imported.` : `${n} songs of this playlist are no longer available on ${source}: they will not be imported.`),
     nameLabel: 'Name in Musonic',
     defaultName: 'Imported playlist',
     start: 'Import',

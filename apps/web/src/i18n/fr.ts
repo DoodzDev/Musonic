@@ -3,7 +3,7 @@
  * @description French strings of the web client (source of truth: en.ts
  *   must have the same shape). Pick the active language through i18n/index.ts.
  * @author DoodzProg
- * @version 0.7.0
+ * @version 0.8.0
  * @license CC-BY-NC-4.0
  */
 
@@ -331,6 +331,8 @@ export const fr = {
     songs: (n: number) => plural(n, 'titre', 'titres'),
     links: (n: number) => plural(n, 'lien de titre', 'liens de titres'),
     partialNote: (read: number, total: number) => `Cette playlist a ${total} titres, mais Spotify n’en donne que ${read} par son adresse. Pour les ${total - read} autres, la fin de l’import vous expliquera comment les ajouter (avec une deuxième playlist Spotify).`,
+    unavailableVideos: (n: number) => (n === 1 ? '1 vidéo de cette playlist n’est plus disponible sur YouTube (supprimée ou privée) : elle ne sera pas importée.' : `${n} vidéos de cette playlist ne sont plus disponibles sur YouTube (supprimées ou privées) : elles ne seront pas importées.`),
+    unavailableSongs: (n: number, source: string) => (n === 1 ? `1 titre de cette playlist n’est plus disponible sur ${source} : il ne sera pas importé.` : `${n} titres de cette playlist ne sont plus disponibles sur ${source} : ils ne seront pas importés.`),
     nameLabel: 'Nom dans Musonic',
     defaultName: 'Playlist importée',
     start: 'Importer',
