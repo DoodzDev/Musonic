@@ -12,7 +12,7 @@
  *   shared raised relief. The last feed is kept on the device, so the Home
  *   also shows offline. Playback goes through the playback engine.
  * @author DoodzProg
- * @version 2.2.1
+ * @version 2.3.0
  * @license MIT
  */
 
@@ -25,14 +25,14 @@ import {useHomeFeed} from '../../hooks/useHomeFeed';
 import {useRecentPlaysStore, type RecentPlay} from '../../store/recentPlaysStore';
 import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
 import {largeDeezerCover, useOnlineRecommendations} from '../../hooks/useOnlineRecommendations';
-import {playAlbumById, playFromList} from '../../services/playback/launchers';
+import {playAlbumById, playFromList, playLikedSongs, playPlaylistById} from '../../services/playback/launchers';
 import {songToTrack} from '../../utils/songToTrack';
 import {LargeTitle, LargeTitleHeader, useLargeTitleInset, useLargeTitleScroll} from '../../components/ui/LargeTitleHeader';
 import Chip from '../../components/ui/Chip';
 import Text from '../../components/ui/Text';
 import Button from '../../components/ui/Button';
 import {SkeletonShelf} from '../../components/ui/Skeleton';
-import ProfileButton from '../../components/shell/ProfileButton';
+import HeaderStart from '../../components/shell/HeaderStart';
 import {
   AlbumCard,
   ArtistBubble,
@@ -165,21 +165,31 @@ export default function HomeScreen() {
   function renderRecent(item: RecentItem): React.ReactElement {
     if (item.album) {
       const album = item.album;
-      return <AlbumCard name={album.name} subtitle={albumLine(album)} coverId={album.coverArt} onPress={() => openAlbum(album)} />;
+      return (
+        <AlbumCard name={album.name} subtitle={albumLine(album)} coverId={album.coverArt} onPress={() => openAlbum(album)}
+          onPlay={() => playAlbumById(album.id)} playLabel={t.home.playAlbum(album.name)} />
+      );
     }
     const p = item.play!;
     switch (p.kind) {
       case 'album':
-        return <AlbumCard name={p.name} subtitle={t.home.kindLine(t.home.typeAlbum, p.artist)} coverId={p.coverArt} onPress={() => openAlbum({id: p.id})} />;
+        return (
+          <AlbumCard name={p.name} subtitle={t.home.kindLine(t.home.typeAlbum, p.artist)} coverId={p.coverArt} onPress={() => openAlbum({id: p.id})}
+            onPlay={() => playAlbumById(p.id)} playLabel={t.home.playAlbum(p.name)} />
+        );
       case 'playlist': {
         const pl = cachedPlaylists.find(x => x.id === p.id);
         return (
           <AlbumCard name={pl?.name ?? p.name} subtitle={t.home.typePlaylist} coverId={pl?.coverArt ?? p.coverArt} playlistId={p.id}
-            onPress={() => navigation.navigate('PlaylistDetail', {playlistId: p.id})} />
+            onPress={() => navigation.navigate('PlaylistDetail', {playlistId: p.id})}
+            onPlay={() => playPlaylistById(p.id)} playLabel={t.home.playPlaylist(pl?.name ?? p.name)} />
         );
       }
       case 'liked':
-        return <AlbumCard name={t.home.likedSongs} subtitle={t.home.typePlaylist} special="liked" onPress={() => navigation.navigate('LikedSongs')} />;
+        return (
+          <AlbumCard name={t.home.likedSongs} subtitle={t.home.typePlaylist} special="liked" onPress={() => navigation.navigate('LikedSongs')}
+            onPlay={playLikedSongs} playLabel={t.home.playPlaylist(t.home.likedSongs)} />
+        );
       case 'library':
         return <AlbumCard name={t.home.myMusic} subtitle={t.home.typePlaylist} special="library" onPress={() => navigation.navigate('Library', {screen: 'AllSongs'})} />;
       case 'mix':
@@ -355,7 +365,7 @@ export default function HomeScreen() {
         {otherShelves.map(renderShelf)}
       </Animated.ScrollView>
 
-      <LargeTitleHeader title={t.home.title} scrollY={scrollY} align="left" left={<ProfileButton />} />
+      <LargeTitleHeader title={t.home.title} scrollY={scrollY} align="left" left={<HeaderStart />} />
     </View>
   );
 }

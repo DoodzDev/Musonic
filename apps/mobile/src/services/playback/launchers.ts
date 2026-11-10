@@ -5,7 +5,7 @@
  *   already playing opens the player instead, A9), play an album by id, and
  *   add one song to the end of the queue (swipe right on a row).
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer from '../player';
@@ -16,6 +16,9 @@ import type {PlaySource} from './buildQueue';
 import {songToTrack, type SongLike} from '../../utils/songToTrack';
 import {toast} from '../../components/ui/Toast';
 import {getT} from '../../i18n';
+import {getPlaylist} from '../../api/endpoints/playlists';
+import {getStarred} from '../../api/endpoints/library';
+import {usePlaylistCacheStore} from '../../store/playlistCacheStore';
 
 /**
  * Plays `tracks` from `source`. With `index`, starts on that track (a tap);
@@ -54,6 +57,28 @@ export async function playAlbumById(albumId: string): Promise<void> {
     await playFromList({type: 'album', id: albumId, name: album.name}, tracks);
   } catch (error) {
     console.warn('Album playback error:', error);
+  }
+}
+
+/** Fetches a playlist and plays it from the start (play button of the Home cards). */
+export async function playPlaylistById(playlistId: string): Promise<void> {
+  try {
+    const {playlist, songs} = await getPlaylist(playlistId);
+    await playFromList({type: 'playlist', id: playlistId, name: playlist.name}, songs.map(songToTrack));
+  } catch (error) {
+    console.warn('Playlist playback error:', error);
+  }
+}
+
+/** Plays the liked songs from the start (play button of the Home card); the cached list offline. */
+export async function playLikedSongs(): Promise<void> {
+  try {
+    const songs = await getStarred()
+      .then(d => d.songs)
+      .catch(() => usePlaylistCacheStore.getState().cachedLikedSongs);
+    if (songs.length) await playFromList({type: 'liked'}, songs.map(songToTrack));
+  } catch (error) {
+    console.warn('Liked songs playback error:', error);
   }
 }
 
