@@ -9,7 +9,7 @@
  *   block is the sheet's fixed header, so swiping down on it closes the sheet;
  *   in landscape it moves to a column on the left.
  * @author DoodzProg
- * @version 1.5.0
+ * @version 1.6.0
  * @license CC-BY-NC-4.0
  */
 import React, {useEffect, useState} from 'react';
@@ -23,6 +23,7 @@ import AccountAvatar from './AccountAvatar';
 import {ListGroup, ListItem} from '../ui/ListGroup';
 import {toast} from '../ui/Toast';
 import BackArrowIcon from '../icons/BackArrowIcon';
+import GearIcon from '../icons/GearIcon';
 import {useSettingsStore} from '../../store/settingsStore';
 import {useIsLandscape} from '../../hooks/useIsLandscape';
 import {useDownloadStore} from '../../store/downloadStore';
@@ -159,7 +160,12 @@ export default function ProfileSheet({visible, onClose}: Props) {
           toggle={{value: isOffline, onValueChange: setOffline}}
         />
         {storageBytes > 0 ? <ListItem label={t.ui.storage} value={formatBytes(storageBytes)} /> : null}
-        <ListItem label={t.drawer.settings} accessory="chevron" onPress={() => go('Settings')} />
+        <ListItem
+          label={t.drawer.settings}
+          icon={<GearIcon size={20} color={colors.textSecondary} />}
+          accessory="chevron"
+          onPress={() => go('Settings')}
+        />
         {__DEV__ ? <ListItem label="Design" accessory="chevron" onPress={() => go('Design')} /> : null}
         <ListItem label={t.ui.about} accessory="chevron" onPress={() => showPage('about')} />
       </ListGroup>

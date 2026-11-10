@@ -133,6 +133,7 @@ export const t = {
     kindLine: (kind: string, artist?: string) => (artist ? `${kind} · ${artist}` : kind),
     mixSubtitle: (count: number) => `Mix Magique · ${count} titre${count > 1 ? 's' : ''}`,
     playAlbum: (title: string) => `Lire l'album ${title}`,
+    playPlaylist: (title: string) => `Lire la playlist ${title}`,
     date: (d: Date) => {
       const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
       const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
@@ -174,9 +175,9 @@ export const t = {
     none: 'Aucun autre appareil connecté. Ouvrez Musonic Web ou l’app sur un autre appareil.',
     settings: 'Réglages',
     sync: 'Lecture synchronisée',
-    syncOn: 'Un seul appareil joue à la fois : lancer la lecture sur l’un met les autres en pause.',
+    syncOn: 'Vos appareils restent synchronisés : un seul joue à la fois, et la musique vous suit d’un appareil à l’autre. Lancer la lecture sur l’un met les autres en pause.',
     syncOff: 'Chaque appareil joue de son côté, sans mettre les autres en pause.',
-    adminNotice: 'L’administrateur du serveur peut voir votre lecture pour vous aider en cas de souci.',
+    adminNotice: 'Comme pour tout compte sur ce serveur, la personne qui le gère voit le titre en cours et l’appareil utilisé, pour vous aider en cas de problème.',
   },
   podcasts: {
     shows: 'Podcasts',
@@ -318,6 +319,33 @@ export const t = {
     sort: {az: 'Titre (A-Z)', artist: 'Artiste', recent: 'Ajoutés récemment'},
     jumpTitle: 'Aller à la lettre',
     jumpHint: 'Touchez une lettre pour y aller',
+  },
+
+  // ─── Playlist import (ADR-029) ─────────────────────────────────────────────
+  playlistImport: {
+    entry: 'Importer une playlist',
+    entryDesc: 'Retrouvez une playlist Spotify, Deezer, YouTube Music…',
+    title: 'Importer une playlist',
+    placeholder: 'Lien de la playlist',
+    hint: 'Collez le lien de partage d’une playlist publique. Musonic la recrée avec vos titres et le catalogue en ligne.',
+    confirm: 'Importer',
+    started: 'Import lancé : la playlist apparaîtra dans la Bibliothèque.',
+    banner: (done: number, total: number) => `Import playlist : ${done}/${total}`,
+    bannerLabel: (name: string, done: number, total: number) => `Import de la playlist ${name} : ${done} sur ${total}`,
+    done: (name: string) => `Playlist importée : ${name}`,
+    failed: (name: string) => `L’import de ${name} a échoué.`,
+    errors: {
+      notPlaylist: 'Ce n’est pas un lien de playlist Spotify, Deezer ou YouTube Music.',
+      notFound: 'Playlist introuvable ou privée : elle doit être publique.',
+      busy: 'Trop d’imports en attente : patientez qu’ils se terminent.',
+      spotify: 'Spotify n’est pas disponible sur ce serveur.',
+      unavailable: 'Le service ne répond pas. Réessayez dans un instant.',
+      youtubeAlbum: 'Les albums YouTube Music ne peuvent pas être importés : importez une playlist.',
+      youtubeLiked: 'Les titres likés et « À regarder plus tard » sont privés : copiez-les d’abord dans une playlist publique.',
+      youtubeMix: 'Les mix et radios YouTube changent à chaque écoute : enregistrez d’abord les titres dans une playlist.',
+      youtubeKey: 'L’import YouTube n’est pas encore activé : l’administrateur doit ajouter une clé dans la console.',
+      youtubeNotPlaylist: 'Ce lien YouTube n’est pas une playlist : partagez la playlist elle-même.',
+    },
   },
 
   // ─── Playlist Detail ───────────────────────────────────────────────────────
@@ -578,6 +606,8 @@ export const t = {
     playback: {
       autoplayLabel: 'Lecture automatique',
       autoplayDesc: "Lance automatiquement des titres similaires à la fin de la file d'attente.",
+      magicShuffleLabel: 'Aléatoire magique',
+      magicShuffleDesc: 'Troisième position du bouton aléatoire : mélange vos titres avec des titres proches des mêmes artistes. Désactivé, le bouton n’a que deux positions.',
       alwaysPreviousLabel: "Précédent revient toujours au titre d'avant",
       alwaysPreviousDesc: 'Sinon, après 3 secondes, Précédent redémarre le titre.',
       nativePlayerLabel: 'Lecteur natif d’Android',

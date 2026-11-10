@@ -130,6 +130,7 @@ export const en = {
     kindLine: (kind: string, artist?: string) => (artist ? `${kind} · ${artist}` : kind),
     mixSubtitle: (count: number) => `Magic Mix · ${count} track${count > 1 ? 's' : ''}`,
     playAlbum: (title: string) => `Play the album ${title}`,
+    playPlaylist: (title: string) => `Play the playlist ${title}`,
     date: (d: Date) => {
       const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -171,9 +172,9 @@ export const en = {
     none: 'No other device connected. Open Musonic Web or the app on another device.',
     settings: 'Settings',
     sync: 'Synced playback',
-    syncOn: 'One device plays at a time: starting playback on one pauses the others.',
+    syncOn: 'Your devices stay in sync: one plays at a time and the music follows you from one to the other. Starting playback on one pauses the others.',
     syncOff: 'Each device plays on its own, without pausing the others.',
-    adminNotice: 'The server’s administrator can see your playback to help you if something goes wrong.',
+    adminNotice: 'As for every account on this server, the person who runs it sees the track playing and the device used, to help you if something goes wrong.',
   },
   podcasts: {
     shows: 'Podcasts',
@@ -317,6 +318,32 @@ export const en = {
   },
 
   // ─── Playlist Detail ───────────────────────────────────────────────────────
+  playlistImport: {
+    entry: 'Import a playlist',
+    entryDesc: 'Bring a playlist from Spotify, Deezer, YouTube Music…',
+    title: 'Import a playlist',
+    placeholder: 'Playlist link',
+    hint: 'Paste the share link of a public playlist. Musonic makes it again with your tracks and the online catalog.',
+    confirm: 'Import',
+    started: 'Import started: the playlist will appear in the Library.',
+    banner: (done: number, total: number) => `Playlist import: ${done}/${total}`,
+    bannerLabel: (name: string, done: number, total: number) => `Importing the playlist ${name}: ${done} of ${total}`,
+    done: (name: string) => `Playlist imported: ${name}`,
+    failed: (name: string) => `Importing ${name} failed.`,
+    errors: {
+      notPlaylist: 'This is not a Spotify, Deezer or YouTube Music playlist link.',
+      notFound: 'Playlist not found or private: it must be public.',
+      busy: 'Too many imports waiting: wait for them to finish.',
+      spotify: 'Spotify is not available on this server.',
+      unavailable: 'The service does not answer. Try again in a moment.',
+      youtubeAlbum: 'YouTube Music albums cannot be imported: import a playlist instead.',
+      youtubeLiked: 'Liked songs and Watch later are private: copy them into a public playlist first.',
+      youtubeMix: 'YouTube mixes and radios change every time: save the songs into a playlist first.',
+      youtubeKey: 'YouTube import is not enabled yet: the administrator must add a key in the console.',
+      youtubeNotPlaylist: 'This YouTube link is not a playlist: share the playlist itself.',
+    },
+  },
+
   playlistDetail: {
     byOwner: (owner: string) => `By ${owner}`,
     options: 'Playlist options',
@@ -571,6 +598,8 @@ export const en = {
     playback: {
       autoplayLabel: 'Autoplay',
       autoplayDesc: 'Automatically plays similar tracks when the queue ends.',
+      magicShuffleLabel: 'Magic shuffle',
+      magicShuffleDesc: 'Third position of the shuffle button: mixes your tracks with close tracks from the same artists. Off, the button only has two positions.',
       alwaysPreviousLabel: 'Previous always goes back',
       alwaysPreviousDesc: 'Otherwise, after 3 seconds, Previous restarts the track.',
       nativePlayerLabel: 'Android’s native player',

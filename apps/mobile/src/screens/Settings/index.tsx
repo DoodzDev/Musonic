@@ -7,7 +7,7 @@
  *   Previous, Home date, full screen, landscape layouts, back online by itself,
  *   the player kind). The visual choices show a small preview of each option.
  * @author DoodzProg
- * @version 3.0.2
+ * @version 3.1.0
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -36,6 +36,7 @@ import {useT} from '../../i18n';
 import {useConnectSnapshot} from '../../services/connect/useConnect';
 import {setSync} from '../../services/connect/connectService';
 import {version as APP_VERSION} from '../../../package.json';
+import {playbackBridge, usePlayerStore} from '../../store/playerStore';
 
 // ─── Previews ─────────────────────────────────────────────────────────────────
 
@@ -189,6 +190,8 @@ export default function SettingsScreen({advanced = false}: {advanced?: boolean})
       setStorageLimitMB: st.setStorageLimitMB,
       hapticsEnabled: st.hapticsEnabled,
       setHapticsEnabled: st.setHapticsEnabled,
+      isMagicShuffleEnabled: st.isMagicShuffleEnabled,
+      setIsMagicShuffleEnabled: st.setIsMagicShuffleEnabled,
     })),
   );
 
@@ -211,6 +214,16 @@ export default function SettingsScreen({advanced = false}: {advanced?: boolean})
     {value: 5120, label: t.settings.playback.storageLimitGB(5)},
     {value: 10240, label: t.settings.playback.storageLimitGB(10)},
   ];
+
+  // Turning magic off while it plays falls back to plain shuffle.
+  const setMagicShuffle = (on: boolean) => {
+    s.setIsMagicShuffleEnabled(on);
+    if (!on && usePlayerStore.getState().shuffleMode === 'magic') {
+      const engine = playbackBridge();
+      if (engine) engine.setShuffleMode('on');
+      else usePlayerStore.getState().setShuffleMode('on');
+    }
+  };
 
   const setAutoDownload = (on: boolean) => {
     if (!on) {
@@ -241,6 +254,7 @@ export default function SettingsScreen({advanced = false}: {advanced?: boolean})
           <SegmentedControl options={qualityOptions} value={s.streamQualityMobile} onChange={s.setStreamQualityMobile} />
         </Block>
         <ListItem label={t.settings.playback.autoplayLabel} description={t.settings.playback.autoplayDesc} toggle={{value: s.isAutoplayEnabled, onValueChange: s.setIsAutoplayEnabled}} />
+        <ListItem label={t.settings.playback.magicShuffleLabel} description={t.settings.playback.magicShuffleDesc} toggle={{value: s.isMagicShuffleEnabled, onValueChange: setMagicShuffle}} />
         <ListItem label={t.settings.player.showRemaining} toggle={{value: s.showRemainingTime, onValueChange: s.setShowRemainingTime}} />
       </ListGroup>
 

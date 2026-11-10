@@ -9,7 +9,7 @@
  *   Deezer IDs as Subsonic IDs. Tapped tracks play alone, then autoplay
  *   (playback engine, ADR-009 A8).
  * @author DoodzProg
- * @version 2.1.1
+ * @version 2.2.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
@@ -22,7 +22,7 @@ import EmptyState from '../../components/ui/EmptyState';
 import {SkeletonShelf} from '../../components/ui/Skeleton';
 import SectionHeader from '../../components/ui/SectionHeader';
 import PressableScale from '../../components/ui/PressableScale';
-import ProfileButton from '../../components/shell/ProfileButton';
+import HeaderStart from '../../components/shell/HeaderStart';
 import {AlbumCard, HomeShelf} from '../../components/home/HomeCards';
 import {SearchIcon} from '../../components/icons';
 import {colors, radii, spacing} from '../../theme';
@@ -397,7 +397,7 @@ export default function SearchHome() {
         ) : null}
       </Animated.ScrollView>
 
-      <LargeTitleHeader title={t.search.headerTitle} scrollY={scrollY} align="left" left={<ProfileButton />} />
+      <LargeTitleHeader title={t.search.headerTitle} scrollY={scrollY} align="left" left={<HeaderStart />} />
     </View>
   );
 }

@@ -12,7 +12,7 @@
  *   than the password (ADR-021).
  *   Persisted across restarts; consumed by RootNavigator to gate the server-setup flow.
  * @author DoodzProg
- * @version 1.11.0
+ * @version 1.12.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -118,6 +118,9 @@ type SettingsState = {
   setIsAlwaysPrevious: (enabled: boolean) => void;
   hapticsEnabled: boolean;
   setHapticsEnabled: (enabled: boolean) => void;
+  /** The shuffle button's third state, magic (suggestions mixed in); off: on / off only. */
+  isMagicShuffleEnabled: boolean;
+  setIsMagicShuffleEnabled: (enabled: boolean) => void;
   isAutoDownloadEnabled: boolean;
   setIsAutoDownloadEnabled: (enabled: boolean) => void;
   isOfflineMode: boolean;
@@ -193,6 +196,8 @@ export const useSettingsStore = create<SettingsState>()(
       setIsAlwaysPrevious: enabled => set({isAlwaysPrevious: enabled}),
       hapticsEnabled: true,
       setHapticsEnabled: enabled => set({hapticsEnabled: enabled}),
+      isMagicShuffleEnabled: true,
+      setIsMagicShuffleEnabled: enabled => set({isMagicShuffleEnabled: enabled}),
       isAutoDownloadEnabled: false,
       setIsAutoDownloadEnabled: enabled => set({isAutoDownloadEnabled: enabled}),
       isOfflineMode: false,

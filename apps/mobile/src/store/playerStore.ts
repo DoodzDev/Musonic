@@ -7,7 +7,7 @@
  *   the playback engine; queue and mode actions are handed over to it through
  *   the engine bridge (registered by the engine, so no import cycle).
  * @author DoodzProg
- * @version 2.2.0
+ * @version 2.3.0
  * @license CC-BY-NC-4.0
  */
 import {create} from 'zustand';
@@ -160,9 +160,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   toggleShuffle: () => {
     haptic('selection');
     const {shuffleMode} = get();
+    // Magic can be turned off in Settings: the button then only goes on / off.
+    const magic = useSettingsStore.getState().isMagicShuffleEnabled;
     const nextMode: ShuffleMode =
       shuffleMode === 'off' ? 'on' :
-      shuffleMode === 'on' ? 'magic' :
+      shuffleMode === 'on' && magic ? 'magic' :
       'off';
     const engine = playbackBridge();
     if (engine) engine.setShuffleMode(nextMode);

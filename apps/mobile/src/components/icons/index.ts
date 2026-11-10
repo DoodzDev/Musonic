@@ -27,6 +27,7 @@ export {default as DownloadStatusIcon} from './DownloadStatusIcon';
 export {default as DragHandleIcon} from './DragHandleIcon';
 export {default as FadersIcon} from './FadersIcon';
 export {default as FullscreenIcon} from './FullscreenIcon';
+export {default as GearIcon} from './GearIcon';
 export {default as GlobeIcon} from './GlobeIcon';
 export {default as GridIcon} from './GridIcon';
 export {default as HeadphonesIcon} from './HeadphonesIcon';
