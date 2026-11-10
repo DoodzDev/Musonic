@@ -242,7 +242,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   per day and per month, total size of their imports, highest streaming bit rate.
 - Console « Imports » (`/v1/admin/imports`, `/v1/admin/providers`): the import queue with its
   counts, retry one or every failed import, remove one; audio providers with their state; a
-  provider's credential (the Deezer ARL) changed from the console, checked by the provider
+  provider's credential (an account token, an API key…) changed from the console, checked by the provider
   before it replaces the old one, kept in the database and never shown again.
 - Console « Bibliothèque » (`/v1/admin/library…`): scan now (quick or full), the songs with
   their file, the songs with a missing file, without a cover, twice in the library, online

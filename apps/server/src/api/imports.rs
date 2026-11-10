@@ -7,7 +7,7 @@
 //! | `POST /v1/admin/imports/{track}/retry` · `DELETE /v1/admin/imports/{track}` | Try again now · remove from the queue |
 //! | `POST /v1/admin/imports/retry-failed` | Every job given up, again |
 //! | `GET /v1/admin/providers` | Audio providers, their state, whether their credential can be changed |
-//! | `PUT /v1/admin/providers/{id}/credential` | `{value}`: a new ARL…, checked before it replaces the old one |
+//! | `PUT /v1/admin/providers/{id}/credential` | `{value}`: a new token or key, checked before it replaces the old one |
 
 use axum::{
     Json, Router,
@@ -231,11 +231,13 @@ async fn remove(State(state): State<AppState>, auth: Auth, Path(track): Path<Str
 #[ts(export)]
 pub struct ProviderInfo {
     pub id: String,
+    /// The name it gives itself, for the console.
+    pub name: String,
     /// Its files may be imported (not only previews).
     pub imports: bool,
     /// The alert it has (`credentials_expired`), if any.
     pub alert: Option<String>,
-    /// The secret the console can change (`ARL`…).
+    /// What it signs in with, when the console can change it (« Token », « API key »…).
     pub credential: Option<String>,
     /// When that secret was last changed from the console (Unix seconds).
     #[ts(type = "number | null")]
@@ -267,6 +269,7 @@ async fn providers(State(state): State<AppState>, auth: Auth) -> Reply {
         .iter()
         .map(|p| ProviderInfo {
             id: p.id().to_owned(),
+            name: p.name().to_owned(),
             imports: p.imports(),
             alert: alerts.get(p.id()).cloned(),
             credential: p.credential().map(str::to_owned),

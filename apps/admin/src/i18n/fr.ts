@@ -2,7 +2,7 @@
  * @file fr.ts
  * @description French texts of the console (the reference: every language has the same keys).
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -67,7 +67,7 @@ export const fr = {
   },
   alerts: {
     credentials: (provider: string) => `Le fournisseur « ${provider} » n'est plus connecté`,
-    credentialsDetail: "Ses identifiants ont expiré (l'ARL pour Deezer) : les titres en ligne se lisent en extrait et les imports attendent.",
+    credentialsDetail: "Ses identifiants ont expiré : les titres en ligne se lisent en extrait et les imports attendent.",
     imports: (n: number) => `${n} ${plural(n, 'import abandonné', 'imports abandonnés')}`,
     importsDetail: "Ils seront relancés si quelqu'un like ou ajoute ces titres à nouveau.",
     disk: 'Disque presque plein',
@@ -419,7 +419,7 @@ export const fr = {
     updates: ['Vérifier les mises à jour', 'Une fois par jour sur GitHub, pour Musonic Server et Musonic Web. Rien n’est installé tout seul.'],
     backups: 'Sauvegardes',
     backupsHelp: 'Une copie de la base chaque jour (comptes, likes, playlists, écoutes, réglages). Les fichiers de musique ne sont pas dedans.',
-    backupsSecret: 'La base contient aussi les identifiants des fournisseurs (ARL) : gardez les sauvegardes téléchargées en lieu sûr.',
+    backupsSecret: 'La base contient aussi les identifiants des fournisseurs : gardez les sauvegardes téléchargées en lieu sûr.',
     lastBackup: (when: string, size: string) => `Dernière : ${when} · ${size}`,
     noBackup: "Aucune sauvegarde pour l'instant.",
     backupNow: 'Sauvegarder maintenant',
@@ -522,7 +522,7 @@ export const fr = {
     qualities: { mp3_128: 'MP3 128', mp3_320: 'MP3 320', flac: 'FLAC' } as Record<string, string>,
     folder: ['Rangement', 'Musonic/Artiste de l’album/Album/NN - Titre'],
     providers: 'Fournisseurs',
-    providerNames: { deezer: 'Deezer', 'deezer-preview': 'Extraits Deezer', subsonic: 'Relais Subsonic' } as Record<string, string>,
+    providerNames: { 'deezer-preview': 'Extraits Deezer', subsonic: 'Relais Subsonic' } as Record<string, string>,
     full: 'Titres complets et imports',
     preview: 'Extraits de 30 s, jamais importés',
     ok: 'Fonctionne',

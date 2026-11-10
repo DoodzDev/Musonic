@@ -10,12 +10,17 @@ one id per track, a shared disk cache, import into the library, tags, covers and
 #[async_trait]
 pub trait AudioProvider: Send + Sync {
     fn id(&self) -> &'static str;
+    fn name(&self) -> &'static str { self.id() }
     fn namespace(&self) -> Option<&'static str> { None }
     async fn open(&self, track: &TrackQuery, wanted: Quality) -> Result<Option<RemoteAudio>>;
+    fn imports(&self) -> bool { true }
+    fn credential(&self) -> Option<&'static str> { None }
+    async fn set_credential(&self, value: &str) -> Result<()> { /* not changeable */ }
 }
 ```
 
-- **`id`**: unique name of the provider, shown in logs and settings.
+- **`id`**: unique, stable identifier of the provider, used in logs, alerts and the API.
+- **`name`** (default: the id): the name the administration console shows.
 - **`namespace`**: the catalog whose track ids the provider understands. When the server knows the
   track's id in that catalog, it passes it in `TrackQuery::provider_id`. Providers that work from
   metadata only (title, artists, ISRC, duration) return `None`.
@@ -28,6 +33,19 @@ pub trait AudioProvider: Send + Sync {
     works again.
 - **`imports`** (default `true`): whether its files may be imported into the library. A
   provider of previews or excerpts returns `false`.
+- **`credential`** (default `None`): when the provider signs in with something an administrator
+  may need to renew (an account token, an API key…), the word for it (« Token », « API key »).
+  The console then offers to change it.
+- **`set_credential`**: receives the new value typed in the console. Check that it works before
+  replacing the old one (return an error otherwise: the console shows it), then keep it where
+  your provider reads it. The value is never logged nor shown again.
+
+## In the administration console
+The « Imports » page lists every provider the server runs, in order, without anything to add
+to the console: its `name`, what it does (« full songs and imports » when `imports` is `true`,
+« 30-second previews » otherwise), whether it works, and the alert set by `CredentialsExpired`.
+When `credential` gives a word, a « Change the … » button opens a form that calls
+`set_credential` (`PUT /v1/admin/providers/{id}/credential`).
 
 ### Imports
 A track without a file that is liked, part of a liked album, or added to a playlist is imported:
@@ -71,7 +89,18 @@ musonic_server::run(config, ext).await
 ```
 
 The default binary (`src/main.rs`) ships the providers of this repository. `MemoryProvider`
-(`src/providers/memory.rs`) is the smallest complete example.
+(`src/providers/memory.rs`) is the smallest complete example. A binary of your own (a crate
+depending on `musonic-server`, with its own `main.rs` calling `musonic_server::cli`) adds its
+providers, and its playlist sources (`Extensions::playlist_sources`), without changing this
+repository.
+
+## Without writing Rust: relaying another server
+A service that already delivers audio through the Subsonic API (another Subsonic server, or a
+proxy such as Octo-Fiesta that fetches songs from an online service) can be used as is with the
+built-in Subsonic relay: set `subsonic_provider_url`, `subsonic_provider_user` and
+`MUSONIC_SUBSONIC_PROVIDER_PASSWORD` (see the README). It appears in the console as « Subsonic
+relay », and its songs can be played and imported like any provider's. You are responsible for
+the services you connect and for respecting their terms.
 
 ## How the server uses them
 A track without a file present is played from the first provider, in order, that opens it. Its

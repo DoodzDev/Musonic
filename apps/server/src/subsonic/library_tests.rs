@@ -1232,7 +1232,7 @@ impl crate::providers::AudioProvider for DeezerFiles {
         _wanted: crate::providers::Quality,
     ) -> anyhow::Result<Option<crate::providers::RemoteAudio>> {
         match self.fail {
-            Some("expired") => Err(crate::providers::CredentialsExpired("ARL".into()).into()),
+            Some("expired") => Err(crate::providers::CredentialsExpired("token".into()).into()),
             Some(_) => Ok(None),
             None if track.provider_id.is_some() => {
                 crate::providers::MemoryProvider::default()

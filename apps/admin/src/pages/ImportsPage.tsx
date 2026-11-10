@@ -1,10 +1,11 @@
 /**
  * @file ImportsPage.tsx
  * @description « Imports »: the queue of online songs to download into the library (try again,
- *   remove), the import settings, the audio providers and their credential (the ARL for
- *   Deezer), changed here without a terminal and never shown.
+ *   remove), the import settings, the audio providers and their credential, changed here
+ *   without a terminal and never shown. Any provider the server runs gets its card, under the
+ *   name it gives itself (`ProviderInfo.name`), translated here for the built-in ones.
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -23,7 +24,7 @@ type State = 'all' | 'pending' | 'running' | 'failed' | 'done';
 const STATES: State[] = ['all', 'pending', 'running', 'failed', 'done'];
 const PAGE = 100;
 
-const providerName = (id: string) => t.imports.providerNames[id] ?? id;
+const providerName = (p: ProviderInfo) => t.imports.providerNames[p.id] ?? p.name;
 
 function stateTag(j: ImportJob): [string, string] {
   switch (j.state) {
@@ -60,7 +61,7 @@ function CredentialModal({ p, onClose, onSaved }: { p: ProviderInfo; onClose: ()
       .finally(() => setBusy(false));
   };
   return (
-    <Modal title={t.imports.credTitle(credential, providerName(p.id))} onClose={onClose}>
+    <Modal title={t.imports.credTitle(credential, providerName(p))} onClose={onClose}>
       <p className="muted small">{t.imports.credHelp}</p>
       <div className="field">
         <label>{credential}</label>
@@ -270,7 +271,7 @@ export function ImportsPage() {
           {providers.map((p) => (
             <div key={p.id} className="list-item">
               <div className="small">
-                <b>{providerName(p.id)}</b> · {p.imports ? t.imports.full : t.imports.preview}
+                <b>{providerName(p)}</b> · {p.imports ? t.imports.full : t.imports.preview}
                 <div className={p.alert ? 'tag bad' : 'muted'}>
                   {p.alert ? t.imports.expired : t.imports.ok}
                   {p.credentialChangedAt ? ` · ${p.credential} ${t.imports.changed(relative(p.credentialChangedAt).toLowerCase())}` : ''}

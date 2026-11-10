@@ -25,6 +25,10 @@ impl DeezerPreview {
 
 #[async_trait]
 impl AudioProvider for DeezerPreview {
+    fn name(&self) -> &'static str {
+        "Deezer previews"
+    }
+
     fn id(&self) -> &'static str {
         "deezer-preview"
     }

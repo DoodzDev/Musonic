@@ -2,6 +2,10 @@
 
 export type ProviderInfo = { id: string, 
 /**
+ * The name it gives itself, for the console.
+ */
+name: string, 
+/**
  * Its files may be imported (not only previews).
  */
 imports: boolean, 
@@ -10,7 +14,7 @@ imports: boolean,
  */
 alert: string | null, 
 /**
- * The secret the console can change (`ARL`…).
+ * What it signs in with, when the console can change it (« Token », « API key »…).
  */
 credential: string | null, 
 /**
