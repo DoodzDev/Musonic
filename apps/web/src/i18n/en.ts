@@ -2,7 +2,7 @@
  * @file en.ts
  * @description English strings of the web client. Same shape as fr.ts (checked by the type).
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.2.1
  * @license CC-BY-NC-4.0
  */
 
@@ -211,7 +211,7 @@ export const en: typeof fr = {
     languageHint: 'Shared with the Musonic website. The page reloads to apply it.',
     player: 'Playback',
     showRemaining: 'Show the time left',
-    crossfade: 'Crossfade',
+    crossfade: 'Crossfade between tracks',
     crossfadeOff: 'Off',
     crossfadeSeconds: (seconds: number) => `${seconds} s`,
     crossfadeHint: 'The next track fades in over the end of the current one. Never when you skip a track yourself.',

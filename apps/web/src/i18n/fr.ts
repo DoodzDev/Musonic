@@ -3,7 +3,7 @@
  * @description French strings of the web client (source of truth: en.ts
  *   must have the same shape). Pick the active language through i18n/index.ts.
  * @author DoodzProg
- * @version 0.6.0
+ * @version 0.6.1
  * @license CC-BY-NC-4.0
  */
 
@@ -211,7 +211,7 @@ export const fr = {
     languageHint: 'Partagée avec le site de Musonic. La page se recharge pour l’appliquer.',
     player: 'Lecture',
     showRemaining: 'Afficher le temps restant',
-    crossfade: 'Fondu enchaîné',
+    crossfade: 'Fondu entre les titres',
     crossfadeOff: 'Désactivé',
     crossfadeSeconds: (seconds: number) => `${seconds} s`,
     crossfadeHint: 'Le titre suivant démarre en fondu sur la fin du titre en cours. Jamais quand vous passez un titre vous-même.',

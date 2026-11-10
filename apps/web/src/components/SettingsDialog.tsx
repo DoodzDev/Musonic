@@ -1,12 +1,12 @@
 /**
  * @file SettingsDialog.tsx
- * @description Settings of the web client, opened from the profile menu:
- *   the language (English / French), shared with the website; playback (time
- *   left, crossfade between tracks, 0 to 12 s, remembered in the browser);
- *   Musonic Connect on a Musonic Server.
+ * @description Settings of the web client, opened from the profile menu, in the
+ *   mobile app's order: playback (crossfade between tracks, 0 to 12 s, then the
+ *   time left, remembered in the browser); the language (English / French),
+ *   shared with the website; Musonic Connect on a Musonic Server.
  *   Escape or a click outside closes it.
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -76,6 +76,19 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <div className="setting">
+          <span className="setting-label">{t.player}</span>
+          <span>{t.crossfade}</span>
+          <div className="setting-slider">
+            <Slider value={crossfade} max={MAX_CROSSFADE} step={1} label={t.crossfade} valueText={crossfadeText} onChange={setCrossfade} />
+            <span className="setting-value" aria-hidden="true">{crossfadeText}</span>
+          </div>
+          <p className="setting-hint">{t.crossfadeHint}</p>
+          <label className="setting-switch">
+            <span>{t.showRemaining}</span>
+            <input type="checkbox" role="switch" aria-checked={showRemaining} checked={showRemaining} onChange={(e) => setShowRemaining(e.target.checked)} />
+          </label>
+        </div>
+        <div className="setting">
           <span className="setting-label" id="setting-language">{t.language}</span>
           <div className="chips" role="radiogroup" aria-labelledby="setting-language">
             {LANGUAGES.map((l) => (
@@ -92,19 +105,6 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             ))}
           </div>
           <p className="setting-hint">{t.languageHint}</p>
-        </div>
-        <div className="setting">
-          <span className="setting-label">{t.player}</span>
-          <label className="setting-switch">
-            <span>{t.showRemaining}</span>
-            <input type="checkbox" role="switch" aria-checked={showRemaining} checked={showRemaining} onChange={(e) => setShowRemaining(e.target.checked)} />
-          </label>
-          <span>{t.crossfade}</span>
-          <div className="setting-slider">
-            <Slider value={crossfade} max={MAX_CROSSFADE} step={1} label={t.crossfade} valueText={crossfadeText} onChange={setCrossfade} />
-            <span className="setting-value" aria-hidden="true">{crossfadeText}</span>
-          </div>
-          <p className="setting-hint">{t.crossfadeHint}</p>
         </div>
         <ConnectSettings />
       </div>
