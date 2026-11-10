@@ -2,7 +2,7 @@
  * @file en.ts
  * @description English strings of the web client. Same shape as fr.ts (checked by the type).
  * @author DoodzProg
- * @version 0.2.1
+ * @version 0.4.1
  * @license CC-BY-NC-4.0
  */
 
@@ -351,7 +351,7 @@ export const en: typeof fr = {
   importPlaylist: {
     open: 'Import',
     title: 'Import a playlist',
-    sub: 'Paste the address of a Spotify or Deezer playlist: Musonic makes it again with songs from your library and the online catalog.',
+    sub: 'Paste the address of a Spotify, Deezer or YouTube Music playlist: Musonic makes it again with songs from your library and the online catalog.',
     urlLabel: 'Playlist address',
     urlPlaceholder: 'https://open.spotify.com/playlist/…',
     read: 'Read the playlist',
@@ -360,6 +360,8 @@ export const en: typeof fr = {
     songs: (n: number) => plural(n, 'song', 'songs'),
     links: (n: number) => plural(n, 'song link', 'song links'),
     partialNote: (read: number, total: number) => `This playlist has ${total} songs, but Spotify gives only ${read} through its address. For the other ${total - read}, the end of the import will show how to add them (with a second Spotify playlist).`,
+    unavailableVideos: (n: number) => (n === 1 ? '1 video of this playlist is no longer available on YouTube (deleted or private): it will not be imported.' : `${n} videos of this playlist are no longer available on YouTube (deleted or private): they will not be imported.`),
+    unavailableSongs: (n: number, source: string) => (n === 1 ? `1 song of this playlist is no longer available on ${source}: it will not be imported.` : `${n} songs of this playlist are no longer available on ${source}: they will not be imported.`),
     nameLabel: 'Name in Musonic',
     defaultName: 'Imported playlist',
     start: 'Import',
@@ -393,7 +395,12 @@ export const en: typeof fr = {
     report: 'Import report',
     another: 'Import another',
     errors: {
-      notPlaylist: 'This is not the address of a Spotify or Deezer playlist.',
+      notPlaylist: 'This is not the address of a Spotify, Deezer or YouTube Music playlist.',
+      youtubeAlbum: 'YouTube Music albums cannot be imported: import a playlist instead.',
+      youtubeLiked: 'Liked songs and Watch later are private: copy them into a public playlist first.',
+      youtubeMix: 'YouTube mixes and radios change every time: save the songs into a playlist first.',
+      youtubeKey: 'YouTube import is not enabled yet: the administrator must add a YouTube key in the console.',
+      youtubeNotPlaylist: 'This YouTube link is not a playlist: share the playlist itself.',
       notFound: 'Playlist not found or private: it must be public.',
       spotify: 'Spotify is not available on this server.',
       catalog: 'The online catalog is off on this server.',

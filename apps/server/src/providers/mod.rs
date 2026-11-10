@@ -67,6 +67,11 @@ pub trait AudioProvider: Send + Sync {
     /// Unique id of this provider, e.g. `import-folder`.
     fn id(&self) -> &'static str;
 
+    /// The name the console shows (« My music service »…); its id when it gives none.
+    fn name(&self) -> &'static str {
+        self.id()
+    }
+
     /// Catalog whose track ids this provider understands (it then gets them in
     /// [`TrackQuery::provider_id`]), or `None` when it only works from metadata.
     fn namespace(&self) -> Option<&'static str> {
@@ -83,7 +88,8 @@ pub trait AudioProvider: Send + Sync {
         true
     }
 
-    /// The secret it signs in with (`ARL`…), when the console may change it.
+    /// What it signs in with (an account token, an API key…), named as the console shows it,
+    /// when the console may change it.
     fn credential(&self) -> Option<&'static str> {
         None
     }

@@ -139,6 +139,7 @@ fn source_error(e: SourceError) -> ApiError {
             StatusCode::NOT_FOUND,
             "playlist not found or private".into(),
         ),
+        SourceError::Unsupported(why) => ApiError(StatusCode::UNPROCESSABLE_ENTITY, why),
         SourceError::Unavailable(e) => {
             tracing::warn!("playlist source: {e:#}");
             ApiError(

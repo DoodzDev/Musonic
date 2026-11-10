@@ -113,6 +113,10 @@ fn format_of(song: &Value) -> Option<(AudioFormat, Quality)> {
 
 #[async_trait]
 impl AudioProvider for SubsonicProvider {
+    fn name(&self) -> &'static str {
+        "Subsonic relay"
+    }
+
     fn id(&self) -> &'static str {
         "subsonic"
     }

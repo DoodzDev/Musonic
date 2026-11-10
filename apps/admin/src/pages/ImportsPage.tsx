@@ -1,10 +1,11 @@
 /**
  * @file ImportsPage.tsx
  * @description « Imports »: the queue of online songs to download into the library (try again,
- *   remove), the import settings, the audio providers and their credential (the ARL for
- *   Deezer), changed here without a terminal and never shown.
+ *   remove), the import settings, the audio providers and their credential, changed here
+ *   without a terminal and never shown. Any provider the server runs gets its card, under the
+ *   name it gives itself (`ProviderInfo.name`), translated here for the built-in ones.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -23,7 +24,7 @@ type State = 'all' | 'pending' | 'running' | 'failed' | 'done';
 const STATES: State[] = ['all', 'pending', 'running', 'failed', 'done'];
 const PAGE = 100;
 
-const providerName = (id: string) => t.imports.providerNames[id] ?? id;
+const providerName = (p: ProviderInfo) => t.imports.providerNames[p.id] ?? p.name;
 
 function stateTag(j: ImportJob): [string, string] {
   switch (j.state) {
@@ -60,7 +61,7 @@ function CredentialModal({ p, onClose, onSaved }: { p: ProviderInfo; onClose: ()
       .finally(() => setBusy(false));
   };
   return (
-    <Modal title={t.imports.credTitle(credential, providerName(p.id))} onClose={onClose}>
+    <Modal title={t.imports.credTitle(credential, providerName(p))} onClose={onClose}>
       <p className="muted small">{t.imports.credHelp}</p>
       <div className="field">
         <label>{credential}</label>
@@ -115,6 +116,39 @@ function PodcastIndexModal({ onClose, onSaved }: { onClose: () => void; onSaved:
   );
 }
 
+function YouTubeKeyModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [key, setKey] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const y = t.youtube;
+  const save = () => {
+    setBusy(true);
+    setError(null);
+    api('/v1/admin/imports/youtube', { method: 'PUT', body: { key } })
+      .then(() => {
+        onSaved();
+        onClose();
+      })
+      .catch((e: ApiError) => setError(e.status === 422 ? y.refused : e.message))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <Modal title={y.keyTitle} onClose={onClose}>
+      <p className="muted small">{y.keyHelp}</p>
+      <div className="field">
+        <label>{y.key}</label>
+        <input className="input" type="password" autoComplete="off" spellCheck={false} value={key} onChange={(e) => setKey(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && key.trim() && !busy && save()} autoFocus />
+      </div>
+      <p className="note">{t.imports.credStored}</p>
+      <ErrorLine error={error} />
+      <div className="actions">
+        <button className="btn ghost" onClick={onClose}>{t.common.cancel}</button>
+        <button className="btn primary" disabled={!key.trim() || busy} onClick={save}>{busy ? t.imports.credChecking : t.imports.credSave}</button>
+      </div>
+    </Modal>
+  );
+}
+
 type PodcastStatus = { indexConfigured: boolean; shows: number; episodes: number };
 
 export function ImportsPage() {
@@ -126,12 +160,15 @@ export function ImportsPage() {
   const [changing, setChanging] = useState<ProviderInfo | null>(null);
   const [podcasts, setPodcasts] = useState<PodcastStatus | null>(null);
   const [indexKey, setIndexKey] = useState(false);
+  const [youtube, setYoutube] = useState<boolean | null>(null);
+  const [youtubeKey, setYoutubeKey] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const settings = useServerSettings();
 
   const load = useCallback(() => {
     api<PodcastStatus>('/v1/admin/podcasts').then(setPodcasts).catch(() => setPodcasts(null));
+    api<{ youtubeKeyConfigured: boolean }>('/v1/admin/imports/youtube').then((s) => setYoutube(s.youtubeKeyConfigured)).catch(() => setYoutube(null));
     const q = new URLSearchParams({ limit: String(limit) });
     if (state !== 'all') q.set('state', state);
     if (search.trim()) q.set('q', search.trim());
@@ -234,7 +271,7 @@ export function ImportsPage() {
           {providers.map((p) => (
             <div key={p.id} className="list-item">
               <div className="small">
-                <b>{providerName(p.id)}</b> · {p.imports ? t.imports.full : t.imports.preview}
+                <b>{providerName(p)}</b> · {p.imports ? t.imports.full : t.imports.preview}
                 <div className={p.alert ? 'tag bad' : 'muted'}>
                   {p.alert ? t.imports.expired : t.imports.ok}
                   {p.credentialChangedAt ? ` · ${p.credential} ${t.imports.changed(relative(p.credentialChangedAt).toLowerCase())}` : ''}
@@ -266,6 +303,19 @@ export function ImportsPage() {
           </div>
         </div>
       )}
+      {youtube !== null && (
+        <div className="card mt">
+          <h2>{t.youtube.title}</h2>
+          <div className="list-item">
+            <div className="small">
+              <b>YouTube Data API</b>
+              <div className="muted">{youtube ? t.youtube.on : t.youtube.off}</div>
+            </div>
+            <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => setYoutubeKey(true)}>{youtube ? t.youtube.change : t.youtube.add}</button>
+          </div>
+        </div>
+      )}
+      {youtubeKey && <YouTubeKeyModal onClose={() => setYoutubeKey(false)} onSaved={() => { setNotice(t.youtube.saved); load(); }} />}
       {indexKey && <PodcastIndexModal onClose={() => setIndexKey(false)} onSaved={() => { setNotice(t.podcasts.saved); load(); }} />}
       {changing && <CredentialModal p={changing} onClose={() => setChanging(null)} onSaved={() => { setNotice(t.imports.credDone); load(); }} />}
     </>

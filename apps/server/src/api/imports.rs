@@ -7,7 +7,7 @@
 //! | `POST /v1/admin/imports/{track}/retry` · `DELETE /v1/admin/imports/{track}` | Try again now · remove from the queue |
 //! | `POST /v1/admin/imports/retry-failed` | Every job given up, again |
 //! | `GET /v1/admin/providers` | Audio providers, their state, whether their credential can be changed |
-//! | `PUT /v1/admin/providers/{id}/credential` | `{value}`: a new ARL…, checked before it replaces the old one |
+//! | `PUT /v1/admin/providers/{id}/credential` | `{value}`: a new token or key, checked before it replaces the old one |
 
 use axum::{
     Json, Router,
@@ -31,6 +31,10 @@ pub fn router() -> Router<AppState> {
         .route("/v1/admin/imports/{track}/retry", post(retry))
         .route("/v1/admin/imports/{track}", delete(remove))
         .route("/v1/admin/providers", get(providers))
+        .route(
+            "/v1/admin/imports/youtube",
+            get(youtube_status).put(set_youtube_key),
+        )
         .route("/v1/admin/providers/{id}/credential", put(set_credential))
 }
 
@@ -227,11 +231,13 @@ async fn remove(State(state): State<AppState>, auth: Auth, Path(track): Path<Str
 #[ts(export)]
 pub struct ProviderInfo {
     pub id: String,
+    /// The name it gives itself, for the console.
+    pub name: String,
     /// Its files may be imported (not only previews).
     pub imports: bool,
     /// The alert it has (`credentials_expired`), if any.
     pub alert: Option<String>,
-    /// The secret the console can change (`ARL`…).
+    /// What it signs in with, when the console can change it (« Token », « API key »…).
     pub credential: Option<String>,
     /// When that secret was last changed from the console (Unix seconds).
     #[ts(type = "number | null")]
@@ -263,6 +269,7 @@ async fn providers(State(state): State<AppState>, auth: Auth) -> Reply {
         .iter()
         .map(|p| ProviderInfo {
             id: p.id().to_owned(),
+            name: p.name().to_owned(),
             imports: p.imports(),
             alert: alerts.get(p.id()).cloned(),
             credential: p.credential().map(str::to_owned),
@@ -359,4 +366,39 @@ pub async fn restore_credentials(state: &AppState) {
             }
         }
     }
+}
+
+/// Whether the YouTube API key is set (ADR-029); the key itself is never sent back.
+async fn youtube_status(State(state): State<AppState>, auth: Auth) -> Reply {
+    admin(&auth)?;
+    let configured = state.youtube.as_ref().is_some_and(|y| y.has_key());
+    Ok(Json(json!({ "youtubeKeyConfigured": configured })))
+}
+
+#[derive(Deserialize)]
+struct YouTubeKey {
+    key: String,
+}
+
+/// Sets the YouTube API key after a test request; an empty key removes it.
+async fn set_youtube_key(
+    State(state): State<AppState>,
+    auth: Auth,
+    Json(body): Json<YouTubeKey>,
+) -> Reply {
+    admin(&auth)?;
+    let Some(youtube) = state.youtube.clone() else {
+        return Err(ApiError(StatusCode::NOT_FOUND, "no YouTube source".into()));
+    };
+    if let Err(e) = youtube.set_key(&state.db, &body.key).await {
+        tracing::warn!("YouTube key refused: {e:#}");
+        return Err(ApiError(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "refused by YouTube".into(),
+        ));
+    }
+    state
+        .journal
+        .log(Entry::new("imports.youtube_key").by_admin(&auth.user.username));
+    Ok(Json(json!({ "youtubeKeyConfigured": youtube.has_key() })))
 }

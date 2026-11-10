@@ -2,7 +2,7 @@
  * @file en.ts
  * @description English texts of the console (same keys as fr.ts, checked by the compiler).
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 
@@ -69,7 +69,7 @@ export const en: Dict = {
   },
   alerts: {
     credentials: (provider) => `The “${provider}” provider is signed out`,
-    credentialsDetail: 'Its credentials expired (the ARL for Deezer): online songs play as previews and imports wait.',
+    credentialsDetail: 'Its credentials expired: online songs play as previews and imports wait.',
     imports: (n) => `${n} ${plural(n, 'import', 'imports')} given up`,
     importsDetail: 'They are tried again if someone likes or adds these songs again.',
     disk: 'Disk almost full',
@@ -421,7 +421,7 @@ export const en: Dict = {
     updates: ['Check for updates', 'Once a day on GitHub, for Musonic Server and Musonic Web. Nothing is installed on its own.'],
     backups: 'Backups',
     backupsHelp: 'A copy of the database every day (accounts, likes, playlists, plays, settings). Music files are not in it.',
-    backupsSecret: 'The database also holds the providers’ credentials (ARL): keep downloaded backups somewhere safe.',
+    backupsSecret: 'The database also holds the providers’ credentials: keep downloaded backups somewhere safe.',
     lastBackup: (when: string, size: string) => `Latest: ${when} · ${size}`,
     noBackup: 'No backup yet.',
     backupNow: 'Back up now',
@@ -472,6 +472,18 @@ export const en: Dict = {
     restarting: 'Restarting… the page reloads when the server answers.',
     timeout: 'The server does not come back. Check it runs (docker ps): it must be started with restart: unless-stopped.',
   },
+  youtube: {
+    title: 'YouTube Music import',
+    on: 'Key saved: public YouTube and YouTube Music playlists can be imported.',
+    off: 'No key: YouTube links are refused by the playlist import.',
+    add: 'Add the key',
+    change: 'Change the key',
+    keyTitle: 'YouTube Data API key',
+    keyHelp: 'Free: console.cloud.google.com → new project → enable "YouTube Data API v3" → Credentials → API key (restrict it to this API). The server tests it before keeping it; it stays on the server.',
+    key: 'API key',
+    refused: 'YouTube refused this key.',
+    saved: 'YouTube key saved.',
+  },
   podcasts: {
     title: 'Podcasts',
     counts: (shows: number, episodes: number) => `${shows} show${shows === 1 ? '' : 's'} followed · ${episodes} episode${episodes === 1 ? '' : 's'}`,
@@ -512,7 +524,7 @@ export const en: Dict = {
     qualities: { mp3_128: 'MP3 128', mp3_320: 'MP3 320', flac: 'FLAC' },
     folder: ['Filing', 'Musonic/Album artist/Album/NN - Title'],
     providers: 'Providers',
-    providerNames: { deezer: 'Deezer', 'deezer-preview': 'Deezer previews', subsonic: 'Subsonic relay' },
+    providerNames: { 'deezer-preview': 'Deezer previews', subsonic: 'Subsonic relay' },
     full: 'Full songs and imports',
     preview: '30-second previews, never imported',
     ok: 'Working',
