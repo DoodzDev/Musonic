@@ -130,7 +130,7 @@ impl Db {
                 };
                 counter.fetch_add(1, Ordering::Relaxed);
             },
-        ));
+        ))?;
         Ok(Self {
             conn: Arc::new(Mutex::new(conn)),
             changes: Arc::default(),

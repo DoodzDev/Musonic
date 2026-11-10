@@ -149,8 +149,11 @@ fn import_in(tx: &Transaction, opts: NavidromeOptions) -> Result<NavidromeReport
             }
         }
     }
-    report.files_matched = tx.query_row("SELECT count(*) FROM nd_track", [], |r| r.get(0))?;
-    let files: usize = tx.query_row("SELECT count(*) FROM nd.media_file", [], |r| r.get(0))?;
+    report.files_matched =
+        tx.query_row("SELECT count(*) FROM nd_track", [], |r| r.get::<_, i64>(0))? as usize;
+    let files = tx.query_row("SELECT count(*) FROM nd.media_file", [], |r| {
+        r.get::<_, i64>(0)
+    })? as usize;
     report.files_not_found = files - report.files_matched;
 
     if opts.keep_ids {
