@@ -16,13 +16,14 @@
  *   tiles stay on the cover's side, the list takes the full height of the
  *   other one.
  * @author DoodzProg
- * @version 3.1.0
+ * @version 3.1.2
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   LayoutAnimation,
   Pressable,
   StyleSheet,
@@ -211,6 +212,7 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
   const sheetHeight = winH * SHEET_HEIGHT_RATIO;
   const t = useT();
   const currentTrack = useActiveTrack();
+  const sourceType = usePlayerStore(s => s.currentSourceKey?.split(':')[0]);
   const storeUpcoming = usePlayerStore(s => s.upcoming);
   // The list's own order: set at once on a drop, then replaced by the
   // engine's only when that one really differs (next track, removal…).
@@ -331,6 +333,18 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
     if (!visible) exitEditMode();
   }, [visible, exitEditMode]);
 
+  // Android back closes the queue (or leaves edit mode first), like any sheet: it used to do
+  // nothing, leaving only the small close button at the top.
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (isEditMode) exitEditMode();
+      else onClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [visible, isEditMode, exitEditMode, onClose]);
+
   const renderItem = useCallback(
     ({item}: {item: Track}) => (
       <QueueRow
@@ -347,7 +361,11 @@ export default function QueueSheet({visible, onClose, slideY}: Props) {
 
   const hasSelection = selectedIds.size > 0;
   const shuffleNote = shuffleMode === 'magic' ? t.queue.shuffleMagic : shuffleMode === 'on' ? t.queue.shuffleOn : null;
-  const subtitle = [t.queue.from(currentPlaylistName || t.queue.fallbackName), shuffleNote].filter(Boolean).join(' · ');
+  // The list playing, not "Music" for every album, artist or liked songs.
+  const sourceName =
+    currentPlaylistName ||
+    (sourceType === 'album' ? currentTrack.album : sourceType === 'artist' ? currentTrack.artist : sourceType === 'liked' ? t.likedSongs.title : undefined);
+  const subtitle = [t.queue.from(sourceName || t.queue.fallbackName), shuffleNote].filter(Boolean).join(' · ');
 
   const listHeader = (
     <View style={styles.sectionHeader}>

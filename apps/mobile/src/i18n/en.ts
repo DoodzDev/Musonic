@@ -3,7 +3,7 @@
  * @description English UI strings. Mirrors the structure of fr.ts exactly.
  *   Swap the active locale in i18n/index.ts to enable English.
  * @author DoodzProg
- * @version 1.4.0
+ * @version 1.4.1
  * @license CC-BY-NC-4.0
  */
 export const en = {
@@ -201,6 +201,7 @@ export const en = {
     artistType: 'Artist',
     albumType: 'Album',
     noResults: (q: string) => `No results for "${q}"`,
+    noResultsHint: 'Check the spelling, try fewer words or the Online tab.',
     browse: 'Browse',
     bestResult: 'Top result',
     scope: {all: 'All', library: 'My library', online: 'Online', podcasts: 'Podcasts'},
@@ -330,6 +331,17 @@ export const en = {
     addReco: (title: string) => `Add ${title} to the playlist`,
     trackCount: (n: number) => `${n} song${n !== 1 ? 's' : ''}`,
     contextLabel: 'PLAYING FROM PLAYLIST',
+    contextBySource: {
+      playlist: 'PLAYING FROM PLAYLIST',
+      album: 'PLAYING FROM ALBUM',
+      artist: 'PLAYING FROM ARTIST',
+      liked: 'PLAYING FROM LIKED SONGS',
+      library: 'PLAYING FROM MY MUSIC',
+      search: 'PLAYING FROM SEARCH',
+      recommendations: 'PLAYING RECOMMENDATIONS',
+      mix: 'PLAYING A MIX',
+      other: 'NOW PLAYING',
+    } as Record<string, string>,
     searchPlaceholder: 'Search this page',
     comingSoon: 'Coming soon',
     noDownloadedSongs: 'No downloaded songs in this playlist',
@@ -413,7 +425,7 @@ export const en = {
     editPlaylist: 'Edit playlist',
     nameAndInfo: 'Name & info',
     editCover: 'Edit cover',
-    addAllToPlaylist: 'Add to another playlist',
+    addAllToPlaylist: 'Add to a playlist',
     addedAllToPlaylist: (n: number, name: string) => `${n} song${n !== 1 ? 's' : ''} added to ${name}`,
     addToPlaylistError: 'Error adding to playlist',
   },
@@ -575,11 +587,11 @@ export const en = {
       wifiOnlyDesc: 'On mobile data, Musonic asks before downloading.',
       qualityWifiLabel: 'Quality on Wi-Fi',
       qualityMobileLabel: 'Quality on mobile data',
-      qualityDesc: 'In kbit/s. Downloads always keep the original quality.',
+      qualityDesc: 'In kbit/s: the higher the number, the better the sound and the more data playback uses. "Original" sends the file as it is. Downloads always keep the original quality.',
       qualityOriginal: 'Original',
       storageLimitLabel: 'Storage limit',
       storageLimitDesc: (used: string) => `Used: ${used}. Beyond it, new downloads are refused.`,
-      storageLimitNone: 'None',
+      storageLimitNone: 'No limit',
       storageLimitGB: (n: number) => `${n} GB`,
     },
     display: {

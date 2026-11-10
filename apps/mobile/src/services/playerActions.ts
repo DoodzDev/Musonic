@@ -3,7 +3,7 @@
  * @description Imperative playback action helpers used across screens. Every list now starts through the playback engine (launchers.ts); the
  *   legacy loaders are gone. Skips always go through the engine.
  * @author DoodzProg
- * @version 2.4.0
+ * @version 2.4.1
  * @license CC-BY-NC-4.0
  */
 import TrackPlayer from './player';
@@ -134,9 +134,27 @@ export async function fetchAutoplayTracks(
     })(),
   ]);
 
-  for (let i = pool.length - 1; i > 0; i--) {
+  // Same song under another id (the library track and its online copy, or both sources): the
+  // suggestions used to offer the track playing right after itself.
+  const seen = new Set([songKey(seedTrack.title, seedTrack.artist)]);
+  const unique = pool.filter(t => {
+    const key = songKey(t.title, t.artist);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  for (let i = unique.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+    [unique[i], unique[j]] = [unique[j], unique[i]];
   }
-  return pool.slice(0, 10);
+  return unique.slice(0, 10);
+}
+
+/** Title and main artist, case, accents and punctuation ignored. */
+function songKey(title?: string, artist?: string): string {
+  const main = (artist ?? '').split(/,|&| feat\.? | ft\.? /i)[0];
+  return `${title ?? ''}|${main}`
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[^a-z0-9|]/g, '');
 }

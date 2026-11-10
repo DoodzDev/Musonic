@@ -7,7 +7,7 @@
  *   Previous, Home date, full screen, landscape layouts, back online by itself,
  *   the player kind). The visual choices show a small preview of each option.
  * @author DoodzProg
- * @version 3.0.0
+ * @version 3.0.2
  * @license CC-BY-NC-4.0
  */
 import React, {useState} from 'react';
@@ -237,16 +237,16 @@ export default function SettingsScreen({advanced = false}: {advanced?: boolean})
         <Block label={t.settings.playback.qualityWifiLabel}>
           <SegmentedControl options={qualityOptions} value={s.streamQualityWifi} onChange={s.setStreamQualityWifi} />
         </Block>
-        <Block label={t.settings.playback.qualityMobileLabel}>
+        <Block label={t.settings.playback.qualityMobileLabel} description={t.settings.playback.qualityDesc}>
           <SegmentedControl options={qualityOptions} value={s.streamQualityMobile} onChange={s.setStreamQualityMobile} />
         </Block>
-        <ListItem label={t.settings.playback.autoplayLabel} toggle={{value: s.isAutoplayEnabled, onValueChange: s.setIsAutoplayEnabled}} />
+        <ListItem label={t.settings.playback.autoplayLabel} description={t.settings.playback.autoplayDesc} toggle={{value: s.isAutoplayEnabled, onValueChange: s.setIsAutoplayEnabled}} />
         <ListItem label={t.settings.player.showRemaining} toggle={{value: s.showRemainingTime, onValueChange: s.setShowRemainingTime}} />
       </ListGroup>
 
       <ListGroup caption={t.settings.sections.downloads}>
-        <ListItem label={t.settings.playback.wifiOnlyLabel} toggle={{value: s.downloadWifiOnly, onValueChange: s.setDownloadWifiOnly}} />
-        <ListItem label={t.settings.playback.autoDownloadLabel} toggle={{value: s.isAutoDownloadEnabled, onValueChange: setAutoDownload}} />
+        <ListItem label={t.settings.playback.wifiOnlyLabel} description={t.settings.playback.wifiOnlyDesc} toggle={{value: s.downloadWifiOnly, onValueChange: s.setDownloadWifiOnly}} />
+        <ListItem label={t.settings.playback.autoDownloadLabel} description={t.settings.playback.autoDownloadDesc} toggle={{value: s.isAutoDownloadEnabled, onValueChange: setAutoDownload}} />
         <Block label={t.settings.playback.storageLimitLabel} description={t.settings.playback.storageLimitDesc(formatBytes(usedBytes))}>
           <SegmentedControl options={storageOptions} value={s.storageLimitMB} onChange={s.setStorageLimitMB} />
         </Block>
@@ -285,7 +285,7 @@ export default function SettingsScreen({advanced = false}: {advanced?: boolean})
             onChange={s.setStartTab}
           />
         </Block>
-        <ListItem label={t.settings.display.hapticsLabel} toggle={{value: s.hapticsEnabled, onValueChange: s.setHapticsEnabled}} />
+        <ListItem label={t.settings.display.hapticsLabel} description={t.settings.display.hapticsDesc} toggle={{value: s.hapticsEnabled, onValueChange: s.setHapticsEnabled}} />
         <ListItem label={t.settings.display.lockRotationLabel} toggle={{value: s.rotationLocked, onValueChange: s.setRotationLocked}} />
       </ListGroup>
 

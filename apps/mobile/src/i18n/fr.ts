@@ -4,7 +4,7 @@
  *   Add keys here first, then mirror them in en.ts. The i18n/index.ts hook
  *   selects the active locale based on settingsStore.language.
  * @author DoodzProg
- * @version 1.4.0
+ * @version 1.4.1
  * @license CC-BY-NC-4.0
  */
 // French UI strings — single source of truth for all user-visible text.
@@ -204,6 +204,7 @@ export const t = {
     artistType: 'Artiste',
     albumType: 'Album',
     noResults: (q: string) => `Aucun résultat pour « ${q} »`,
+    noResultsHint: 'Vérifiez l’orthographe, essayez moins de mots ou l’onglet En ligne.',
     browse: 'Parcourir',
     bestResult: 'Meilleur résultat',
     scope: {all: 'Tout', library: 'Ma bibliothèque', online: 'En ligne', podcasts: 'Podcasts'},
@@ -323,6 +324,18 @@ export const t = {
   playlistDetail: {
     trackCount: (n: number) => `${n} titre${n !== 1 ? 's' : ''}`,
     contextLabel: 'LECTURE DEPUIS UNE PLAYLIST',
+    /** Header of the full player, by the kind of list playing. */
+    contextBySource: {
+      playlist: 'LECTURE DEPUIS UNE PLAYLIST',
+      album: 'LECTURE DEPUIS UN ALBUM',
+      artist: 'LECTURE DEPUIS UN ARTISTE',
+      liked: 'LECTURE DEPUIS LES TITRES LIKÉS',
+      library: 'LECTURE DEPUIS MA MUSIQUE',
+      search: 'LECTURE DEPUIS LA RECHERCHE',
+      recommendations: 'LECTURE DE RECOMMANDATIONS',
+      mix: 'LECTURE D’UN MIX',
+      other: 'EN LECTURE',
+    } as Record<string, string>,
     byOwner: (owner: string) => `Par ${owner}`,
     options: 'Options de la playlist',
     edit: 'Modifier la playlist',
@@ -384,7 +397,7 @@ export const t = {
     addedToQueue: "Ajouté à la file d'attente",
     removedFromPlaylist: 'Titre supprimé de la playlist',
     addToLiked: 'Ajouter aux titres likés',
-    removeFromLiked: 'Supprimer des titres likés',
+    removeFromLiked: 'Retirer des titres likés',
     manageInPlaylists: 'Gérer dans mes playlists',
     addError: "Erreur lors de l'ajout",
     removeError: 'Erreur lors de la suppression',
@@ -418,7 +431,7 @@ export const t = {
     editPlaylist: 'Modifier la playlist',
     nameAndInfo: 'Nom et informations',
     editCover: 'Modifier la pochette',
-    addAllToPlaylist: 'Ajouter à une autre playlist',
+    addAllToPlaylist: 'Ajouter à une playlist',
     addedAllToPlaylist: (n: number, name: string) => `${n} titre${n !== 1 ? 's' : ''} ajouté${n !== 1 ? 's' : ''} dans ${name}`,
     addToPlaylistError: "Erreur lors de l'ajout à la playlist",
   },
@@ -581,11 +594,11 @@ export const t = {
       wifiOnlyDesc: 'En données mobiles, Musonic vous demande avant de télécharger.',
       qualityWifiLabel: 'Qualité en Wi-Fi',
       qualityMobileLabel: 'Qualité en données mobiles',
-      qualityDesc: 'En kbit/s. Les téléchargements restent en qualité originale.',
+      qualityDesc: 'En kbit/s : plus le nombre est grand, meilleur est le son et plus la lecture consomme de données. « Originale » envoie le fichier tel quel. Les téléchargements restent en qualité originale.',
       qualityOriginal: 'Originale',
       storageLimitLabel: 'Limite de stockage',
       storageLimitDesc: (used: string) => `Utilisé : ${used}. Au-delà, les nouveaux téléchargements sont refusés.`,
-      storageLimitNone: 'Aucune',
+      storageLimitNone: 'Sans limite',
       storageLimitGB: (n: number) => `${n} Go`,
     },
     display: {

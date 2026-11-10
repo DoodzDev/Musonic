@@ -17,7 +17,7 @@
  *   The heavy player body only mounts while the player is open; a light shell
  *   stays mounted to preload adjacent cover art.
  * @author DoodzProg
- * @version 2.5.1
+ * @version 2.5.2
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -189,6 +189,8 @@ function FullScreenPlayerContent() {
   const localLikeOverrides = usePlayerStore(s => s.localLikeOverrides);
   const savedSet = usePlaylistCacheStore(s => s.savedSet);
   const currentPlaylistName = usePlayerStore(s => s.currentPlaylistName);
+  // "album:42" → album: the header said "from a playlist" for every list.
+  const sourceType = usePlayerStore(s => s.currentSourceKey?.split(':')[0] ?? 'other');
   const dominantColor = usePlayerStore(s => s.dominantColor);
   const localTogglePlay = usePlayerStore(s => s.togglePlay);
   const togglePlay = remote ? remote.toggle : localTogglePlay;
@@ -645,7 +647,7 @@ function FullScreenPlayerContent() {
                   {chevronBtn}
                   <View style={styles.headerCenter}>
                     <Text style={[styles.headerSub, remote && styles.headerRemote]} numberOfLines={1}>
-                      {remote ? t.connect.playingOn(remote.device.name) : t.playlistDetail.contextLabel}
+                      {remote ? t.connect.playingOn(remote.device.name) : t.playlistDetail.contextBySource[sourceType] ?? t.playlistDetail.contextBySource.other}
                     </Text>
                     <Text style={styles.headerTitle} numberOfLines={1}>
                       {currentPlaylistName || currentTrack.album || t.library.title}
