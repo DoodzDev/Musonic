@@ -2,7 +2,7 @@
  * @file en.ts
  * @description English texts of the console (same keys as fr.ts, checked by the compiler).
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -471,6 +471,18 @@ export const en: Dict = {
     confirmSub: 'Music stops for a few seconds for everyone, then the apps reconnect on their own. Running imports carry on afterwards.',
     restarting: 'Restarting… the page reloads when the server answers.',
     timeout: 'The server does not come back. Check it runs (docker ps): it must be started with restart: unless-stopped.',
+  },
+  youtube: {
+    title: 'YouTube Music import',
+    on: 'Key saved: public YouTube and YouTube Music playlists can be imported.',
+    off: 'No key: YouTube links are refused by the playlist import.',
+    add: 'Add the key',
+    change: 'Change the key',
+    keyTitle: 'YouTube Data API key',
+    keyHelp: 'Free: console.cloud.google.com → new project → enable "YouTube Data API v3" → Credentials → API key (restrict it to this API). The server tests it before keeping it; it stays on the server.',
+    key: 'API key',
+    refused: 'YouTube refused this key.',
+    saved: 'YouTube key saved.',
   },
   podcasts: {
     title: 'Podcasts',

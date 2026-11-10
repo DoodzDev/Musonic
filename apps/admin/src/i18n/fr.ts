@@ -2,7 +2,7 @@
  * @file fr.ts
  * @description French texts of the console (the reference: every language has the same keys).
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.2.0
  * @license CC-BY-NC-4.0
  */
 
@@ -469,6 +469,18 @@ export const fr = {
     confirmSub: "La musique se coupe quelques secondes pour tout le monde, puis les applications se reconnectent seules. Les imports en cours reprennent ensuite.",
     restarting: 'Redémarrage… la page se recharge quand le serveur répond.',
     timeout: "Le serveur ne revient pas. Vérifiez qu'il tourne (docker ps) : il doit être lancé avec restart: unless-stopped.",
+  },
+  youtube: {
+    title: 'Import YouTube Music',
+    on: 'Clé enregistrée : les playlists publiques YouTube et YouTube Music peuvent être importées.',
+    off: 'Clé absente : les liens YouTube sont refusés à l’import de playlists.',
+    add: 'Ajouter la clé',
+    change: 'Changer la clé',
+    keyTitle: 'Clé YouTube Data API',
+    keyHelp: 'Gratuite : console.cloud.google.com → nouveau projet → activer « YouTube Data API v3 » → Identifiants → Clé API (à restreindre à cette API). Le serveur la teste avant de la garder ; elle reste sur le serveur.',
+    key: 'Clé API',
+    refused: 'YouTube a refusé cette clé.',
+    saved: 'Clé YouTube enregistrée.',
   },
   podcasts: {
     title: 'Podcasts',
