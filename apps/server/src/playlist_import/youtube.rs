@@ -303,6 +303,7 @@ const NOISE: &[&str] = &[
     "clip officiel",
     "clip",
     "hd",
+    "full hd",
     "hq",
     "4k",
 ];
@@ -371,9 +372,42 @@ fn strip_noise(title: &str) -> String {
     t.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
+/// Emojis and other pictographs (« ❤️ », « 💘 », « ★ ») used as decoration, joiners and
+/// variation selectors included.
+fn decorative(c: char) -> bool {
+    let n = c as u32;
+    !c.is_alphanumeric()
+        && (n >= 0x2190 || n == 0x200D)
+        && !matches!(c, '\u{3000}'..='\u{303F}' | '\u{FF00}'..='\u{FFEF}')
+}
+
+/// Decoration between words read as a separator: « MARIO CHICOT 💘 Pourquoi Vivre 💘 » is
+/// « MARIO CHICOT - Pourquoi Vivre ».
+fn split_decoration(title: &str) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    let mut cur = String::new();
+    for c in title.chars() {
+        if c == '_' {
+            // « Title_Artist »: a space, the artist being found in the title when matching.
+            cur.push(' ');
+        } else if decorative(c) {
+            if !cur.trim().is_empty() {
+                parts.push(cur.trim().to_owned());
+            }
+            cur.clear();
+        } else {
+            cur.push(c);
+        }
+    }
+    if !cur.trim().is_empty() {
+        parts.push(cur.trim().to_owned());
+    }
+    parts.join(" - ")
+}
+
 /// A video of a playlist as a song: title and artists from the title and the channel.
 fn track_of(video_title: &str, channel: &str, id: &str, duration_ms: Option<i64>) -> SourceTrack {
-    let clean = strip_noise(video_title);
+    let clean = strip_noise(&split_decoration(video_title));
     let from_channel = channel_artist(channel);
     // "Artist - Song": only with one dash, or when the first part is the channel's artist.
     let (artist, song) = match clean.split_once(" - ") {
@@ -578,6 +612,25 @@ mod tests {
         let t = track_of("Goodbye - Remix - Extended", "Unknown channel", "e", None);
         assert_eq!(t.title, "Goodbye - Remix - Extended");
         assert_eq!(t.artists, ["Unknown channel"]);
+        // Emojis as separators.
+        let t = track_of(
+            "MARIO CHICOT 💘 Pourquoi Vivre 💘",
+            "T U K U G A K O V I I",
+            "f",
+            None,
+        );
+        assert_eq!(t.title, "Pourquoi Vivre");
+        assert_eq!(t.artists, ["MARIO CHICOT"]);
+        let t = track_of(
+            "FREDERIC FRANCOIS ❤️❤️J'AI BESOIN QUE TU SOIS LA❤️❤️",
+            "Frederictv552",
+            "g",
+            None,
+        );
+        assert_eq!(t.title, "J'AI BESOIN QUE TU SOIS LA");
+        assert_eq!(t.artists, ["FREDERIC FRANCOIS"]);
+        let t = track_of("Au Revoir_Alain Morisod (Full HD)", "31Sylou", "h", None);
+        assert_eq!(t.title, "Au Revoir Alain Morisod");
     }
 
     /// A local stand-in for the YouTube Data API: two pages, a deleted video, durations.

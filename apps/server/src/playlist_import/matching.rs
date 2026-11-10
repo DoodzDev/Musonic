@@ -252,12 +252,61 @@ fn same_artists(want: &[String], r: &DzTrack) -> bool {
     })
 }
 
+/// Two words this close are the same (« francois » and « françois » are already equal).
+fn same_word(a: &str, b: &str) -> bool {
+    a == b || (a.len() > 4 && crate::matcher::similar(a, b))
+}
+
+/// The words of three letters or more, « St-Val » or « Dis-moi » read as two words.
+fn long_words(s: &str) -> Vec<String> {
+    words(&s.replace(['-', '\'', '’', '.', '/', '_'], " "))
+        .into_iter()
+        .filter(|w| w.len() >= 3)
+        .collect()
+}
+
+/// The source's artist (a channel: « Frédéric François rend Hommage à Mike Brant ») names the
+/// result's main artist: all its long words are in it.
+fn artist_named(source_artists: &[String], r: &DzTrack) -> bool {
+    let Some(artist) = r.artist.as_ref().map(|a| long_words(&a.name)) else {
+        return false;
+    };
+    let theirs = long_words(&source_artists.join(" "));
+    !artist.is_empty()
+        && artist
+            .iter()
+            .all(|w| theirs.iter().any(|s| same_word(w, s)))
+}
+
+/// A video title naming both the result's artist and its title (« MARIO CHICOT Pourquoi Vivre »
+/// posted by a fan's channel, whose name is not the artist): every long word of the result's
+/// main artist and title is in it, the title adds something to the artist's name, and at most
+/// one word of the source is neither.
+fn named_in_title(source: &[String], r: &DzTrack) -> bool {
+    let Some(artist) = r.artist.as_ref().map(|a| long_words(&a.name)) else {
+        return false;
+    };
+    let title = long_words(&r.title);
+    let in_source = |w: &String| source.iter().any(|s| same_word(w, s));
+    if artist.is_empty()
+        || title.is_empty()
+        || !artist.iter().all(in_source)
+        || !title.iter().all(in_source)
+        || title.iter().all(|w| artist.contains(w))
+    {
+        return false;
+    }
+    let explained = |s: &String| artist.iter().chain(title.iter()).any(|w| same_word(w, s));
+    source.iter().filter(|s| !explained(s)).count() <= 1
+}
+
 /// The best Deezer search result for this song, and whether it is surely the same. Not sure
 /// (« uncertain »): another recording of the same work or song, close enough to stand in.
 pub fn pick(results: &[DzTrack], t: &SourceTrack) -> Option<(DzTrack, bool)> {
     let want = normalize_artists(t.artists.iter().map(String::as_str));
     let exact = normalize(&t.title);
     let source = words(&t.title);
+    let source_long = long_words(&t.title);
     let mut best: Option<((bool, i64, i64), &DzTrack)> = None;
     let split = |s: &str| normalize(&s.replace(['\'', '’'], " "));
     let source_all = split(&t.title);
@@ -272,23 +321,27 @@ pub fn pick(results: &[DzTrack], t: &SourceTrack) -> Option<(DzTrack, bool)> {
         }
         let same = same_title(&r.title, &t.title);
         let cover = covered(&source, &r.title);
-        let artists = same_artists(&want, r);
+        let artists = same_artists(&want, r) || artist_named(&t.artists, r);
         let gap = t.duration_ms.map_or(0, |d| (d - r.duration * 1000).abs());
-        let sure = artists && ((same && gap <= SURE_MS) || (cover >= 0.8 && gap <= 3_000));
+        let named = named_in_title(&source_long, r);
+        let sure = (artists && ((same && gap <= SURE_MS) || (cover >= 0.8 && gap <= 3_000)))
+            || (named && t.duration_ms.is_some() && gap <= SURE_MS);
         let close = (artists && (same || cover >= 0.6) && gap <= UNCERTAIN_MS)
             || (artists && (same || cover >= 0.75) && gap <= OTHER_RECORDING_MS)
             // The same work by the same composer, whatever its length (a whole symphony for one
             // movement, a suite for a piece): a stand-in, uncertain.
             || (artists && cover >= 0.85)
             || (same && gap <= SURE_MS)
-            || (cover >= 0.8 && gap <= 3_000);
+            || (cover >= 0.8 && gap <= 3_000)
+            || (named && gap <= UNCERTAIN_MS);
         if !sure && !close {
             continue;
         }
         let score = ((cover * 100.0) as i64)
             + i64::from(same) * 50
             + i64::from(normalize(&r.title) == exact) * 20
-            + i64::from(artists) * 40;
+            + i64::from(artists) * 40
+            + i64::from(named) * 90;
         let key = (sure, score, -gap);
         if best.as_ref().is_none_or(|(k, _)| key > *k) {
             best = Some((key, r));
@@ -460,6 +513,51 @@ mod tests {
             duration_ms: ms,
             ..Default::default()
         }
+    }
+
+    #[test]
+    fn finds_songs_named_in_a_video_title() {
+        // A fan's channel: the artist is in the title, not the channel.
+        let t = song(
+            "MARIO CHICOT Pourquoi Vivre",
+            &["T U K U G A K O V I I"],
+            Some(306_000),
+        );
+        let results = [
+            dz(1, "Pourquoi vivre", "Mario Chicot", 315),
+            dz(2, "Pourquoi vivre", "Mario Chicot", 304),
+        ];
+        let (r, sure) = pick(&results, &t).unwrap();
+        assert_eq!((r.id, sure), (2, true));
+        // « Saint » for « St »: one word explained by nothing is allowed; lengths far apart.
+        let t = song("tanya saint val chalè", &["Jimmy B"], Some(260_000));
+        let (r, sure) = pick(&[dz(3, "Mi Chalè", "Tanya St-Val", 273)], &t).unwrap();
+        assert_eq!((r.id, sure), (3, false));
+        // A compilation names the artist and the song, but much more too.
+        let t = song(
+            "Rocky Balboa Songs Bill Conti Gonna Fly Now Going The Distance",
+            &["fan"],
+            Some(169_000),
+        );
+        assert!(pick(&[dz(4, "Gonna Fly Now", "Bill Conti", 169)], &t).is_none());
+        // « Title_Artist », and a channel naming the artist.
+        let t = song(
+            "Dis-moi qu'un jour Alain Morisod & Sweet People",
+            &["31Sylou"],
+            Some(215_000),
+        );
+        let r = dz(6, "Dis-moi qu'un jour", "Alain Morisod & Sweet People", 214);
+        assert_eq!(pick(&[r], &t).map(|(r, s)| (r.id, s)), Some((6, true)));
+        let t = song(
+            "Qui Saura",
+            &["Frédéric François rend Hommage à Mike Brant"],
+            Some(330_000),
+        );
+        let r = dz(7, "Qui saura", "Frédéric François", 333);
+        assert_eq!(pick(&[r], &t).map(|(r, s)| (r.id, s)), Some((7, true)));
+        // A song named like its artist is not « named in the title ».
+        let t = song("Survivor", &["Destiny's Child"], Some(254_000));
+        assert!(pick(&[dz(5, "Survivor", "Survivor", 200)], &t).is_none());
     }
 
     #[test]
