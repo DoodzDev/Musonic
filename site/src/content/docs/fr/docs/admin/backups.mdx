@@ -1,0 +1,188 @@
+---
+title: Sauvegardes et restauration
+description: Quoi sauvegarder sur un Musonic Server, comment fonctionnent ses sauvegardes quotidiennes, comment copier la base sans risque pendant qu'elle tourne, la restaurer et déménager le serveur sur une nouvelle machine.
+---
+
+import { Steps, Aside, Tabs, TabItem, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Cette page s'adresse à la personne qui gère le serveur : quoi garder pour ne rien perdre si un disque lâche, et comment tout remettre en place.
+
+## Quoi sauvegarder
+
+<img class="diagram" src="/assets/img/docs/diagrams/what-to-back-up.fr.svg" alt="Schéma : trois choses à garder, le dossier de musique, le dossier de données avec musonic.db et secret.key, et compose.yml ; les caches sont laissés de côté" />
+
+| Quoi | Où (exemple Docker) | Pourquoi |
+|---|---|---|
+| **La base** `musonic.db` | `./data/` | Comptes, likes, playlists, écoutes, files de lecture, réglages, identifiants des fournisseurs. Le cœur du serveur. |
+| **La clé** `secret.key` | `./data/` | Déchiffre les mots de passe gardés pour la connexion Subsonic par jeton. Inutile si vous donnez vous-même `MUSONIC_SECRET_KEY` (gardez alors cette valeur). |
+| **Le dossier de musique** | le dossier monté sur `/music` | Vos fichiers, et les titres importés dans son dossier `Musonic/`. La base ne contient aucune musique. |
+| **Votre installation** | `compose.yml` (ou votre fichier de configuration) | Chemins, utilisateur, variables d'environnement. |
+| Le journal d'activité `events.db` | `./data/` | Facultatif : l'historique des connexions et des événements. |
+
+Les caches (`cache/`, `tmp/`) et Musonic Web (`web/`) se recréent tout seuls : inutile de les garder.
+
+<Aside type="caution">
+La base contient les identifiants des fournisseurs, et le dossier de données contient la clé. Rangez les sauvegardes là où vous seul pouvez les lire.
+</Aside>
+
+## Les sauvegardes quotidiennes du serveur
+
+Le serveur copie lui-même sa base **chaque jour** :
+
+- **Où** : `backups/` dans le dossier de données (`./data/backups/` avec Docker), un fichier par jour nommé `musonic-AAAA-MM-JJ.db` (date en UTC).
+- **Quand** : quelques instants après le démarrage, puis toutes les 24 heures. Un redémarrage un jour qui a déjà sa sauvegarde n'en refait pas.
+- **Combien** : les 14 plus récentes par défaut. Changez-le dans la console (**Réglages et maintenance → Sauvegardes → Jours gardés** : aucune, 3, 7, 14, 30 ou 90) ou avec `MUSONIC_BACKUP_DAYS` (0 à 365, `0` = aucune).
+- **Chaque sauvegarde est une base complète et cohérente**, qu'on peut ouvrir ou remettre telle quelle. Les fichiers ne sont lisibles que par l'utilisateur du serveur.
+- Sans sauvegarde depuis plus de 2 jours, le tableau de bord affiche l'alerte « Pas de sauvegarde depuis plus de 2 jours ».
+
+<Aside type="danger">
+Ces sauvegardes sont sur **le même disque** que la base. Elles protègent d'une erreur, pas d'un disque mort. Copiez-les régulièrement sur un autre disque ou une autre machine.
+</Aside>
+
+### Sauvegarder maintenant et télécharger
+
+<Steps>
+
+1. **Dans la console, ouvrez « Réglages et maintenance ».**
+
+2. **Sous « Sauvegardes », cliquez sur « Sauvegarder maintenant ».** La sauvegarde du jour est faite, ou remplacée.
+
+3. **Cliquez sur « Télécharger » à côté d'une sauvegarde pour la garder sur votre ordinateur.**
+
+   <img class="shot-wide" src="/assets/img/docs/admin-backups/01-backups-card.fr.webp" alt="La carte Sauvegardes de Réglages et maintenance : la dernière sauvegarde avec sa date et sa taille, le bouton Sauvegarder maintenant, le choix Jours gardés sur 14 jours, et la liste des sauvegardes avec un bouton Télécharger chacune" />
+
+</Steps>
+
+### Copier les sauvegardes sur une autre machine
+
+Depuis un autre ordinateur, un `rsync` du dossier suffit, par exemple une fois par jour :
+
+```sh
+rsync -a <utilisateur>@<serveur>:<dossier>/data/backups/ ~/musonic-sauvegardes/
+```
+
+`<utilisateur>@<serveur>` est votre accès SSH au serveur ; `<dossier>` le dossier qui contient `compose.yml`. Les fichiers de sauvegarde appartiennent à l'utilisateur du serveur (UID 1000 dans l'exemple) : connectez-vous avec cet utilisateur, ou adaptez les droits.
+
+## Copier la base sans risque pendant qu'elle tourne
+
+<Aside type="caution">
+Ne copiez jamais `musonic.db` avec `cp` pendant que le serveur tourne : la copie peut être incomplète. Utilisez l'une des méthodes ci-dessous.
+</Aside>
+
+<Tabs>
+  <TabItem label="Depuis la console">
+**Réglages et maintenance → Sauvegarder maintenant**, puis prenez le nouveau fichier dans `data/backups/` ou cliquez sur **Télécharger**. C'est le plus simple.
+  </TabItem>
+  <TabItem label="Avec sqlite3">
+Sur la machine du serveur, avec l'outil `sqlite3` installé (il n'est pas dans l'image Docker) :
+
+```sh
+sqlite3 data/musonic.db ".backup 'musonic-copie.db'"
+```
+
+La copie est cohérente, même pendant que le serveur écrit. Lancez-la avec un utilisateur qui peut lire `data/`.
+  </TabItem>
+  <TabItem label="Serveur arrêté">
+Arrêtez le serveur (`docker compose stop`), copiez tout le dossier `data/`, puis relancez-le (`docker compose start`). La musique est coupée pendant ce temps.
+  </TabItem>
+</Tabs>
+
+## Restaurer une sauvegarde
+
+À faire après une erreur (compte supprimé, playlists perdues) ou une base abîmée. Tout ce qui a changé après la date de la sauvegarde est perdu.
+
+<Steps>
+
+1. **Allez dans le dossier de `compose.yml` et arrêtez le serveur.**
+
+   ```sh
+   cd <dossier>
+   docker compose stop
+   ```
+
+2. **Mettez la base actuelle de côté, sans la supprimer.**
+
+   ```sh
+   mkdir data/avant-restauration
+   mv data/musonic.db data/musonic.db-wal data/musonic.db-shm data/avant-restauration/
+   ```
+
+   Certains de ces fichiers peuvent ne pas exister : c'est normal.
+
+3. **Copiez la sauvegarde à sa place.**
+
+   ```sh
+   cp data/backups/musonic-2026-11-10.db data/musonic.db
+   ```
+
+   Remplacez la date par celle que vous voulez. Ajoutez `sudo` si votre utilisateur ne peut pas lire les sauvegardes.
+
+4. **Rendez le fichier à l'utilisateur du serveur.**
+
+   ```sh
+   sudo chown 1000:1000 data/musonic.db
+   ```
+
+   `1000:1000` est la ligne `user:` de votre `compose.yml`.
+
+5. **Démarrez le serveur et vérifiez.**
+
+   ```sh
+   docker compose up -d
+   docker compose logs -f musonic-server
+   ```
+
+   Les journaux affichent `musonic-server starting` puis `listening on …`. Ouvrez la console : comptes et playlists sont ceux de la date de la sauvegarde.
+
+</Steps>
+
+**Bon à savoir**
+
+- Gardez le même `secret.key` (ou `MUSONIC_SECRET_KEY`). Sans lui, la connexion Subsonic par jeton échoue pour les comptes existants jusqu'à ce que chacun reçoive un nouveau mot de passe ; les connexions par mot de passe ou par clé d'appareil fonctionnent toujours.
+- Une sauvegarde **plus ancienne** peut aller sur un serveur **plus récent** : le serveur met à jour sa structure au démarrage, après en avoir gardé une copie nommée `musonic.db.before-schema-N`.
+- Une base **plus récente** ne tourne pas sur un serveur **plus ancien** : il refuse de démarrer avec « database schema … is newer than this server: update the server ». Pour revenir à une version précédente après une mise à jour, restaurez la copie `musonic.db.before-schema-N` faite juste avant.
+- Sans Docker, la procédure est la même : arrêtez le service, échangez le fichier dans votre dossier de données, rendez-le à l'utilisateur du serveur, démarrez.
+
+## Déménager le serveur sur une nouvelle machine
+
+<Steps>
+
+1. **Sur la nouvelle machine, installez Docker.** Voir [Installer avec Docker](/fr/docs/install/docker/).
+
+2. **Sur l'ancienne machine, arrêtez le serveur.**
+
+   ```sh
+   docker compose stop
+   ```
+
+3. **Copiez le dossier de `compose.yml` (avec `data/`) et le dossier de musique sur la nouvelle machine.**
+
+   ```sh
+   rsync -a <dossier>/ <utilisateur>@<nouvelle-machine>:<dossier>/
+   rsync -a <musique>/ <utilisateur>@<nouvelle-machine>:<musique>/
+   ```
+
+   `<dossier>` est le dossier de `compose.yml`, `<musique>` votre dossier de musique, `<utilisateur>@<nouvelle-machine>` l'accès SSH à la nouvelle machine. `-a` garde propriétaires et dates. Lancez-le avec un utilisateur qui peut lire tous les fichiers (avec `sudo` si besoin).
+
+4. **Sur la nouvelle machine, vérifiez `compose.yml`.** Le chemin de la musique à gauche de `:/music`, et la ligne `user:` qui correspond au propriétaire des dossiers (`id -u` et `id -g` donnent vos numéros).
+
+5. **Démarrez le serveur.**
+
+   ```sh
+   cd <dossier>
+   docker compose up -d
+   ```
+
+6. **Faites pointer votre adresse vers la nouvelle machine.** Déplacez votre reverse proxy (ou tunnel) et votre nom de domaine. Si l'adresse ne change pas, les applications continuent de marcher sans se reconnecter.
+
+</Steps>
+
+- Le dossier de musique peut avoir un autre chemin sur la nouvelle machine : avec Docker, il reste `/music` dans le conteneur. Sans Docker, indiquez le nouveau chemin dans `MUSONIC_MUSIC_DIR` : le serveur retrouve ses fichiers par leur place dans le dossier, et les journaux affichent `music folder moved from … to …`.
+- Gardez l'ancienne machine intacte quelques jours, le temps de vérifier que tout marche sur la nouvelle.
+
+## Et ensuite
+
+<CardGrid>
+  <LinkCard title="Configuration" href="/fr/docs/admin/configuration/" description="Le dossier de données en détail et chaque réglage." />
+  <LinkCard title="Dépannage" href="/fr/docs/admin/troubleshooting/" description="Permissions, ports, journaux." />
+</CardGrid>

@@ -1,0 +1,188 @@
+---
+title: Backups and restore
+description: What to back up on a Musonic Server, how its daily database backups work, how to copy the database safely while it runs, how to restore it and how to move the server to a new machine.
+---
+
+import { Steps, Aside, Tabs, TabItem, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+This page is for the person who runs the server: what to save so that nothing is lost if a disk dies, and how to bring everything back.
+
+## What to back up
+
+<img class="diagram" src="/assets/img/docs/diagrams/what-to-back-up.en.svg" alt="Diagram: three things to save, the music folder, the data folder with musonic.db and secret.key, and compose.yml; caches are left out" />
+
+| What | Where (Docker example) | Why |
+|---|---|---|
+| **The database** `musonic.db` | `./data/` | Accounts, likes, playlists, plays, play queues, settings, providers' credentials. The heart of the server. |
+| **The key** `secret.key` | `./data/` | Decrypts the passwords kept for the Subsonic token sign-in. Not needed if you set `MUSONIC_SECRET_KEY` yourself (then keep that value). |
+| **The music folder** | the folder mounted on `/music` | Your files, and the songs imported into its `Musonic/` folder. The database does not contain any music. |
+| **Your setup** | `compose.yml` (or your configuration file) | Paths, user, environment variables. |
+| The activity log `events.db` | `./data/` | Optional: the history of sign-ins and events. |
+
+Caches (`cache/`, `tmp/`) and Musonic Web (`web/`) are made again on their own: no need to save them.
+
+<Aside type="caution">
+The database holds the providers' credentials, and the data folder holds the key. Keep backups where only you can read them.
+</Aside>
+
+## The server's own daily backups
+
+The server copies its database **every day** by itself:
+
+- **Where**: `backups/` in the data folder (`./data/backups/` with Docker), one file per day named `musonic-YYYY-MM-DD.db` (the date is in UTC).
+- **When**: a few moments after the server starts, then every 24 hours. A restart on a day that already has its backup does not make another one.
+- **How many**: the 14 most recent by default. Change it in the console (**Settings and maintenance → Backups → Days kept**: none, 3, 7, 14, 30 or 90) or with `MUSONIC_BACKUP_DAYS` (0 to 365, `0` = none).
+- **Each backup is a complete, consistent database** you can open or put back as it is. The files are readable by the server's user only.
+- If no backup was made for more than 2 days, the dashboard shows the alert "No backup for more than 2 days".
+
+<Aside type="danger">
+These backups are on **the same disk** as the database. They protect against a mistake, not against a dead disk. Copy them regularly to another disk or machine.
+</Aside>
+
+### Back up now and download
+
+<Steps>
+
+1. **In the console, open "Settings and maintenance".**
+
+2. **Under "Backups", click "Back up now".** Today's backup is made, or replaced.
+
+3. **Click "Download" next to a backup to save it on your computer.**
+
+   <img class="shot-wide" src="/assets/img/docs/admin-backups/01-backups-card.en.webp" alt="The Backups card of Settings and maintenance: the latest backup with its date and size, the Back up now button, the Days kept choice on 14 days, and the list of backups with a Download button each" />
+
+</Steps>
+
+### Copy the backups to another machine
+
+From another computer, an `rsync` of the folder is enough, for example once a day:
+
+```sh
+rsync -a <user>@<server>:<folder>/data/backups/ ~/musonic-backups/
+```
+
+`<user>@<server>` is how you connect to the server with SSH; `<folder>` the folder holding `compose.yml`. The backup files belong to the server's user (UID 1000 in the example): connect as that user, or adapt the rights.
+
+## Copy the database safely while it runs
+
+<Aside type="caution">
+Never copy `musonic.db` with `cp` while the server runs: the copy may be incomplete. Use one of the ways below.
+</Aside>
+
+<Tabs>
+  <TabItem label="From the console">
+**Settings and maintenance → Back up now**, then take the new file from `data/backups/` or click **Download**. This is the simplest way.
+  </TabItem>
+  <TabItem label="With sqlite3">
+On the server machine, with the `sqlite3` tool installed (it is not in the Docker image):
+
+```sh
+sqlite3 data/musonic.db ".backup 'musonic-copy.db'"
+```
+
+This gives a consistent copy, even while the server writes. Run it as a user who can read `data/`.
+  </TabItem>
+  <TabItem label="Server stopped">
+Stop the server (`docker compose stop`), copy the whole `data/` folder, then start it again (`docker compose start`). The music stops meanwhile.
+  </TabItem>
+</Tabs>
+
+## Restore a backup
+
+Use this after a mistake (an account deleted, playlists lost) or a damaged database. Everything that changed after the backup's date is lost.
+
+<Steps>
+
+1. **Go to the folder of `compose.yml` and stop the server.**
+
+   ```sh
+   cd <folder>
+   docker compose stop
+   ```
+
+2. **Put the current database aside, without deleting it.**
+
+   ```sh
+   mkdir data/before-restore
+   mv data/musonic.db data/musonic.db-wal data/musonic.db-shm data/before-restore/
+   ```
+
+   Some of these files may not exist: that is normal.
+
+3. **Copy the backup in its place.**
+
+   ```sh
+   cp data/backups/musonic-2026-11-10.db data/musonic.db
+   ```
+
+   Replace the date by the one you want. Use `sudo` if your user cannot read the backups.
+
+4. **Give the file back to the server's user.**
+
+   ```sh
+   sudo chown 1000:1000 data/musonic.db
+   ```
+
+   `1000:1000` is the `user:` line of your `compose.yml`.
+
+5. **Start the server and check.**
+
+   ```sh
+   docker compose up -d
+   docker compose logs -f musonic-server
+   ```
+
+   The logs say `musonic-server starting` then `listening on …`. Open the console: accounts and playlists are those of the backup's date.
+
+</Steps>
+
+**Good to know**
+
+- Keep the same `secret.key` (or `MUSONIC_SECRET_KEY`). Without it, the Subsonic token sign-in fails for existing accounts until each one gets a new password; sign-ins with the password or with a device key still work.
+- An **older** backup can be put on a **newer** server: the server updates its structure at start, after keeping a copy named `musonic.db.before-schema-N`.
+- A **newer** database cannot run on an **older** server: it refuses to start with "database schema … is newer than this server: update the server". To go back to an older version after an update, restore the `musonic.db.before-schema-N` copy made just before it.
+- Without Docker, it is the same procedure: stop the service, swap the file in your data folder, give it to the server's user, start.
+
+## Move the server to a new machine
+
+<Steps>
+
+1. **On the new machine, install Docker.** See [Install with Docker](/docs/install/docker/).
+
+2. **On the old machine, stop the server.**
+
+   ```sh
+   docker compose stop
+   ```
+
+3. **Copy the folder of `compose.yml` (with `data/`) and the music folder to the new machine.**
+
+   ```sh
+   rsync -a <folder>/ <user>@<new-machine>:<folder>/
+   rsync -a <music>/ <user>@<new-machine>:<music>/
+   ```
+
+   `<folder>` is the folder of `compose.yml`, `<music>` your music folder, `<user>@<new-machine>` the SSH access to the new machine. `-a` keeps owners and dates. Run as a user who can read every file (with `sudo` if needed).
+
+4. **On the new machine, check `compose.yml`.** The music path on the left of `:/music`, and the `user:` line matching the owner of the folders there (`id -u` and `id -g` give your numbers).
+
+5. **Start the server.**
+
+   ```sh
+   cd <folder>
+   docker compose up -d
+   ```
+
+6. **Point your address to the new machine.** Move your reverse proxy (or tunnel) and your domain name. If the address stays the same, the apps keep working without signing in again.
+
+</Steps>
+
+- The music folder may be at a different path on the new machine: with Docker it is still `/music` inside the container. Without Docker, set the new path in `MUSONIC_MUSIC_DIR`: the server finds its files again by their place inside the folder, and the logs say `music folder moved from … to …`.
+- Keep the old machine untouched for a few days, until everything works on the new one.
+
+## Next steps
+
+<CardGrid>
+  <LinkCard title="Configuration" href="/docs/admin/configuration/" description="The data folder in detail and every setting." />
+  <LinkCard title="Troubleshooting" href="/docs/admin/troubleshooting/" description="Permissions, ports, logs." />
+</CardGrid>

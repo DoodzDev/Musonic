@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="t d">
+<title id="t">Quand la bibliothèque est scannée</title>
+<desc id="d">Quatre déclencheurs mènent à une seule file de scans ; le scan parcourt les dossiers, lit seulement les fichiers changés, puis met à jour la base.</desc>
+<defs><marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0.8 L10 5 L0 9.2 Z" fill="#7D7B77"/></marker><marker id="aho" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0.8 L10 5 L0 9.2 Z" fill="#FF6B35"/></marker><marker id="asg" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M10 0.8 L0 5 L10 9.2 Z" fill="#7D7B77"/></marker><marker id="aso" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M10 0.8 L0 5 L10 9.2 Z" fill="#FF6B35"/></marker></defs>
+<rect x="20" y="20" width="320" height="64" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="36" y="56.48" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="start" font-weight="600">Démarrage du serveur</text>
+<path d="M340 52 L474 175" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="20" y="96" width="320" height="64" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="36" y="122.98" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="start" font-weight="600">Changement dans le dossier</text>
+<text x="36" y="142.64" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="start">après 5 s de calme</text>
+<path d="M340 128 L474 175" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="20" y="172" width="320" height="64" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="36" y="198.98" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="start" font-weight="600">Scan automatique</text>
+<text x="36" y="218.64" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="start">toutes les 60 min par défaut</text>
+<path d="M340 204 L474 175" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="20" y="248" width="320" height="64" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="36" y="274.98" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="start" font-weight="600">Bouton de la console</text>
+<text x="36" y="294.64" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="start">ou startScan d'un client Subsonic</text>
+<path d="M340 280 L474 175" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="480" y="130" width="300" height="90" rx="12" fill="#1C1C1E" stroke="#FF6B35" stroke-width="1.5"/>
+<text x="630" y="170.04" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="middle" font-weight="600">File de scans</text>
+<text x="630" y="190.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#B1AFAB" text-anchor="middle">jamais deux à la fois</text>
+<path d="M630 220 L630 338 L130 338 L130 364" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="20" y="370" width="215" height="96" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="127.5" y="402.48" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600"><tspan x="127.5" dy="0">Parcourir les</tspan><tspan x="127.5" dy="21">dossiers</tspan></text>
+<text x="127.5" y="443.14" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="middle">sauter ceux inchangés</text>
+<path d="M235 418 L249 418" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="255" y="370" width="215" height="96" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="362.5" y="402.48" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600"><tspan x="362.5" dy="0">Lire seulement les</tspan><tspan x="362.5" dy="21">fichiers changés</tspan></text>
+<text x="362.5" y="443.14" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="middle">scan complet : tous</text>
+<path d="M470 418 L484 418" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="490" y="370" width="215" height="96" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="597.5" y="404.48" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600">Mettre à jour</text>
+<text x="597.5" y="424.14" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="middle"><tspan x="597.5" dy="0">titres, albums, artistes,</tspan><tspan x="597.5" dy="17">pochettes, paroles</tspan></text>
+<path d="M705 418 L749 418" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="755" y="370" width="185" height="96" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<g transform="translate(771 386) scale(1.16667)" fill="none" stroke="#B1AFAB" stroke-width="1.28571" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="2.8"/><path d="M4 6v12c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8V6"/><path d="M4 12c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8"/></g>
+<text x="771" y="429.04" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="start" font-weight="600">Base</text>
+<text x="771" y="449.92" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#B1AFAB" text-anchor="start">musonic.db</text>
+</svg>

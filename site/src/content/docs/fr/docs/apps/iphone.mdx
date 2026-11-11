@@ -1,0 +1,133 @@
+---
+title: Utiliser Musonic sur iPhone ou iPad
+description: Il n'existe pas d'application Musonic pour iOS. Comment utiliser le lecteur web de Musonic sur iPhone ou iPad, l'ajouter à l'écran d'accueil avec Safari ou Chrome, et ce qui marche moins bien que sur Android.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Il n'existe **pas d'application Musonic pour iPhone ou iPad**, et aucune n'est prévue. Sur iOS, vous écoutez avec le lecteur web de Musonic dans Safari ou Chrome, et vous l'ajoutez à votre écran d'accueil pour qu'il s'ouvre comme une application, avec sa propre icône. Cette page vous guide pas à pas, puis vous dit honnêtement ce qui marche moins bien que sur Android.
+
+**Ce qu'il vous faut**
+
+- Un iPhone ou un iPad avec une version récente d'iOS ou d'iPadOS.
+- L'**adresse** de votre serveur, votre **identifiant** et votre **mot de passe**.
+- Une adresse de serveur qui commence par **`https://`** (voir l'avertissement ci-dessous).
+
+<Aside type="caution" title="Votre serveur doit avoir une adresse en https://">
+Le lecteur web à `musonic.doodz.dev/app/` est une page en `https://`, et Safari lui interdit d'appeler un serveur en `http://`. Si votre serveur n'est joignable qu'à une adresse comme `http://192.168.1.20:4533`, demandez à son administrateur d'installer le lecteur web sur le serveur (il se trouve alors à `http://192.168.1.20:4533/app/`), ou de donner une adresse en `https://` au serveur.
+</Aside>
+
+## Ajouter Musonic à l'écran d'accueil
+
+Les images ci-dessous sont des dessins des écrans d'iOS : les boutons bougent un peu d'une version d'iOS à l'autre, cherchez donc la même icône et les mêmes mots.
+
+<Tabs>
+<TabItem label="Safari">
+
+<Steps>
+
+1. **Ouvrez Safari et allez sur `musonic.doodz.dev/app`.**
+
+   Ou la copie de votre serveur, `https://<votre serveur>/app/`. L'écran de connexion de Musonic s'affiche. Inutile de vous connecter tout de suite.
+
+2. **Touchez le bouton Partager.**
+
+   C'est un carré avec une flèche vers le haut. Sur iOS 26, touchez d'abord **⋯** en bas à droite de la barre d'adresse, puis **Partager**. Sur iOS 18 et avant, il est directement dans la barre d'outils en bas de l'écran (en haut à droite sur iPad).
+
+   <img class="diagram" src="/assets/img/docs/diagrams/iphone-safari-01-share.fr.svg" alt="Dessin de Safari sur iPhone affichant la page de connexion de Musonic, avec le bouton Partager (un carré avec une flèche vers le haut) entouré dans la barre d'outils du bas." />
+
+3. **Touchez « Sur l'écran d'accueil ».**
+
+   C'est dans la liste sous la rangée d'applis. Si vous ne le voyez pas, faites défiler ou touchez **Afficher plus**.
+
+   <img class="diagram" src="/assets/img/docs/diagrams/iphone-safari-02-add-to-home.fr.svg" alt="Dessin de la feuille de partage d'iOS ouverte sur la page, avec la ligne « Sur l'écran d'accueil » et son icône (un plus dans un carré) mise en évidence." />
+
+4. **Touchez « Ajouter ».**
+
+   Le nom est déjà « Musonic » : vous pouvez le changer. Si vous voyez **Ouvrir en tant qu'app web**, laissez-le activé. Touchez **Ajouter** en haut à droite.
+
+   <img class="diagram" src="/assets/img/docs/diagrams/iphone-safari-03-add.fr.svg" alt="Dessin de l'écran « Sur l'écran d'accueil » : l'icône Musonic, le nom Musonic, l'adresse musonic.doodz.dev, l'interrupteur « Ouvrir en tant qu'app web » activé, et le bouton Ajouter mis en évidence en haut à droite." />
+
+5. **Ouvrez Musonic depuis son icône sur l'écran d'accueil.**
+
+   Il s'ouvre dans sa propre fenêtre, sans la barre d'adresse de Safari.
+
+   <img class="diagram" src="/assets/img/docs/diagrams/iphone-04-home-screen.fr.svg" alt="Dessin d'un écran d'accueil d'iPhone avec l'icône noire de Musonic parmi d'autres icônes d'applis, mise en évidence, avec le nom Musonic dessous." />
+
+</Steps>
+
+</TabItem>
+<TabItem label="Chrome">
+
+Chrome sur iOS peut aussi ajouter une page à l'écran d'accueil sur les versions récentes d'iOS (16.4 et suivantes).
+
+<Steps>
+
+1. **Ouvrez Chrome et allez sur `musonic.doodz.dev/app`.**
+
+2. **Touchez le bouton Partager dans la barre d'adresse.**
+
+   C'est le carré avec une flèche vers le haut, à droite de l'adresse. S'il n'y est pas, touchez **⋯** (en bas à droite), puis **Partager**.
+
+   <img class="diagram" src="/assets/img/docs/diagrams/iphone-chrome-01-share.fr.svg" alt="Dessin de Chrome sur iPhone affichant la page de connexion de Musonic, avec le bouton Partager entouré au bout de la barre d'adresse." />
+
+3. **Touchez « Sur l'écran d'accueil ».**
+
+   Faites défiler la liste ou touchez **Afficher plus** si vous ne le voyez pas.
+
+4. **Touchez « Ajouter ».**
+
+5. **Ouvrez Musonic depuis son icône sur l'écran d'accueil.**
+
+</Steps>
+
+</TabItem>
+</Tabs>
+
+## Se connecter la première fois
+
+<Steps>
+
+1. **Touchez l'icône Musonic sur votre écran d'accueil.**
+
+2. **Tapez l'adresse de votre serveur, votre identifiant et votre mot de passe.**
+
+   Par exemple `https://music.example.com`. Musonic ajoute `https://` si vous l'oubliez.
+
+3. **Cochez « Se souvenir de moi » si cet iPhone est le vôtre.**
+
+   Confirmez avec **Activer**. Sans cette case, il faudra vous reconnecter chaque fois qu'iOS ferme l'appli.
+
+4. **Touchez « Se connecter ».**
+
+</Steps>
+
+L'appli de l'écran d'accueil ne partage pas sa connexion avec Safari : même si vous étiez connecté dans Safari, connectez-vous une fois de plus dans l'appli. L'écran de connexion, les erreurs et ce que devient votre mot de passe sont expliqués dans [Le lecteur web](/fr/docs/apps/web/#se-connecter).
+
+## Ce qui marche moins bien sur iPhone
+
+Le lecteur web est d'abord pensé pour l'ordinateur. Et sur iOS, une page web a moins de libertés qu'une application. Voici à quoi vous attendre.
+
+| Sujet | Ce qui se passe |
+|---|---|
+| **Mise en page** | La mise en page est celle d'un ordinateur. Sur un iPhone tenu droit, l'écran est trop étroit (moins d'environ 760 px) et le menu latéral avec **Accueil**, **Rechercher** et **Bibliothèque** est masqué. Tournez l'iPhone à l'horizontale : sur la plupart des iPhone récents, le menu apparaît alors. Sur iPad, le menu s'affiche à l'horizontale et, sur la plupart des modèles, à la verticale aussi. |
+| **Lecture en arrière-plan** | iOS peut mettre en pause ou fermer une page web en arrière-plan. La lecture continue en général écran verrouillé, mais elle peut s'arrêter au bout d'un long moment, et le titre suivant peut ne pas démarrer. Cela n'a pas été testé sur toutes les versions d'iOS. |
+| **Fondu entre les titres** | Laissez **Fondu entre les titres** sur **Désactivé** sur iPhone. Activé, le son passe par le moteur audio du navigateur (Web Audio), qu'iOS met plus facilement en pause en arrière-plan. |
+| **Volume** | iOS ne laisse pas une page web changer le volume : utilisez les boutons de l'iPhone. Le curseur de volume peut rester sans effet. |
+| **Hors ligne** | Pas d'écoute hors ligne : le lecteur web lit tout en streaming et a besoin de la connexion à votre serveur. Les téléchargements n'existent que dans l'[application Android](/fr/docs/apps/android/). |
+| **Voiture** | Pas de CarPlay. Le Bluetooth de la voiture marche comme pour n'importe quel son de l'iPhone. |
+| **Mini-lecteur, plein écran** | Le mini-lecteur flottant et le bouton de plein écran du navigateur sont faits pour l'ordinateur : ils ne marchent pas sur iPhone. |
+| **Minuteur de veille** | Il fonctionne tant que la page tourne. Si iOS a mis la page en pause, il peut se déclencher en retard. |
+| **Mises à jour** | Automatiques : c'est une page web. Vous avez la dernière version à chaque chargement, sans rien installer. Une copie hébergée sur votre serveur suit les mises à jour que son administrateur installe. |
+
+Ce qui marche comme sur ordinateur : votre bibliothèque, la recherche, les playlists, les likes, les paroles, la file d'attente, les podcasts, les imports et Musonic Connect, avec le même compte que sur vos autres appareils.
+
+## Le retirer
+
+Maintenez le doigt sur l'icône Musonic, touchez **Supprimer l'app**, puis **Supprimer de l'écran d'accueil** (ou **Supprimer le signet**). Vos playlists et vos likes sont sur votre serveur : rien n'est perdu.
+
+## Et ensuite
+
+- [Le lecteur web](/fr/docs/apps/web/) : tout ce qu'il fait, la connexion en détail, les raccourcis.
+- [Importer vos playlists](/fr/docs/apps/import-playlists/)
+- [Utiliser d'autres applis Subsonic](/fr/docs/apps/other-clients/) : il existe des applis Subsonic tierces sur iOS.

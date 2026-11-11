@@ -1,0 +1,62 @@
+---
+title: Documentation
+description: Par où commencer avec Musonic, que quelqu'un vous ait donné un accès, que vous vouliez votre propre serveur ou que vous veniez de Navidrome.
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Cette documentation explique comment utiliser les applis Musonic, comment faire tourner votre propre Musonic Server, et comment tout fonctionne en détail. Choisissez ci-dessous la situation qui vous correspond : chacune mène à la bonne page.
+
+## Par où commencer
+
+### On m'a donné un accès
+
+Un proche fait tourner un Musonic Server et vous a créé un compte. Il vous faut seulement une appli et les informations qu'il vous a envoyées (l'adresse du serveur, votre identifiant et votre mot de passe).
+
+<CardGrid>
+  <LinkCard title="Sur Android" href="/fr/docs/apps/android/" description="Installer l'appli Musonic sur votre téléphone Android, pas à pas." />
+  <LinkCard title="Sur iPhone ou iPad" href="/fr/docs/apps/iphone/" description="Utiliser le lecteur web et l'ajouter à votre écran d'accueil." />
+  <LinkCard title="Sur un ordinateur" href="/fr/docs/apps/web/" description="Écouter dans votre navigateur, sans rien installer." />
+</CardGrid>
+
+### Je veux mon propre serveur
+
+Vous avez des fichiers de musique et voulez les écouter partout, pour vous et vos proches.
+
+<CardGrid>
+  <LinkCard title="Comment marche Musonic" href="/fr/docs/start/how-it-works/" description="Le serveur, les applis, et ce qu'il vous faut avant de commencer." />
+  <LinkCard title="Installer avec Docker" href="/fr/docs/install/docker/" description="D'une machine Linux vide à votre premier compte." />
+</CardGrid>
+
+### J'utilise Navidrome
+
+Musonic Server peut reprendre vos playlists, likes, notes et écoutes, et vos applis Subsonic continuent de marcher.
+
+<CardGrid>
+  <LinkCard title="Guide de migration" href="/fr/docs/migration/navidrome/" description="Essayer Musonic à côté de Navidrome, puis basculer quand vous êtes prêt." />
+</CardGrid>
+
+### Je veux les détails
+
+Comment le son est traité, ce qui sort de votre serveur, les chiffres mesurés et l'API.
+
+<CardGrid>
+  <LinkCard title="Qualité audio" href="/fr/docs/reference/audio-quality/" description="Fichiers d'origine, transcodage et réglages de qualité." />
+  <LinkCard title="Vie privée et réseau" href="/fr/docs/reference/privacy/" description="Ce que le serveur et les applis envoient, et à qui." />
+  <LinkCard title="Benchmark" href="/fr/docs/about/benchmark/" description="Musonic Server et Navidrome mesurés sur la même machine." />
+  <LinkCard title="API" href="/fr/docs/reference/api/" description="L'API Subsonic / OpenSubsonic et l'API propre à Musonic." />
+</CardGrid>
+
+## Toutes les rubriques
+
+| Rubrique | Ce que vous y trouvez |
+|---|---|
+| **Commencer** | [Comment marche Musonic](/fr/docs/start/how-it-works/), installer le serveur [avec Docker](/fr/docs/install/docker/) ou [sans Docker](/fr/docs/install/binary/), le [premier démarrage](/fr/docs/install/first-start/), [y accéder de l'extérieur en HTTPS](/fr/docs/install/https/) et [le mettre à jour](/fr/docs/install/update/). |
+| **Applications** | L'[appli Android](/fr/docs/apps/android/), [se connecter à un serveur](/fr/docs/apps/sign-in/), [iPhone et iPad](/fr/docs/apps/iphone/), le [lecteur web](/fr/docs/apps/web/), [écouter de la musique](/fr/docs/apps/listening/), [importer vos playlists](/fr/docs/apps/import-playlists/), les [podcasts](/fr/docs/apps/podcasts/), [hors ligne et données mobiles](/fr/docs/apps/offline/), [Android Auto](/fr/docs/apps/android-auto/) et les [autres applis Subsonic](/fr/docs/apps/other-clients/). |
+| **Bibliothèque musicale** | [Organiser vos fichiers](/fr/docs/library/organize/), [l'analyse et les mises à jour](/fr/docs/library/scan/), le [catalogue en ligne et les imports](/fr/docs/library/online-catalogue/) et les [podcasts sur le serveur](/fr/docs/library/podcasts/). |
+| **Administration** | La [console](/fr/docs/admin/console/), les [comptes, droits et appareils](/fr/docs/admin/accounts/), la [référence de configuration](/fr/docs/admin/configuration/), la [sauvegarde et la restauration](/fr/docs/admin/backups/) et le [dépannage](/fr/docs/admin/troubleshooting/). |
+| **Venir de Navidrome** | Le [guide de migration](/fr/docs/migration/navidrome/). |
+| **Référence** | La [qualité audio](/fr/docs/reference/audio-quality/), la [vie privée et le réseau](/fr/docs/reference/privacy/), l'[API](/fr/docs/reference/api/), la [ligne de commande](/fr/docs/reference/cli/) et l'[architecture](/fr/docs/reference/architecture/). |
+| **À propos** | Le [benchmark](/fr/docs/about/benchmark/) et [sa méthode](/fr/docs/about/benchmark-method/), la [FAQ](/fr/docs/about/faq/), la [licence](/fr/docs/about/license/) et les [versions et changements](/fr/docs/about/changelog/). |
+
+Une erreur ou un manque dans ces pages ? [Ouvrez un ticket sur GitHub](https://github.com/DoodzDev/Musonic/issues/new/choose).

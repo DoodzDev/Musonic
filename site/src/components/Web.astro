@@ -1,0 +1,167 @@
+---
+/**
+ * @file Web.astro
+ * @description Web player page, in either language: what Musonic in the browser does, the way
+ *   to open it, its main features as rows of real screenshots, installing it on a computer, the
+ *   way for iPhone, hosting it on your own server, and the links to the documentation.
+ * @author DoodzProg
+ * @version 0.1.0
+ * @license CC-BY-NC-4.0
+ */
+import Base from './Base.astro';
+import { localePath, type Lang } from '../i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const L = (p: string) => localePath(p, lang);
+const shot = (name: string) => `/assets/img/screenshots/web/${name}-${lang}.jpg`;
+
+const t = {
+  en: {
+    title: 'Musonic in your browser: the web player',
+    description: 'The Musonic web player: your server\'s music in the browser, with mixes, synced lyrics, podcasts and playlist import. Nothing to install, installable as an app.',
+    h1: 'Musonic in your browser',
+    lead: 'The same home, mixes, lyrics and playlists as on your phone, made for a big screen. Nothing to install: open it and sign in to your server.',
+    open: 'Open the web player',
+    guide: 'How it works',
+    iphone: 'On iPhone?',
+    fine: 'Brave, Chrome or Edge recommended · Firefox and Safari play everything too',
+    heroAlt: 'The Musonic web player: an album page with its songs.',
+    rows: [
+      { img: 'home', alt: 'The home page of the web player: quick access, recently played and Magic Mixes.', h: 'A home that knows your taste', p: 'Quick access, recently played, favourite artists, « More like… » and « Because you liked… », and Magic Mixes made each day from the genres you play most.' },
+      { img: 'player', alt: 'The full-screen player of the web player: large cover and synced lyrics beside it.', h: 'Full screen, with the lyrics', p: 'A large cover with the lyrics beside it, the sung line highlighted; click a line to jump to it. Crossfade from 0 to 12 seconds, shuffle, repeat, and a queue you reorder by dragging.' },
+      { img: 'import', alt: 'Importing a playlist: the pasted link, the playlist\'s name, cover and songs before import.', h: 'Bring your playlists over', p: 'Paste a Spotify, Deezer or YouTube Music playlist link. Your server rebuilds it from your library and the online catalogue, even with the window closed, then lists the songs it was unsure of.' },
+    ],
+    factsTitle: 'And also',
+    facts: [
+      ['Podcasts', 'Follow shows, pick up an episode where you left it on any device, up to 2× speed, back 15 s and ahead 30 s.'],
+      ['Musonic Connect (beta)', 'The « Devices » button moves playback to any of your devices at the same second; the player bar then becomes its remote.'],
+      ['The keyboard', 'Space to play or pause, Ctrl + ← → for the previous or next song, the media keys, Esc to close the full-screen player.'],
+      ['A floating mini player', 'It stays on top of every window, even with the browser minimized. Needs Brave, Chrome or Edge.'],
+      ['Your last listening', 'It comes back when the page opens, paused where you stopped, on this device or another one.'],
+      ['English and French', 'The browser\'s language by default; your choice is shared with this website.'],
+    ],
+    installTitle: 'Install it on your computer',
+    install: 'In Chrome, Edge or Brave, the install button in the address bar turns Musonic into an app with its own window and icon. It is still the web player: nothing else to update.',
+    iosTitle: 'On iPhone? Add it to your home screen',
+    ios: 'There is no Musonic app for iPhone: use the web player. Open it in Safari, then Share → « Add to Home Screen »: it opens from its own icon, like an app.',
+    iosLink: 'Musonic on iPhone and iPad',
+    serverTitle: 'Which server?',
+    server: 'The web player reaches servers that allow it, over https://: Musonic Server and Navidrome do. Podcasts, playlist import and Musonic Connect need Musonic Server; with another Subsonic server, the rest works.',
+    hostTitle: 'At your own address',
+    host: 'Musonic Server can serve the web player itself: one click in its console (Settings → Musonic Web) installs the latest version at your-server/app, already set to connect to it.',
+    docsTitle: 'Guides',
+    docs: [
+      ['The web player, in detail', '/docs/apps/web/'],
+      ['Sign in to your server', '/docs/apps/sign-in/'],
+      ['Import your playlists', '/docs/apps/import-playlists/'],
+      ['Musonic on iPhone and iPad', '/docs/apps/iphone/'],
+    ],
+  },
+  fr: {
+    title: 'Musonic dans votre navigateur : le lecteur web',
+    description: 'Le lecteur web de Musonic : la musique de votre serveur dans le navigateur, avec mix, paroles synchronisées, podcasts et import de playlists. Rien à installer, installable comme une appli.',
+    h1: 'Musonic dans votre navigateur',
+    lead: 'Le même accueil, les mêmes mix, paroles et playlists que sur votre téléphone, pensés pour un grand écran. Rien à installer : ouvrez-le et connectez-vous à votre serveur.',
+    open: 'Ouvrir le lecteur web',
+    guide: 'Comment ça marche',
+    iphone: 'Sur iPhone ?',
+    fine: 'Brave, Chrome ou Edge conseillés · Firefox et Safari lisent tout aussi',
+    heroAlt: 'Le lecteur web de Musonic : une page d\'album avec ses titres.',
+    rows: [
+      { img: 'home', alt: 'L\'accueil du lecteur web : accès rapide, écoutés récemment et Magic Mixes.', h: 'Un accueil qui connaît vos goûts', p: 'Accès rapide, écoutés récemment, artistes préférés, « Plus dans le style de… » et « Parce que vous avez aimé… », et des Magic Mixes faits chaque jour à partir des genres que vous écoutez le plus.' },
+      { img: 'player', alt: 'Le lecteur plein écran du lecteur web : grande pochette et paroles synchronisées à côté.', h: 'En plein écran, avec les paroles', p: 'Une grande pochette avec les paroles à côté, la ligne chantée mise en avant ; cliquez sur une ligne pour y aller. Fondu entre les titres de 0 à 12 secondes, lecture aléatoire, répétition, et une file d\'attente à réordonner par glisser-déposer.' },
+      { img: 'import', alt: 'Import d\'une playlist : le lien collé, le nom, la pochette et les titres de la playlist avant l\'import.', h: 'Rapatriez vos playlists', p: 'Collez le lien d\'une playlist Spotify, Deezer ou YouTube Music. Votre serveur la recrée à partir de votre bibliothèque et du catalogue en ligne, même fenêtre fermée, puis liste les titres dont il n\'était pas sûr.' },
+    ],
+    factsTitle: 'Et aussi',
+    facts: [
+      ['Podcasts', 'Suivez des émissions, reprenez un épisode là où vous l\'aviez laissé sur n\'importe quel appareil, jusqu\'à 2× plus vite, 15 s en arrière et 30 s en avant.'],
+      ['Musonic Connect (bêta)', 'Le bouton « Appareils » passe la lecture sur n\'importe lequel de vos appareils à la seconde près ; la barre du lecteur devient alors sa télécommande.'],
+      ['Le clavier', 'Espace pour lire ou mettre en pause, Ctrl + ← → pour le titre précédent ou suivant, les touches multimédia, Échap pour fermer le lecteur plein écran.'],
+      ['Un mini-lecteur flottant', 'Il reste au-dessus de toutes les fenêtres, même navigateur réduit. Demande Brave, Chrome ou Edge.'],
+      ['Votre dernière écoute', 'Elle revient à l\'ouverture de la page, en pause là où vous vous étiez arrêté, sur cet appareil ou un autre.'],
+      ['Français et anglais', 'La langue du navigateur par défaut ; votre choix est partagé avec ce site.'],
+    ],
+    installTitle: 'Installez-le sur votre ordinateur',
+    install: 'Dans Chrome, Edge ou Brave, le bouton d\'installation de la barre d\'adresse fait de Musonic une appli avec sa propre fenêtre et son icône. C\'est toujours le lecteur web : rien d\'autre à mettre à jour.',
+    iosTitle: 'Sur iPhone ? Ajoutez-le à l\'écran d\'accueil',
+    ios: 'Il n\'y a pas d\'appli Musonic pour iPhone : utilisez le lecteur web. Ouvrez-le dans Safari, puis Partager → « Sur l\'écran d\'accueil » : il s\'ouvre depuis sa propre icône, comme une appli.',
+    iosLink: 'Musonic sur iPhone et iPad',
+    serverTitle: 'Quel serveur ?',
+    server: 'Le lecteur web joint les serveurs qui l\'autorisent, en https:// : Musonic Server et Navidrome le font. Les podcasts, l\'import de playlists et Musonic Connect demandent Musonic Server ; avec un autre serveur Subsonic, le reste fonctionne.',
+    hostTitle: 'À votre propre adresse',
+    host: 'Musonic Server peut servir le lecteur web lui-même : un clic dans sa console (Réglages → Musonic Web) installe la dernière version à votre-serveur/app, déjà réglée pour s\'y connecter.',
+    docsTitle: 'Guides',
+    docs: [
+      ['Le lecteur web en détail', '/docs/apps/web/'],
+      ['Se connecter à votre serveur', '/docs/apps/sign-in/'],
+      ['Importer vos playlists', '/docs/apps/import-playlists/'],
+      ['Musonic sur iPhone et iPad', '/docs/apps/iphone/'],
+    ],
+  },
+}[lang];
+---
+<Base lang={lang} path="/web/" title={t.title} description={t.description} current="web">
+  <section class="wrap hero">
+    <h1>{t.h1}</h1>
+    <p class="lead">{t.lead}</p>
+    <div class="actions">
+      <a class="button" href="/app/">{t.open}</a>
+      <div class="textlinks">
+        <a href={L('/docs/apps/web/')}>{t.guide}</a>
+        <a href="#ios">{t.iphone}</a>
+      </div>
+    </div>
+    <p class="small">{t.fine}</p>
+    <img class="shot" src={shot('album')} alt={t.heroAlt} width="1440" height="900" />
+  </section>
+
+  <section class="wrap">
+    {t.rows.map((r) => (
+      <div class="row">
+        <img class="row__img" src={shot(r.img)} alt={r.alt} width="1440" height="900" loading="lazy" />
+        <div>
+          <h3>{r.h}</h3>
+          <p>{r.p}</p>
+        </div>
+      </div>
+    ))}
+  </section>
+
+  <section class="wrap block">
+    <h2>{t.factsTitle}</h2>
+    <ul class="facts">
+      {t.facts.map(([h, p]) => (<li><h3>{h}</h3><p>{p}</p></li>))}
+    </ul>
+  </section>
+
+  <section class="wrap block note">
+    <h2>{t.installTitle}</h2>
+    <p>{t.install}</p>
+  </section>
+
+  <section class="wrap block note" id="ios">
+    <h2>{t.iosTitle}</h2>
+    <div>
+      <p>{t.ios}</p>
+      <p><a href={L('/docs/apps/iphone/')}>{t.iosLink} →</a></p>
+    </div>
+  </section>
+
+  <section class="wrap block note">
+    <h2>{t.serverTitle}</h2>
+    <p>{t.server}</p>
+  </section>
+
+  <section class="wrap block note">
+    <h2>{t.hostTitle}</h2>
+    <p>{t.host}</p>
+  </section>
+
+  <section class="wrap block note">
+    <h2>{t.docsTitle}</h2>
+    <ul class="links">
+      {t.docs.map(([label, href]) => (<li><a href={L(href)}>{label} →</a></li>))}
+    </ul>
+  </section>
+</Base>

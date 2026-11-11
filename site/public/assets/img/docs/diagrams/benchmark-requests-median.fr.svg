@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 788" role="img" aria-labelledby="t d" font-family="Inter Variable, Inter, system-ui, sans-serif" lang="fr">
+<title id="t">Latence médiane de 14 requêtes Subsonic, ms</title>
+<desc id="d">Plus bas = mieux · échelle logarithmique. Recherche « love » : Musonic 0,353, Navidrome 29,4; Recherche « mo » : Musonic 0,377, Navidrome 25,6; Recherche « the love » : Musonic 0,299, Navidrome 20,2; Un album : Musonic 0,288, Navidrome 2,60; Un artiste : Musonic 0,279, Navidrome 2,27; Tous les artistes (797) : Musonic 0,429, Navidrome 52,7; Un titre : Musonic 0,284, Navidrome 2,43; 50 albums les plus récents : Musonic 0,338, Navidrome 16,6; 500 albums de A à Z : Musonic 0,517, Navidrome 35,4; 50 albums au hasard : Musonic 2,17, Navidrome 8,31; 50 titres au hasard : Musonic 3,29, Navidrome 5,76; Genres : Musonic 0,289, Navidrome 1,17; Favoris : Musonic 0,279, Navidrome 2,17; Playlists : Musonic 0,276, Navidrome 1,01. Médiane de 3 passes · Musonic Server 1.0.1 face à Navidrome 0.64.2 · 22/10/2026 · VPS ARM 2 cœurs, 1 871 fichiers.</desc>
+<text x="16.0" y="30.0" font-size="18" fill="#F1F0EE" text-anchor="start" font-weight="600">Latence médiane de 14 requêtes Subsonic, ms</text>
+<text x="16.0" y="52.0" font-size="12.5" fill="#7D7B77" text-anchor="start">Plus bas = mieux · échelle logarithmique</text>
+<rect x="16" y="70" width="12" height="12" rx="2" fill="#FF6B35"/>
+<text x="34.0" y="80.5" font-size="13" fill="#B1AFAB" text-anchor="start">Musonic</text>
+<rect x="108" y="70" width="12" height="12" rx="2" fill="#8E8C88"/>
+<text x="126.0" y="80.5" font-size="13" fill="#B1AFAB" text-anchor="start">Navidrome</text>
+<line x1="248.0" y1="96" x2="248.0" y2="712" stroke="#2C2C2F" stroke-width="1"/>
+<text x="248.0" y="728.0" font-size="12" fill="#7D7B77" text-anchor="middle">0,1</text>
+<line x1="452.0" y1="96" x2="452.0" y2="712" stroke="#2C2C2F" stroke-width="1"/>
+<text x="452.0" y="728.0" font-size="12" fill="#7D7B77" text-anchor="middle">1</text>
+<line x1="656.0" y1="96" x2="656.0" y2="712" stroke="#2C2C2F" stroke-width="1"/>
+<text x="656.0" y="728.0" font-size="12" fill="#7D7B77" text-anchor="middle">10</text>
+<line x1="860.0" y1="96" x2="860.0" y2="712" stroke="#2C2C2F" stroke-width="1"/>
+<text x="860.0" y="728.0" font-size="12" fill="#7D7B77" text-anchor="middle">100</text>
+<text x="554.0" y="748.0" font-size="12" fill="#7D7B77" text-anchor="middle">ms (échelle logarithmique)</text>
+<text x="236.0" y="124.0" font-size="14" fill="#B1AFAB" text-anchor="end">Recherche « love »</text>
+<path d="M248.0 104.0h108.7a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-108.7z" fill="#FF6B35"/>
+<text x="365.7" y="116.0" font-size="14" fill="#F1F0EE" text-anchor="start">0,353</text>
+<path d="M248.0 120.0h500.7a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-500.7z" fill="#8E8C88"/>
+<text x="757.7" y="132.0" font-size="14" fill="#F1F0EE" text-anchor="start">29,4</text>
+<text x="236.0" y="168.0" font-size="14" fill="#B1AFAB" text-anchor="end">Recherche « mo »</text>
+<path d="M248.0 148.0h114.6a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-114.6z" fill="#FF6B35"/>
+<text x="371.6" y="160.0" font-size="14" fill="#F1F0EE" text-anchor="start">0,377</text>
+<path d="M248.0 164.0h488.4a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-488.4z" fill="#8E8C88"/>
+<text x="745.4" y="176.0" font-size="14" fill="#F1F0EE" text-anchor="start">25,6</text>
+<text x="236.0" y="212.0" font-size="14" fill="#B1AFAB" text-anchor="end">Recherche « the love »</text>
+<path d="M248.0 192.0h94.0a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-94.0z" fill="#FF6B35"/>
+<text x="351.0" y="204.0" font-size="14" fill="#F1F0EE" text-anchor="start">0,299</text>
+<path d="M248.0 208.0h467.1a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-467.1z" fill="#8E8C88"/>
+<text x="724.1" y="220.0" font-size="14" fill="#F1F0EE" text-anchor="start">20,2</text>
+<text x="236.0" y="256.0" font-size="14" fill="#B1AFAB" text-anchor="end">Un album</text>
+<path d="M248.0 236.0h90.7a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-90.7z" fill="#FF6B35"/>
+<text x="347.7" y="248.0" font-size="14" fill="#F1F0EE" text-anchor="start">0,288</text>
+<path d="M248.0 252.0h285.8a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-285.8z" fill="#8E8C88"/>
+<text x="542.8" y="264.0" font-size="14" fill="#F1F0EE" text-anchor="start">2,60</text>
+<text x="236.0" y="300.0" font-size="14" fill="#B1AFAB" text-anchor="end">Un artiste</text>
+<path d="M248.0 280.0h87.9a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-87.9z" fill="#FF6B35"/>
+<text x="344.9" y="292.0" font-size="14" fill="#F1F0EE" text-anchor="start">0,279</text>
+<path d="M248.0 296.0h273.6a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-273.6z" fill="#8E8C88"/>
+<text x="530.6" y="308.0" font-size="14" fill="#F1F0EE" text-anchor="start">2,27</text>
+<text x="236.0" y="344.0" font-size="14" fill="#B1AFAB" text-anchor="end">Tous les artistes (797)</text>
+<path d="M248.0 324.0h126.0a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-126.0z" fill="#FF6B35"/>
+<text x="383.0" y="336.0" font-size="14" fill="#F1F0EE" text-anchor="start">0,429</text>
+<path d="M248.0 340.0h552.3a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-552.3z" fill="#8E8C88"/>
+<text x="809.3" y="352.0" font-size="14" fill="#F1F0EE" text-anchor="start">52,7</text>
+<text x="236.0" y="388.0" font-size="14" fill="#B1AFAB" text-anchor="end">Un titre</text>
+<path d="M248.0 368.0h89.5a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-89.5z" fill="#FF6B35"/>
+<text x="346.5" y="380.0" font-size="14" fill="#F1F0EE" text-anchor="start">0,284</text>
+<path d="M248.0 384.0h279.7a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-279.7z" fill="#8E8C88"/>
+<text x="536.7" y="396.0" font-size="14" fill="#F1F0EE" text-anchor="start">2,43</text>
+<text x="236.0" y="432.0" font-size="14" fill="#B1AFAB" text-anchor="end">50 albums les plus récents</text>
+<path d="M248.0 412.0h104.9a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-104.9z" fill="#FF6B35"/>
+<text x="361.9" y="424.0" font-size="14" fill="#F1F0EE" text-anchor="start">0,338</text>
+<path d="M248.0 428.0h450.2a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-450.2z" fill="#8E8C88"/>
+<text x="707.2" y="440.0" font-size="14" fill="#F1F0EE" text-anchor="start">16,6</text>
+<text x="236.0" y="476.0" font-size="14" fill="#B1AFAB" text-anchor="end">500 albums de A à Z</text>
+<path d="M248.0 456.0h142.6a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-142.6z" fill="#FF6B35"/>
+<text x="399.6" y="468.0" font-size="14" fill="#F1F0EE" text-anchor="start">0,517</text>
+<path d="M248.0 472.0h516.9a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-516.9z" fill="#8E8C88"/>
+<text x="773.9" y="484.0" font-size="14" fill="#F1F0EE" text-anchor="start">35,4</text>
+<text x="236.0" y="520.0" font-size="14" fill="#B1AFAB" text-anchor="end">50 albums au hasard</text>
+<path d="M248.0 500.0h269.5a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-269.5z" fill="#FF6B35"/>
+<text x="526.5" y="512.0" font-size="14" fill="#F1F0EE" text-anchor="start">2,17</text>
+<path d="M248.0 516.0h388.6a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-388.6z" fill="#8E8C88"/>
+<text x="645.6" y="528.0" font-size="14" fill="#F1F0EE" text-anchor="start">8,31</text>
+<text x="236.0" y="564.0" font-size="14" fill="#B1AFAB" text-anchor="end">50 titres au hasard</text>
+<path d="M248.0 544.0h306.5a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-306.5z" fill="#FF6B35"/>
+<text x="563.5" y="556.0" font-size="14" fill="#F1F0EE" text-anchor="start">3,29</text>
+<path d="M248.0 560.0h356.2a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-356.2z" fill="#8E8C88"/>
+<text x="613.2" y="572.0" font-size="14" fill="#F1F0EE" text-anchor="start">5,76</text>
+<text x="236.0" y="608.0" font-size="14" fill="#B1AFAB" text-anchor="end">Genres</text>
+<path d="M248.0 588.0h91.0a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-91.0z" fill="#FF6B35"/>
+<text x="348.0" y="600.0" font-size="14" fill="#F1F0EE" text-anchor="start">0,289</text>
+<path d="M248.0 604.0h214.7a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-214.7z" fill="#8E8C88"/>
+<text x="471.7" y="616.0" font-size="14" fill="#F1F0EE" text-anchor="start">1,17</text>
+<text x="236.0" y="652.0" font-size="14" fill="#B1AFAB" text-anchor="end">Favoris</text>
+<path d="M248.0 632.0h87.9a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-87.9z" fill="#FF6B35"/>
+<text x="344.9" y="644.0" font-size="14" fill="#F1F0EE" text-anchor="start">0,279</text>
+<path d="M248.0 648.0h269.7a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-269.7z" fill="#8E8C88"/>
+<text x="526.7" y="660.0" font-size="14" fill="#F1F0EE" text-anchor="start">2,17</text>
+<text x="236.0" y="696.0" font-size="14" fill="#B1AFAB" text-anchor="end">Playlists</text>
+<path d="M248.0 676.0h86.9a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-86.9z" fill="#FF6B35"/>
+<text x="343.9" y="688.0" font-size="14" fill="#F1F0EE" text-anchor="start">0,276</text>
+<path d="M248.0 692.0h202.1a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-202.1z" fill="#8E8C88"/>
+<text x="459.1" y="704.0" font-size="14" fill="#F1F0EE" text-anchor="start">1,01</text>
+<text x="16.0" y="776.0" font-size="12" fill="#7D7B77" text-anchor="start">Médiane de 3 passes · Musonic Server 1.0.1 face à Navidrome 0.64.2 · 22/10/2026 · VPS ARM 2 cœurs, 1 871 fichiers</text>
+</svg>

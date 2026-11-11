@@ -1,0 +1,219 @@
+---
+title: Le lecteur web
+description: Comment écouter Musonic dans un navigateur sur ordinateur, se connecter, utiliser les raccourcis clavier, l'installer comme une application, et ce qu'il ne fait pas par rapport à l'application Android.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Musonic Web, c'est le lecteur Musonic dans votre navigateur : le même accueil, les mêmes mixes, paroles, playlists et file d'attente que sur le téléphone, pensés pour un écran d'ordinateur. Cette page s'adresse à tous ceux qui veulent écouter sur ordinateur, que quelqu'un vous ait ouvert un compte ou que vous gériez le serveur vous-même.
+
+**Ce qu'il vous faut**
+
+- Un ordinateur avec un navigateur récent (voir [Navigateurs](#navigateurs)).
+- L'**adresse** de votre serveur, votre **identifiant** et votre **mot de passe**.
+
+## Deux façons de l'ouvrir
+
+Il existe deux copies du même lecteur web. Elles font la même chose ; seule l'adresse change.
+
+| Copie | Adresse | À utiliser quand |
+|---|---|---|
+| **Copie en ligne** | `https://musonic.doodz.dev/app/` | Vous ne voulez rien installer. Elle se connecte à n'importe quel serveur que vous tapez, à condition qu'il ait une adresse en `https://`. Toujours la dernière version. |
+| **Copie de votre serveur** | `https://<votre serveur>/app/` | L'administrateur de votre serveur l'a installée depuis la console. Pratique à la maison avec une adresse en `http://`, ou pour tout garder sur une seule adresse. |
+
+`<votre serveur>` est l'adresse de votre Musonic Server, la même que dans les applis (par exemple `music.example.com`).
+
+<Aside type="note" title="La copie du serveur est installée par l'administrateur">
+Un Musonic Server ne contient pas le lecteur web d'origine. L'administrateur l'installe une fois dans la console : **Réglages et maintenance** → **Musonic Web sur ce serveur** → **Installer**. La console télécharge la dernière version depuis GitHub et la sert à `/app/`. Elle ne se met pas à jour toute seule : la même carte affiche ensuite **Mettre à jour (version)** quand une version plus récente existe. Sans cette étape, `/app/` n'affiche rien sur le serveur.
+</Aside>
+
+Vous pouvez aussi héberger le lecteur web sur votre propre serveur web (Nginx, Caddy…) : téléchargez `Musonic-Web.zip` dans la dernière [version](https://github.com/DoodzDev/Musonic/releases?q=web-v&expanded=true) `web-v…` et suivez son [guide d'auto-hébergement](https://github.com/DoodzDev/Musonic/blob/main/apps/web/SELF-HOSTING.md) (en anglais).
+
+## Se connecter
+
+<Steps>
+
+1. **Ouvrez `https://musonic.doodz.dev/app/` dans votre navigateur.**
+
+   Ou la copie de votre serveur, `https://<votre serveur>/app/`. L'écran de connexion affiche le logo Musonic et « Connectez votre serveur de musique ».
+
+   <img class="shot-wide" src="/assets/img/docs/apps-web/01-sign-in-empty.fr.webp" alt="L'écran de connexion de Musonic Web : le logo, « Connectez votre serveur de musique », les champs Adresse du serveur, Identifiant et Mot de passe, la case « Se souvenir de moi », le bouton Se connecter, et English · Français en bas." />
+
+2. **Dans « Adresse du serveur », tapez l'adresse de votre serveur.**
+
+   Par exemple `https://music.example.com`. Si vous oubliez `https://`, Musonic l'ajoute.
+
+3. **Tapez votre identifiant et votre mot de passe.**
+
+   Le bouton en forme d'œil dans le champ du mot de passe affiche ce que vous avez tapé.
+
+4. **Cochez « Se souvenir de moi » seulement sur votre propre ordinateur.**
+
+   Un avertissement s'ouvre d'abord : cliquez sur **Activer** pour confirmer. Sans cette case, vous êtes déconnecté à la fermeture de l'onglet.
+
+5. **Cliquez sur « Se connecter ».**
+
+   Le bouton affiche « Connexion… », puis l'accueil s'ouvre.
+
+   <img class="shot-wide" src="/assets/img/docs/apps-web/02-home.fr.webp" alt="L'accueil de Musonic Web après la connexion : le menu latéral à gauche (Accueil, Rechercher, Bibliothèque, Titres likés, playlists), les tuiles d'accès rapide et les étagères au centre, la barre de lecture en bas." />
+
+</Steps>
+
+### Ce qui se passe à la connexion
+
+- **Sur un Musonic Server**, votre mot de passe ne sert qu'une fois : le serveur donne à ce navigateur sa propre **clé d'appareil**, à son nom (par exemple « Musonic Web · Firefox (Linux) »). C'est la clé, et non votre mot de passe, qui sert ensuite. L'administrateur la voit dans la console, dans **Appareils et sécurité**, et peut la révoquer. **Se déconnecter** (menu du profil, en haut à droite) la révoque aussi.
+- **Sur un autre serveur Subsonic** (Navidrome…), le lecteur web se connecte avec un jeton tiré de votre mot de passe (`t` + `s`). Le mot de passe lui-même n'est jamais envoyé en clair ni enregistré.
+- **Sans « Se souvenir de moi »**, la clé ou le jeton n'est gardé que pour l'onglet (`sessionStorage`) : fermer l'onglet vous déconnecte, et chaque nouvel onglet vous demande de vous connecter. **Avec**, il est gardé dans le navigateur (`localStorage`) jusqu'à la déconnexion. Toute personne ayant accès à ce navigateur, ou une extension, pourrait le réutiliser : c'est pour cela que l'avertissement vous demande d'abord.
+- La dernière adresse utilisée est retenue (ce n'est pas un secret) : le champ est déjà rempli la fois suivante.
+
+### Erreurs de connexion
+
+| Message | Ce que cela veut dire |
+|---|---|
+| Identifiant ou mot de passe incorrect. | Vérifiez les deux. Après 10 mots de passe faux différents, un Musonic Server bloque votre adresse pour ce compte pendant 15 minutes. |
+| Serveur injoignable. Vérifiez l'adresse et votre connexion. | L'adresse est fausse, le serveur est éteint, ou le navigateur n'a pas eu le droit de le joindre (voir ci-dessous). |
+| Adresse invalide. Exemple : https://music.example.com | Ce n'est pas une adresse web. |
+| Votre compte a été suspendu. Demandez à l'administrateur du serveur. | L'administrateur a suspendu le compte. |
+| Ce navigateur a été déconnecté de votre compte. Reconnectez-vous. | La clé d'appareil a été révoquée (dans la console, ou en vous déconnectant). |
+| Votre mot de passe a changé ? Reconnectez-vous avec le nouveau. | Le mot de passe a changé depuis la connexion de ce navigateur. |
+
+<Aside type="caution" title="La copie en ligne demande un serveur en https://">
+La copie en ligne est une page en `https://`. Les navigateurs interdisent à une page `https://` d'appeler un serveur en `http://` : une adresse comme `http://192.168.1.20:4533` ne marche donc pas depuis `musonic.doodz.dev`. Utilisez plutôt la copie de votre serveur (`http://192.168.1.20:4533/app/`), ou donnez une adresse en `https://` à votre serveur. Le serveur doit aussi accepter les requêtes venant d'autres sites (CORS) : Musonic Server et Navidrome le font.
+</Aside>
+
+## Ce qu'il fait
+
+| Partie | Ce que vous y trouvez |
+|---|---|
+| **Accueil** | Accès rapide, écoutés récemment, vos artistes préférés, « Plus dans le style de… », « Parce que vous avez aimé… », huit Mix Magiques par jour à partir de vos genres préférés, À redécouvrir, Nouveautés dans votre bibliothèque, Au hasard. |
+| **Rechercher** | Titres, albums et artistes de votre bibliothèque, avec les filtres Tout / Titres / Albums / Artistes, et des résultats qui se chargent au fil du défilement. Sur un Musonic Server avec le catalogue en ligne activé, les résultats du catalogue suivent ceux de votre bibliothèque, et un filtre **Podcasts** apparaît. Champ vide : les Mix Magiques et **Parcourir** (ajoutés récemment, les plus écoutés, au hasard, une tuile par décennie). |
+| **Bibliothèque** | Les playlists (avec Titres likés et Ma Musique), **Nouvelle playlist**, **Importer**, **Jouer par genre**, les albums, les artistes et les podcasts suivis. |
+| **Playlists** | Créer, supprimer et **Modifier** : le nom et la description deviennent des champs, chaque titre reçoit une poignée pour le déplacer (ou les flèches haut et bas) et un « − » pour le retirer ; **Terminé** enregistre tout, Échap ou **Annuler** abandonne les changements. Le nom et la description sont partagés avec toutes les applis. |
+| **Lignes de titres** | Un cœur pour les titres likés, un « + » / « ✓ » qui montre si le titre est dans une de vos playlists. Clic droit ou « ⋯ » : lire ensuite, ajouter à la file d'attente, ajouter à une playlist, liker, aller à l'album ou à l'artiste. |
+| **Barre de lecture** | Aléatoire (désactivé / activé / Magique), précédent, lecture, suivant, répétition (tout / ce titre), progression, volume, les panneaux file d'attente et paroles, le minuteur de veille, **Appareils** (Musonic Connect), le mini-lecteur flottant et le lecteur plein écran. |
+| **File d'attente** | Un panneau latéral en zones : En cours, Ajoutés par vous, À suivre, Lecture auto. Lancez n'importe quelle entrée, retirez-la, réordonnez par glisser-déposer, **Tout effacer**. |
+| **Paroles** | Paroles synchronisées venant de votre serveur (intégrées aux fichiers), sinon de LRCLIB. La ligne chantée est mise en évidence ; cliquez sur une ligne pour y aller. |
+| **Lecteur plein écran** | Un fond flouté tiré de la pochette, une grande pochette, les paroles à côté, le like, les commandes et le volume, et un bouton pour le plein écran du navigateur. S'ouvre en cliquant sur la pochette dans la barre de lecture. |
+| **Mini-lecteur flottant** | Une petite fenêtre qui reste au-dessus de toutes les autres, même navigateur réduit. Sa mise en page suit sa taille, d'une fine ligne à une grande vue avec le like et le titre suivant. Chrome, Edge et Brave seulement. |
+| **Minuteur de veille** | Met en pause après la durée choisie, ou à la fin du titre. Recharger la page l'annule. |
+| **Imports** | Bibliothèque → **Importer** : collez l'adresse d'une playlist Spotify, Deezer ou YouTube Music, et Musonic la recrée avec des titres de votre bibliothèque et du catalogue en ligne. Voir [Importer vos playlists](/fr/docs/apps/import-playlists/). |
+| **Podcasts** | Cherchez des émissions, suivez-les, reprenez un épisode là où vous l'avez laissé (sur tous vos appareils), vitesse de 0,75× à 2×, recul de 15 s et avance de 30 s, transcriptions affichées comme des paroles. |
+| **Musonic Connect** (bêta) | **Appareils** liste vos appareils (chaque onglet du navigateur en est un) et y déplace la lecture. Quand un autre appareil joue, la barre de lecture devient sa télécommande. Votre dernière écoute revient, en pause, à l'ouverture de la page. |
+| **Réglages** | Menu du profil (en haut à droite) → **Réglages** : **Fondu entre les titres** (Désactivé à 12 s), **Afficher le temps restant**, **Langue** (English / Français), et sur un Musonic Server le nom de cet appareil pour Musonic Connect. |
+
+L'import, les podcasts, Musonic Connect et le retour de votre dernière écoute demandent **Musonic Server**. Avec Navidrome ou un autre serveur Subsonic, tout le reste fonctionne.
+
+La largeur des panneaux se règle : faites glisser le bord du menu latéral ou de la file d'attente, double-cliquez dessus pour revenir à la taille par défaut. Le volume, la largeur des panneaux, le fondu et l'affichage du temps sont retenus dans ce navigateur.
+
+## Raccourcis clavier
+
+Les raccourcis marchent dans la fenêtre principale et dans le mini-lecteur flottant, sauf pendant que vous tapez dans un champ.
+
+| Touches | Action |
+|---|---|
+| <kbd>Espace</kbd> | Lecture / pause |
+| <kbd>Ctrl</kbd> + <kbd>→</kbd> | Titre suivant |
+| <kbd>Ctrl</kbd> + <kbd>←</kbd> | Titre précédent (retour au début du titre après 3 secondes) |
+| Touches multimédia (lecture/pause, suivant, précédent) | Comme les boutons ; aussi les commandes multimédia de votre bureau |
+| <kbd>Échap</kbd> | Fermer le lecteur plein écran (quand le navigateur n'est pas en plein écran), une fenêtre de dialogue, un menu, ou le mode d'édition d'une playlist sans enregistrer |
+| <kbd>↑</kbd> / <kbd>↓</kbd> sur la poignée d'un titre | Monter ou descendre le titre pendant l'édition d'une playlist |
+| <kbd>←</kbd> / <kbd>→</kbd> sur le bord d'un panneau | Rétrécir ou élargir le panneau (10 px ; 40 px avec <kbd>Maj</kbd>) |
+| <kbd>↑</kbd> / <kbd>↓</kbd> dans le minuteur de veille | Changer la valeur choisie |
+| <kbd>Entrée</kbd> dans « Nom de cet appareil » | Enregistrer le nom |
+
+Sur Mac, les raccourcis suivant et précédent utilisent aussi <kbd>Ctrl</kbd>, pas <kbd>Cmd</kbd>.
+
+Un clic droit sur le fond de la page ouvre le menu de Musonic (précédent, suivant, les pages principales, recharger). Un second clic droit ouvre le menu du navigateur.
+
+## Navigateurs
+
+| Navigateur | Fonctionne | Mini-lecteur flottant | Installer comme une appli |
+|---|---|---|---|
+| Chrome, Edge, Brave (ordinateur) | Oui | Oui | Oui |
+| Firefox (ordinateur) | Oui | Non | Firefox ne le propose pas |
+| Safari (Mac) | Oui | Non | **Fichier** → **Ajouter au Dock** (macOS Sonoma et suivants) |
+
+Le mini-lecteur flottant utilise Document Picture-in-Picture, que seuls les navigateurs Chromium ont aujourd'hui. Utilisez une version récente de votre navigateur.
+
+Musonic Web est conçu pour un ordinateur. Sur un téléphone Android, utilisez l'[application Android](/fr/docs/apps/android/) ; sur iPhone, voir [Utiliser Musonic sur iPhone ou iPad](/fr/docs/apps/iphone/).
+
+## L'installer comme une application sur votre ordinateur
+
+Une fois installé, Musonic Web s'ouvre dans sa propre fenêtre, avec son icône dans la barre des tâches ou le Dock, sans la barre d'adresse du navigateur.
+
+<Tabs>
+<TabItem label="Chrome, Brave">
+
+<Steps>
+
+1. **Ouvrez `https://musonic.doodz.dev/app/` (ou la copie de votre serveur).**
+
+2. **Cliquez sur l'icône d'installation à droite de la barre d'adresse.**
+
+   Elle ressemble à un écran avec une flèche vers le bas. Si vous ne la voyez pas : menu **⋮** → **Caster, enregistrer et partager** → **Installer la page en tant qu'application…** (l'intitulé change un peu selon les versions).
+
+   <img class="shot-wide" src="/assets/img/docs/apps-web/03-install-chrome.fr.webp" alt="Chrome affichant Musonic Web, avec l'icône d'installation mise en évidence au bout de la barre d'adresse et, en dessous, la fenêtre « Installer l'application ? » montrant Musonic et le bouton Installer." />
+
+3. **Cliquez sur « Installer ».**
+
+   Musonic s'ouvre dans sa propre fenêtre. La prochaine fois, ouvrez-le depuis le menu des applications, la barre des tâches ou le bureau.
+
+</Steps>
+
+</TabItem>
+<TabItem label="Edge">
+
+<Steps>
+
+1. **Ouvrez `https://musonic.doodz.dev/app/` (ou la copie de votre serveur).**
+
+2. **Cliquez sur l'icône « Application disponible » à droite de la barre d'adresse.**
+
+   Si vous ne la voyez pas : menu **…** → **Applications** → **Installer ce site en tant qu'application**.
+
+3. **Cliquez sur « Installer ».**
+
+</Steps>
+
+</TabItem>
+<TabItem label="Safari (Mac)">
+
+<Steps>
+
+1. **Ouvrez `https://musonic.doodz.dev/app/` dans Safari.**
+
+2. **Dans la barre des menus, cliquez sur « Fichier » → « Ajouter au Dock ».**
+
+3. **Cliquez sur « Ajouter ».**
+
+   Musonic apparaît dans le Dock et s'ouvre dans sa propre fenêtre.
+
+</Steps>
+
+</TabItem>
+</Tabs>
+
+**En détail.** Les navigateurs ne proposent l'installation que pour une page servie en `https://` (ou `localhost`). La copie d'un serveur à `http://192.168.…/app/` lit la musique, mais ne peut pas être installée. L'application installée est la même page web : elle se met à jour toute seule avec la copie en ligne, et suit les mises à jour faites par l'administrateur avec la copie d'un serveur. Sans « Se souvenir de moi », vous vous connectez à chaque ouverture de sa fenêtre. Pour la retirer, ouvrez-la et utilisez le menu de sa fenêtre (**⋮** dans Chrome, **…** dans Edge) → **Désinstaller**.
+
+## Ce qu'il ne fait pas par rapport à l'application Android
+
+| | Application Android | Lecteur web |
+|---|---|---|
+| **Écoute hors ligne** | Téléchargement de playlists, d'albums, des titres likés ; téléchargement automatique | **Aucune** : le lecteur web lit tout en streaming et a besoin de la connexion au serveur |
+| **Réglage de qualité** | Qualité en Wi-Fi et en données mobiles | **Aucun** : vous recevez le fichier d'origine, sauf si l'administrateur a fixé une limite plus basse pour votre compte ou pour le serveur |
+| **Android Auto** | Oui | Non |
+| **Fondu entre les titres** | Oui | Oui (0 à 12 s), mais il demande un serveur qui envoie les en-têtes CORS, et ne s'applique jamais aux épisodes de podcast |
+| **Onglet En ligne dans la recherche** | Un onglet « En ligne » à part | Les résultats en ligne suivent ceux de votre bibliothèque dans les mêmes listes |
+| **Mise en page** | Téléphone | Ordinateur : dans une fenêtre étroite (moins d'environ 760 px de large), le menu latéral est masqué |
+| **Mini-lecteur flottant** | — | Chrome, Edge, Brave |
+
+<Aside type="note" title="Ce que le lecteur web envoie hors de votre serveur">
+La page elle-même vient de `musonic.doodz.dev` (GitHub Pages) pour la copie en ligne, ou de votre serveur pour sa copie. Votre musique, les pochettes et la connexion ne vont qu'à votre serveur. Quand votre serveur n'a pas les paroles d'un titre, votre navigateur les demande à LRCLIB (`lrclib.net`), avec l'artiste, le titre et la durée.
+</Aside>
+
+## Et ensuite
+
+- [Utiliser Musonic sur iPhone ou iPad](/fr/docs/apps/iphone/)
+- [Importer vos playlists](/fr/docs/apps/import-playlists/)
+- [Utiliser d'autres applis Subsonic](/fr/docs/apps/other-clients/)
+- [Installer l'application Android](/fr/docs/apps/android/)

@@ -1,0 +1,62 @@
+---
+title: Documentation
+description: Where to start with Musonic, whether someone gave you access, you want your own server, or you are coming from Navidrome.
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+This documentation explains how to use the Musonic apps, how to run your own Musonic Server, and how everything works in detail. Pick the situation that matches yours below: each one leads to the right page.
+
+## Where to start
+
+### Someone gave me access
+
+A friend or a family member runs a Musonic Server and gave you an account. You only need an app and the details they sent you (the server's address, your username and your password).
+
+<CardGrid>
+  <LinkCard title="On Android" href="/docs/apps/android/" description="Install the Musonic app on your Android phone, step by step." />
+  <LinkCard title="On iPhone or iPad" href="/docs/apps/iphone/" description="Use the web player and add it to your home screen." />
+  <LinkCard title="On a computer" href="/docs/apps/web/" description="Listen in your browser, nothing to install." />
+</CardGrid>
+
+### I want my own server
+
+You have music files and want to listen to them everywhere, for you and the people close to you.
+
+<CardGrid>
+  <LinkCard title="How Musonic works" href="/docs/start/how-it-works/" description="The server, the apps, and what you need before you start." />
+  <LinkCard title="Install with Docker" href="/docs/install/docker/" description="From an empty Linux machine to your first account." />
+</CardGrid>
+
+### I use Navidrome
+
+Musonic Server can take over your playlists, likes, ratings and plays, and your Subsonic apps keep working.
+
+<CardGrid>
+  <LinkCard title="Migration guide" href="/docs/migration/navidrome/" description="Try Musonic next to Navidrome, then switch when you are ready." />
+</CardGrid>
+
+### I want the details
+
+How the sound is handled, what leaves your server, the measured numbers and the API.
+
+<CardGrid>
+  <LinkCard title="Audio quality" href="/docs/reference/audio-quality/" description="Original files, transcoding and quality settings." />
+  <LinkCard title="Privacy and network" href="/docs/reference/privacy/" description="What the server and the apps send, and to whom." />
+  <LinkCard title="Benchmark" href="/docs/about/benchmark/" description="Musonic Server and Navidrome measured on the same machine." />
+  <LinkCard title="API" href="/docs/reference/api/" description="The Subsonic / OpenSubsonic API and Musonic's own API." />
+</CardGrid>
+
+## Every section
+
+| Section | What you find there |
+|---|---|
+| **Get started** | [How Musonic works](/docs/start/how-it-works/), installing the server [with Docker](/docs/install/docker/) or [without Docker](/docs/install/binary/), the [first start](/docs/install/first-start/), [reaching it from outside over HTTPS](/docs/install/https/) and [updating it](/docs/install/update/). |
+| **Apps** | The [Android app](/docs/apps/android/), [signing in to a server](/docs/apps/sign-in/), [iPhone and iPad](/docs/apps/iphone/), the [web player](/docs/apps/web/), [listening to music](/docs/apps/listening/), [importing your playlists](/docs/apps/import-playlists/), [podcasts](/docs/apps/podcasts/), [offline and data usage](/docs/apps/offline/), [Android Auto](/docs/apps/android-auto/) and [other Subsonic apps](/docs/apps/other-clients/). |
+| **Music library** | [Organising your files](/docs/library/organize/), [scans and updates](/docs/library/scan/), the [online catalogue and imports](/docs/library/online-catalogue/) and [podcasts on the server](/docs/library/podcasts/). |
+| **Administration** | The [console](/docs/admin/console/), [accounts, rights and devices](/docs/admin/accounts/), the [configuration reference](/docs/admin/configuration/), [backups and restore](/docs/admin/backups/) and [troubleshooting](/docs/admin/troubleshooting/). |
+| **Coming from Navidrome** | The [migration guide](/docs/migration/navidrome/). |
+| **Reference** | [Audio quality](/docs/reference/audio-quality/), [privacy and network](/docs/reference/privacy/), the [API](/docs/reference/api/), the [command line](/docs/reference/cli/) and the [architecture](/docs/reference/architecture/). |
+| **About** | The [benchmark](/docs/about/benchmark/) and [its method](/docs/about/benchmark-method/), the [FAQ](/docs/about/faq/), the [licence](/docs/about/license/) and the [versions and changes](/docs/about/changelog/). |
+
+Something missing or wrong in these pages? [Open an issue on GitHub](https://github.com/DoodzDev/Musonic/issues/new/choose).

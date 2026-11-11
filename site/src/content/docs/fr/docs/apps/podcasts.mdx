@@ -1,0 +1,131 @@
+---
+title: Podcasts
+description: Comment trouver, suivre et écouter des podcasts dans l’appli Android et le lecteur web Musonic — recherche, épisodes, reprise là où vous vous êtes arrêté, vitesse et sauts, désabonnement.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Cette page montre comment écouter des podcasts dans Musonic : trouver une émission, s’y abonner, écouter ses épisodes et reprendre là où vous vous étiez arrêté, sur n’importe lequel de vos appareils.
+
+**Ce qu’il vous faut**
+
+- Un compte sur un **Musonic Server** (les podcasts ne sont pas disponibles avec Navidrome ni les autres serveurs).
+- L’appli Android ou le lecteur web.
+
+Votre serveur lit les émissions depuis leur flux RSS public ; le son des épisodes passe aussi par votre serveur, l’hébergeur du podcast ne vous voit donc jamais.
+
+## Trouver une émission
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+<Steps>
+
+1. **Ouvrez l’onglet Recherche et tapez le nom d’une émission, ou d’une personne.**
+
+2. **Touchez le filtre « Podcasts ».**
+
+   Vous obtenez les émissions trouvées, puis **Épisodes où cette personne intervient** quand le serveur peut chercher par personne (voir plus bas).
+
+   <img class="shot-phone" src="/assets/img/docs/apps-podcasts/01-search.fr.webp" alt="La recherche de l’appli avec le filtre Podcasts sélectionné, une liste d’émissions avec leurs pochettes, et en dessous Épisodes où cette personne intervient." />
+
+3. **Touchez une émission pour ouvrir sa page.**
+
+   Un épisode trouvé par personne ouvre son émission, positionnée sur cet épisode, et le lance.
+
+</Steps>
+
+</TabItem>
+<TabItem label="Web">
+
+<Steps>
+
+1. **Ouvrez Rechercher et tapez le nom d’une émission, ou d’une personne.**
+
+   Les émissions apparaissent aussi sous **Tout**.
+
+2. **Cliquez sur le filtre « Podcasts ».**
+
+   <img class="shot-wide" src="/assets/img/docs/apps-podcasts/02-web-search.fr.webp" alt="La recherche de Musonic Web avec le filtre Podcasts sélectionné, des cartes d’émissions et la liste Épisodes où cette personne intervient." />
+
+3. **Cliquez sur une émission pour ouvrir sa page.**
+
+</Steps>
+
+Vous pouvez aussi **coller l’adresse d’un flux RSS** (commençant par `https://`) dans le champ de recherche : une carte **Flux RSS**, **Ouvrir ce flux**, ouvre cette émission.
+
+</TabItem>
+</Tabs>
+
+**D’où viennent les résultats.** Les émissions sont cherchées dans l’annuaire d’Apple Podcasts (iTunes), dans le pays de votre langue (France pour le français, États-Unis sinon dans l’appli). Si l’administrateur a ajouté une clé **Podcast Index** dans la console, la recherche trouve aussi les émissions absentes de cet annuaire, et les épisodes où une personne (animateur ou invité) intervient. Sans elle, **Épisodes où cette personne intervient** n’apparaît pas.
+
+## S’abonner à une émission
+
+<Steps>
+
+1. **Sur la page de l’émission, touchez ou cliquez sur « S’abonner ».**
+
+   Le bouton devient **Abonné**. L’émission est maintenant dans votre Bibliothèque.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-podcasts/03-show-page.fr.webp" alt="La page d’un podcast dans l’appli : pochette, auteur, description, le bouton S’abonner, et les épisodes du plus récent au plus ancien avec leur date et leur durée." />
+
+2. **Retrouvez-la ensuite dans Bibliothèque → Podcasts.**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-podcasts/04-library-podcasts.fr.webp" alt="La Bibliothèque de l’appli sur l’onglet Podcasts, avec la liste des émissions suivies." />
+
+</Steps>
+
+Vous pouvez ouvrir une émission et écouter ses épisodes sans vous abonner. Votre serveur relit les flux des émissions suivies **toutes les heures** : les nouveaux épisodes apparaissent d’eux-mêmes sur la page de l’émission. Musonic n’envoie pas de notification pour les nouveaux épisodes.
+
+## Écouter un épisode
+
+**Touchez ou cliquez sur un épisode** dans la page de l’émission. Les épisodes sont listés du plus récent au plus ancien, chacun avec sa date et sa durée, ou **« Reste 12 min »** si vous l’avez commencé, ou **Écouté** une fois dépassés 95 %.
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+Dans le lecteur plein écran, un épisode a, à la place de l’aléatoire et de la répétition :
+
+- **−15** et **+30** : reculer de 15 secondes, avancer de 30 secondes ;
+- le bouton de **vitesse**, qui affiche la vitesse en cours ; chaque appui passe à la suivante : 1×, 1,25×, 1,5×, 1,75×, 2×, 0,75×.
+
+<img class="shot-phone" src="/assets/img/docs/apps-podcasts/05-episode-player.fr.webp" alt="Le lecteur plein écran de l’appli pendant un épisode de podcast, avec les boutons −15 et +30 et le bouton de vitesse sur 1,5×." />
+
+Les podcasts sont aussi dans **Android Auto** : **Bibliothèque → Podcasts** liste les émissions suivies, puis leurs épisodes (voir [Android Auto](/fr/docs/apps/android-auto/)).
+
+</TabItem>
+<TabItem label="Web">
+
+À la place de l’aléatoire et de la répétition, la barre de lecture affiche **−15** et **+30** autour des commandes, et le bouton de **vitesse** avec les mêmes paliers (1×, 1,25×, 1,5×, 1,75×, 2×, 0,75×). La vitesse est retenue par le navigateur. Sur la page d’une émission, **Lecture** lance l’épisode le plus récent que vous n’avez pas encore écouté.
+
+<img class="shot-wide" src="/assets/img/docs/apps-podcasts/06-web-episode.fr.webp" alt="La barre de lecture de Musonic Web pendant un épisode, avec les boutons −15 et +30 et le bouton de vitesse." />
+
+</TabItem>
+</Tabs>
+
+**Reprendre là où vous vous êtes arrêté.** Votre position dans chaque épisode est enregistrée par votre serveur toutes les quelques secondes et à chaque pause, pour votre compte. Relancez l’épisode sur votre téléphone, dans le navigateur ou dans la voiture : il reprend à cet endroit. Un épisode marqué **Écouté** repart du début.
+
+**Transcriptions.** Quand l’émission publie une transcription, le bouton **Paroles** l’affiche, ligne par ligne, comme des paroles synchronisées. Un épisode n’affiche jamais de paroles de chanson.
+
+**Pas de fondu** entre les épisodes, même quand le fondu est activé.
+
+## Se désabonner d’une émission
+
+<Steps>
+
+1. **Ouvrez la page de l’émission (Bibliothèque → Podcasts).**
+2. **Touchez ou cliquez sur « Abonné ».**
+
+   L’émission quitte votre Bibliothèque. Sa page reste accessible par la recherche.
+
+</Steps>
+
+<Aside type="note" title="Pas encore disponible pour les podcasts">
+Les épisodes ne peuvent pas être téléchargés pour une écoute hors ligne, et ils ne rejoignent pas la file d’attente avec vos titres : un épisode se joue seul, depuis là où vous vous étiez arrêté.
+</Aside>
+
+## Et ensuite
+
+- [Écouter de la musique](/fr/docs/apps/listening/)
+- [Android Auto](/fr/docs/apps/android-auto/)
+- [Podcasts sur le serveur](/fr/docs/library/podcasts/) (pour les administrateurs)

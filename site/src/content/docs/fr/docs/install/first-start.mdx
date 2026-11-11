@@ -1,0 +1,204 @@
+---
+title: Premier démarrage
+description: Comment créer le compte administrateur de Musonic Server, ouvrir la console et s'y connecter, vérifier le premier scan, installer le lecteur web et inviter des personnes avec un lien.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Cette page vous mène d'un serveur qui répond à des personnes qui écoutent : votre compte administrateur, la console, le premier scan, le lecteur web et les invitations. Faites-la une fois, juste après l'installation [avec Docker](/fr/docs/install/docker/) ou [sans Docker](/fr/docs/install/binary/).
+
+**Ce qu'il vous faut**
+
+- Musonic Server installé et qui répond (`curl http://127.0.0.1:4533/health` donne `{"status":"ok"}`).
+- Un terminal sur la machine du serveur.
+- Un navigateur, sur la machine du serveur ou sur un autre ordinateur.
+
+## 1. Créer le compte administrateur
+
+Le premier compte se crée en ligne de commande. Avant lui, il n'existe aucun compte, et personne ne peut se connecter.
+
+<Steps>
+
+1. **Lancez la commande de votre installation.**
+
+   <Tabs syncKey="install">
+   <TabItem label="Docker">
+
+   Depuis le dossier du serveur (là où se trouve `compose.yml`) :
+
+   ```sh
+   cd ~/musonic-server
+   docker compose exec musonic-server musonic-server user add <name> --admin
+   ```
+
+   </TabItem>
+   <TabItem label="Sans Docker">
+
+   ```sh
+   sudo -u <user> env MUSONIC_CONFIG=/etc/musonic-server/config.toml /opt/musonic-server/musonic-server user add <name> --admin
+   ```
+
+   `<user>` est l'utilisateur du service (la ligne `User=` du service).
+
+   </TabItem>
+   </Tabs>
+
+   `<name>` est le nom avec lequel vous vous connecterez, par exemple `alice`.
+
+2. **Tapez votre mot de passe, puis appuyez sur Entrée.**
+
+   La commande affiche `Password for <name>:`. Le mot de passe **s'affiche à l'écran pendant que vous le tapez** : vérifiez que personne ne regarde.
+
+3. **Vérifiez la réponse.**
+
+   Elle indique `created <name> (administrator)`. Votre compte existe.
+
+</Steps>
+
+`--admin` fait du compte un administrateur : il peut se connecter à la console. Sans `--admin`, la commande crée un utilisateur ordinaire. Les noms sont uniques, sans distinction de majuscules et minuscules.
+
+<Aside type="tip" title="Sans taper le mot de passe">
+La commande lit aussi le mot de passe dans la variable d'environnement `MUSONIC_PASSWORD`, pour les scripts. Tapé sur une ligne de commande, il resterait dans l'historique de votre terminal : préférez le taper quand il est demandé.
+</Aside>
+
+## 2. Ouvrir la console
+
+La console se trouve à **l'adresse du serveur lui-même**. L'adresse à ouvrir dépend de l'endroit où se trouve votre navigateur :
+
+| Votre navigateur est | Ouvrez |
+|---|---|
+| Sur la machine du serveur | `http://127.0.0.1:4533` |
+| Sur un autre ordinateur, HTTPS déjà en place | `https://music.example.com` (votre adresse) |
+| Sur un autre ordinateur, avant HTTPS | Par un tunnel SSH (ci-dessous) |
+
+**Le tunnel SSH.** Le serveur n'écoute que sur la machine elle-même (`127.0.0.1:4533`). Depuis votre ordinateur, cette commande relie le port 4533 de votre ordinateur à celui du serveur :
+
+```sh
+ssh -L 4533:127.0.0.1:4533 <account>@<server-address>
+```
+
+`<account>` est votre compte sur la machine du serveur, `<server-address>` son adresse (par exemple `192.168.1.20`). Laissez cette fenêtre ouverte, et ouvrez `http://localhost:4533` dans le navigateur de votre ordinateur.
+
+## 3. Se connecter
+
+<Steps>
+
+1. **Tapez votre nom et votre mot de passe, puis cliquez sur « Se connecter ».**
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/01-console-sign-in.fr.webp" alt="La page de connexion de la console : le titre Console Musonic, le texte Réservée aux administrateurs de ce serveur, les champs Nom et Mot de passe et le bouton Se connecter." />
+
+2. **Le tableau de bord s'ouvre.**
+
+   Le menu de gauche donne toutes les pages de la console ; la barre du haut montre l'état du serveur en direct.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/02-dashboard.fr.webp" alt="Le tableau de bord de la console juste après le premier démarrage : le menu de gauche (Tableau de bord, Comptes, Appareils et sécurité, Bibliothèque, Imports, Lecture, Données, Réglages et maintenance, Activité, Journal d'administration) et les cartes avec le nombre de titres, d'albums et de comptes." />
+
+</Steps>
+
+Seuls les administrateurs peuvent se connecter à la console. Un compte ordinaire voit « Vous n'êtes pas administrateur » : il écoute avec les applis, qui sont les mêmes pour tous les comptes.
+
+La console garde votre session dans ce navigateur. **Se déconnecter** est la flèche à côté de votre nom, en bas du menu.
+
+## 4. Vérifier le premier scan
+
+Le serveur commence **tout seul** à scanner votre dossier de musique dès son premier démarrage, puis le surveille : un fichier ajouté plus tard apparaît sans rien faire.
+
+<Steps>
+
+1. **Cliquez sur « Bibliothèque » dans le menu.**
+
+   Le haut de la page indique le nombre de titres et l'heure du dernier scan.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/03-library.fr.webp" alt="La page Bibliothèque de la console après le premier scan : le nombre de titres et l'heure du dernier scan en haut, les boutons Scan rapide et Scan complet, et la liste des titres avec titre, artiste, album, format et source." />
+
+2. **S'il manque des titres, cliquez sur « Scan rapide ».**
+
+   Un scan rapide ne lit que les dossiers modifiés. **Scan complet** relit tous les fichiers (après avoir modifié beaucoup de tags, par exemple).
+
+</Steps>
+
+« Aucun dossier de musique n'est réglé sur ce serveur » veut dire que le serveur n'a pas de dossier de musique : vérifiez la ligne du dossier de musique dans `compose.yml` (Docker) ou `music_dir` (sans Docker). Une liste vide après un scan vient en général d'un problème de droits : voir [Installer avec Docker](/fr/docs/install/docker/#utilisateur-et-droits). Comment le scan lit vos fichiers : [Analyse et mises à jour](/fr/docs/library/scan/) et [Organiser vos fichiers](/fr/docs/library/organize/).
+
+## 5. Installer le lecteur web sur votre serveur (facultatif)
+
+Votre serveur peut aussi servir le lecteur web, à l'adresse du serveur suivie de `/app/` (par exemple `https://music.example.com/app/`), déjà réglé pour s'y connecter. Vous pouvez aussi utiliser le [lecteur web de ce site](/fr/docs/apps/web/), avec l'adresse de votre serveur.
+
+<Steps>
+
+1. **Cliquez sur « Réglages et maintenance » dans le menu.**
+
+2. **Dans « Musonic Web sur ce serveur », cliquez sur « Installer ».**
+
+   Le serveur télécharge le lecteur web le plus récent depuis les versions GitHub de Musonic.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/04-webapp-install.fr.webp" alt="La page Réglages et maintenance de la console, la section Musonic Web sur ce serveur avec Pas installé, la dernière version sur GitHub et le bouton Installer." />
+
+3. **Cliquez sur « Ouvrir » pour l'essayer.**
+
+</Steps>
+
+Plus tard, la même section propose **Mettre à jour** quand un lecteur web plus récent existe. Rien ne s'installe tout seul.
+
+## 6. Inviter des personnes
+
+Chaque personne crée son propre compte à partir d'un lien : elle choisit son nom et son mot de passe, et vous ne voyez jamais le mot de passe.
+
+<Aside type="caution" title="Ouvrez d'abord la console à son adresse définitive">
+Le lien d'invitation commence par l'adresse affichée dans votre navigateur. Créé depuis `http://localhost:4533`, il ne marcherait que sur votre ordinateur. Créez les invitations une fois la console ouverte à l'adresse que les gens utiliseront (par exemple `https://music.example.com`) : voir [HTTPS](/fr/docs/install/https/).
+</Aside>
+
+<Steps>
+
+1. **Cliquez sur « Comptes » dans le menu, puis sur « Inviter quelqu'un ».**
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/05-accounts.fr.webp" alt="La page Comptes de la console : la liste avec le compte administrateur, le bouton Inviter quelqu'un en haut à droite, et la section Invitations en dessous avec Aucune invitation pour l'instant." />
+
+2. **Remplissez l'invitation, puis cliquez sur « Créer l'invitation ».**
+
+   **Note** : pour vous seulement, pour retrouver l'invitation dans la liste (« Invitation pour ma cousine Léa »). **Rôle** : Utilisateur, ou Administrateur. **Valable** : 1 h, 24 h, 7 jours (par défaut), 30 jours, ou une durée personnalisée.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/06-invite-form.fr.webp" alt="La fenêtre Inviter quelqu'un : le champ Note rempli avec Invitation pour ma cousine Léa, le choix Rôle sur Utilisateur, le choix Valable sur 7 j, et le bouton Créer l'invitation." />
+
+3. **Cliquez sur « Copier », et envoyez le lien à la personne.**
+
+   Par message, par e-mail, comme vous voulez. **Le lien n'est montré que maintenant** : si vous le perdez, annulez l'invitation et créez-en une nouvelle.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/07-invite-link.fr.webp" alt="La fenêtre Inviter quelqu'un après création : Lien à envoyer (montré une seule fois), avec le lien https://music.example.com/invite/… et le bouton Copier, et le bouton Terminé." />
+
+</Steps>
+
+**Ce que voit la personne.** Le lien ouvre une page de votre serveur, sans connexion :
+
+<Steps>
+
+1. **Elle choisit un nom et un mot de passe, puis clique sur « Créer mon compte ».**
+
+   Le mot de passe doit faire au moins 8 caractères. Un lien ne sert qu'une fois, jusqu'à la date écrite sous le bouton.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/08-invite-page.fr.webp" alt="La page d'invitation : le titre Bienvenue sur Musonic, le texte alice vous invite. Choisissez votre nom et votre mot de passe, les champs Nom, Mot de passe et Confirmer le mot de passe, et le bouton Créer mon compte." />
+
+2. **La page indique « Votre compte est prêt » et montre l'adresse du serveur.**
+
+   Elle se connecte à l'appli avec cette adresse, son nom et son mot de passe.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/09-invite-done.fr.webp" alt="La page Votre compte est prêt, avec l'adresse du serveur https://music.example.com dans un cadre et le texte et connectez-vous avec le nom et le mot de passe que vous venez de choisir." />
+
+</Steps>
+
+La liste des invitations de la page **Comptes** montre l'état de chacune : en attente, utilisée par qui, expirée ou annulée. Droits, quotas, liens de nouveau mot de passe et suspensions sont expliqués dans [Comptes, droits et appareils](/fr/docs/admin/accounts/).
+
+## 7. Se connecter aux applis
+
+Dans chaque appli, vous entrez trois choses : l'**adresse du serveur**, votre **nom** et votre **mot de passe**.
+
+- **Appli Android** : « URL du serveur », « Identifiant », « Mot de passe », puis « Se connecter ». Voir [Installer l'appli Android](/fr/docs/apps/android/).
+- **Lecteur web** (ordinateur, iPhone, iPad) : « Adresse du serveur », « Identifiant », « Mot de passe », puis « Se connecter ». Voir [Le lecteur web](/fr/docs/apps/web/) et [Sur iPhone et iPad](/fr/docs/apps/iphone/).
+- **Autres applis Subsonic** : les trois mêmes choses. Voir [Autres applis Subsonic](/fr/docs/apps/other-clients/).
+
+L'adresse est celle du serveur, avec `https://` (par exemple `https://music.example.com`). À la maison, l'appli Android accepte aussi une adresse `http://` de votre réseau local, comme `http://192.168.1.20:4533`. Les étapes en images : [Se connecter à un serveur](/fr/docs/apps/sign-in/).
+
+## Et ensuite
+
+- [Y accéder de l'extérieur (HTTPS)](/fr/docs/install/https/).
+- [La console](/fr/docs/admin/console/) : chaque page en détail.
+- [Sauvegarde et restauration](/fr/docs/admin/backups/).

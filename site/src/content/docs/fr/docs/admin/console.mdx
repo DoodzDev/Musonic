@@ -1,0 +1,243 @@
+---
+title: La console d'administration
+description: Comment ouvrir la console d'administration de Musonic Server, et à quoi servent chaque écran, chaque chiffre et chaque bouton.
+---
+
+import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+La console d'administration est la page web livrée avec Musonic Server. C'est là que vous invitez des personnes, réglez leurs droits, surveillez la bibliothèque et les imports, et entretenez le serveur. Cette page s'adresse à la personne qui gère le serveur.
+
+**Ce qu'il vous faut**
+
+- Musonic Server en marche (voir [Installer avec Docker](/fr/docs/install/docker/)).
+- Un compte **administrateur** sur ce serveur.
+- Un navigateur d'ordinateur. La console marche aussi sur téléphone, mais ses tableaux sont pensés pour un grand écran.
+
+## Ouvrir la console
+
+<Steps>
+
+1. **Ouvrez l'adresse de votre serveur dans un navigateur.**
+
+   C'est la même adresse que celle donnée aux applications, sans rien derrière : par exemple `https://music.example.com/`. Sur la machine du serveur elle-même, `http://127.0.0.1:4533/` fonctionne aussi.
+
+2. **Saisissez le nom et le mot de passe d'un compte administrateur, puis cliquez sur « Se connecter ».**
+
+   <img class="shot-wide" src="/assets/img/docs/admin-console/01-login.fr.webp" alt="La page de connexion de la Console Musonic : le logo Musonic, le titre Console Musonic, les champs Nom et Mot de passe et le bouton Se connecter" />
+
+3. **Vous voici sur le tableau de bord.** Le menu de gauche mène à tous les autres écrans.
+
+</Steps>
+
+### Bon à savoir
+
+- **La console est réservée aux administrateurs.** Un compte utilisateur qui s'y connecte voit la page « Vous n'êtes pas administrateur », avec un bouton pour ouvrir Musonic Web. On écoute dans les applications, jamais dans la console.
+- **La console et le lecteur sont séparés.** La console est à la racine de l'adresse du serveur (`/`). Musonic Web, une fois installé sur le serveur, est à `/app/`. Les applications et les clients Subsonic utilisent `/rest/…` et `/v1/…`. Une seule adresse sert donc tout.
+
+  <img class="diagram" src="/assets/img/docs/diagrams/server-paths.fr.svg" alt="Schéma : une seule adresse de serveur sert la console à /, Musonic Web à /app/, l'API Subsonic à /rest/ et l'API Musonic à /v1/" />
+
+- **Un administrateur écoute comme tout le monde.** Dans les applications, administrateurs et utilisateurs ont exactement les mêmes fonctions. Le rôle d'administrateur ajoute seulement la console.
+- **La connexion dure 30 jours**, prolongée à chaque utilisation de la console. Le bouton en bas à gauche, à côté de votre nom, vous déconnecte.
+- **Langue.** La console suit la langue de votre navigateur (français ou anglais). Vous pouvez la changer dans [Réglages et maintenance](#réglages-et-maintenance) ; le choix vaut pour ce navigateur seulement.
+- **Pas de console ?** Si l'adresse affiche une courte page « Musonic Server is running » au lieu de la connexion, les fichiers de la console manquent : voir [Dépannage](/fr/docs/admin/troubleshooting/#la-console-ne-souvre-pas).
+
+<Aside type="caution">
+Dans l'installation Docker d'exemple, le serveur écoute sur `127.0.0.1:4533` : seule la machine elle-même peut le joindre. Pour ouvrir la console depuis un autre ordinateur, placez devant le serveur un reverse proxy en HTTPS, ou utilisez un tunnel SSH pour un coup d'œil rapide :
+
+```sh
+ssh -L 4533:127.0.0.1:4533 <utilisateur>@<serveur>
+```
+
+`<utilisateur>@<serveur>` est ce que vous tapez d'habitude pour vous connecter à la machine en SSH. Tant que la commande tourne, ouvrez `http://localhost:4533/` sur votre ordinateur.
+</Aside>
+
+<Aside type="tip">
+Mot de passe administrateur oublié ? Il n'existe pas de commande de réinitialisation, mais il y a un moyen de revenir : voir [Mot de passe administrateur oublié](/fr/docs/admin/troubleshooting/#mot-de-passe-administrateur-oublié).
+</Aside>
+
+## Le cadre de chaque page
+
+<img class="shot-wide" src="/assets/img/docs/admin-console/02-dashboard.fr.webp" alt="Le tableau de bord de la console, avec le menu à gauche, la barre en direct en haut et les cartes du tableau de bord" />
+
+**Le menu, à gauche**, regroupe les écrans :
+
+| Groupe | Écrans |
+|---|---|
+| — | Tableau de bord |
+| Personnes | Comptes · Appareils et sécurité |
+| Musique | Bibliothèque · Imports · Lecture |
+| Serveur | Données · Réglages et maintenance · Activité · Journal d'administration |
+
+Sous le logo : l'adresse du serveur et sa version. En bas : votre nom et le bouton **Se déconnecter**.
+
+**La barre en direct, en haut**, se met à jour toute seule. Chaque chiffre est un lien vers l'écran qui en donne le détail :
+
+| Chiffre | Signification | Ouvre |
+|---|---|---|
+| En service depuis… | Temps écoulé depuis le démarrage. « Hors ligne » si le serveur ne répond pas. | — |
+| Réception / Envoi | Le trafic réseau en ce moment. | Données |
+| … à l'écoute | Le nombre de personnes qui écoutent en ce moment. | Activité |
+| … import(s) | Les imports en cours ou en attente. | Imports |
+| CPU / RAM | Processeur et mémoire utilisés par Musonic Server. | Données |
+| Alertes | Une étiquette rouge ou orange par problème (voir plus bas). | Tableau de bord |
+
+## Tableau de bord
+
+Le premier écran : tout va-t-il bien, et que se passe-t-il.
+
+- **Alertes.** « Tout va bien », ou « N points à regarder » avec une ligne par problème. Les alertes possibles :
+
+  | Alerte | Pourquoi | Que faire |
+  |---|---|---|
+  | Le fournisseur « … » n'est plus connecté | Ses identifiants ont expiré : les titres en ligne se lisent en extraits et les imports attendent. | Imports → Fournisseurs → **Changer l'…** |
+  | N imports abandonnés | Ils ont échoué après plusieurs essais. | Imports → **Relancer** |
+  | Disque presque plein | Moins de 10 % du disque est libre. | Libérez de la place ou déplacez la musique. |
+  | Pas de sauvegarde depuis plus de 2 jours | La sauvegarde quotidienne n'a pas eu lieu. | Regardez les journaux du serveur. |
+  | Musonic Server X est disponible | Une version plus récente est sur GitHub. | [Mettez à jour](/fr/docs/install/docker/) quand vous voulez. Rien ne s'installe tout seul. |
+
+- **Chiffres.** Titres (et combien ont été importés en tout), albums et artistes, heures de musique, comptes avec leur nombre d'appareils.
+- **Espace disque.** Le disque entier du serveur, puis ce qu'utilise Musonic : musique (bibliothèque et imports, avec la part des imports Musonic), base de données, sauvegardes (avec la date de la dernière) et caches.
+- **Trafic ce mois-ci.** Ce que le serveur a envoyé et reçu depuis le 1er. **Voir les données** ouvre l'écran Données.
+- **En ce moment.** Qui écoute quel titre, et depuis combien de temps.
+- **Activité récente.** Les derniers événements (connexions, comptes, imports, sauvegardes). **Voir plus** ouvre Activité.
+- **Versions.** La version installée de Musonic Server et de Musonic Web, la dernière sur GitHub, et la date de la dernière vérification.
+
+## Comptes
+
+<img class="shot-wide" src="/assets/img/docs/admin-console/03-accounts.fr.webp" alt="L'écran Comptes : la liste des comptes avec leur rôle, dernière connexion, appareils et imports du mois, puis les invitations et les réinitialisations de mot de passe en cours" />
+
+- **La liste des comptes**, avec un champ de recherche. Colonnes : compte, rôle (Administrateur ou Utilisateur), dernière connexion, nombre d'appareils, imports du mois (avec le quota mensuel s'il y en a un). Un compte suspendu porte la mention « Suspendu ». Cliquez sur un compte pour ouvrir sa fiche.
+- **Inviter quelqu'un** crée un lien d'invitation. La personne choisit elle-même son nom et son mot de passe : vous ne les voyez jamais.
+- **Invitations** : chaque invitation avec sa note, son rôle, sa date de création, son expiration et son état (En attente, Utilisée par…, Expirée, Annulée). Le lien d'une invitation n'est montré qu'une fois, à sa création. S'il est perdu, annulez l'invitation et créez-en une nouvelle.
+- **Réinitialisations de mot de passe en cours** : les liens de réinitialisation pas encore utilisés, avec leur expiration.
+
+### La fiche d'un compte
+
+<img class="shot-wide" src="/assets/img/docs/admin-console/05-account.fr.webp" alt="La fiche d'un compte utilisateur : rôle, interrupteur Compte actif, Déconnecter partout, interrupteurs des droits, quotas et liste des appareils" />
+
+- **Lien de réinitialisation** : crée un lien que la personne ouvre pour choisir un nouveau mot de passe.
+- **Supprimer** : supprime le compte après que vous avez tapé son nom. Absent sur votre propre compte.
+- **Rôle** : Utilisateur ou Administrateur.
+- **Compte actif** : coupé = suspendu. Le compte ne peut plus se connecter ; rien n'est supprimé.
+- **Déconnecter partout** : ferme ses sessions et révoque toutes ses clés d'appareils.
+- **Droits** et **Quotas** : ce qu'un utilisateur peut faire. Les administrateurs ne sont jamais limités.
+- **Appareils** : ses clés d'appareils, avec leur date de création et de dernière utilisation, et un bouton **Révoquer**.
+
+Tout cela est expliqué pas à pas dans [Comptes et rôles](/fr/docs/admin/accounts/).
+
+## Appareils et sécurité
+
+<img class="shot-wide" src="/assets/img/docs/admin-console/06-security.fr.webp" alt="L'écran Appareils et sécurité : le tableau des clés d'appareils de tous les comptes, les connexions récentes, les adresses bloquées et l'interrupteur Ancienne connexion Subsonic" />
+
+- **Appareils** : toutes les clés d'appareils de tous les comptes (nom de l'appareil, compte, date d'ajout, dernière utilisation). **Révoquer** déconnecte l'appareil tout de suite ; pour revenir, il devra se reconnecter avec le mot de passe. Les applications qui se connectent seulement par mot de passe (la plupart des clients Subsonic) n'ont pas de clé et n'apparaissent pas ici.
+- **Connexions récentes** : la dernière connexion réussie de chaque compte, application et adresse. **Tout le journal des connexions** ouvre Activité, filtrée sur les connexions.
+- **Adresses bloquées** : après 10 mots de passe faux différents pour un compte, une adresse est bloquée 15 minutes pour ce compte. **Débloquer** lève le blocage plus tôt.
+- **Ancienne connexion Subsonic** : le mot de passe, ou le jeton `t` + `s`, envoyé à chaque requête. Musonic Web, l'application Musonic actuelle et la plupart des clients Subsonic l'utilisent. La couper ne laisse que les clés d'appareils : ces applications ne pourront plus se connecter. Prend effet après un redémarrage.
+
+## Bibliothèque
+
+<img class="shot-wide" src="/assets/img/docs/admin-console/07-library.fr.webp" alt="L'écran Bibliothèque : le nombre de titres, le résultat du dernier scan, les boutons Scan rapide et Scan complet, les onglets Titres, Fichiers manquants, Doublons, Sans pochette et En ligne, et le tableau des titres" />
+
+- **Le dernier scan** : nombre de fichiers, titres ajoutés, fichiers manquants, erreurs et durée.
+- **Scan rapide** relit seulement les dossiers changés. **Scan complet** relit tous les fichiers.
+- **Scan automatique** : les changements du dossier de musique sont vus tout de suite ; un scan régulier rattrape le reste. Choix : « Aux changements seulement », toutes les heures, toutes les 6 heures ou une fois par jour. Appliqué après un redémarrage.
+- **Onglets** :
+  - **Titres** : toute la bibliothèque, avec une recherche sur le titre, l'artiste, l'album ou le chemin du fichier.
+  - **Fichiers manquants** : les titres dont le fichier n'est plus dans le dossier de musique (déplacé ou supprimé).
+  - **Doublons** : le même titre deux fois (deux fichiers, ou mêmes titre et artistes).
+  - **Sans pochette** : aucune image dans le fichier, dans son dossier ni en ligne.
+  - **En ligne** : les titres en ligne likés ou mis en playlist, qui n'ont pas encore de fichier.
+- **Écouter** joue un titre dans la console, pour vérifier. Cliquez sur un titre pour voir ses fichiers, son format, son ISRC, ses genres, ses écoutes et ses likes.
+
+## Imports
+
+<img class="shot-wide" src="/assets/img/docs/admin-console/08-imports.fr.webp" alt="L'écran Imports : les compteurs en attente, en cours, en échec et faits, le tableau des imports avec les boutons Réessayer et Retirer, les réglages des imports et la liste des fournisseurs" />
+
+Quand quelqu'un like un titre en ligne, like son album ou l'ajoute à une playlist, le serveur peut l'importer en fichier dans votre dossier de musique, grâce à un fournisseur audio que vous avez branché.
+
+- **Compteurs et tableau** : chaque import avec le titre, qui l'a demandé, son état (En attente, En cours, Fait, Abandonné) et le nombre d'essais. Un import raté est retenté après 5 minutes, 30 minutes, 2 heures et 12 heures, puis abandonné.
+  - **Relancer** en relance un ; **Relancer les N échecs** les relance tous.
+  - **Retirer** sort un titre de la file. Il reste liké ou dans ses playlists, en ligne.
+- **Réglages des imports** :
+  - **Import automatique** : activé ou non.
+  - **Qualité** : MP3 128, MP3 320 ou FLAC, le meilleur que permet le fournisseur jusqu'à ce niveau.
+  - **Rangement** : les fichiers importés vont dans `Musonic/Artiste de l'album/Album/NN - Titre`.
+  - **Catalogue en ligne** : recherche et pages hors de la bibliothèque, pour les comptes autorisés.
+  - **Extraits de 30 s** : ce qui se joue quand aucun fournisseur n'a le titre complet.
+- **Fournisseurs** : tous les fournisseurs audio du serveur, dans l'ordre où ils sont essayés, avec ce qu'ils donnent (« Titres complets et imports » ou « Extraits de 30 s, jamais importés ») et s'ils fonctionnent. Quand un fournisseur se connecte avec un jeton ou une clé, un bouton **Changer l'…** permet d'en coller un nouveau ; le serveur le vérifie avant de le garder. Il est enregistré dans la base de données, donc aussi dans ses sauvegardes.
+- **Podcasts** : le nombre d'émissions suivies et d'épisodes. **Ajouter la clé** enregistre une clé Podcast Index gratuite (recherche par personne, émissions absentes de l'annuaire iTunes).
+- **Import YouTube Music** : **Ajouter la clé** enregistre une clé YouTube Data API, nécessaire pour importer les playlists publiques YouTube et YouTube Music. Le serveur la teste avant de la garder.
+
+Sans fournisseur qui importe, seuls les fichiers de la bibliothèque se lisent en entier : voir [Fournisseurs audio](https://github.com/DoodzDev/Musonic/blob/main/apps/server/docs/PROVIDERS.md) (en anglais).
+
+## Lecture
+
+<img class="shot-wide" src="/assets/img/docs/admin-console/09-playback.fr.webp" alt="L'écran Lecture : ffmpeg présent avec sa version, le débit maximal par défaut, le format des titres réduits, et les caches des titres en ligne, des pochettes et des titres transcodés" />
+
+Ce que reçoivent les applications. Ces réglages valent pour tous les comptes ; la limite de débit propre à un compte, dans sa fiche, l'emporte si elle est plus basse.
+
+- **Streaming** : **ffmpeg** est présent (avec sa version) ou absent. Sans lui, les fichiers partent tels quels, sans réduire le débit.
+- **Débit maximal par défaut** : sans limite, 320, 256, 192, 128 ou 96 kbit/s. Au-delà, les titres sont réduits avec ffmpeg.
+- **Format des titres réduits** : MP3, Opus ou AAC, utilisé quand une application demande moins de débit sans choisir de format. Opus est le plus léger à qualité égale.
+- **Caches**, chacun avec un bouton **Vider** :
+  - **Titres en ligne** : gardés quelques minutes après l'écoute, partagés entre les auditeurs.
+  - **Pochettes** : redimensionnées pour les applications, recréées au besoin.
+  - **Titres transcodés** : gardés sur le disque pour que réécouter un titre réduit, ou avancer dedans, soit immédiat. Choisissez la taille (aucun, de 250 Mo à 5 Go, 500 Mo par défaut) ; les plus anciens partent en premier.
+
+## Données
+
+<img class="shot-wide" src="/assets/img/docs/admin-console/10-data.fr.webp" alt="L'écran Données : ce qui a été envoyé ce mois-ci face à la limite mensuelle, le graphique du trafic par heure, les graphiques du processeur, de la mémoire et du disque" />
+
+Le trafic réseau, le processeur, la mémoire et le disque, mesurés heure par heure depuis le premier démarrage du serveur.
+
+- **Envoyé ce mois-ci**, face à la **limite d'envoi par mois** de votre hébergeur si vous en indiquez une (**Limite**), avec une projection à la fin du mois. Le compteur repart le 1er.
+- **Périodes** : jour, semaine, mois ou année, avec des flèches pour reculer et **Maintenant** pour revenir. Chaque graphique peut s'afficher en **Tableau**.
+- **Trafic** : entrant et sortant, le total de la machine et la part de Musonic.
+- **Processeur (Musonic)** et **Mémoire (Musonic, maximum)**.
+- **Disque** : utilisé, musique, imports Musonic, système et autres services, libre, et une estimation de la date où le disque sera plein.
+
+<Aside type="note">
+Dans Docker, le conteneur ne voit que son propre trafic. Pour compter celui de toute la machine, le `compose.yml` d'exemple monte `/proc/1/net/dev` en lecture seule sur `/host/net/dev`. Sans ce montage, l'écran le signale et ne montre que le trafic de Musonic.
+</Aside>
+
+## Réglages et maintenance
+
+<img class="shot-wide" src="/assets/img/docs/admin-console/11-settings.fr.webp" alt="L'écran Réglages et maintenance : Musonic Web sur ce serveur, sauvegardes, maintenance, taille du journal d'activité, journaux du serveur et langue de la console" />
+
+- **Musonic Web sur ce serveur** : installe ou met à jour le lecteur web depuis la dernière version sur GitHub. Il est alors servi à `/app/` sur votre serveur, déjà réglé pour s'y connecter. **Ouvrir** l'ouvre.
+- **Sauvegardes** : une copie de la base de données chaque jour. **Jours gardés** (aucune, 3, 7, 14, 30 ou 90 ; 14 par défaut), **Sauvegarder maintenant**, et la liste des sauvegardes avec un bouton **Télécharger**. Voir [Sauvegardes](/fr/docs/admin/backups/).
+- **Maintenance** :
+  - **Redémarrer le serveur** : applique les réglages changés. La musique se coupe quelques secondes, puis les applications se reconnectent seules.
+  - **Vérifier les mises à jour** : cherche sur GitHub des versions plus récentes de Musonic Server et de Musonic Web. Rien ne s'installe tout seul.
+- **Journal d'activité** : sa taille, son nombre de lignes et sa plus vieille ligne, et sa **Taille maximale** (de 10 Mo à 5 Go, 50 Mo par défaut). Au-delà, les plus vieilles lignes partent.
+- **Journaux du serveur** : les 2 000 dernières lignes gardées en mémoire depuis le dernier démarrage, filtrées sur Tout, Avertissements ou Erreurs.
+- **Langue de la console** : français ou anglais, pour ce navigateur.
+
+<Aside type="note">
+La plupart des réglages prennent effet au prochain redémarrage. Quand l'un d'eux attend, une barre en haut de la page le signale, avec un bouton **Redémarrer maintenant**.
+</Aside>
+
+## Activité
+
+<img class="shot-wide" src="/assets/img/docs/admin-console/12-activity.fr.webp" alt="L'écran Activité : les filtres par type et par période, le champ de recherche et la liste des événements du jour" />
+
+Tout ce qui se passe sur le serveur, une ligne courte par événement : connexions (et refus), comptes, imports, sauvegardes, fournisseurs, redémarrages.
+
+- **Filtres** : Tout, Connexions, Comptes, Imports, Serveur, Problèmes ; et Toujours, Aujourd'hui, 7 jours ou 30 jours.
+- **Recherche** sur un nom, un titre, une adresse IP ou une application.
+- **En direct** : les nouvelles lignes arrivent toutes seules.
+
+## Journal d'administration
+
+La même liste, limitée à ce qu'ont fait les administrateurs, depuis la console ou une application : comptes créés ou supprimés, rôles, droits, réglages, sauvegardes téléchargées, caches vidés, redémarrages.
+
+<img class="shot-wide" src="/assets/img/docs/admin-console/13-admin-log.fr.webp" alt="L'écran Journal d'administration, qui liste les actions des administrateurs, chacune avec le nom de l'administrateur" />
+
+## Et ensuite
+
+<CardGrid>
+  <LinkCard title="Comptes et rôles" href="/fr/docs/admin/accounts/" description="Inviter, régler droits et quotas, réinitialiser un mot de passe." />
+  <LinkCard title="Configuration" href="/fr/docs/admin/configuration/" description="Chaque réglage, variable d'environnement et fichier." />
+  <LinkCard title="Sauvegardes" href="/fr/docs/admin/backups/" description="Quoi sauvegarder, et comment restaurer." />
+  <LinkCard title="Dépannage" href="/fr/docs/admin/troubleshooting/" description="Les problèmes courants et leurs solutions." />
+</CardGrid>

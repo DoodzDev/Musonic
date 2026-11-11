@@ -1,0 +1,150 @@
+---
+title: Use other Subsonic apps
+description: How to connect a third-party Subsonic or OpenSubsonic app to Musonic Server, which sign-in methods it accepts, how to make an API key, and which features and API endpoints are supported.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Musonic Server speaks the Subsonic API (version 1.16.1) and its OpenSubsonic extensions, so you can also listen with apps that were made for Navidrome or Subsonic. This page explains how to connect such an app, which sign-in methods the server accepts, and what those apps cannot see.
+
+**What you need**
+
+- A Subsonic or OpenSubsonic app on your phone or computer.
+- The **address** of your Musonic Server, your **username** and your **password**.
+
+## Which apps
+
+Any app that speaks Subsonic should work. Well-known ones include Symfonium and Substreamer on Android, and Feishin on computers. **Not all of them have been tested with Musonic Server**, and each app uses the API in its own way: if something does not work in one of them, please [open an issue](https://github.com/DoodzDev/Musonic/issues/new/choose) and say which app and which version.
+
+## Connect an app
+
+The words differ from one app to the next, but every Subsonic app asks for the same three things.
+
+<Steps>
+
+1. **In the app, add a new server.**
+
+   Look for "Add server", "Subsonic", "OpenSubsonic" or "Navidrome". If the app asks which kind of server, pick **Subsonic** or **OpenSubsonic** (Navidrome usually works too).
+
+2. **Type your server's address, without `/rest`.**
+
+   For example `https://music.example.com`. It is the same address as in the Musonic apps. The app adds `/rest/…` itself.
+
+3. **Type your username and your password.**
+
+4. **If the app offers a sign-in method, keep the default.**
+
+   Most apps use the token method, which works on a Musonic Server unless the administrator turned it off. See the table below if the app is refused.
+
+5. **Save, then let the app read your library.**
+
+   Some apps download the whole list of your songs, albums and artists first: on a large library, this can take a few minutes.
+
+</Steps>
+
+### Sign-in methods
+
+A Subsonic app proves who you are with each request. Musonic Server accepts three ways.
+
+| Method | What the app sends | Accepted |
+|---|---|---|
+| **Token** (`u` + `t` + `s`) | A hash of your password and a random salt. Most apps' default. | Yes, while **Legacy Subsonic sign-in** is on (`legacy_auth`, on by default). Otherwise the app gets error 41: "Token authentication is not available on this server: use apiKey". |
+| **Password** (`u` + `p`) | Your password, plain or as `enc:` + hex. Some apps call this "legacy" or "plain text password". | Always. Use it only over `https://`: the password travels with every request. |
+| **API key** (`apiKey`) | A key made for this app only (OpenSubsonic). | Always. The best choice when the app supports it: no password is stored in the app, and the key can be revoked alone. |
+
+**Details.**
+
+- With `apiKey`, the app must not also send `u`, `p`, `t` or `s`: the server answers error 43 (conflicting authentication).
+- After 10 different wrong passwords from the same address, the server blocks that address for that account for 15 minutes.
+- The name the app gives itself (the `c` parameter) shows in the console, under **Devices and security** → **Recent sign-ins**, so the administrator can see which app signed in.
+- Token sign-in needs a copy of your password that the server can read back, kept encrypted with a key outside the database (`MUSONIC_SECRET_KEY`, or `secret.key` in the data folder). It exists only for passwords set while `legacy_auth` was on: if the administrator turns it on later, change your password once so that token sign-in works for your account.
+
+### Make an API key for an app
+
+The Musonic apps make their own key when you sign in. For a third-party app that accepts an API key, there is no button yet: you make one with two commands, from any computer with `curl`.
+
+<Steps>
+
+1. **Sign in to get a temporary session.**
+
+   ```sh
+   curl -s -X POST https://music.example.com/v1/auth/login \
+     -H 'Content-Type: application/json' \
+     -d '{"username": "<username>", "password": "<password>"}'
+   ```
+
+   Replace `https://music.example.com` with your server's address, and `<username>` and `<password>` with yours. The answer starts with `{"token":"…"`: copy the value of `token`.
+
+2. **Ask for a key named after the app.**
+
+   ```sh
+   curl -s -X POST https://music.example.com/v1/me/api-keys \
+     -H 'Authorization: Bearer <token>' \
+     -H 'Content-Type: application/json' \
+     -d '{"name": "<app name>"}'
+   ```
+
+   `<token>` is the value from step 1, `<app name>` a name you will recognise (for example `Symfonium on my tablet`). The answer holds `"key":"msk_…"`: that is the API key. **It is shown only once**: paste it in the app's API key field now.
+
+3. **End the temporary session.**
+
+   ```sh
+   curl -s -X POST https://music.example.com/v1/auth/logout \
+     -H 'Authorization: Bearer <token>'
+   ```
+
+</Steps>
+
+The key appears in the console under **Devices and security**, with its name, the date it was added and when it was last used. Revoking it there signs that app out at once, and only that app. You can list your own keys with `GET /v1/me/api-keys` and revoke one with `DELETE /v1/me/api-keys/<id>`, using the same `Authorization: Bearer` header.
+
+<Aside type="caution">
+The session token and the API key both open your account. Do not paste them in a chat, an issue or a screenshot. If one leaks, revoke the key in the console, or change your password (that signs out every session).
+</Aside>
+
+## What third-party apps do not see
+
+Third-party apps use the standard Subsonic API. What Musonic adds on top goes through its own API (`/v1`) or Musonic-only routes, which those apps do not know.
+
+| Musonic feature | In a third-party app |
+|---|---|
+| **Your library, playlists, likes, ratings, plays** | Yes: they are the same data, shared with the Musonic apps. |
+| **Online catalogue** | Partly. When the administrator turned it on for your account, search results can include songs, albums and artists from the online catalogue after your library's. Whether they play in full depends on the server's settings. |
+| **Magic Mixes, the Musonic Home** | No: they come from Musonic-only routes. |
+| **Playlist imports** (Spotify, Deezer, YouTube Music) | No: use Musonic Web or the Android app. The imported playlists then show in every app. |
+| **Musonic Connect** and real-time sync between devices | No. A third-party app can still save and restore its queue with `savePlayQueue` / `getPlayQueue`. |
+| **Podcasts** | Partly: the standard podcast routes work (follow by feed address, list shows and episodes, newest episodes), but the podcast directory search is Musonic-only, and some apps hide podcasts because the account's `podcastRole` is reported as `false`. |
+| **Plays sent to Last.fm or ListenBrainz** | No: plays (`scrobble`) are counted on your server only. |
+
+## Supported API
+
+The server answers at `/rest/<endpoint>` (with or without `.view`), in XML by default, JSON with `f=json`, JSONP with `f=jsonp` and `callback`. Parameters can be sent in the address or as a form (OpenSubsonic `formPost`). An endpoint not in this table answers error 0, "… is not implemented yet".
+
+| Group | Endpoints | Supported |
+|---|---|---|
+| **System** | `ping`, `getLicense`, `getOpenSubsonicExtensions`, `tokenInfo` | Yes |
+| **Users** | `getUser`, `getUsers`, `createUser`, `deleteUser`, `changePassword` | Yes (`updateUser`: no). Managing other accounts needs an administrator. |
+| **Browsing** | `getMusicFolders`, `getIndexes`, `getMusicDirectory`, `getArtists`, `getArtist`, `getAlbum`, `getSong`, `getGenres`, `getArtistInfo`, `getArtistInfo2`, `getAlbumInfo`, `getAlbumInfo2`, `getSimilarSongs`, `getSimilarSongs2`, `getTopSongs` | Yes |
+| **Lists** | `getAlbumList`, `getAlbumList2`, `getRandomSongs`, `getSongsByGenre`, `getStarred`, `getStarred2`, `getNowPlaying` | Yes |
+| **Search** | `search2`, `search3` | Yes (`search`, the oldest one: no). An empty query lists everything, for apps that sync the whole library. |
+| **Playlists** | `getPlaylists`, `getPlaylist`, `createPlaylist`, `updatePlaylist`, `deletePlaylist` | Yes |
+| **Likes, ratings, plays** | `star`, `unstar`, `setRating`, `scrobble` | Yes. Plays stay on the server. |
+| **Streaming** | `stream`, `download` | Yes, with seeking (HTTP ranges). `stream` takes `maxBitRate`, `format` (`mp3`, `opus`, `aac`, `ogg`, or `raw` for the original) and `timeOffset`. The account's or the server's bit rate limit applies. `hls`: no. |
+| **Cover art** | `getCoverArt` | Yes, with `size` |
+| **Lyrics** | `getLyrics`, `getLyricsBySongId` | Yes |
+| **Podcasts** | `getPodcasts`, `getNewestPodcasts`, `getPodcastEpisode`, `createPodcastChannel`, `deletePodcastChannel`, `refreshPodcasts` | Yes. `downloadPodcastEpisode`, `deletePodcastEpisode`: no. |
+| **Play queue** | `savePlayQueue`, `getPlayQueue`, `savePlayQueueByIndex`, `getPlayQueueByIndex` | Yes |
+| **Bookmarks** | `getBookmarks`, `createBookmark`, `deleteBookmark` | No |
+| **Library scan** | `getScanStatus`, `startScan` | Yes (`startScan`: administrators only) |
+| **Internet radio** | `getInternetRadioStations` | Answers an empty list; adding stations: no |
+| **Shares** | `getShares`, `createShare`, `updateShare`, `deleteShare` | No (`shareRole` is `false`) |
+| **Jukebox** | `jukeboxControl` | No (`jukeboxRole` is `false`) |
+| **Chat, videos, avatars** | `getChatMessages`, `getVideos`, `getAvatar`… | No |
+
+OpenSubsonic extensions announced by `getOpenSubsonicExtensions` (it answers without signing in): `apiKeyAuthentication`, `formPost`, `indexBasedQueue`, and `musonicServer`, which tells the Musonic apps they can use the server's extra features. Every answer also carries `"type": "musonic"`, `"serverVersion"` and `"openSubsonic": true`.
+
+## Next steps
+
+- [The web player](/docs/apps/web/)
+- [Install the Android app](/docs/apps/android/)
+- [Coming from Navidrome](/docs/migration/navidrome/)
+- [API reference](/docs/reference/api/)

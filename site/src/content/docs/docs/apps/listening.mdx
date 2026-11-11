@@ -1,0 +1,441 @@
+---
+title: Listen to music
+description: How the Musonic Android app and web player work day to day — Home, search, library, the player, the queue, lyrics, likes, crossfade, Magic Mixes, the sleep timer and Musonic Connect.
+---
+
+import { Steps, Aside, Tabs, TabItem, Badge } from '@astrojs/starlight/components';
+
+This page explains everything you do while listening, in the **Android app** and in the **web player** (which is also what you use on an iPhone). Where the two differ, the page shows both side by side.
+
+**What you need**
+
+- The app or the web player, signed in to your server (see [Sign in to a server](/docs/apps/sign-in/)).
+- A few songs in your library. Home fills up as you listen and like songs.
+
+<Aside type="note" title="Musonic Server or another server">
+Everything on this page works with Navidrome and other Subsonic servers, except what is marked **With Musonic Server**: the online catalogue, imports of online songs, podcasts and Musonic Connect.
+</Aside>
+
+## Find your way around
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+The app has three tabs at the bottom: **Home**, **Search** and **Library**. The song playing sits in a small bar just above them, the **mini player**. At the top of every tab, your profile initial opens your profile (offline mode, storage, About, Log out) and the gear next to it opens **Settings**.
+
+<img class="shot-phone" src="/assets/img/docs/apps-listening/01-tabs.en.webp" alt="The Musonic app on Home, with the mini player above the three tabs Home, Search and Library, and the profile initial and the gear at the top." />
+
+</TabItem>
+<TabItem label="Web">
+
+A side panel on the left holds **Home**, **Search**, **Library** and your playlists. The **player bar** runs along the bottom. Your profile, at the top right, opens **Settings**, **About** and **Log out**.
+
+<img class="shot-wide" src="/assets/img/docs/apps-listening/02-web-layout.en.webp" alt="Musonic Web on Home: the side panel with Home, Search, Library and playlists on the left, the player bar at the bottom, the profile at the top right." />
+
+</TabItem>
+</Tabs>
+
+## Home
+
+Home is made for you from your own library and what you listen to. It changes **every day** (the choice of the day is the same all day long, then changes the next day) and it is the same on your phone and in the browser. An album never appears twice on the same page.
+
+The chips at the top (**All**, **Playlists**, **Albums**, **Artists**) show only one kind of card.
+
+<img class="shot-phone" src="/assets/img/docs/apps-listening/03-home.en.webp" alt="Home in the app: the date, the title Home, the chips All, Playlists, Albums, Artists, the quick access grid and the Recently played shelf." />
+
+| Section | What it shows | How it is chosen |
+|---|---|---|
+| **Quick access** (the tiles at the top) | Liked Songs, your playlists, recent albums | Liked Songs first (once you have liked a song), then your three most recently changed playlists, then the albums you played lately. 6 tiles in the app, up to 8 on the web. |
+| **Recently played** | Albums (in the app: also the songs, playlists and mixes you started) | What you played last. The app first lists what you really played on this phone, then the server's recent albums. |
+| **Your favourite artists** | Artists | A score per artist: the plays of your most played albums, plus 1 point per liked song and 5 points if you liked the artist. |
+| **More like …** | Albums | One of your five favourite artists is picked for the day; you get the latest album of up to four artists similar to them. |
+| **Albums with songs you like** | Albums | Albums holding your liked songs, the ones with the most likes first (albums you liked as a whole are left out). |
+| **Because you liked "…"** | Songs | One of your liked songs is picked for the day; you get songs similar to it. |
+| **Magic Mixes** | Mixes | See [Magic Mixes](#magic-mixes). |
+| **Rediscover** | Albums | Albums among your most played that you have not played for more than 60 days. |
+| **New in your library** | Albums | The albums most recently added to your server. |
+| **Random** | Albums | A random pick. It always closes the page. |
+
+After **Your favourite artists**, the shelves from **More like …** to **New in your library** are put in a new order every day; a section with very few cards goes further down, and an empty one is not shown.
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+The app adds two online sections after **Recently played** <Badge text="With Musonic Server" variant="note" />:
+
+- **For you**: albums found in the online catalogue from the artists you played lately, marked **Online**.
+- **Artists to discover**: artists similar to yours that you do not have yet.
+
+They are loaded once per session and never offline. The last Home is kept on the phone, so it still shows without a connection ("Offline: last loaded home"). Pull the page down to refresh it. Recent cards have a play button: it plays at once, while touching the card opens it. **Settings → Advanced options → Date on Home** shows or hides the date above the title.
+
+</TabItem>
+<TabItem label="Web">
+
+The web Home has the same sections, without the online ones. If your library is still empty, it says so: play a few songs and it fills up.
+
+<img class="shot-wide" src="/assets/img/docs/apps-listening/04-web-home.en.webp" alt="Musonic Web Home with Quick access, Recently played, Your favourite artists and a Magic Mixes shelf." />
+
+</TabItem>
+</Tabs>
+
+### Magic Mixes
+
+A Magic Mix is a playlist made for you each day around a **music genre**.
+
+1. Musonic counts the genres of the albums you play most, the albums you played lately, your liked albums and your liked songs.
+2. It keeps your top genres and picks some of them for the day: **4 mixes in the app, 8 on the web**.
+3. For each genre it draws up to **30 random songs of that genre from your library**. A genre with fewer than 5 songs gets no mix.
+
+The genre comes from your files' tags: if your files have no genre, there are no mixes. Open a mix like a playlist: its cover is a mosaic of up to four album covers, and **Play** or **Shuffle** starts it.
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+When you open a mix in the app, about **3 songs in 10 are discoveries** — songs from the online catalogue and songs similar to yours, marked **Online** and spread through the list (never first). Opened again from **Recently played**, a mix of that genre is drawn afresh.
+
+</TabItem>
+<TabItem label="Web">
+
+On the web, a mix holds only songs from your library ("Your songs, by genre"). Magic Mixes also show on the Search page when the field is empty.
+
+</TabItem>
+</Tabs>
+
+## Search
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+<Steps>
+
+1. **Tap the Search tab, then the search field.**
+
+   With an empty field you see the genres of your library (each opens all its songs) and suggestions based on your liked songs and recent listens. Once the field is open, your recent searches show; **Clear** erases them.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/05-search-home.en.webp" alt="The Search tab with an empty field, the genres of the library and suggestion shelves below." />
+
+2. **Type what you are looking for.**
+
+   Results come as you type: the **Top result**, then artists, albums and songs.
+
+3. **Choose a filter: All, Online or Podcasts.**
+
+   **All** mixes your library and the online catalogue. **Online** keeps only the online catalogue (items marked **Online**). **Podcasts** searches shows and episodes (see [Podcasts](/docs/apps/podcasts/)).
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/06-search-results.en.webp" alt="Search results for an artist with the All, Online and Podcasts filters, the top result, albums and songs, one of them marked Online." />
+
+4. **Tap a song to play it, or an album or artist to open it.**
+
+   A song found by search plays alone, then **autoplay** carries on with similar songs. Press and hold a song for its menu.
+
+</Steps>
+
+</TabItem>
+<TabItem label="Web">
+
+<Steps>
+
+1. **Click Search in the side panel.**
+
+   With an empty field you see the **Magic Mixes** and **Browse**: Recently added, Most played, Random and one tile per decade (1970s to 2020s).
+
+2. **Type in the field "What do you want to listen to?".**
+
+3. **Choose a filter: All, Songs, Albums, Artists or Podcasts.**
+
+   **All** shows a few of each kind with **Show all**. With one filter, the list loads more results by itself as you scroll down. Paste the address of an RSS feed to open a podcast (see [Podcasts](/docs/apps/podcasts/)).
+
+   <img class="shot-wide" src="/assets/img/docs/apps-listening/07-web-search.en.webp" alt="Musonic Web search results with the filters All, Songs, Albums, Artists, Podcasts, a list of songs and a shelf of albums." />
+
+4. **Double-click a song to play it, or click an album or an artist to open it.**
+
+   A song found by search plays alone, then autoplay follows. Right-click a row (or its "⋯") for its menu.
+
+</Steps>
+
+</TabItem>
+</Tabs>
+
+<Aside type="note" title="The online catalogue">
+**With Musonic Server**, if the administrator left the online catalogue on and your account is allowed to use it, search also shows artists, albums and songs that are not in your library. They come from Deezer's public catalogue (names, covers, 30-second previews). When your server can import songs, an online song you like or add to a playlist is added to your library; otherwise it stays online and you hear its preview. See [Online catalogue and imports](/docs/library/online-catalogue/).
+</Aside>
+
+## Library
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+The **Library** tab holds two tiles, **Liked Songs** and **My Music** (every song of your library, sortable by title, artist or date added, with a letter index), then the tabs **Playlists**, **Albums**, **Artists**, **Podcasts** and **Downloaded**.
+
+- **Sort by**: Recent, Recently added, Alphabetical or Custom.
+- The grid / list button changes the view; the magnifier searches the library.
+- Press and hold a playlist to pin it at the top, rename it, download it or delete it.
+- The **+** button creates a playlist (or imports one, see [Import your playlists](/docs/apps/import-playlists/)).
+
+<img class="shot-phone" src="/assets/img/docs/apps-listening/08-library.en.webp" alt="The Library tab with the Liked Songs and My Music tiles, the tabs Playlists, Albums, Artists, Podcasts, Downloaded, and a list of playlists." />
+
+</TabItem>
+<TabItem label="Web">
+
+**Library** has the tabs **Playlists** (with Liked Songs and **My Music**, your whole library), **Albums**, **Artists** and, with Musonic Server, **Podcasts**. **Play by genre** opens a genre's songs. **New playlist** creates one; **Import** (with Musonic Server) brings one from another service. The side panel lists your playlists, the most recently played first, with a play button on hover.
+
+<img class="shot-wide" src="/assets/img/docs/apps-listening/09-web-library.en.webp" alt="The web Library page on the Playlists tab, with the Import and New playlist buttons at the top right." />
+
+</TabItem>
+</Tabs>
+
+## The player
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+**The mini player** shows the cover, title, artist, Previous, Play / Pause and Next.
+
+- **Tap the cover or the title, or swipe up**: the full player opens.
+- **Swipe left or right**: next or previous song.
+
+**The full player** shows the cover, the title with **+** (add to a playlist) and **♥** (like), the progress bar with the real audio quality, the controls, and a bottom row: **Lyrics · Shuffle · Repeat · Queue**.
+
+- **Drag down** from the top or the cover to close it.
+- **Swipe the cover** left or right to change song.
+- The **"⋯"** button opens the song's menu: like, add to a playlist, add to queue, download, go to the album or the artist, and the **Sleep timer**.
+
+<img class="shot-phone" src="/assets/img/docs/apps-listening/10-full-player.en.webp" alt="The app's full player: blurred cover background, large cover, title with + and heart, progress bar, controls and the bottom row Lyrics, Shuffle, Repeat, Queue." />
+
+The phone can be turned: in landscape, the cover takes one column and the rest the other (side set in **Settings → Advanced options**).
+
+</TabItem>
+<TabItem label="Web">
+
+**The player bar** shows the song, shuffle, Previous, Play / Pause, Next, repeat, the progress, the volume, and buttons for the queue, the lyrics, the sleep timer, the floating mini player and the full player.
+
+- **Click the cover** in the bar: the full-screen player opens (blurred cover, large cover, lyrics beside it). **Escape** or the chevron closes it; its own button switches the browser to full screen.
+- **The floating mini player** (Brave, Chrome, Edge) is a small window that stays on top of everything, even when the tab is hidden. Its layout follows its size.
+- **Keyboard**: **Space** plays or pauses, **Ctrl + →** next song, **Ctrl + ←** previous. Media keys and your computer's media controls work too.
+
+<img class="shot-wide" src="/assets/img/docs/apps-listening/11-web-full-player.en.webp" alt="Musonic Web's full-screen player with the large cover on the left and synced lyrics on the right, the current line highlighted." />
+
+</TabItem>
+</Tabs>
+
+**Previous** goes back to the previous song during the first 3 seconds; after that, it restarts the song. In the app, **Settings → Advanced options → Always go back to the previous track** makes it always go back. Swiping the mini player always changes song.
+
+### Shuffle and repeat
+
+The **shuffle** button has three positions: **off**, **on**, and **Magic**.
+
+- **On**: the songs to come are mixed. When you tap a song in a list, that song plays first and the rest is shuffled.
+- **Magic**: your songs in a mixed order, with **one suggestion after every two songs** — close songs from the same artists, marked **Magic**. In the app, Magic needs a connection; **Settings → Advanced options → Magic shuffle** removes this position so the button has only two.
+- **Off again**: the list goes back to its own order, after the last song of it that played. Suggestions to come are removed.
+
+The **repeat** button: **off**, **all** (the list starts again at the end, reshuffled if shuffle is on), **one** (the song repeats; Next still moves on).
+
+**Autoplay**: when nothing is left after the song playing, similar songs follow. It never runs in "repeat all". In the app, you can turn it off in **Settings → Playback → Autoplay** or with the **Autoplay** tile of the queue; on the web it is always on.
+
+## The queue
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+<Steps>
+
+1. **In the full player, tap "Queue".**
+
+   At the top: the song playing (tap it to go back to the player) and three tiles, **Shuffle**, **Repeat**, **Autoplay**. Below: **Up next**, then the autoplay songs, dimmed.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/12-queue.en.webp" alt="The queue sheet: the current song, the Shuffle, Repeat and Autoplay tiles, the Up next list with handles, and dimmed autoplay songs at the bottom." />
+
+2. **To move a song, drag it by its handle.**
+
+   The change applies at once.
+
+3. **To remove or play songs next, tap "Edit", select them, then tap "Play next" or "Remove".**
+
+   **Clear all** removes everything to come. A message offers **Undo** for a few seconds.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/13-queue-edit.en.webp" alt="The queue in Edit mode with two songs selected and the bar Play next, Remove (2), Clear all at the bottom." />
+
+</Steps>
+
+To add a song from anywhere, open its menu ("⋯" or press and hold) and tap **Add to queue**.
+
+</TabItem>
+<TabItem label="Web">
+
+<Steps>
+
+1. **Click the queue button in the player bar.**
+
+   The queue opens on the right, in sections: **Now playing**, **Added by you**, **Next up**, **Autoplay**.
+
+   <img class="shot-wide" src="/assets/img/docs/apps-listening/14-web-queue.en.webp" alt="The web queue panel on the right with the sections Now playing, Added by you, Next up and Autoplay." />
+
+2. **Drag a song to move it; click it to play it.**
+
+   Songs before it are skipped.
+
+3. **To add a song, right-click it (or "⋯") and choose "Play next" or "Add to queue".**
+
+   **Clear all** empties what comes next (there is no undo on the web).
+
+</Steps>
+
+</TabItem>
+</Tabs>
+
+**How the queue is organised** (the same rules in both):
+
+| Zone | What it holds |
+|---|---|
+| Now playing | The song playing. Clearing the queue never removes it. |
+| **Added by you** | Songs you added. **Play next** puts a song at the top of this zone, **Add to queue** at its end. They play before the rest, are never shuffled, and **stay when you start another album or playlist**. |
+| **Next up** | The rest of the album, playlist or mix you started, possibly with **Magic** suggestions. |
+| **Autoplay** | Similar songs, played after everything else. |
+
+A song dropped among "Added by you" becomes one of them. The same song can be in the queue twice.
+
+**After a restart**:
+
+- **Android**: the queue and the position come back when you open the app again (for the same account).
+- **Web** <Badge text="With Musonic Server" variant="note" />: your last listening comes back when the page opens, paused where you stopped, whether it was on this device or another one. With another server, the queue starts empty.
+
+## Lyrics
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+**In the full player, tap "Lyrics".** The cover shrinks to a small row and the lyrics take the space. Synced lyrics follow the song (the current line in white); **tap a line to jump to it**. If you scroll, following resumes after 3 seconds.
+
+<img class="shot-phone" src="/assets/img/docs/apps-listening/15-lyrics.en.webp" alt="Synced lyrics inside the app's full player, the current line in white, past lines faint." />
+
+</TabItem>
+<TabItem label="Web">
+
+**Click the lyrics button in the player bar**: they open in the side panel. They also show beside the cover in the full-screen player. **Click a line to jump to it.**
+
+</TabItem>
+</Tabs>
+
+**Where the lyrics come from**, in this order:
+
+1. **Your server.** Musonic Server reads a `.lrc` file (synced) or `.txt` file with the same name as the song, next to it, then the lyrics in the file's tags. A `.lrc` wins over a `.txt`, and a file next to the song wins over the tags. Other servers give the lyrics they know.
+2. **LRCLIB** (lrclib.net), a free public lyrics database, when your server has none. Only the artist, the title and the length of the song are sent. Synced lyrics are preferred, plain text otherwise, and the length must match within 3 seconds.
+
+Plain lyrics are shown whole, without following. When nothing is found, the app says "No lyrics available" and the web "No lyrics for this song.". For a podcast episode, its transcript is shown instead, when the show publishes one.
+
+## Likes
+
+Tap the **♥** (in the player, or beside a song in a list) to add a song to **Liked Songs**; tap it again to remove it. Your likes feed Home (favourite artists, "Because you liked", Magic Mixes) and show on all your devices.
+
+In the app, **Liked Songs** also has **Recommended tracks** (songs close to the ones you love) and **Download all**.
+
+<Aside type="note">
+Liking an online song (with Musonic Server) adds it to your library when your server can import songs: the app says "Sending to your server…", the web "Adding the song to your library…". This can take a few seconds.
+</Aside>
+
+## Crossfade
+
+The crossfade makes the next song fade in over the end of the current one. It is **off by default** and goes from **0 to 12 seconds** (0 = off).
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+<Steps>
+
+1. **Tap the gear at the top of any tab.**
+2. **Under "Playback", move the "Crossfade" slider.**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/16-crossfade.en.webp" alt="The app's Settings, Playback section, with Autoplay on and the Crossfade slider set to 6 s." />
+
+</Steps>
+
+The fade is done by Android's own player, so it also works with the screen off; the song shown (app, notification, car) changes when the old one really ends. If you turn off **Settings → Advanced options → Android audio player**, the fade only happens while Musonic is on screen. It uses a little more battery.
+
+</TabItem>
+<TabItem label="Web">
+
+<Steps>
+
+1. **Click your profile at the top right, then "Settings".**
+2. **Under "Playback", move the "Crossfade between tracks" slider.**
+
+   <img class="shot-wide" src="/assets/img/docs/apps-listening/17-web-crossfade.en.webp" alt="The web Settings window with the Crossfade between tracks slider set to 6 s." />
+
+</Steps>
+
+The setting is remembered by this browser.
+
+</TabItem>
+</Tabs>
+
+**There is never a crossfade**:
+
+- when you skip a song yourself (Next, Previous, a swipe, a tap on another song);
+- with repeat one;
+- when the sleep timer is set to the end of the song;
+- at the end of the queue (nothing comes after);
+- on a song shorter than twice the fade;
+- between podcast episodes.
+
+## Sleep timer
+
+The sleep timer pauses the music after a time you choose, or at the end of the song playing.
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+<Steps>
+
+1. **In the full player, tap "⋯", then "Sleep timer".**
+2. **Tap a preset (15, 30, 45, 60 or 90 minutes), or turn the wheels and tap "Stop in …".**
+
+   **End of track** pauses at the end of the song. **Turn off timer** cancels it.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/18-sleep-timer.en.webp" alt="The Sleep timer sheet with hours, minutes and seconds wheels, the presets 15, 30, 45, 60, 90, and the End of track button." />
+
+</Steps>
+
+It works with the screen off. Closing the app cancels it; the menu shows the time left ("Sleep timer · 12 min").
+
+</TabItem>
+<TabItem label="Web">
+
+**Click the sleep timer button** in the player bar (or the full player), pick a duration (hours, minutes, seconds) or **End of track**. Reloading the page cancels it, and in a tab hidden for a while the browser may stop the music up to a minute late.
+
+</TabItem>
+</Tabs>
+
+## Musonic Connect
+
+<Badge text="beta" variant="caution" /> **With Musonic Server.** Musonic Connect shows what plays on your other devices (your phone, each browser tab with Musonic Web), lets you control them, and moves the music from one to another at the same second.
+
+<Steps>
+
+1. **Open Musonic on two devices with the same account.**
+
+2. **On one of them, tap or click "Devices".**
+
+   In the app the button is in the full player; on the web, in the player bar. The list "Listen on" shows your devices and what each one plays.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/19-connect-devices.en.webp" alt="The Listen on sheet in the app, listing This phone and a browser named Firefox on PC, with the Synced playback switch." />
+
+3. **Tap the device that should play.**
+
+   The music moves there, at the same point in the song. While another device plays, your player becomes its remote: its song, its position and its buttons ("Playing on …"). **Listen here** brings the music back.
+
+</Steps>
+
+**Synced playback** (a switch in the same window, and in **Settings → Musonic Connect**): when on, only one device plays at a time and starting the music on one pauses the others. When off, each device plays on its own. On the web, the settings also let you name the device.
+
+When the app opens, it takes up your last listening if it is newer than its own, paused where you stopped.
+
+<Aside type="note">
+As for every account on the server, the person who runs it can see the song playing and the device used, to help you if something goes wrong. With another server than Musonic Server, the Devices button does not appear.
+</Aside>
+
+## Next steps
+
+- [Import your playlists](/docs/apps/import-playlists/)
+- [Podcasts](/docs/apps/podcasts/)
+- [Offline and data usage](/docs/apps/offline/)
+- [Android Auto](/docs/apps/android-auto/)

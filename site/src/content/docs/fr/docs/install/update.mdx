@@ -1,0 +1,218 @@
+---
+title: Mettre à jour le serveur
+description: Comment mettre à jour Musonic Server avec Docker ou en programme unique, ce qui arrive à la base de données, les sauvegardes faites pour vous, comment revenir à une version précédente, et comment les applis signalent leurs propres mises à jour.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Cette page met Musonic Server à jour vers une version plus récente, et explique ce qui arrive à vos données et comment revenir en arrière au besoin. Elle s'adresse à la personne qui fait tourner le serveur. Les applis se mettent à jour à part, voir [la fin de cette page](#mettre-à-jour-les-applis).
+
+## Savoir qu'une nouvelle version est sortie
+
+Le serveur cherche les nouvelles versions sur GitHub toutes les 6 heures (réglage `update_check`, variable d'environnement `MUSONIC_UPDATE_CHECK`, activé par défaut). Il **n'installe jamais rien tout seul** : il vous prévient.
+
+- La console affiche une alerte **« Musonic Server X est disponible »** dans la barre du haut, avec **Voir la version**.
+- La carte **Versions** du **Tableau de bord** montre la version installée, la dernière, et **Mise à jour disponible** ou **À jour**. La même carte couvre le lecteur web installé sur le serveur.
+
+<img class="shot-wide" src="/assets/img/docs/install-update/01-update-alert.fr.webp" alt="Le tableau de bord de la console avec l'alerte Musonic Server X est disponible dans la barre du haut, et la carte Versions qui indique la version installée, la dernière et Mise à jour disponible." />
+
+Lisez les changements avant de mettre à jour : les notes de version sur la [page des versions](https://github.com/DoodzDev/Musonic/releases) (étiquettes `server-v…`), ou la [liste des versions](/fr/docs/about/changelog/).
+
+## Mettre à jour
+
+<Tabs syncKey="install">
+<TabItem label="Docker">
+
+<Steps>
+
+1. **Allez dans le dossier du serveur.**
+
+   ```sh
+   cd ~/musonic-server
+   ```
+
+2. **Téléchargez la nouvelle image.**
+
+   ```sh
+   docker compose pull
+   ```
+
+3. **Relancez le serveur avec elle.**
+
+   ```sh
+   docker compose up -d
+   ```
+
+   Docker remplace le conteneur ; votre dossier `data` reste. La musique s'arrête quelques secondes, les applis se reconnectent toutes seules.
+
+4. **Vérifiez la version dans les journaux.**
+
+   ```sh
+   docker compose logs --tail 50 musonic-server
+   ```
+
+   La ligne `musonic-server starting` montre la nouvelle `version`.
+
+5. **Supprimez l'ancienne image (facultatif).**
+
+   ```sh
+   docker image prune
+   ```
+
+</Steps>
+
+Avec l'étiquette `:1` du fichier compose d'exemple, `pull` prend la version `1.x` la plus récente : il ne passe jamais tout seul à une `2.0`. Une `2.0` dirait dans ses notes ce qu'il faut changer avant.
+
+</TabItem>
+<TabItem label="Sans Docker">
+
+<Steps>
+
+1. **Téléchargez et décompressez la nouvelle version.**
+
+   ```sh
+   cd /tmp
+   curl -LO https://github.com/DoodzDev/Musonic/releases/download/server-v<version>/musonic-server-<version>-linux-$(uname -m).tar.gz
+   tar -xzf musonic-server-<version>-linux-$(uname -m).tar.gz
+   ```
+
+   `<version>` est la nouvelle version, par exemple `1.2.1`.
+
+2. **Arrêtez le serveur.**
+
+   ```sh
+   sudo systemctl stop musonic-server
+   ```
+
+3. **Gardez l'ancienne version, mettez la nouvelle en place.**
+
+   ```sh
+   sudo rm -rf /opt/musonic-server.old
+   sudo mv /opt/musonic-server /opt/musonic-server.old
+   sudo mkdir /opt/musonic-server
+   sudo cp -r musonic-server-<version>-linux-$(uname -m)/. /opt/musonic-server/
+   ```
+
+4. **Démarrez-le.**
+
+   ```sh
+   sudo systemctl start musonic-server
+   ```
+
+5. **Vérifiez la version dans les journaux.**
+
+   ```sh
+   journalctl -u musonic-server -n 50
+   ```
+
+   La ligne `musonic-server starting` montre la nouvelle `version`.
+
+</Steps>
+
+Remplacez tout le dossier, pas seulement le programme : la console dans `admin/` va avec sa version du serveur. Votre configuration (`/etc/musonic-server`) et vos données (`/var/lib/musonic-server`) ne sont pas touchées.
+
+</TabItem>
+</Tabs>
+
+## Ce qui arrive à la base de données
+
+Vous n'avez rien à faire : **le serveur met sa base à jour lui-même au démarrage**.
+
+- La base a une version de schéma. Chaque nouvelle version du serveur apporte les changements dont elle a besoin (migrations), appliqués dans l'ordre au démarrage, chacun entièrement ou pas du tout. Les journaux affichent `database migrated to <n> (<name>)` pour chacun.
+- **Avant de modifier la base, le serveur la copie telle qu'elle était**, à côté : `musonic.db.before-schema-<n>` dans le dossier de données (`<n>` est la première migration sur le point d'être appliquée). Cette copie est faite une fois, et sert à revenir en arrière à la main.
+- Beaucoup de mises à jour ne changent rien à la base : aucune copie n'est faite alors.
+- Un serveur plus ancien refuse d'ouvrir une base qu'un plus récent a modifiée : il s'arrête avec `database schema … is newer than this server …: update the server`. Vos données ne sont pas touchées.
+
+## Les sauvegardes quotidiennes
+
+En plus de cette copie, le serveur sauvegarde sa base **chaque jour** dans `backups/`, dans le dossier de données (`musonic-AAAA-MM-JJ.db`), la première fois juste après son démarrage. Il garde les **14** dernières (réglage `backup_days`, `MUSONIC_BACKUP_DAYS` ; `0` les coupe).
+
+Dans la console, **Réglages et maintenance** → **Sauvegardes** les liste, en fait une tout de suite (**Sauvegarder maintenant**) et les télécharge. La console vous prévient quand aucune sauvegarde n'a été faite depuis plus de 2 jours.
+
+<Aside type="tip" title="Avant une grosse mise à jour">
+Cliquez sur **Sauvegarder maintenant** dans la console, ou copiez tout le dossier de données. Une sauvegarde ne contient que la base (comptes, likes, playlists, écoutes, réglages), pas vos fichiers de musique, ni `secret.key` : gardez ce fichier avec vos sauvegardes. Plus de détails dans [Sauvegarde et restauration](/fr/docs/admin/backups/).
+</Aside>
+
+## Revenir à une version précédente
+
+Si une nouvelle version ne vous convient pas, vous pouvez revenir à celle que vous aviez.
+
+**Si la mise à jour n'a pas modifié la base** (aucune ligne `database migrated` dans les journaux, aucun nouveau fichier `musonic.db.before-schema-…`) : remettez l'ancienne version, c'est tout.
+
+<Tabs syncKey="install">
+<TabItem label="Docker">
+
+Dans `compose.yml`, écrivez la version exacte que vous aviez à la place de `1`, par exemple :
+
+```yaml
+    image: ghcr.io/doodzdev/musonic-server:1.2.0
+```
+
+puis `docker compose up -d`. Remettez `1` plus tard pour recevoir à nouveau les mises à jour.
+
+</TabItem>
+<TabItem label="Sans Docker">
+
+```sh
+sudo systemctl stop musonic-server
+sudo mv /opt/musonic-server /opt/musonic-server.new
+sudo mv /opt/musonic-server.old /opt/musonic-server
+sudo systemctl start musonic-server
+```
+
+</TabItem>
+</Tabs>
+
+**Si la mise à jour a modifié la base**, l'ancienne version la refuse. Revenez à la copie faite avant la migration. Ce qui a été fait entre-temps (likes, écoutes, playlists depuis la mise à jour) est perdu.
+
+<Steps>
+
+1. **Arrêtez le serveur.**
+
+   Docker : `docker compose down`. Sans Docker : `sudo systemctl stop musonic-server`.
+
+2. **Mettez la base actuelle de côté, avec ses deux fichiers compagnons.**
+
+   Dans le dossier de données (`~/musonic-server/data`, ou `/var/lib/musonic-server`) :
+
+   ```sh
+   mkdir newer
+   mv musonic.db musonic.db-wal musonic.db-shm newer/
+   ```
+
+   (`musonic.db-wal` et `musonic.db-shm` peuvent ne pas exister : ce n'est pas grave.)
+
+3. **Remettez la copie faite avant la migration.**
+
+   ```sh
+   cp musonic.db.before-schema-<n> musonic.db
+   ```
+
+   Prenez la plus récente, le fichier au `<n>` **le plus grand** : c'est celle qu'a faite cette mise à jour (les autres viennent de mises à jour précédentes). Sans Docker, lancez les commandes sous l'utilisateur du service, ou rendez-lui le fichier avec `chown`.
+
+4. **Démarrez l'ancienne version** (voir plus haut).
+
+</Steps>
+
+<Aside type="caution">
+Ne remettez jamais une sauvegarde en place pendant que le serveur tourne, et déplacez toujours `musonic.db-wal` et `musonic.db-shm` avec `musonic.db` : ils contiennent les derniers changements de la base en cours d'utilisation.
+</Aside>
+
+## Mettre à jour les applis
+
+Les applis se mettent à jour à part du serveur : chacune a sa propre version et ses propres publications.
+
+| Appli | Comment elle apprend qu'une version est sortie | Comment mettre à jour |
+|---|---|---|
+| **Android** | Quelques secondes après son lancement, l'appli cherche sur GitHub une version Android plus récente de Musonic. S'il y en a une, une fenêtre indique **« Mise à jour disponible »**, « La version X est disponible sur GitHub », avec **Voir la release**. Vous pouvez aussi vérifier vous-même : le bouton rond avec votre initiale, en haut à droite → **À propos** → **Vérifier les mises à jour**. | Téléchargez et installez le nouvel APK de la version, par-dessus l'ancien : vos comptes et vos téléchargements restent. Voir [Installer l'appli Android](/fr/docs/apps/android/). |
+| **Lecteur web sur votre serveur** (`/app/`) | Le **Tableau de bord** de la console (**Versions**) et **Réglages et maintenance** (**Musonic Web sur ce serveur**) montrent la dernière version. | **Réglages et maintenance** → **Musonic Web sur ce serveur** → **Mettre à jour**. Puis rechargez la page dans les navigateurs. |
+| **Lecteur web de ce site** | Rien à faire. | Il est mis à jour à chaque nouvelle version du lecteur web : rechargez la page. |
+| **iPhone, iPad** | Ils utilisent le lecteur web : voir les deux lignes au-dessus. | Pareil. |
+
+<img class="shot-phone" src="/assets/img/docs/install-update/02-android-update.fr.webp" alt="L'appli Android avec la fenêtre Mise à jour disponible, le texte La version X est disponible sur GitHub, et les boutons Annuler et Voir la release." />
+
+## Et ensuite
+
+- [Sauvegarde et restauration](/fr/docs/admin/backups/).
+- [Versions et changements](/fr/docs/about/changelog/).
+- [Dépannage](/fr/docs/admin/troubleshooting/).

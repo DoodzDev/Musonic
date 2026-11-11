@@ -76,6 +76,18 @@ p { max-width: var(--measure); }
 .row h3 { font-size: clamp(24px, 2.4vw, 30px); }
 .row p { color: var(--text-2); margin: 14px 0 18px; }
 
+/* Rows with a portrait phone screenshot: the picture stays phone-sized. */
+.row--phone { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr); }
+.row--phone .row__img { max-width: 320px; justify-self: center; }
+
+/* Paragraphs and plain lists in a section */
+.note div > * + * { margin-top: 12px; }
+.links, .plain { margin: 0; padding: 0; list-style: none; }
+.links li + li { margin-top: 8px; }
+.plain li { color: var(--text-2); padding: 8px 0; border-top: 1px solid var(--line); }
+.plain li:last-child { border-bottom: 1px solid var(--line); }
+.after { margin-top: 32px; }
+
 /* Facts: two columns of short title + sentence, no boxes */
 .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 56px; margin: 40px 0 0; padding: 0; list-style: none; }
 .facts h3 { font-size: 18px; }

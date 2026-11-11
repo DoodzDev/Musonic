@@ -1,0 +1,150 @@
+---
+title: Utiliser d'autres applis Subsonic
+description: Comment connecter une appli Subsonic ou OpenSubsonic tierce à Musonic Server, quelles méthodes de connexion il accepte, comment créer une clé d'API, et quelles fonctions et routes de l'API sont prises en charge.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Musonic Server parle l'API Subsonic (version 1.16.1) et ses extensions OpenSubsonic : vous pouvez donc aussi écouter avec des applis faites pour Navidrome ou Subsonic. Cette page explique comment connecter une telle appli, quelles méthodes de connexion le serveur accepte, et ce que ces applis ne voient pas.
+
+**Ce qu'il vous faut**
+
+- Une appli Subsonic ou OpenSubsonic sur votre téléphone ou votre ordinateur.
+- L'**adresse** de votre Musonic Server, votre **identifiant** et votre **mot de passe**.
+
+## Quelles applis
+
+Toute appli qui parle Subsonic devrait fonctionner. Parmi les plus connues : Symfonium et Substreamer sur Android, Feishin sur ordinateur. **Elles n'ont pas toutes été testées avec Musonic Server**, et chaque appli utilise l'API à sa façon : si quelque chose ne marche pas dans l'une d'elles, [ouvrez un ticket](https://github.com/DoodzDev/Musonic/issues/new/choose) en indiquant l'appli et sa version.
+
+## Connecter une appli
+
+Les mots changent d'une appli à l'autre, mais toutes les applis Subsonic demandent les trois mêmes choses.
+
+<Steps>
+
+1. **Dans l'appli, ajoutez un nouveau serveur.**
+
+   Cherchez « Ajouter un serveur », « Subsonic », « OpenSubsonic » ou « Navidrome ». Si l'appli demande le type de serveur, choisissez **Subsonic** ou **OpenSubsonic** (Navidrome marche aussi en général).
+
+2. **Tapez l'adresse de votre serveur, sans `/rest`.**
+
+   Par exemple `https://music.example.com`. C'est la même adresse que dans les applis Musonic. L'appli ajoute elle-même `/rest/…`.
+
+3. **Tapez votre identifiant et votre mot de passe.**
+
+4. **Si l'appli propose une méthode de connexion, gardez celle par défaut.**
+
+   La plupart des applis utilisent la méthode par jeton, qui marche sur un Musonic Server tant que l'administrateur ne l'a pas désactivée. Voyez le tableau ci-dessous si l'appli est refusée.
+
+5. **Enregistrez, puis laissez l'appli lire votre bibliothèque.**
+
+   Certaines applis téléchargent d'abord la liste complète de vos titres, albums et artistes : sur une grande bibliothèque, cela peut prendre quelques minutes.
+
+</Steps>
+
+### Méthodes de connexion
+
+Une appli Subsonic prouve qui vous êtes à chaque requête. Musonic Server accepte trois façons.
+
+| Méthode | Ce que l'appli envoie | Acceptée |
+|---|---|---|
+| **Jeton** (`u` + `t` + `s`) | Une empreinte de votre mot de passe et un sel aléatoire. La méthode par défaut de la plupart des applis. | Oui, tant que l'**Ancienne connexion Subsonic** est activée (`legacy_auth`, activée par défaut). Sinon l'appli reçoit l'erreur 41 : « Token authentication is not available on this server: use apiKey ». |
+| **Mot de passe** (`u` + `p`) | Votre mot de passe, en clair ou en `enc:` + hexadécimal. Certaines applis l'appellent « legacy » ou « mot de passe en clair ». | Toujours. Seulement en `https://` : le mot de passe voyage avec chaque requête. |
+| **Clé d'API** (`apiKey`) | Une clé faite pour cette appli seulement (OpenSubsonic). | Toujours. Le meilleur choix quand l'appli le permet : aucun mot de passe n'est gardé dans l'appli, et la clé peut être révoquée seule. |
+
+**En détail.**
+
+- Avec `apiKey`, l'appli ne doit pas envoyer aussi `u`, `p`, `t` ou `s` : le serveur répond l'erreur 43 (méthodes de connexion en conflit).
+- Après 10 mots de passe faux différents depuis la même adresse, le serveur bloque cette adresse pour ce compte pendant 15 minutes.
+- Le nom que l'appli se donne (le paramètre `c`) apparaît dans la console, dans **Appareils et sécurité** → **Connexions récentes** : l'administrateur voit ainsi quelle appli s'est connectée.
+- La connexion par jeton demande une copie de votre mot de passe que le serveur peut relire, gardée chiffrée avec une clé hors de la base de données (`MUSONIC_SECRET_KEY`, ou `secret.key` dans le dossier de données). Elle n'existe que pour les mots de passe choisis pendant que `legacy_auth` était activé : si l'administrateur l'active plus tard, changez une fois votre mot de passe pour que la connexion par jeton marche pour votre compte.
+
+### Créer une clé d'API pour une appli
+
+Les applis Musonic créent leur propre clé à la connexion. Pour une appli tierce qui accepte une clé d'API, il n'y a pas encore de bouton : vous la créez avec deux commandes, depuis n'importe quel ordinateur avec `curl`.
+
+<Steps>
+
+1. **Connectez-vous pour obtenir une session temporaire.**
+
+   ```sh
+   curl -s -X POST https://music.example.com/v1/auth/login \
+     -H 'Content-Type: application/json' \
+     -d '{"username": "<identifiant>", "password": "<mot de passe>"}'
+   ```
+
+   Remplacez `https://music.example.com` par l'adresse de votre serveur, `<identifiant>` et `<mot de passe>` par les vôtres. La réponse commence par `{"token":"…"` : copiez la valeur de `token`.
+
+2. **Demandez une clé au nom de l'appli.**
+
+   ```sh
+   curl -s -X POST https://music.example.com/v1/me/api-keys \
+     -H 'Authorization: Bearer <jeton>' \
+     -H 'Content-Type: application/json' \
+     -d '{"name": "<nom de l appli>"}'
+   ```
+
+   `<jeton>` est la valeur obtenue à l'étape 1, `<nom de l appli>` un nom que vous reconnaîtrez (par exemple `Symfonium sur ma tablette`). La réponse contient `"key":"msk_…"` : c'est la clé d'API. **Elle n'est affichée qu'une fois** : collez-la tout de suite dans le champ de clé d'API de l'appli.
+
+3. **Fermez la session temporaire.**
+
+   ```sh
+   curl -s -X POST https://music.example.com/v1/auth/logout \
+     -H 'Authorization: Bearer <jeton>'
+   ```
+
+</Steps>
+
+La clé apparaît dans la console, dans **Appareils et sécurité**, avec son nom, sa date d'ajout et sa dernière utilisation. La révoquer à cet endroit déconnecte aussitôt cette appli, et seulement elle. Vous pouvez lister vos propres clés avec `GET /v1/me/api-keys` et en révoquer une avec `DELETE /v1/me/api-keys/<id>`, avec le même en-tête `Authorization: Bearer`.
+
+<Aside type="caution">
+Le jeton de session et la clé d'API ouvrent tous les deux votre compte. Ne les collez pas dans une discussion, un ticket ou une capture d'écran. Si l'un fuite, révoquez la clé dans la console, ou changez votre mot de passe (cela ferme toutes les sessions).
+</Aside>
+
+## Ce que les applis tierces ne voient pas
+
+Les applis tierces utilisent l'API Subsonic standard. Ce que Musonic ajoute passe par sa propre API (`/v1`) ou par des routes propres à Musonic, que ces applis ne connaissent pas.
+
+| Fonction de Musonic | Dans une appli tierce |
+|---|---|
+| **Votre bibliothèque, playlists, likes, notes, écoutes** | Oui : ce sont les mêmes données, partagées avec les applis Musonic. |
+| **Catalogue en ligne** | En partie. Si l'administrateur l'a activé pour votre compte, les résultats de recherche peuvent contenir, après ceux de votre bibliothèque, des titres, albums et artistes du catalogue en ligne. Leur lecture complète dépend des réglages du serveur. |
+| **Mix Magiques, l'accueil de Musonic** | Non : ils viennent de routes propres à Musonic. |
+| **Import de playlists** (Spotify, Deezer, YouTube Music) | Non : utilisez Musonic Web ou l'application Android. Les playlists importées s'affichent ensuite dans toutes les applis. |
+| **Musonic Connect** et la synchro en direct entre appareils | Non. Une appli tierce peut quand même enregistrer et retrouver sa file d'attente avec `savePlayQueue` / `getPlayQueue`. |
+| **Podcasts** | En partie : les routes de podcasts standard marchent (suivre par l'adresse du flux, lister les émissions et les épisodes, les derniers épisodes), mais la recherche dans l'annuaire de podcasts est propre à Musonic, et certaines applis masquent les podcasts car le compte annonce `podcastRole` à `false`. |
+| **Écoutes envoyées à Last.fm ou ListenBrainz** | Non : les écoutes (`scrobble`) sont comptées sur votre serveur seulement. |
+
+## API prise en charge
+
+Le serveur répond à `/rest/<route>` (avec ou sans `.view`), en XML par défaut, en JSON avec `f=json`, en JSONP avec `f=jsonp` et `callback`. Les paramètres peuvent être envoyés dans l'adresse ou en formulaire (OpenSubsonic `formPost`). Une route absente de ce tableau répond l'erreur 0, « … is not implemented yet ».
+
+| Groupe | Routes | Prise en charge |
+|---|---|---|
+| **Système** | `ping`, `getLicense`, `getOpenSubsonicExtensions`, `tokenInfo` | Oui |
+| **Comptes** | `getUser`, `getUsers`, `createUser`, `deleteUser`, `changePassword` | Oui (`updateUser` : non). Gérer les autres comptes demande un administrateur. |
+| **Navigation** | `getMusicFolders`, `getIndexes`, `getMusicDirectory`, `getArtists`, `getArtist`, `getAlbum`, `getSong`, `getGenres`, `getArtistInfo`, `getArtistInfo2`, `getAlbumInfo`, `getAlbumInfo2`, `getSimilarSongs`, `getSimilarSongs2`, `getTopSongs` | Oui |
+| **Listes** | `getAlbumList`, `getAlbumList2`, `getRandomSongs`, `getSongsByGenre`, `getStarred`, `getStarred2`, `getNowPlaying` | Oui |
+| **Recherche** | `search2`, `search3` | Oui (`search`, la plus ancienne : non). Une recherche vide liste tout, pour les applis qui synchronisent toute la bibliothèque. |
+| **Playlists** | `getPlaylists`, `getPlaylist`, `createPlaylist`, `updatePlaylist`, `deletePlaylist` | Oui |
+| **Likes, notes, écoutes** | `star`, `unstar`, `setRating`, `scrobble` | Oui. Les écoutes restent sur le serveur. |
+| **Lecture** | `stream`, `download` | Oui, avec déplacement dans le titre (requêtes HTTP partielles). `stream` accepte `maxBitRate`, `format` (`mp3`, `opus`, `aac`, `ogg`, ou `raw` pour l'original) et `timeOffset`. La limite de débit du compte ou du serveur s'applique. `hls` : non. |
+| **Pochettes** | `getCoverArt` | Oui, avec `size` |
+| **Paroles** | `getLyrics`, `getLyricsBySongId` | Oui |
+| **Podcasts** | `getPodcasts`, `getNewestPodcasts`, `getPodcastEpisode`, `createPodcastChannel`, `deletePodcastChannel`, `refreshPodcasts` | Oui. `downloadPodcastEpisode`, `deletePodcastEpisode` : non. |
+| **File d'attente** | `savePlayQueue`, `getPlayQueue`, `savePlayQueueByIndex`, `getPlayQueueByIndex` | Oui |
+| **Signets** | `getBookmarks`, `createBookmark`, `deleteBookmark` | Non |
+| **Scan de la bibliothèque** | `getScanStatus`, `startScan` | Oui (`startScan` : administrateurs seulement) |
+| **Radios internet** | `getInternetRadioStations` | Répond une liste vide ; ajouter des stations : non |
+| **Partages** | `getShares`, `createShare`, `updateShare`, `deleteShare` | Non (`shareRole` vaut `false`) |
+| **Jukebox** | `jukeboxControl` | Non (`jukeboxRole` vaut `false`) |
+| **Discussion, vidéos, avatars** | `getChatMessages`, `getVideos`, `getAvatar`… | Non |
+
+Extensions OpenSubsonic annoncées par `getOpenSubsonicExtensions` (qui répond sans connexion) : `apiKeyAuthentication`, `formPost`, `indexBasedQueue`, et `musonicServer`, qui indique aux applis Musonic qu'elles peuvent utiliser les fonctions en plus du serveur. Chaque réponse contient aussi `"type": "musonic"`, `"serverVersion"` et `"openSubsonic": true`.
+
+## Et ensuite
+
+- [Le lecteur web](/fr/docs/apps/web/)
+- [Installer l'application Android](/fr/docs/apps/android/)
+- [Venir de Navidrome](/fr/docs/migration/navidrome/)
+- [Référence de l'API](/fr/docs/reference/api/)

@@ -1,0 +1,113 @@
+---
+title: Musonic en voiture
+description: Comment faire apparaître Musonic dans Android Auto alors qu'il ne vient pas du Play Store, et ce que vous pouvez en faire sur l'écran de la voiture.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Cette page montre comment utiliser Musonic sur l'écran de votre voiture avec Android Auto : le réglage à faire une fois pour qu'il apparaisse, puis ce que vous pouvez faire en conduisant.
+
+**Ce qu'il vous faut**
+
+- Musonic installé sur votre téléphone et connecté ([Installer l'appli Android](/fr/docs/apps/android/), [Se connecter à un serveur](/fr/docs/apps/sign-in/)).
+- Une voiture ou un autoradio compatible Android Auto, et un téléphone qui fait tourner Android Auto (intégré à Android 10 et plus récent ; sur les téléphones plus anciens, l'appli Android Auto du Play Store).
+
+<Aside type="note" title="Android Auto dans Musonic est en bêta">
+La navigation, la lecture, la recherche, la file d'attente et les paroles fonctionnent. Certaines voitures peuvent se comporter autrement que celles où Musonic a été testé : si quelque chose ne va pas, [signalez-le](https://github.com/DoodzDev/Musonic/issues).
+</Aside>
+
+## Pourquoi un réglage est nécessaire
+
+Android Auto n'affiche que les applis installées depuis le Play Store. Musonic s'installe depuis GitHub : Android Auto le cache tant que vous n'activez pas **Sources inconnues** dans ses paramètres pour les développeurs. Vous le faites une seule fois, sur le téléphone. Cela ne change rien d'autre sur le téléphone et ne concerne qu'Android Auto.
+
+## Faire apparaître Musonic dans Android Auto
+
+Faites-le sur le téléphone, à l'arrêt, avant votre premier trajet. Les noms ci-dessous sont ceux d'Android Auto en français ; ils peuvent varier un peu selon sa version.
+
+<Steps>
+
+1. **Ouvrez les paramètres d'Android Auto.**
+
+   Sous Android 10 et plus récent, ouvrez **Paramètres**, cherchez **Android Auto** et ouvrez-le. Sur un Samsung, c'est dans **Paramètres → Appareils connectés → Android Auto**. Sur les téléphones plus anciens, ouvrez l'appli **Android Auto**.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android-auto/01-android-auto-settings.fr.webp" alt="La page des paramètres d'Android Auto sur le téléphone, avec sa liste d'options." />
+
+2. **Descendez tout en bas et touchez dix fois de suite « Version ».**
+
+   Au bout de quelques appuis, Android Auto affiche le nombre d'appuis restants.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android-auto/02-version.fr.webp" alt="Le bas des paramètres d'Android Auto, avec la ligne Version et son numéro mis en évidence." />
+
+3. **Touchez « OK » pour autoriser les paramètres de développement.**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android-auto/03-allow-dev-settings.fr.webp" alt="La fenêtre d'Android Auto qui demande d'autoriser les paramètres de développement, avec les boutons Annuler et OK." />
+
+4. **Touchez le menu ⋮ en haut à droite, puis « Paramètres pour les développeurs ».**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android-auto/04-developer-menu.fr.webp" alt="Le menu ⋮ ouvert en haut à droite des paramètres d'Android Auto, avec Paramètres pour les développeurs." />
+
+5. **Descendez et cochez « Sources inconnues ».**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android-auto/05-unknown-sources.fr.webp" alt="Les paramètres pour les développeurs d'Android Auto, avec l'option Sources inconnues cochée." />
+
+6. **Connectez le téléphone à la voiture, avec le câble ou sans fil.**
+
+7. **Sur l'écran de la voiture, ouvrez la liste des applis et touchez Musonic.**
+
+   Musonic est parmi les applis de musique, avec son logo orange. Il démarre tout seul, même si l'appli est fermée sur le téléphone.
+
+   <img class="shot-wide" src="/assets/img/docs/apps-android-auto/06-car-launcher.fr.webp" alt="La liste des applis Android Auto de la voiture, avec l'icône de Musonic parmi les applis multimédias." />
+
+</Steps>
+
+<Aside type="tip" title="GrapheneOS">
+Sous GrapheneOS, Android Auto peut se fermer dès que la voiture se connecte. Ouvrez **Paramètres → Applications → Sandboxed Google Play → Android Auto** et activez les autorisations listées, puis reconnectez.
+</Aside>
+
+<Aside type="caution" title="Musonic n'apparaît toujours pas">
+Vérifiez que le téléphone est connecté à un serveur dans Musonic, que **Sources inconnues** est toujours coché (une mise à jour d'Android Auto peut le décocher), puis débranchez et rebranchez le téléphone. Si vous avez installé une nouvelle version de Musonic pendant que la voiture était connectée, déconnectez-la et reconnectez-la.
+</Aside>
+
+## Ce que vous pouvez faire en voiture
+
+Musonic a ses propres écrans dans Android Auto, avec trois onglets.
+
+| Onglet | Ce qu'il montre |
+|---|---|
+| **Accueil** | **Reprendre** : le titre en cours, un appui pour continuer. **Écoutés récemment** : albums, playlists, artistes et Titres likés, en grandes pochettes. Puis vos playlists. Le bouton loupe ouvre la recherche. |
+| **Bibliothèque** | **Playlists**, **Albums**, **Artistes**, **Podcasts** (les émissions que vous suivez) et **Téléchargés**. |
+| **Téléchargés** | Les titres gardés sur le téléphone, qui se lisent sans réseau. |
+
+<img class="shot-wide" src="/assets/img/docs/apps-android-auto/07-car-home.fr.webp" alt="L'onglet Accueil de Musonic sur l'écran de la voiture : les onglets Accueil, Bibliothèque et Téléchargés en haut, la ligne Reprendre, les pochettes Écoutés récemment et le bouton rond de recherche." />
+
+**Les playlists et les albums** s'ouvrent sur leur liste de titres, avec **Lire** et **Aléatoire** en haut. Le titre en cours affiche des barres de niveau orange à la place de sa pochette. Touchez un titre pour lire toute la liste à partir de lui.
+
+<img class="shot-wide" src="/assets/img/docs/apps-android-auto/08-car-playlist.fr.webp" alt="Une playlist sur l'écran de la voiture : son nom en haut avec les boutons Lire et Aléatoire, et les titres, celui en cours marqué de barres de niveau orange." />
+
+**L'écran de lecture** est dessiné par Android Auto : pochette, titre, artiste, lecture et pause, précédent et suivant, et la barre de progression. Musonic y ajoute :
+
+- **Aléatoire** (désactivé, activé, Magique), **Répétition** et **J'aime**, synchronisés avec le téléphone ;
+- en haut, **File d'attente** (les titres suivants, en lecture seule) et **Paroles** : la ligne chantée remplace le nom de l'artiste, sur l'écran de lecture de la voiture. Il faut des paroles synchronisées (sinon « Pas de paroles synchronisées ») et le réglage **Lecteur audio Android**, activé par défaut (**Réglages → Options avancées**) ;
+- pour un épisode de podcast, **reculer de 15 s**, **avancer de 30 s** et la **vitesse** à la place d'aléatoire, répétition et j'aime. Un épisode reprend là où vous l'aviez laissé.
+
+<img class="shot-wide" src="/assets/img/docs/apps-android-auto/09-car-playback.fr.webp" alt="L'écran de lecture de la voiture avec Musonic : la pochette floutée, le titre et l'artiste, les boutons de lecture, Aléatoire, Répétition et J'aime, et les boutons File d'attente et Paroles en haut." />
+
+**Recherche.** La loupe de l'onglet Accueil cherche des titres, des albums et des artistes. La voiture n'autorise le clavier qu'à l'arrêt. En roulant, dites à l'assistant de la voiture « Joue *titre ou artiste* sur Musonic » : Musonic cherche et lit ce qu'il trouve.
+
+**Sans réseau**, la Bibliothèque ne garde que Playlists et Téléchargés, comme dans l'appli. Voir [Écouter hors ligne](/fr/docs/apps/offline/).
+
+## Pensé pour la conduite
+
+Android Auto dessine chaque écran à partir de modèles conçus par Google pour la conduite ; Musonic choisit seulement ce qu'il y met. Donc :
+
+- la taille des textes, des pochettes et des boutons est fixée par la voiture, la même que dans les autres applis de musique ;
+- les listes sont coupées au nombre d'éléments que votre voiture accepte ;
+- le clavier ne marche qu'à l'arrêt ; sinon, utilisez la voix ;
+- Musonic n'affiche que les boutons acceptés par la voiture : deux au plus en haut d'un écran, en icônes seules.
+
+Sur les anciennes versions d'Android Auto qui ne gèrent pas ces écrans, Musonic affiche à la place les écrans multimédias standard d'Android Auto : onglets, listes et écran de lecture, avec moins d'options.
+
+## Pour aller plus loin
+
+- [Écouter hors ligne](/fr/docs/apps/offline/) : téléchargez vos playlists avant un trajet sans réseau.
+- [Installer l'appli Android](/fr/docs/apps/android/) : mises à jour et désinstallation.

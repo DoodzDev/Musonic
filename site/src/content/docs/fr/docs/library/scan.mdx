@@ -1,0 +1,175 @@
+---
+title: Scanner votre bibliothèque
+description: Comment Musonic Server repère les fichiers de musique ajoutés, modifiés et supprimés, la différence entre scan rapide et scan complet, et ce que deviennent likes et playlists quand des fichiers bougent.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Cette page s'adresse à la personne qui fait tourner le serveur. Elle explique comment le serveur garde sa bibliothèque à jour avec votre dossier de musique, quand lancer un scan vous-même, et ce que veulent dire les listes de la console (fichiers manquants, doublons, sans pochette).
+
+**Ce qu'il vous faut**
+
+- Un serveur avec un dossier de musique réglé (`MUSONIC_MUSIC_DIR` ; avec Docker, le dossier monté sur `/music`).
+- Un compte administrateur, pour la console.
+
+## En bref : vous n'avez presque rien à faire
+
+Le serveur scanne la bibliothèque **à son démarrage**, puis :
+
+- **quelques secondes après un changement** dans le dossier de musique (fichier ajouté, modifié, déplacé ou supprimé) : il surveille le dossier et attend 5 secondes sans changement, si bien que copier un album entier donne un seul scan, pas un par fichier ;
+- **à intervalle régulier**, toutes les 60 minutes par défaut, pour rattraper ce que la surveillance aurait manqué ;
+- **quand vous le demandez**, depuis la console ou un client Subsonic.
+
+Deux scans ne se chevauchent jamais : une demande faite pendant un scan en relance un autre juste après.
+
+<img class="diagram" src="/assets/img/docs/diagrams/library-scan-triggers.fr.svg" alt="Schéma : quatre déclencheurs (démarrage du serveur, un changement dans le dossier de musique après 5 secondes de calme, le scan automatique régulier, un bouton de la console) mènent à une seule file de scans ; le scan parcourt les dossiers, ne lit que les fichiers changés, puis met à jour titres, albums, artistes, pochettes et paroles dans la base." />
+
+## Lancer un scan depuis la console
+
+<Steps>
+
+1. **Ouvrez l'adresse de votre serveur dans un navigateur et connectez-vous avec un compte administrateur.**
+
+   La console d'administration s'ouvre sur le tableau de bord.
+
+2. **Cliquez sur « Bibliothèque » dans la partie « Musique » du menu.**
+
+   Le haut de la page indique le nombre de titres et l'heure du dernier scan.
+
+   <img class="shot-wide" src="/assets/img/docs/library-scan/01-library-page.fr.webp" alt="La page Bibliothèque de la console : le titre Bibliothèque, la ligne « titres · dernier scan », les boutons Scan rapide et Scan complet en haut à droite, le bilan du dernier scan et les onglets Titres, Fichiers manquants, Doublons, Sans pochette, En ligne." />
+
+3. **Cliquez sur « Scan rapide »** (ou **« Scan complet »**, voir plus bas lequel choisir).
+
+   La ligne sous le titre affiche « Scan en cours… » et les deux boutons restent grisés jusqu'à la fin.
+
+4. **Lisez le bilan du scan.**
+
+   Il donne le nombre de fichiers, de titres ajoutés, de fichiers manquants, d'erreurs et la durée.
+
+</Steps>
+
+### Scan rapide ou scan complet ?
+
+| | Scan rapide | Scan complet |
+|---|---|---|
+| Ce qu'il lit | Seulement les dossiers dont le contenu a changé (noms, tailles, dates de modification), et dedans seulement les fichiers audio qui ont changé | Tous les fichiers audio, à nouveau |
+| Quand il tourne | Au démarrage, après des changements, à intervalle régulier, au bouton | Seulement quand vous le demandez |
+| Durée | Quelques secondes sur une bibliothèque inchangée | À peu près celle du premier scan |
+| À utiliser | Presque toujours | Après avoir ajouté ou remplacé **une image de pochette ou un fichier de paroles** à côté de titres inchangés ; après avoir modifié des tags avec un outil qui garde la date de modification du fichier ; quand quelque chose semble faux |
+
+<Aside type="caution" title="Pochettes et paroles ajoutées après coup">
+Le scan rapide ne relit un fichier audio que si **ce fichier** a changé. Un `cover.jpg` ou un `.lrc` ajouté à côté de titres restés identiques est vu par un **scan complet**. Voir [Ranger vos fichiers de musique](/fr/docs/library/organize/#pochettes).
+</Aside>
+
+### En ligne de commande ou depuis un client Subsonic
+
+<Tabs>
+<TabItem label="Docker">
+
+```sh
+docker compose exec musonic-server musonic-server scan          # rapide
+docker compose exec musonic-server musonic-server scan --full   # complet
+```
+
+</TabItem>
+<TabItem label="Programme">
+
+```sh
+musonic-server scan          # rapide
+musonic-server scan --full   # complet
+```
+
+Lancez-le avec les mêmes réglages que le serveur (mêmes `MUSONIC_DATA_DIR` et `MUSONIC_MUSIC_DIR`).
+
+</TabItem>
+</Tabs>
+
+`musonic-server scan` scanne une fois, affiche un bilan et s'arrête. Il sert aux scripts et au premier scan avant un [import depuis Navidrome](/fr/docs/migration/navidrome/) ; quand le serveur tourne, préférez les boutons de la console, qui passent par la file de scans du serveur lui-même.
+
+Les clients Subsonic qui ont un bouton « scanner la bibliothèque » utilisent `startScan` (`fullScan=true` pour un scan complet) ; seuls les comptes administrateurs peuvent en lancer un.
+
+## Changer le scan automatique
+
+<Steps>
+
+1. **Dans la console, ouvrez « Bibliothèque ».**
+
+2. **Choisissez la fréquence dans « Scan automatique »**, en bas de la page.
+
+   Les choix sont « Aux changements seulement », « Et toutes les heures » (par défaut), « Et toutes les 6 heures » et « Et une fois par jour ».
+
+   <img class="shot-wide" src="/assets/img/docs/library-scan/02-automatic-scan.fr.webp" alt="Le bas de la page Bibliothèque de la console : le réglage « Scan automatique » avec son explication et la liste ouverte : Aux changements seulement, Et toutes les heures, Et toutes les 6 heures, Et une fois par jour." />
+
+3. **Cliquez sur « Redémarrer maintenant » dans le bandeau qui apparaît.**
+
+   La nouvelle valeur s'applique une fois le serveur redémarré. La musique s'arrête quelques secondes, puis les applis se reconnectent seules.
+
+</Steps>
+
+Le même réglage s'appelle `scan_interval_minutes` dans le fichier de configuration, ou `MUSONIC_SCAN_INTERVAL_MINUTES` (en minutes, `0` = seulement aux changements ; de 0 à 10080 dans la console). Une valeur enregistrée dans la console l'emporte sur le fichier de configuration et sur l'environnement.
+
+## Quand les changements ne sont pas vus tout seuls
+
+Si le serveur ne peut pas surveiller le dossier, il écrit cette ligne dans ses journaux au démarrage et ne compte plus que sur les scans réguliers :
+
+```text
+cannot watch /music: …; relying on scheduled scans
+```
+
+La surveillance repose sur les notifications du système. Elles n'arrivent pas pour tous les types de dossiers : les changements faits **depuis une autre machine** sur un partage réseau ne sont souvent pas signalés. Sous Linux, une très grosse bibliothèque peut aussi dépasser le nombre de dossiers qu'un utilisateur peut surveiller ; augmenter `fs.inotify.max_user_watches` avec `sysctl` règle ce cas.
+
+Dans ces situations, gardez un scan régulier (toutes les heures, ou plus souvent avec `MUSONIC_SCAN_INTERVAL_MINUTES`), ou lancez un scan rapide à la main après avoir ajouté de la musique.
+
+## Likes et playlists quand les fichiers changent
+
+Chaque titre a **un identifiant qui ne change pas** : donné une fois, il est gardé à travers les rescans, les déplacements et les imports. Likes, playlists, nombres d'écoutes et téléchargements des applis pointent vers cet identifiant. Quand un fichier change, le scanner cherche le titre auquel il appartient, dans cet ordre :
+
+1. **Le même chemin** : un fichier retagué sur place reste le même titre, avec ses nouveaux tags.
+2. **La même identité** : un fichier déplacé ou renommé est reconnu par son identifiant d'enregistrement MusicBrainz, sinon par artiste de l'album + album + disque + numéro de piste + titre. Il garde son titre, ses likes et ses playlists.
+3. **Un titre vu d'abord en ligne, encore sans fichier**, avec le même ISRC, ou le même nom, les mêmes artistes et la même durée (à 3 secondes près) : un fichier importé rejoint le titre déjà liké ou en playlist.
+4. Sinon, un nouveau titre.
+
+| Ce que vous faites | Ce qui se passe |
+|---|---|
+| Modifier les tags d'un fichier, sur place | Même titre, nouveaux tags. |
+| Déplacer ou renommer un fichier ou un dossier | Même titre (retrouvé par son identité). |
+| Déplacer tout le dossier de musique (autre disque, autre montage Docker) | Rien à refaire : les chemins sont gardés relatifs au dossier de musique. |
+| Déplacer un fichier **et** changer en même temps son titre, son album ou son numéro de piste | Un nouveau titre : l'ancien apparaît en fichier manquant et garde ses likes. Faites l'un, scannez, puis l'autre ; ou donnez des identifiants MusicBrainz à vos fichiers, qui survivent à tout changement. |
+| Supprimer un fichier | Son titre est marqué « fichier manquant » : masqué dans les applis (sauf s'il est aussi connu du catalogue en ligne), gardé avec ses likes et ses playlists. Si le fichier revient, le titre revient tel quel. |
+
+Le serveur ne supprime jamais de lui-même les titres dont le fichier manque.
+
+## Les listes de la console
+
+La page Bibliothèque a des onglets pour vérifier votre bibliothèque :
+
+| Onglet | Ce qu'il liste |
+|---|---|
+| **Titres** | Tous les titres, avec leur fichier, format, débit et taille. Recherche par titre, artiste, album ou chemin de fichier. |
+| **Fichiers manquants** | Les titres dont le fichier n'est plus dans le dossier de musique (déplacé sans être reconnu, ou supprimé). |
+| **Doublons** | Le même titre deux fois : deux fichiers pour un titre (deux copies aux mêmes tags), ou deux titres avec le même nom et les mêmes artistes. |
+| **Sans pochette** | Les titres sans aucune image : ni dans le fichier, ni dans leur dossier, ni en ligne. |
+| **En ligne** | Les titres en ligne likés ou ajoutés à une playlist qui n'ont pas encore de fichier (pas importés). |
+
+Cliquez sur un titre pour ouvrir sa fiche : tags, fichiers (avec **Écouter pour vérifier**, pour entendre le fichier dans le navigateur), catalogues en ligne qui le connaissent, ISRC, genres, écoutes et likes.
+
+<img class="shot-wide" src="/assets/img/docs/library-scan/03-track-page.fr.webp" alt="La fiche d'un titre dans la console : titre et artistes en haut, le bouton Écouter pour vérifier, le bloc Fichiers avec chemin, format, débit et taille, puis ISRC, genres, écoutes et likes en nombre de comptes." />
+
+## Performances
+
+- Le scanner lit les tags de plusieurs fichiers à la fois, un par fil d'exécution du processeur.
+- Un dossier dont le contenu n'a pas changé (mêmes noms, tailles et dates) n'est pas rouvert : un scan rapide d'une bibliothèque inchangée ne fait que parcourir les dossiers.
+- Les changements sont écrits par lots de 200 fichiers, si bien que les applis continuent de fonctionner pendant un long premier scan.
+- Sur une grosse bibliothèque, la mise en place de la surveillance prend un moment : le serveur répond aux requêtes pendant ce temps.
+
+## Réglages liés au scan
+
+| Réglage (fichier) | Environnement | Par défaut | Rôle |
+|---|---|---|---|
+| `music_dir` | `MUSONIC_MUSIC_DIR` | aucun (`/music` dans l'image Docker) | Le dossier de musique. Sans lui, le serveur démarre avec une bibliothèque vide. |
+| `scan_interval_minutes` | `MUSONIC_SCAN_INTERVAL_MINUTES` | `60` | Minutes entre deux scans réguliers ; `0` = seulement au démarrage, aux changements et sur demande. Aussi dans la console. |
+
+## Et ensuite
+
+- [Ranger vos fichiers de musique](/fr/docs/library/organize/) : formats, tags, pochettes et paroles.
+- [Catalogue en ligne et imports](/fr/docs/library/online-catalogue/) : les titres qui entrent dans la bibliothèque depuis le catalogue en ligne.

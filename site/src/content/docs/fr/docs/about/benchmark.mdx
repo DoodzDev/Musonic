@@ -1,0 +1,397 @@
+---
+title: Benchmark
+description: Toutes les mesures du benchmark de Musonic Server 1.0.1 face à Navidrome 0.64.2, sur la même machine ARM et la même bibliothèque, avec les points où Navidrome est devant et ce que le test ne montre pas.
+---
+
+import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Cette page donne tous les résultats du benchmark que j’ai mené entre Musonic Server et Navidrome, avec le contexte nécessaire pour les juger. Elle s’adresse à vous si vous choisissez un serveur, ou si vous voulez vérifier les chiffres. La façon dont le test a été mené est décrite dans [Méthode du benchmark](/fr/docs/about/benchmark-method/) ; les scripts et les résultats bruts sont [sur GitHub](https://github.com/DoodzDev/Musonic/tree/main/tools/benchmark).
+
+<Aside type="note" title="Le contexte de tous les chiffres de cette page">
+**Musonic Server 1.0.1 face à Navidrome 0.64.2**, mesurés le **22/10/2026**, sur **un seul serveur virtuel ARM** (Ampere Altra, 2 cœurs, 12 Go de mémoire), avec **une seule bibliothèque de 1 871 fichiers** (7,0 Go, surtout du MP3, 797 artistes). Les deux serveurs tournaient sans Docker, l’un après l’autre, à partir d’un dossier de données vide, en **3 passes alternées** ; chaque valeur est la **médiane des 3 passes**.
+</Aside>
+
+## Les résultats principaux
+
+| Quoi | Musonic | Navidrome | Rapport |
+|---|---:|---:|---:|
+| Analyse de toute la bibliothèque, base vide | **1,78 s** | 18,9 s | 10,6× |
+| Mémoire au repos, 60 s après l’analyse | **19,5 Mio** | 100 Mio | 5,1× |
+| Lister tous les artistes (`getArtists`, 797 artistes), médiane | **0,429 ms** | 52,7 ms | 122,9× |
+| Recherche « love » (`search3`), médiane | **0,353 ms** | 29,4 ms | 83,4× |
+| Les 5 % les plus lents des 14 requêtes courantes (p95), plage | **0,361–3,56 ms** | 1,34–84,6 ms | de 2,3× à 146,6× |
+| Requêtes par seconde avec 64 clients simultanés | **913** | 156 | 5,8× |
+| Temps processeur du serveur pour 1 000 requêtes | **0,58–0,60 s** | 11,0–12,1 s | de 18,4× à 20,9× |
+| 1er octet d’un titre transcodé pour la première fois | 42,0 ms | **33,5 ms** | Navidrome 1,3× |
+
+Navidrome est devant sur **12 des 113 mesures** de la synthèse : le 1er octet transcodé, deux mesures de poids des pochettes, le débit d’un fichier original (de 6 %), le temps pour transcoder un titre entier (de 0,7 %) et le poids compressé de 7 réponses sur 14. Elles sont toutes listées dans [Où Navidrome est devant](#où-navidrome-est-devant).
+
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-setup.fr.svg" alt="Schéma : sur un serveur virtuel ARM à 2 cœurs, le script de test parle par 127.0.0.1 à un seul serveur testé à la fois, Musonic Server ou Navidrome ; les deux lisent le même dossier de musique et utilisent le même ffmpeg ; chaque passe part d’un dossier de données vide ; les passes alternent entre les deux serveurs, 3 chacun." />
+
+## Comment lire les tableaux
+
+- **Chaque valeur est la médiane des 3 passes.** Les petits chiffres entre parenthèses sont la plus basse et la plus haute des 3 passes. Sans parenthèses, les 3 passes ont donné la même valeur à cette précision.
+- Le **rapport** est toujours la meilleure valeur divisée par la moins bonne : il vaut donc 1× ou plus. La colonne **Devant** indique quel serveur a la meilleure valeur ; celle-ci est en gras.
+- Pour les durées, la mémoire, le temps processeur et les poids, le plus bas est le mieux. Pour les requêtes par seconde et le débit, le plus haut est le mieux.
+- Unités : s (secondes), ms (millisecondes), Mio (1 048 576 octets ; sous Linux, `/proc` donne la mémoire par unités de 1 024 octets, divisées ici par 1 024), Kio (1 024 octets), Mo (1 000 000 d’octets, pour le dossier de données et le débit).
+- Une latence est mesurée par le client : de l’envoi de la requête à la réception de toute la réponse, sur une connexion gardée ouverte, sur la même machine. Elle inclut le temps du client lui-même.
+
+## Tous les résultats
+
+### Analyse de la bibliothèque
+
+La durée entre le moment où le serveur répond (et, pour Musonic, où son compte de test est créé) et la fin de sa première analyse complète de la bibliothèque, à partir d’un dossier de données vide. Le temps processeur est compté sur la même période.
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| Durée réelle (s) | **1,78 <small>(1,77–2,01)</small>** | 18,9 <small>(18,9–19,1)</small> | 10,6× | Musonic |
+| Temps processeur (s) | **1,77 <small>(1,75–1,77)</small>** | 16,9 <small>(16,6–17,0)</small> | 9,6× | Musonic |
+| Mémoire max pendant l’analyse (Mio) | **19,3 <small>(19,1–19,8)</small>** | 56,3 <small>(55,7–61,4)</small> | 2,9× | Musonic |
+
+Pour recouper, la durée d’analyse que chaque serveur indique lui-même : Musonic 1,79 s (1,78–1,97), Navidrome 17,2 s (16,8–17,5), soit un rapport de 9,6×.
+
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-scan.fr.svg" alt="Graphique en barres de l’analyse : durée réelle 1,78 s pour Musonic et 18,9 s pour Navidrome ; temps processeur 1,77 s et 16,9 s ; mémoire max 19,3 Mio et 56,3 Mio." />
+
+### Mémoire
+
+Mémoire résidente (RSS) du processus du serveur.
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| Au repos, 60 s après l’analyse | **19,5 <small>(19,2–19,7)</small>** | 100 <small>(94,9–109)</small> | 5,1× | Musonic |
+| Après tous les tests | **77,6 <small>(72,4–79,2)</small>** | 236 <small>(229–239)</small> | 3,0× | Musonic |
+| Maximum sur toute la passe (VmHWM) | **78,3 <small>(72,8–79,5)</small>** | 237 <small>(235–244)</small> | 3,0× | Musonic |
+| 5 s après un redémarrage | **15,5 <small>(15,4–15,5)</small>** | 45,1 <small>(44,9–45,2)</small> | 2,9× | Musonic |
+
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-memory.fr.svg" alt="Graphique en barres de la mémoire : au repos 19,5 Mio pour Musonic et 100 Mio pour Navidrome ; après tous les tests 77,6 et 236 Mio ; maximum 78,3 et 237 Mio ; après un redémarrage 15,5 et 45,1 Mio." />
+
+### Démarrage
+
+La durée entre le lancement du programme et sa réponse à une première requête HTTP.
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| Premier démarrage, dossier de données vide (s) | **0,062 <small>(0,055–0,147)</small>** | 0,769 <small>(0,764–0,782)</small> | 12,4× | Musonic |
+| Redémarrage, dossier de données existant (s) | **0,019 <small>(0,018–0,029)</small>** | 0,045 <small>(0,039–0,070)</small> | 2,4× | Musonic |
+
+### Disque
+
+Tout le contenu du dossier de données après la passe : base de données, cache des pochettes, cache de transcodage et tout ce que le serveur y a écrit. Le test ne détaille pas par type.
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| Dossier de données après la passe (Mo) | **26,9 <small>(26,9–27,0)</small>** | 361 | 13,4× | Musonic |
+
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-startup-disk.fr.svg" alt="Graphique en barres : premier démarrage 0,062 s pour Musonic et 0,769 s pour Navidrome ; redémarrage 0,019 s et 0,045 s ; dossier de données 26,9 Mo et 361 Mo." />
+
+### Requêtes : latence médiane
+
+Les 14 requêtes Subsonic qu’une appli fait tous les jours, chacune envoyée 20 fois pour chauffer, puis 200 fois à la suite. Médiane des 200.
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| Recherche « love » (`search3`) | **0,353 <small>(0,336–0,355)</small>** | 29,4 <small>(27,1–30,4)</small> | 83,4× | Musonic |
+| Recherche « mo » (`search3`) | **0,377 <small>(0,369–0,378)</small>** | 25,6 <small>(24,4–28,1)</small> | 68,0× | Musonic |
+| Recherche « the love » (`search3`) | **0,299 <small>(0,296–0,329)</small>** | 20,2 <small>(17,9–22,2)</small> | 67,4× | Musonic |
+| Un album (`getAlbum`) | **0,288 <small>(0,285–0,293)</small>** | 2,60 <small>(2,60–2,93)</small> | 9,0× | Musonic |
+| Un artiste (`getArtist`) | **0,279 <small>(0,278–0,392)</small>** | 2,27 <small>(2,04–2,92)</small> | 8,1× | Musonic |
+| Tous les artistes, 797 (`getArtists`) | **0,429 <small>(0,423–0,455)</small>** | 52,7 <small>(51,8–53,3)</small> | 122,9× | Musonic |
+| Un titre (`getSong`) | **0,284 <small>(0,281–0,286)</small>** | 2,43 <small>(2,00–2,44)</small> | 8,6× | Musonic |
+| 50 albums les plus récents (`getAlbumList2`) | **0,338 <small>(0,335–0,352)</small>** | 16,6 <small>(16,5–17,0)</small> | 49,3× | Musonic |
+| 500 albums de A à Z (`getAlbumList2`) | **0,517 <small>(0,510–0,539)</small>** | 35,4 <small>(35,3–35,4)</small> | 68,4× | Musonic |
+| 50 albums au hasard (`getAlbumList2`) | **2,17 <small>(2,13–2,21)</small>** | 8,31 <small>(8,28–8,37)</small> | 3,8× | Musonic |
+| 50 titres au hasard (`getRandomSongs`) | **3,29 <small>(3,27–3,30)</small>** | 5,76 <small>(5,70–5,90)</small> | 1,8× | Musonic |
+| Genres (`getGenres`) | **0,289 <small>(0,286–0,291)</small>** | 1,17 <small>(1,14–1,18)</small> | 4,0× | Musonic |
+| Favoris (`getStarred2`) | **0,279 <small>(0,277–0,282)</small>** | 2,17 <small>(1,76–2,97)</small> | 7,8× | Musonic |
+| Playlists (`getPlaylists`) | **0,276 <small>(0,276–0,294)</small>** | 1,01 <small>(0,994–1,05)</small> | 3,7× | Musonic |
+
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-requests-median.fr.svg" alt="Graphique en barres, échelle logarithmique, de la latence médiane des 14 requêtes pour les deux serveurs ; Musonic entre 0,276 et 3,29 ms, Navidrome entre 1,01 et 52,7 ms." />
+
+### Requêtes : 95e centile
+
+Les mêmes 200 requêtes : la durée sous laquelle 95 % d’entre elles ont reçu leur réponse (les 5 % les plus lentes prennent plus longtemps).
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| Recherche « love » (`search3`) | **0,445 <small>(0,416–0,454)</small>** | 61,9 <small>(60,7–62,4)</small> | 139,1× | Musonic |
+| Recherche « mo » (`search3`) | **0,455 <small>(0,450–0,493)</small>** | 60,4 <small>(60,3–60,4)</small> | 132,7× | Musonic |
+| Recherche « the love » (`search3`) | **0,390 <small>(0,368–0,393)</small>** | 57,2 <small>(57,1–57,2)</small> | 146,6× | Musonic |
+| Un album (`getAlbum`) | **0,372 <small>(0,364–0,446)</small>** | 25,2 <small>(21,9–29,7)</small> | 67,6× | Musonic |
+| Un artiste (`getArtist`) | **0,378 <small>(0,374–1,10)</small>** | 28,7 <small>(26,0–34,2)</small> | 76,0× | Musonic |
+| Tous les artistes, 797 (`getArtists`) | **0,587 <small>(0,511–0,832)</small>** | 84,6 <small>(81,3–89,6)</small> | 144,2× | Musonic |
+| Un titre (`getSong`) | **0,390 <small>(0,362–0,539)</small>** | 25,9 <small>(24,8–30,0)</small> | 66,5× | Musonic |
+| 50 albums les plus récents (`getAlbumList2`) | **0,450 <small>(0,415–0,456)</small>** | 36,0 <small>(35,4–41,4)</small> | 80,1× | Musonic |
+| 500 albums de A à Z (`getAlbumList2`) | **0,632 <small>(0,597–0,640)</small>** | 39,0 <small>(38,2–60,6)</small> | 61,7× | Musonic |
+| 50 albums au hasard (`getAlbumList2`) | **2,30 <small>(2,25–2,47)</small>** | 11,2 <small>(11,0–11,4)</small> | 4,9× | Musonic |
+| 50 titres au hasard (`getRandomSongs`) | **3,56 <small>(3,47–4,79)</small>** | 8,21 <small>(7,97–8,48)</small> | 2,3× | Musonic |
+| Genres (`getGenres`) | **0,366 <small>(0,363–0,370)</small>** | 1,51 <small>(1,48–1,57)</small> | 4,1× | Musonic |
+| Favoris (`getStarred2`) | **0,394 <small>(0,350–0,395)</small>** | 3,50 <small>(3,36–3,94)</small> | 8,9× | Musonic |
+| Playlists (`getPlaylists`) | **0,361 <small>(0,355–0,753)</small>** | 1,34 <small>(1,28–1,66)</small> | 3,7× | Musonic |
+
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-requests-p95.fr.svg" alt="Graphique en barres, échelle logarithmique, du 95e centile des 14 requêtes ; Musonic entre 0,361 et 3,56 ms, Navidrome entre 1,34 et 84,6 ms." />
+
+### Requêtes juste après un like
+
+Avant **chacune** des 200 requêtes mesurées, le client like un titre puis retire le like (`star`, puis `unstar`). C’est le pire cas pour un serveur qui garde des réponses prêtes : Musonic 1.0.1 jette les réponses qu’une écriture modifie et les refait en arrière-plan, et ici la requête suivante arrive avant que ce soit fini.
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| Recherche « love » (`search3`) | **2,78 <small>(2,64–2,80)</small>** | 4,88 <small>(4,70–5,15)</small> | 1,8× | Musonic |
+| Recherche « mo » (`search3`) | **5,47 <small>(5,43–5,57)</small>** | 7,09 <small>(6,71–7,12)</small> | 1,3× | Musonic |
+| Recherche « the love » (`search3`) | **1,93 <small>(1,92–1,94)</small>** | 4,61 <small>(4,34–4,73)</small> | 2,4× | Musonic |
+| Un album (`getAlbum`) | **0,845 <small>(0,837–0,853)</small>** | 1,84 <small>(1,82–1,88)</small> | 2,2× | Musonic |
+| Un artiste (`getArtist`) | **0,471 <small>(0,470–0,483)</small>** | 1,66 <small>(1,64–1,67)</small> | 3,5× | Musonic |
+| Tous les artistes, 797 (`getArtists`) | **4,48 <small>(4,26–4,66)</small>** | 30,2 <small>(30,2–30,3)</small> | 6,8× | Musonic |
+| Un titre (`getSong`) | **0,772 <small>(0,770–0,777)</small>** | 1,36 <small>(1,36–1,37)</small> | 1,8× | Musonic |
+| 50 albums les plus récents (`getAlbumList2`) | **4,46 <small>(4,42–4,51)</small>** | 4,76 <small>(4,72–4,79)</small> | 1,07× | Musonic |
+| 500 albums de A à Z (`getAlbumList2`) | **24,0 <small>(23,4–24,5)</small>** | 35,3 <small>(35,2–35,4)</small> | 1,5× | Musonic |
+| 50 albums au hasard (`getAlbumList2`) | **2,21 <small>(2,20–2,25)</small>** | 8,41 <small>(8,37–8,65)</small> | 3,8× | Musonic |
+| 50 titres au hasard (`getRandomSongs`) | **3,35 <small>(3,27–3,42)</small>** | 5,63 <small>(5,54–5,67)</small> | 1,7× | Musonic |
+| Genres (`getGenres`) | **0,739 <small>(0,735–0,740)</small>** | 1,19 <small>(1,18–1,20)</small> | 1,6× | Musonic |
+| Favoris (`getStarred2`) | **0,405 <small>(0,391–0,414)</small>** | 1,62 <small>(1,62–1,70)</small> | 4,0× | Musonic |
+| Playlists (`getPlaylists`) | **0,375 <small>(0,365–0,377)</small>** | 1,02 <small>(1,00–1,03)</small> | 2,7× | Musonic |
+
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-after-like.fr.svg" alt="Graphique en barres, échelle logarithmique, de la latence médiane des 14 requêtes juste après un like ; Musonic entre 0,375 et 24,0 ms, Navidrome entre 1,02 et 35,3 ms ; l’écart le plus serré est sur les 50 albums les plus récents, 4,46 contre 4,76 ms." />
+
+### Requêtes 300 ms après un like
+
+Le même like suivi de son retrait, puis 300 ms d’attente avant la requête, comme une personne qui ouvre l’écran suivant. 30 requêtes mesurées par route au lieu de 200.
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| Recherche « love » (`search3`) | **0,694 <small>(0,690–0,706)</small>** | 7,21 <small>(6,86–7,58)</small> | 10,4× | Musonic |
+| Recherche « mo » (`search3`) | **0,708 <small>(0,707–0,712)</small>** | 9,47 <small>(9,24–9,56)</small> | 13,4× | Musonic |
+| Recherche « the love » (`search3`) | **0,683 <small>(0,678–0,689)</small>** | 6,94 <small>(6,82–6,98)</small> | 10,2× | Musonic |
+| Un album (`getAlbum`) | **0,671 <small>(0,670–0,680)</small>** | 2,42 <small>(2,42–2,50)</small> | 3,6× | Musonic |
+| Un artiste (`getArtist`) | **0,665 <small>(0,665–0,672)</small>** | 2,22 <small>(2,21–2,26)</small> | 3,3× | Musonic |
+| Tous les artistes, 797 (`getArtists`) | **0,728 <small>(0,723–0,731)</small>** | 30,2 <small>(30,0–30,8)</small> | 41,5× | Musonic |
+| Un titre (`getSong`) | **0,678 <small>(0,672–0,678)</small>** | 1,91 | 2,8× | Musonic |
+| 50 albums les plus récents (`getAlbumList2`) | **0,699 <small>(0,692–0,700)</small>** | 5,14 <small>(5,10–5,18)</small> | 7,4× | Musonic |
+| 500 albums de A à Z (`getAlbumList2`) | **0,762 <small>(0,752–0,802)</small>** | 35,4 <small>(35,3–35,5)</small> | 46,5× | Musonic |
+| 50 albums au hasard (`getAlbumList2`) | **3,25 <small>(3,25–3,27)</small>** | 8,90 <small>(8,85–8,95)</small> | 2,7× | Musonic |
+| 50 titres au hasard (`getRandomSongs`) | **4,64 <small>(4,63–4,67)</small>** | 6,01 <small>(6,00–6,14)</small> | 1,3× | Musonic |
+| Genres (`getGenres`) | **0,672 <small>(0,664–0,673)</small>** | 1,66 <small>(1,65–1,66)</small> | 2,5× | Musonic |
+| Favoris (`getStarred2`) | **0,670 <small>(0,665–0,674)</small>** | 3,63 <small>(3,63–3,66)</small> | 5,4× | Musonic |
+| Playlists (`getPlaylists`) | **0,675 <small>(0,670–0,675)</small>** | 1,50 <small>(1,50–1,54)</small> | 2,2× | Musonic |
+
+<Aside type="note" title="Navidrome est plus rapide quand les requêtes sont espacées">
+Plusieurs routes de Navidrome répondent plus vite dans les deux séries « après un like » que dans la série à la suite ci-dessus : la recherche « love » prend 29,4 ms à la suite, 4,88 ms juste après un like et 7,21 ms 300 ms après. Le test n’explique pas pourquoi. Si vous comparez les serveurs pour un usage réel, où les requêtes arrivent écran par écran, regardez aussi les séries « après un like », pas seulement la série à la suite.
+</Aside>
+
+### Clients simultanés : débit
+
+1, 4, 16 et 64 clients en même temps pendant 10 s chacun, chaque client sur sa propre connexion, qui tire chaque requête au hasard parmi : un album, les 50 albums les plus récents, une recherche d’un mot au hasard, tous les artistes, 20 titres au hasard.
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| 1 client (requêtes/s) | **723 <small>(723–729)</small>** | 86,5 <small>(86,1–87,1)</small> | 8,4× | Musonic |
+| 4 clients (requêtes/s) | **918 <small>(899–928)</small>** | 135 <small>(134–136)</small> | 6,8× | Musonic |
+| 16 clients (requêtes/s) | **902 <small>(900–905)</small>** | 143 <small>(141–143)</small> | 6,3× | Musonic |
+| 64 clients (requêtes/s) | **913 <small>(904–917)</small>** | 156 <small>(152–158)</small> | 5,8× | Musonic |
+
+<Aside type="caution" title="Le débit de Musonic est limité par le client de test">
+Le client est un programme Python qui tourne sur les mêmes 2 cœurs que le serveur. À partir de 4 clients, Musonic plafonne vers 900 requêtes par seconde en utilisant environ la moitié d’un cœur (voir le tableau du temps processeur plus bas) : la limite vient du client, pas du serveur. Navidrome utilisait environ 1,7 des 2 cœurs à 16 et 64 clients. Le temps processeur par requête, plus bas, est la comparaison la plus juste.
+</Aside>
+
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-throughput.fr.svg" alt="Graphique en barres des requêtes par seconde : 1 client 723 pour Musonic et 86,5 pour Navidrome ; 4 clients 918 et 135 ; 16 clients 902 et 143 ; 64 clients 913 et 156." />
+
+### Clients simultanés : latence
+
+La latence de toutes les requêtes faites pendant ces étapes de 10 s (médiane et 95e centile).
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| 1 client : médiane (ms) | **0,410 <small>(0,410–0,420)</small>** | 5,68 <small>(5,67–5,68)</small> | 13,9× | Musonic |
+| 1 client : p95 (ms) | **2,53 <small>(2,47–2,53)</small>** | 32,9 <small>(32,9–33,0)</small> | 13,0× | Musonic |
+| 4 clients : médiane (ms) | **2,44 <small>(2,42–2,48)</small>** | 19,0 <small>(18,6–19,0)</small> | 7,8× | Musonic |
+| 4 clients : p95 (ms) | **6,32 <small>(6,27–6,55)</small>** | 80,7 <small>(79,1–81,0)</small> | 12,8× | Musonic |
+| 16 clients : médiane (ms) | **9,23 <small>(9,22–9,24)</small>** | 102 <small>(100–103)</small> | 11,0× | Musonic |
+| 16 clients : p95 (ms) | **23,9 <small>(23,8–24,9)</small>** | 212 <small>(210–212)</small> | 8,9× | Musonic |
+| 64 clients : médiane (ms) | **33,5 <small>(33,0–33,7)</small>** | 394 <small>(381–399)</small> | 11,8× | Musonic |
+| 64 clients : p95 (ms) | **105 <small>(104–106)</small>** | 593 <small>(583–624)</small> | 5,6× | Musonic |
+
+### Temps processeur du serveur
+
+Le temps processeur utilisé par le processus du serveur (utilisateur et système, lu dans `/proc`) pendant chaque étape de 10 s, divisé par le nombre de requêtes servies, pour 1 000 requêtes.
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| 1 client (s) | **0,582 <small>(0,576–0,585)</small>** | 12,1 <small>(12,1–12,2)</small> | 20,9× | Musonic |
+| 4 clients (s) | **0,602 <small>(0,600–0,603)</small>** | 12,1 <small>(12,0–12,2)</small> | 20,0× | Musonic |
+| 16 clients (s) | **0,601 <small>(0,596–0,602)</small>** | 11,7 <small>(11,7–11,8)</small> | 19,5× | Musonic |
+| 64 clients (s) | **0,598 <small>(0,589–0,600)</small>** | 11,0 <small>(10,8–11,1)</small> | 18,4× | Musonic |
+
+Le même temps processeur par seconde d’étape, qui montre la part des 2 cœurs utilisée par chaque serveur (2,0 voudrait dire les deux cœurs pleins) :
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| 1 client (s processeur par s) | **0,421 <small>(0,420–0,423)</small>** | 1,06 <small>(1,04–1,06)</small> | 2,5× | Musonic |
+| 4 clients (s processeur par s) | **0,554 <small>(0,540–0,559)</small>** | 1,63 <small>(1,62–1,63)</small> | 2,9× | Musonic |
+| 16 clients (s processeur par s) | **0,542 <small>(0,537–0,545)</small>** | 1,67 <small>(1,66–1,68)</small> | 3,1× | Musonic |
+| 64 clients (s processeur par s) | **0,542 <small>(0,538–0,548)</small>** | 1,70 <small>(1,69–1,72)</small> | 3,1× | Musonic |
+
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-cpu.fr.svg" alt="Graphique en barres du temps processeur du serveur pour 1 000 requêtes : 1 client 0,582 s pour Musonic et 12,1 s pour Navidrome ; 4 clients 0,602 et 12,1 s ; 16 clients 0,601 et 11,7 s ; 64 clients 0,598 et 11,0 s." />
+
+### Pochettes
+
+Les pochettes de 60 albums, demandées en 300 et 600 pixels : une première fois (le serveur redimensionne l’image), de nouveau aussitôt, puis encore 10 s plus tard. Les durées sont la médiane des 60 requêtes.
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| 300 px, 1re demande (médiane, ms) | **21,1 <small>(21,0–21,7)</small>** | 72,5 <small>(72,1–72,8)</small> | 3,4× | Musonic |
+| 300 px, redemandée aussitôt (médiane, ms) | **0,531 <small>(0,516–0,537)</small>** | 0,992 <small>(0,983–1,15)</small> | 1,9× | Musonic |
+| 300 px, redemandée 10 s plus tard (médiane, ms) | **0,539 <small>(0,537–0,540)</small>** | 0,921 <small>(0,911–0,929)</small> | 1,7× | Musonic |
+| 600 px, 1re demande (médiane, ms) | **31,5 <small>(30,1–32,6)</small>** | 119 <small>(115–119)</small> | 3,8× | Musonic |
+| 600 px, redemandée aussitôt (médiane, ms) | **0,599 <small>(0,596–0,643)</small>** | 1,05 <small>(1,02–1,05)</small> | 1,8× | Musonic |
+| 600 px, redemandée 10 s plus tard (médiane, ms) | **0,637 <small>(0,605–0,637)</small>** | 0,977 <small>(0,956–0,978)</small> | 1,5× | Musonic |
+
+Poids total des 60 pochettes reçues :
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| 300 px, 1re demande (Kio, 60 pochettes) | 1 091 | **1 001** | 1,09× | **Navidrome** |
+| 300 px, redemandée aussitôt (Kio) ¹ | **973 <small>(962–979)</small>** | 1 001 | 1,03× | Musonic |
+| 300 px, 10 s plus tard (Kio) | **915 <small>(906–919)</small>** | 1 001 | 1,09× | Musonic |
+| 600 px, 1re demande (Kio, 60 pochettes) | 3 701 | **3 488** | 1,06× | **Navidrome** |
+| 600 px, redemandée aussitôt (Kio) ¹ | **3 440** | 3 488 | 1,01× | Musonic |
+| 600 px, 10 s plus tard (Kio) | **3 246 <small>(3 222–3 249)</small>** | 3 488 | 1,07× | Musonic |
+
+¹ Absent du fichier de synthèse : calculé de la même façon à partir des résultats bruts.
+
+Musonic 1.0.1 envoie tout de suite une première version de la pochette redimensionnée, puis en fabrique une plus légère en arrière-plan (mozjpeg) qui la remplace dans son cache. C’est pourquoi son poids baisse entre la première demande et 10 s plus tard, alors que celui de Navidrome reste le même.
+
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-covers.fr.svg" alt="Graphique en barres de la durée médiane par pochette : 300 px 1re demande 21,1 ms pour Musonic et 72,5 ms pour Navidrome ; 600 px 1re demande 31,5 et 119 ms ; 300 px redemandée 0,531 et 0,992 ms ; 600 px redemandée 0,599 et 1,05 ms." />
+
+### Streaming
+
+Les mêmes 10 fichiers audio sur les deux serveurs (retrouvés par leur taille en octets), chacun lu une fois avant les mesures pour que le cache disque du système ne décide pas. 5 fichiers sont envoyés tels quels ; 5 autres, à 128 kbit/s, sont transcodés en MP3 à 96 kbit/s par le même ffmpeg pour les deux serveurs.
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| 1er octet, fichier original (ms) | **0,811 <small>(0,808–0,838)</small>** | 1,55 <small>(1,43–1,61)</small> | 1,9× | Musonic |
+| Fichier original entier, débit (Mo/s) | 625 <small>(616–660)</small> | **660 <small>(631–720)</small>** | 1,06× | **Navidrome** |
+| 1er octet, transcodé en MP3 96 kbit/s, 1re écoute (ms) | 42,0 <small>(41,9–42,1)</small> | **33,5 <small>(33,4–40,4)</small>** | 1,3× | **Navidrome** |
+| Titre entier transcodé, 1re écoute (ms) | 2 779 <small>(2 761–2 784)</small> | **2 760 <small>(2 758–2 761)</small>** | 1,01× | **Navidrome** |
+| 1er octet, transcodé, 2e écoute (ms) | **1,25 <small>(1,20–1,36)</small>** | 1,72 <small>(1,71–1,72)</small> | 1,4× | Musonic |
+
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-streaming.fr.svg" alt="Graphique en barres des durées de streaming : 1er octet d’un fichier original 0,811 ms pour Musonic et 1,55 ms pour Navidrome ; 1er octet transcodé, 1re écoute 42,0 et 33,5 ms, Navidrome devant ; 1er octet transcodé, 2e écoute 1,25 et 1,72 ms." />
+
+### Connexion à chaque requête
+
+Une appli Subsonic se connecte à chaque requête. `ping` ne fait rien d’autre : il montre le coût de la connexion plus le plancher de la mesure (client, connexion).
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| `ping`, connexion par jeton `t`+`s` (médiane, ms) | **0,270 <small>(0,269–0,271)</small>** | 0,682 <small>(0,651–0,698)</small> | 2,5× | Musonic |
+| `ping`, mot de passe `p` (médiane, ms) | **0,395 <small>(0,377–0,396)</small>** | 0,705 <small>(0,664–0,719)</small> | 1,8× | Musonic |
+
+### Poids des réponses
+
+Poids de chaque réponse reçue avec `Accept-Encoding: gzip` (une requête par route), en Kio.
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| Recherche « love » (`search3`) | 6,98 <small>(6,96–7,00)</small> | **5,95** | 1,2× | **Navidrome** |
+| Recherche « mo » (`search3`) | 8,88 <small>(8,84–8,90)</small> | **6,91 <small>(6,90–6,92)</small>** | 1,3× | **Navidrome** |
+| Recherche « the love » (`search3`) | **2,46 <small>(2,45–2,47)</small>** | 3,20 | 1,3× | Musonic |
+| Un album (`getAlbum`) | **0,723 <small>(0,723–0,726)</small>** | 0,811 <small>(0,808–0,812)</small> | 1,1× | Musonic |
+| Un artiste (`getArtist`) | 0,690 | **0,490 <small>(0,489–0,490)</small>** | 1,4× | **Navidrome** |
+| Tous les artistes, 797 (`getArtists`) | 47,7 | **30,0 <small>(30,0–30,1)</small>** | 1,6× | **Navidrome** |
+| Un titre (`getSong`) | **0,639 <small>(0,639–0,640)</small>** | 0,666 <small>(0,666–0,670)</small> | 1,04× | Musonic |
+| 50 albums les plus récents (`getAlbumList2`) | **6,79 <small>(6,70–6,85)</small>** | 6,88 | 1,01× | Musonic |
+| 500 albums de A à Z (`getAlbumList2`) | **65,8 <small>(65,7–65,8)</small>** | 67,0 <small>(67,0–67,1)</small> | 1,02× | Musonic |
+| 50 albums au hasard (`getAlbumList2`) | **7,59 <small>(7,37–7,64)</small>** | 7,79 <small>(7,58–7,91)</small> | 1,03× | Musonic |
+| 50 titres au hasard (`getRandomSongs`) | 13,2 <small>(12,4–13,2)</small> | **10,6 <small>(10,5–11,2)</small>** | 1,2× | **Navidrome** |
+| Genres (`getGenres`) | 0,772 <small>(0,772–0,773)</small> | **0,690** | 1,1× | **Navidrome** |
+| Favoris (`getStarred2`) | 0,159 | **0,134** | 1,2× | **Navidrome** |
+| Playlists (`getPlaylists`) | **0,142** | 0,328 <small>(0,326–0,331)</small> | 2,3× | Musonic |
+
+Pour comparaison, le poids des mêmes réponses sans compression (les tests de latence ci-dessus utilisent des réponses non compressées), en Kio :
+
+| Mesure | Musonic | Navidrome | Rapport | Devant |
+|---|---:|---:|---:|---|
+| Recherche « love » (`search3`) | **25,9 <small>(25,9–26,0)</small>** | 30,8 | 1,2× | Musonic |
+| Recherche « mo » (`search3`) | **33,0 <small>(33,0–33,2)</small>** | 36,5 | 1,1× | Musonic |
+| Recherche « the love » (`search3`) | **8,65** | 15,0 | 1,7× | Musonic |
+| Un album (`getAlbum`) | **1,79** | 1,98 | 1,1× | Musonic |
+| Un artiste (`getArtist`) | **0,690** | 0,894 | 1,3× | Musonic |
+| Tous les artistes, 797 (`getArtists`) | **104** | 125 | 1,2× | Musonic |
+| Un titre (`getSong`) | **1,26** | 1,34 | 1,06× | Musonic |
+| 50 albums les plus récents (`getAlbumList2`) | **23,1** | 31,6 | 1,4× | Musonic |
+| 500 albums de A à Z (`getAlbumList2`) | **235** | 323 | 1,4× | Musonic |
+| 50 albums au hasard (`getAlbumList2`) | **23,9 <small>(23,7–23,9)</small>** | 32,2 <small>(32,0–33,0)</small> | 1,3× | Musonic |
+| 50 titres au hasard (`getRandomSongs`) | **47,7 <small>(47,2–47,8)</small>** | 54,1 <small>(53,6–54,2)</small> | 1,1× | Musonic |
+| Genres (`getGenres`) | **2,49** | 2,72 | 1,09× | Musonic |
+| Favoris (`getStarred2`) | 0,159 | **0,142** | 1,1× | **Navidrome** |
+| Playlists (`getPlaylists`) | **0,142** | 0,475 | 3,4× | Musonic |
+
+Les réponses `getArtist`, `getStarred2` et `getPlaylists` de Musonic ont le même poids avec et sans gzip : Musonic 1.0.1 envoyait ces petites réponses (moins de 1 Kio) sans les compresser.
+
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-gzip.fr.svg" alt="Graphique en barres du poids compressé des réponses des 14 requêtes pour les deux serveurs, en Kio ; Navidrome est plus léger pour tous les artistes (30,0 contre 47,7 Kio), les recherches love et mo, un artiste, 50 titres au hasard, les genres et les favoris." />
+
+## Où Navidrome est devant
+
+Toutes les mesures de la synthèse où Navidrome a la meilleure valeur :
+
+| Mesure | Musonic | Navidrome | Navidrome devant de |
+|---|---:|---:|---:|
+| 1er octet d’un titre transcodé pour la première fois | 42,0 ms | **33,5 ms** | 1,25× |
+| Fichier original entier, débit | 625 Mo/s | **660 Mo/s** | 1,06× |
+| Titre entier transcodé, 1re écoute | 2 779 ms | **2 760 ms** | 1,007× |
+| 60 pochettes en 300 px, 1re demande, poids total | 1 091 Kio | **1 001 Kio** | 1,09× |
+| 60 pochettes en 600 px, 1re demande, poids total | 3 701 Kio | **3 488 Kio** | 1,06× |
+| Tous les artistes (`getArtists`), compressé | 47,7 Kio | **30,0 Kio** | 1,59× |
+| Un artiste (`getArtist`), compressé | 0,690 Kio | **0,490 Kio** | 1,41× |
+| Recherche « mo » (`search3`), compressé | 8,88 Kio | **6,91 Kio** | 1,29× |
+| 50 titres au hasard (`getRandomSongs`), compressé | 13,2 Kio | **10,6 Kio** | 1,24× |
+| Favoris (`getStarred2`), compressé | 0,159 Kio | **0,134 Kio** | 1,19× |
+| Recherche « love » (`search3`), compressé | 6,98 Kio | **5,95 Kio** | 1,17× |
+| Genres (`getGenres`), compressé | 0,772 Kio | **0,690 Kio** | 1,12× |
+
+Ce que cela veut dire :
+
+- **1er octet transcodé (33,5 contre 42,0 ms).** C’est le délai avant qu’un titre démarre quand le serveur doit le convertir et ne l’a jamais converti. Une fois converti, Musonic garde le résultat sur disque, et une 2e écoute démarre en 1,25 ms contre 1,72 ms. Depuis la 1.0.1, quand une appli enregistre sa file de lecture sur le serveur (`savePlayQueue`), Musonic convertit aussi le titre suivant en arrière-plan avant son tour ; le test n’enregistre pas de file, ce n’est donc pas mesuré.
+- **Poids compressé des artistes et des recherches.** En 1.0.1, les identifiants de Musonic étaient des UUID de 36 caractères, qui se compressent mal ; ceux de Navidrome font 22 caractères. La liste de tous les artistes pesait 47,7 Kio contre 30,0 Kio. Les identifiants courts sont arrivés avec Musonic Server 1.0.3 (voir [Ce qui a changé depuis](#ce-qui-a-changé-depuis)).
+- **Les pochettes à la toute première demande** sont 6 à 9 % plus lourdes chez Musonic, puis 7 à 9 % plus légères 10 s plus tard, une fois remplacées par la version faite en arrière-plan.
+- **Le débit d’un fichier original** (625 contre 660 Mo/s) et **la durée de transcodage d’un titre entier** (2 779 contre 2 760 ms) diffèrent de 6 % et de 0,7 % ; pour le débit, les plages des passes se recouvrent (616–660 contre 631–720 Mo/s).
+
+## À propos de la moyenne unique
+
+L’ancienne version de ce site affichait **« 6,9× en moyenne, sur 36 mesures »**. Voici d’où il vient, et pourquoi cette page ne met pas un seul chiffre en avant.
+
+- C’est la **moyenne géométrique** de 36 rapports, chacun écrit comme « combien de fois Musonic fait mieux » (Navidrome ÷ Musonic pour les durées, la mémoire et les poids ; Musonic ÷ Navidrome pour les débits) : une mesure où Navidrome est devant compte donc pour une valeur inférieure à 1. La moyenne géométrique est la racine n-ième du produit des n rapports, la façon habituelle de faire la moyenne d’accélérations.
+- Les 36 mesures étaient : les 9 de l’analyse, de la mémoire, du démarrage et du disque ; les 14 latences médianes ; les 4 débits en requêtes par seconde et le temps processeur pour 1 000 requêtes ; et 8 mesures de pochettes et de lecture (1re pochette en 300 et 600 px, pochette redemandée en 300 px, 1er octet d’un fichier original, 1er octet transcodé, 2e écoute transcodée, `ping` par jeton, débit d’un fichier original).
+- Recalculée à partir des résultats bruts avec les médianes non arrondies, elle vaut **6,95**. Le 6,9 affiché venait de valeurs arrondies (par exemple 11,7 s ÷ 0,6 s pour le temps processeur).
+- La même moyenne sur **les 113 mesures** de la synthèse (avec les p95, les séries « après un like », la latence sous charge et tous les poids) vaut **5,14**.
+- Une moyenne dépend des mesures qu’on y met, et elle cache celles où Navidrome est devant. Lisez les tableaux ci-dessus pour ce qui compte pour vous.
+
+## Ce que ce benchmark ne montre PAS
+
+- **Une grosse bibliothèque.** 1 871 fichiers, 7,0 Go, 797 artistes, environ 1 000 albums : c’est une petite bibliothèque. Rien ici ne dit comment l’un ou l’autre serveur se comporte avec 30 000 ou 100 000 titres. Ce test est prévu (voir [Méthode du benchmark](/fr/docs/about/benchmark-method/#prévu)).
+- **D’autres machines.** Un seul serveur virtuel ARM à 2 cœurs et 12 Go de mémoire. Pas un Raspberry Pi, pas une machine x86, pas un NAS, pas un disque dur.
+- **Une machine au calme.** D’autres services tournaient sur le même serveur pendant le test, de la même façon pour les deux serveurs.
+- **Un générateur de charge séparé.** Le client de test tourne sur les mêmes 2 cœurs que le serveur. Il plafonne Musonic vers 900 requêtes par seconde, et son propre temps est compris dans chaque latence : les médianes de Musonic sous la milliseconde sont proches du plancher de la mesure (`ping` prend 0,270 ms).
+- **Des réglages optimisés.** Navidrome tournait avec ses réglages par défaut, sauf l’analyse planifiée, les services externes, Last.fm et les statistiques d’usage, coupés. Musonic tournait avec ses réglages par défaut, sauf le catalogue en ligne, les extraits, les imports et la vérification des mises à jour, coupés. Aucun des deux n’a été réglé pour ce test.
+- **Plusieurs dates ou machines.** Un seul test, un soir, sur une machine. Les 3 passes montrent la stabilité des chiffres sur cette machine, pas sur une autre.
+- **Les applis.** C’est un test du serveur. Il ne dit rien des applis Musonic, des applis Subsonic ni du réseau entre elles et le serveur.
+- **Les fonctions.** Il compare la vitesse et les ressources sur les mêmes requêtes Subsonic, pas ce que chaque serveur sait faire.
+- **Les nouvelles analyses.** Seule la première analyse complète d’une base vide a été mesurée, pas une nouvelle analyse après quelques fichiers modifiés.
+- **Les versions d’aujourd’hui.** Voir ci-dessous.
+
+## Ce qui a changé depuis
+
+Les mesures portent sur **Musonic Server 1.0.1** et **Navidrome 0.64.2**. Les deux ont évolué depuis ; le benchmark n’a pas été refait.
+
+- **Identifiants courts** (Musonic Server 1.0.3) : les titres, albums, artistes, dossiers et playlists ont désormais des identifiants de 11 caractères au lieu de 36. D’après le journal des changements de la 1.0.3, la liste des artistes est 42 % plus légère, 500 albums 24 % et une recherche environ 20 %. Ce sont des chiffres de Musonic seul, non mesurés face à Navidrome : **les poids compressés de cette page sont ceux de la 1.0.1**, et les réponses de Musonic sont plus légères aujourd’hui.
+- **`/health`** (Musonic Server 1.0.3) n’indique plus l’analyse. Le script se replie désormais sur la route Subsonic `getScanStatus` et fonctionne donc avec les versions actuelles (voir le [README du script](https://github.com/DoodzDev/Musonic/tree/main/tools/benchmark)).
+- La version actuelle de Musonic Server est la 1.2.1. Navidrome a publié ses propres versions après la 0.64.2. Aucun des deux n’a été remesuré depuis le 22/10/2026.
+
+## Vérifiez par vous-même
+
+Les scripts (`serverbench.py`, `summarize.py`), la configuration utilisée et les résultats bruts de ce test (`results/2026-10-22-v6/`) sont dans le dépôt. Vous pouvez refaire le même test sur votre machine, avec votre bibliothèque.
+
+<CardGrid>
+  <LinkCard title="Méthode du benchmark" description="Machine, versions, chaque requête, mesure de la mémoire et du processeur, calcul de la synthèse." href="/fr/docs/about/benchmark-method/" />
+  <LinkCard title="Scripts et résultats bruts" description="tools/benchmark sur GitHub." href="https://github.com/DoodzDev/Musonic/tree/main/tools/benchmark" />
+  <LinkCard title="Venir de Navidrome" description="Essayer Musonic à côté de Navidrome, sur le même dossier de musique." href="/fr/docs/migration/navidrome/" />
+</CardGrid>

@@ -1,0 +1,320 @@
+---
+title: Installer le serveur avec Docker
+description: Comment installer Musonic Server avec Docker Compose sur une machine Linux, de l'installation de Docker à un serveur qui répond, avec chaque ligne du fichier compose expliquée.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Cette page installe Musonic Server avec Docker Compose, d'une machine Linux vide à un serveur qui répond. C'est la façon la plus simple d'avoir votre propre serveur : l'image contient déjà le serveur, ffmpeg et la console.
+
+**Ce qu'il vous faut**
+
+- Une machine Linux qui reste allumée, en **64 bits** (x86_64, ou ARM64 comme un Raspberry Pi 3, 4 ou 5 avec un système 64 bits). Voir [Comment marche Musonic](/fr/docs/start/how-it-works/).
+- Un terminal sur cette machine (directement, ou par `ssh`), et un compte qui peut utiliser `sudo`.
+- Votre musique dans un dossier de cette machine.
+- Environ 15 minutes, plus le temps du premier scan de votre bibliothèque.
+
+<img class="diagram" src="/assets/img/docs/diagrams/docker-folders.fr.svg" alt="Schéma : sur la machine, le dossier musonic-server/data est monté en /data dans le conteneur, et votre dossier de musique en /music ; le conteneur écoute sur le port 4533, joignable seulement depuis la machine elle-même en 127.0.0.1:4533." />
+
+## Installation rapide
+
+<Steps>
+
+1. **Installez Docker et son extension Compose.**
+
+   Suivez la page officielle de votre système (détails dans [Installer Docker](#installer-docker) plus bas), puis vérifiez que ça marche :
+
+   ```sh
+   docker compose version
+   ```
+
+2. **Créez un dossier pour le serveur et ses données.**
+
+   ```sh
+   mkdir -p ~/musonic-server/data
+   cd ~/musonic-server
+   ```
+
+3. **Téléchargez le fichier compose.**
+
+   ```sh
+   curl -o compose.yml https://raw.githubusercontent.com/DoodzDev/Musonic/main/apps/server/compose.example.yml
+   ```
+
+4. **Trouvez vos numéros d'utilisateur et de groupe.**
+
+   ```sh
+   id
+   ```
+
+   Notez les nombres après `uid=` et `gid=` (souvent `1000` et `1000`).
+
+5. **Modifiez `compose.yml` : votre dossier de musique et vos numéros.**
+
+   ```sh
+   nano compose.yml
+   ```
+
+   Remplacez `/path/to/music` par le vrai chemin de votre dossier de musique, et `1000:1000` par vos `uid:gid` s'ils sont différents. Enregistrez avec **Ctrl+O**, **Entrée**, puis quittez avec **Ctrl+X**.
+
+6. **Démarrez le serveur.**
+
+   ```sh
+   docker compose up -d
+   ```
+
+7. **Vérifiez qu'il répond.**
+
+   ```sh
+   curl http://127.0.0.1:4533/health
+   ```
+
+   La réponse est `{"status":"ok"}`. Passez au [premier démarrage](/fr/docs/install/first-start/) : votre compte administrateur.
+
+</Steps>
+
+La suite de cette page détaille chaque étape, et ce qu'il faut faire quand quelque chose ne marche pas.
+
+## Installer Docker
+
+Musonic a besoin de **Docker Engine** avec l'**extension Compose** (la commande `docker compose`, avec une espace). Installez-les avec les instructions officielles de votre système :
+
+| Système | Instructions officielles |
+|---|---|
+| Debian, Raspberry Pi OS (64 bits) | [docs.docker.com/engine/install/debian](https://docs.docker.com/engine/install/debian/) |
+| Ubuntu | [docs.docker.com/engine/install/ubuntu](https://docs.docker.com/engine/install/ubuntu/) |
+| Fedora | [docs.docker.com/engine/install/fedora](https://docs.docker.com/engine/install/fedora/) |
+| Autres systèmes | [docs.docker.com/engine/install](https://docs.docker.com/engine/install/) |
+| Arch Linux | les paquets `docker` et `docker-compose` (voir le [wiki Arch](https://wiki.archlinux.org/title/Docker)) |
+
+Ensuite, pour ne pas taper `sudo` devant chaque commande `docker`, ajoutez-vous au groupe `docker`, puis **déconnectez-vous et reconnectez-vous** (ou redémarrez) :
+
+```sh
+sudo usermod -aG docker $USER
+```
+
+Vérifiez que ça marche, sans `sudo` :
+
+```sh
+docker compose version
+docker run --rm hello-world
+```
+
+<Aside type="caution">
+Les membres du groupe `docker` peuvent contrôler toute la machine à travers Docker. N'y ajoutez que des comptes de confiance. Si vous préférez, sautez cette étape et tapez `sudo docker …` au lieu de `docker …` partout sur cette page.
+</Aside>
+
+<Aside type="tip" title="Sur un NAS">
+Beaucoup de NAS font tourner des conteneurs Docker depuis leur propre appli (avec un « projet » ou une « stack » créée à partir d'un fichier compose). Vous pouvez y coller le fichier compose ci-dessous. Réglez les deux dossiers et les numéros d'utilisateur de la même façon.
+</Aside>
+
+## Le dossier du serveur
+
+Choisissez un dossier pour le serveur : le fichier compose y va, et son dossier `data` contient tout ce que le serveur écrit. Cette page utilise `~/musonic-server` (dans votre dossier personnel) ; `/srv/musonic-server` ou un dossier sur un partage du NAS marche aussi.
+
+```sh
+mkdir -p ~/musonic-server/data
+cd ~/musonic-server
+```
+
+**Créez `data` vous-même, avant le premier démarrage.** S'il n'existe pas, Docker le crée en tant que `root`, et le serveur (qui ne tourne pas en `root`) ne peut pas y écrire.
+
+Ce que le serveur garde dans `data` :
+
+| Dans `data` | Ce que c'est |
+|---|---|
+| `musonic.db` (avec `musonic.db-wal`, `musonic.db-shm`) | La base de données : comptes, bibliothèque, likes, playlists, écoutes, réglages changés dans la console. |
+| `secret.key` | La clé qui chiffre les mots de passe gardés pour les anciennes applis Subsonic. Créée au premier démarrage. Gardez-la avec la base. |
+| `backups/` | Une copie de la base par jour (`musonic-AAAA-MM-JJ.db`), les 14 dernières par défaut. |
+| `events.db` | Le journal d'activité et d'administration de la console. |
+| `cache/`, `tmp/` | Pochettes redimensionnées, titres transcodés, titres en cours de diffusion. Peuvent être vidés. |
+| `web/` | Le lecteur web, quand vous l'installez depuis la console. |
+
+## Le fichier compose
+
+Téléchargez le fichier d'exemple du dépôt. Il est aussi joint à chaque version du serveur sous le nom `compose.yml`.
+
+```sh
+curl -o compose.yml https://raw.githubusercontent.com/DoodzDev/Musonic/main/apps/server/compose.example.yml
+```
+
+Le voici, ligne par ligne :
+
+```yaml
+services:
+  musonic-server:
+    image: ghcr.io/doodzdev/musonic-server:1
+    container_name: musonic-server
+    restart: unless-stopped
+    user: "1000:1000"
+    ports:
+      - "127.0.0.1:4533:4533"
+    volumes:
+      - ./data:/data
+      - /path/to/music:/music
+      - /proc/1/net/dev:/host/net/dev:ro
+    environment:
+      RUST_LOG: info
+      # MUSONIC_ONLINE: "false"
+    mem_limit: 512m
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+```
+
+| Ligne | Ce qu'elle fait | À changer ? |
+|---|---|---|
+| `image: ghcr.io/doodzdev/musonic-server:1` | L'image publiée, pour x86_64 et ARM64. L'étiquette `1` suit toutes les versions `1.x` : une mise à jour ne passe jamais toute seule à une `2.0`. Autres étiquettes : `latest`, `1.2`, `1.2.1` (une version exacte). | Non. Mettez une version exacte (`:1.2.1`) seulement pour y rester. |
+| `container_name: musonic-server` | Le nom du conteneur, utilisé par `docker logs musonic-server`. | Non. |
+| `restart: unless-stopped` | Docker relance le serveur après un plantage, un redémarrage de la machine, ou un redémarrage demandé depuis la console. | **Non** : le bouton **Redémarrer** de la console compte dessus. |
+| `user: "1000:1000"` | L'utilisateur et le groupe sous lesquels tourne le serveur, en numéros. Ils doivent pouvoir lire votre musique et écrire dans `data`. | **Oui**, si `id` donne d'autres numéros (voir [Utilisateur et droits](#utilisateur-et-droits)). |
+| `ports: "127.0.0.1:4533:4533"` | Le serveur écoute sur le port 4533, joignable **seulement depuis la machine elle-même**. Un reverse proxy en HTTPS sur la même machine lui passe les visiteurs ([HTTPS](/fr/docs/install/https/)). | Seulement pour le joindre depuis votre réseau local sans HTTPS (voir plus bas). |
+| `./data:/data` | Votre dossier `data`, vu comme `/data` dans le conteneur : base, caches, sauvegardes. | Non (ou un chemin absolu vers un autre dossier). |
+| `/path/to/music:/music` | Votre dossier de musique, vu comme `/music` dans le conteneur. | **Oui** : mettez le vrai chemin de votre dossier de musique. |
+| `/proc/1/net/dev:/host/net/dev:ro` | Permet à la page **Données** de la console de compter le trafic réseau de toute la machine. Sans cette ligne, elle ne compte que celui du serveur. | Facultatif. |
+| `RUST_LOG: info` | La quantité de détails que le serveur écrit dans ses journaux. `debug` en écrit plus, `warn` moins. | Rarement. |
+| `# MUSONIC_ONLINE: "false"` | Enlevez le `#` pour couper le catalogue en ligne (le serveur ne le contacte alors jamais). | À votre choix. |
+| `mem_limit: 512m` | La mémoire maximale que le conteneur peut utiliser. | Augmentez-la pour une très grosse bibliothèque si les journaux montrent que le serveur s'est arrêté faute de mémoire. |
+| `read_only: true` | Les fichiers propres au conteneur ne peuvent pas être modifiés : le serveur n'écrit que dans `/data` (et `/music` pour les imports). | Non. |
+| `cap_drop: [ALL]`, `security_opt: no-new-privileges` | Le serveur n'a aucun droit Linux particulier, et ne peut pas en obtenir. | Non. |
+| `logging: … max-size: "10m", max-file: "3"` | Les journaux tiennent dans 3 fichiers de 10 Mo au plus : ils ne remplissent jamais le disque. | Non. |
+
+Tous les autres réglages (intervalle de scan, sauvegardes gardées, débits…) sont des variables d'environnement à ajouter sous `environment:`, et la plupart se changent aussi depuis la console. La liste complète est dans la [référence de configuration](/fr/docs/admin/configuration/).
+
+### Le joindre depuis votre réseau local sans HTTPS
+
+Avec `127.0.0.1:4533:4533`, seule la machine elle-même joint le serveur. Pour l'essayer depuis un autre appareil de la maison avant de mettre en place HTTPS, changez la ligne en :
+
+```yaml
+    ports:
+      - "4533:4533"
+```
+
+Utilisez ensuite `http://<ip-de-la-machine>:4533`, où `<ip-de-la-machine>` est l'adresse locale de la machine (donnée par `hostname -I`, par exemple `192.168.1.20`). L'appli Android n'accepte `http://` que pour les adresses de votre réseau local ; toute autre adresse doit être en `https://`.
+
+<Aside type="caution">
+N'ouvrez jamais le port 4533 sur votre box internet pour joindre le serveur depuis l'extérieur : les mots de passe passeraient en clair. Utilisez [HTTPS](/fr/docs/install/https/) à la place.
+</Aside>
+
+## Utilisateur et droits
+
+Le serveur tourne sous l'utilisateur et le groupe écrits dans `user:`, en numéros. Trouvez les vôtres avec `id` :
+
+```sh
+id
+```
+
+```txt
+uid=1000(alice) gid=1000(alice) groups=1000(alice),…
+```
+
+Ici, écrivez `user: "1000:1000"`. Si votre musique appartient à un autre utilisateur, prenez les numéros de cet utilisateur : `id <nom-utilisateur>`.
+
+Cet utilisateur doit pouvoir :
+
+- **lire** votre dossier de musique et tous ses fichiers ;
+- **écrire** dans `data` ;
+- **écrire** dans votre dossier de musique seulement si vous voulez des imports (voir plus bas).
+
+Vérifiez à qui appartiennent les dossiers :
+
+```sh
+ls -ldn ~/musonic-server/data /path/to/music
+```
+
+Les troisième et quatrième colonnes sont les numéros d'utilisateur et de groupe. Si `data` appartient à `0 0` (root), donnez-le à votre utilisateur :
+
+```sh
+sudo chown -R 1000:1000 ~/musonic-server/data
+```
+
+## Musique en lecture seule, ou imports
+
+Musonic Server ne modifie, ne déplace et ne supprime jamais vos propres fichiers. Il n'écrit dans votre dossier de musique que pour **importer** des titres : quand un fournisseur audio est branché sur le serveur, un titre en ligne que quelqu'un like ou ajoute à une playlist est enregistré en fichier dans un dossier `Musonic` à l'intérieur de votre dossier de musique (réglage `MUSONIC_IMPORT_DIR`). Voir [Catalogue en ligne et imports](/fr/docs/library/online-catalogue/).
+
+| Vous voulez | Écrivez |
+|---|---|
+| Pas d'imports, et la garantie que rien n'est jamais écrit dans votre musique | `- /path/to/music:/music:ro` (`:ro` = lecture seule) |
+| Des imports dans votre dossier de musique | `- /path/to/music:/music` (l'utilisateur de `user:` doit pouvoir y écrire) |
+
+Sans fournisseur audio, il n'y a pas d'imports, et `:ro` ne change rien pour vous.
+
+## Démarrer
+
+Depuis le dossier du serveur :
+
+```sh
+cd ~/musonic-server
+docker compose up -d
+```
+
+Docker télécharge l'image, crée le conteneur et le démarre en arrière-plan (`-d`). Au premier démarrage, le serveur crée sa base de données, son `secret.key`, puis commence à scanner votre dossier de musique.
+
+Vérifiez qu'il tourne :
+
+```sh
+docker compose ps
+```
+
+La colonne `STATUS` indique `Up … (healthy)` au bout de quelques secondes : l'image vérifie toutes les 30 secondes que le serveur répond.
+
+## Lire les journaux
+
+```sh
+docker compose logs -f musonic-server
+```
+
+(`-f` suit les nouvelles lignes ; **Ctrl+C** arrête de suivre, le serveur continue de tourner.)
+
+Lors d'un démarrage normal, vous voyez des lignes avec ces messages :
+
+- `musonic-server starting`, avec la version et votre dossier de musique (`music_dir=Some("/music")`) ;
+- `administration console: /usr/share/musonic/admin` ;
+- `no account yet: create the administrator …` tant que vous n'avez pas créé votre compte ;
+- `listening on http://0.0.0.0:4533`.
+
+## Vérifier qu'il répond
+
+Depuis la machine elle-même :
+
+```sh
+curl http://127.0.0.1:4533/health
+```
+
+```json
+{"status":"ok"}
+```
+
+`{"status":"degraded"}` veut dire que le serveur tourne mais que sa base ne répond pas : lisez les journaux. Pour voir ce que le serveur dit de lui-même (version, ce qu'il sait faire) :
+
+```sh
+curl http://127.0.0.1:4533/v1/info
+```
+
+Le serveur répond. Créez maintenant votre compte administrateur : [Premier démarrage](/fr/docs/install/first-start/).
+
+## Erreurs courantes
+
+| Ce que vous voyez | Pourquoi | Que faire |
+|---|---|---|
+| `permission denied while trying to connect to the Docker daemon socket` | Votre compte n'est pas encore dans le groupe `docker`. | Lancez `sudo usermod -aG docker $USER`, déconnectez-vous et reconnectez-vous. Ou tapez `sudo docker …`. |
+| `docker: 'compose' is not a docker command` | L'extension Compose manque. | Installez le paquet `docker-compose-plugin` (voir [Installer Docker](#installer-docker)). |
+| Le conteneur redémarre sans arrêt ; les journaux disent `opening /data/musonic.db` | Le serveur ne peut pas écrire dans `data`. | Donnez `data` au bon utilisateur : `sudo chown -R 1000:1000 ~/musonic-server/data` (vos numéros), puis `docker compose up -d`. |
+| `Bind for 127.0.0.1:4533 failed: port is already allocated` ou `address already in use` | Un autre programme utilise le port 4533 (Navidrome utilise le même par défaut). | Arrêtez l'autre programme, ou changez seulement le nombre de gauche : `"127.0.0.1:4534:4533"`, puis utilisez le port 4534 partout. |
+| Les journaux montrent `music_dir=Some("/music")` mais la bibliothèque reste vide | La ligne du dossier de musique est fausse, ou l'utilisateur ne peut pas le lire. | Vérifiez le chemin dans `compose.yml`, et `ls -ldn /path/to/music`. Après correction : `docker compose up -d`. |
+| `no matching manifest for linux/arm/v7` (ou `exec format error`) | La machine a un système ARM 32 bits. | Installez un système 64 bits (par exemple Raspberry Pi OS 64 bits). |
+| `curl: (7) Failed to connect to 127.0.0.1 port 4533` | Le serveur n'est pas démarré, ou vous n'êtes pas sur la machine elle-même. | `docker compose ps`, puis les journaux. Lancez `curl` sur la machine du serveur, pas sur votre ordinateur. |
+| `curl: (56) Recv failure: Connection reset by peer` juste après le démarrage | Le serveur démarre encore. | Attendez quelques secondes et réessayez. |
+
+D'autres cas dans [Dépannage](/fr/docs/admin/troubleshooting/).
+
+## Et ensuite
+
+- [Premier démarrage](/fr/docs/install/first-start/) : votre compte administrateur, la console, les invitations.
+- [Y accéder de l'extérieur (HTTPS)](/fr/docs/install/https/).
+- [Mettre à jour le serveur](/fr/docs/install/update/).

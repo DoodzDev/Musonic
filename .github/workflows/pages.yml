@@ -1,14 +1,14 @@
 name: Website & Web Client
 
-# Publishes the GitHub Pages site: the project website (docs/) at the root and
-# the web client under /app/ (https://musonic.doodz.dev/app/, custom domain set in
+# Publishes the GitHub Pages site: the project website and its documentation
+# (site/, Astro + Starlight) at the root and the web client under /app/ (https://musonic.doodz.dev/app/, custom domain set in
 # the repository settings → Pages).
 on:
   push:
     branches:
       - main
     paths:
-      - 'docs/**'
+      - 'site/**'
       - 'apps/web/**'
       - 'packages/core/**'
       - 'package.json'
@@ -40,21 +40,22 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          npm ci --prefix site
 
       - name: Build web client
         run: npm run build --workspace apps/web
         env:
           MUSONIC_WEB_BASE: /app/
 
+      - name: Build website
+        run: npm run build --prefix site
+
       - name: Assemble site
-        run: |
-          mkdir -p _site/app
-          cp -r docs/. _site/
-          cp -r apps/web/dist/. _site/app/
-          # GitHub Pages has a single 404 page: serve the web client there so
-          # reloading a deep link (/app/album/…) still opens the app.
-          cp _site/app/index.html _site/404.html
+        # Website at the root, web client under /app/; the single 404 page of
+        # GitHub Pages opens the web client for /app/… and the site's own page otherwise.
+        run: bash site/scripts/assemble.sh _site
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3

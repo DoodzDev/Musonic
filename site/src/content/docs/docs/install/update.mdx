@@ -1,0 +1,218 @@
+---
+title: Update the server
+description: How to update Musonic Server with Docker or as a single program, what happens to the database, the backups made for you, how to go back to an older version, and how the apps tell you about their own updates.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+This page updates Musonic Server to a newer version, and explains what happens to your data and how to go back if needed. It is for the person who runs the server. The apps are updated separately, see [the end of this page](#updating-the-apps).
+
+## Know when a new version is out
+
+The server looks for new versions on GitHub every 6 hours (setting `update_check`, environment variable `MUSONIC_UPDATE_CHECK`, on by default). It **never installs anything on its own**: it tells you.
+
+- The console shows an alert **"Musonic Server X is out"** in the bar at the top, with **See the release**.
+- The **Dashboard**'s **Versions** card shows the installed version, the latest one, and **Update available** or **Up to date**. The same card covers the web player installed on the server.
+
+<img class="shot-wide" src="/assets/img/docs/install-update/01-update-alert.en.webp" alt="The console's dashboard with the alert Musonic Server X is out in the top bar, and the Versions card showing the installed version, the latest one and Update available." />
+
+Read the changes before you update: the release notes on the [releases page](https://github.com/DoodzDev/Musonic/releases) (tags `server-v…`), or the [list of versions](/docs/about/changelog/).
+
+## Update
+
+<Tabs syncKey="install">
+<TabItem label="Docker">
+
+<Steps>
+
+1. **Go to the folder of the server.**
+
+   ```sh
+   cd ~/musonic-server
+   ```
+
+2. **Download the new image.**
+
+   ```sh
+   docker compose pull
+   ```
+
+3. **Start the server again with it.**
+
+   ```sh
+   docker compose up -d
+   ```
+
+   Docker replaces the container; your `data` folder stays. Music stops for a few seconds, the apps reconnect on their own.
+
+4. **Check the version in the logs.**
+
+   ```sh
+   docker compose logs --tail 50 musonic-server
+   ```
+
+   The line `musonic-server starting` shows the new `version`.
+
+5. **Remove the old image (optional).**
+
+   ```sh
+   docker image prune
+   ```
+
+</Steps>
+
+With the tag `:1` of the example compose file, `pull` takes the newest `1.x` version: it never jumps to a `2.0` on its own. A `2.0` would say in its notes what to change first.
+
+</TabItem>
+<TabItem label="Without Docker">
+
+<Steps>
+
+1. **Download and unpack the new version.**
+
+   ```sh
+   cd /tmp
+   curl -LO https://github.com/DoodzDev/Musonic/releases/download/server-v<version>/musonic-server-<version>-linux-$(uname -m).tar.gz
+   tar -xzf musonic-server-<version>-linux-$(uname -m).tar.gz
+   ```
+
+   `<version>` is the new version, for example `1.2.1`.
+
+2. **Stop the server.**
+
+   ```sh
+   sudo systemctl stop musonic-server
+   ```
+
+3. **Keep the old version, put the new one in place.**
+
+   ```sh
+   sudo rm -rf /opt/musonic-server.old
+   sudo mv /opt/musonic-server /opt/musonic-server.old
+   sudo mkdir /opt/musonic-server
+   sudo cp -r musonic-server-<version>-linux-$(uname -m)/. /opt/musonic-server/
+   ```
+
+4. **Start it.**
+
+   ```sh
+   sudo systemctl start musonic-server
+   ```
+
+5. **Check the version in the logs.**
+
+   ```sh
+   journalctl -u musonic-server -n 50
+   ```
+
+   The line `musonic-server starting` shows the new `version`.
+
+</Steps>
+
+Replace the whole folder, not only the program: the console in `admin/` goes with its version of the server. Your configuration (`/etc/musonic-server`) and your data (`/var/lib/musonic-server`) are not touched.
+
+</TabItem>
+</Tabs>
+
+## What happens to the database
+
+You have nothing to do: **the server updates its database itself when it starts**.
+
+- The database has a schema version. Each new version of the server brings the changes it needs (migrations), applied in order at start, each one entirely or not at all. The logs show `database migrated to <n> (<name>)` for each.
+- **Before changing the database, the server copies it as it was**, next to it: `musonic.db.before-schema-<n>` in the data folder (`<n>` is the first migration about to be applied). This copy is made once, and is there to go back by hand.
+- Many updates change nothing in the database: then no copy is made.
+- An older server refuses to open a database that a newer one has changed: it stops with `database schema … is newer than this server …: update the server`. Your data is not touched.
+
+## The daily backups
+
+Besides that copy, the server backs up its database **every day** in `backups/` inside the data folder (`musonic-YYYY-MM-DD.db`), the first time just after it starts. It keeps the last **14** (setting `backup_days`, `MUSONIC_BACKUP_DAYS`; `0` turns them off).
+
+In the console, **Settings and maintenance** → **Backups** lists them, makes one now (**Back up now**) and downloads them. The console warns you when no backup was made for more than 2 days.
+
+<Aside type="tip" title="Before a big update">
+Click **Back up now** in the console, or copy the whole data folder. A backup holds the database only (accounts, likes, playlists, plays, settings), not your music files, and not `secret.key`: keep that file with your backups. More in [Backups and restore](/docs/admin/backups/).
+</Aside>
+
+## Go back to an older version
+
+If a new version does not suit you, you can go back to the one you had.
+
+**If the update did not change the database** (no `database migrated` line in the logs, no new `musonic.db.before-schema-…` file): put the old version back, that is all.
+
+<Tabs syncKey="install">
+<TabItem label="Docker">
+
+In `compose.yml`, write the exact version you had instead of `1`, for example:
+
+```yaml
+    image: ghcr.io/doodzdev/musonic-server:1.2.0
+```
+
+then `docker compose up -d`. Put `1` back later to get updates again.
+
+</TabItem>
+<TabItem label="Without Docker">
+
+```sh
+sudo systemctl stop musonic-server
+sudo mv /opt/musonic-server /opt/musonic-server.new
+sudo mv /opt/musonic-server.old /opt/musonic-server
+sudo systemctl start musonic-server
+```
+
+</TabItem>
+</Tabs>
+
+**If the update changed the database**, the old version refuses it. Go back to the copy made before the migration. What was done in the meantime (likes, plays, playlists since the update) is lost.
+
+<Steps>
+
+1. **Stop the server.**
+
+   Docker: `docker compose down`. Without Docker: `sudo systemctl stop musonic-server`.
+
+2. **Move the current database aside, with its two companion files.**
+
+   In the data folder (`~/musonic-server/data`, or `/var/lib/musonic-server`):
+
+   ```sh
+   mkdir newer
+   mv musonic.db musonic.db-wal musonic.db-shm newer/
+   ```
+
+   (`musonic.db-wal` and `musonic.db-shm` may not exist: that is fine.)
+
+3. **Put the copy made before the migration back.**
+
+   ```sh
+   cp musonic.db.before-schema-<n> musonic.db
+   ```
+
+   Take the newest one, the file with the **highest** `<n>`: it is the one this update made (older ones come from earlier updates). Without Docker, run the commands as the user of the service, or give the file back to it with `chown`.
+
+4. **Start the old version** (see above).
+
+</Steps>
+
+<Aside type="caution">
+Never put a backup in place while the server runs, and always move `musonic.db-wal` and `musonic.db-shm` with `musonic.db`: they hold the last changes of the database that is running.
+</Aside>
+
+## Updating the apps
+
+The apps are updated separately from the server: each has its own version and its own releases.
+
+| App | How it learns about a new version | How to update |
+|---|---|---|
+| **Android** | A few seconds after it starts, the app checks GitHub for a newer Musonic release for Android. If there is one, a window says **"Update available"**, "Version X is available on GitHub", with **View release**. You can also check yourself: the round button with your initial, at the top right → **About** → **Check for updates**. | Download and install the new APK from the release, over the old one: your accounts and downloads stay. See [Install the Android app](/docs/apps/android/). |
+| **Web player on your server** (`/app/`) | The console's **Dashboard** (**Versions**) and **Settings and maintenance** (**Musonic Web on this server**) show the latest version. | **Settings and maintenance** → **Musonic Web on this server** → **Update**. Then reload the page in the browsers. |
+| **Web player of this site** | Nothing to do. | It is updated with each new version of the web player: reload the page. |
+| **iPhone, iPad** | They use the web player: see the two lines above. | Same. |
+
+<img class="shot-phone" src="/assets/img/docs/install-update/02-android-update.en.webp" alt="The Android app with the window Update available, the text Version X is available on GitHub, and the buttons Cancel and View release." />
+
+## Next steps
+
+- [Backups and restore](/docs/admin/backups/).
+- [Versions and changes](/docs/about/changelog/).
+- [Troubleshooting](/docs/admin/troubleshooting/).

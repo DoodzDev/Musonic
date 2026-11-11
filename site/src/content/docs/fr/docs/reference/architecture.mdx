@@ -1,0 +1,203 @@
+---
+title: Architecture
+description: Comment Musonic est construit — le monorepo, le parcours d'une requête dans Musonic Server, sa base SQLite et ses caches, la synchronisation en temps réel, le code partagé, la compilation, les versions publiées et les licences.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Cette page explique comment le projet Musonic est organisé, pour les développeurs qui veulent lire le code, le compiler ou contribuer. Tout se trouve dans un seul dépôt Git, [github.com/DoodzDev/Musonic](https://github.com/DoodzDev/Musonic).
+
+<img class="diagram" src="/assets/img/docs/diagrams/architecture-overview.fr.svg" alt="Schéma : l'appli Android, Musonic Web, la console d'administration et les autres clients Subsonic parlent à Musonic Server en HTTPS ; le serveur lit le dossier de musique, garde ses données dans SQLite, transcode avec ffmpeg, et interroge le catalogue en ligne et les fournisseurs audio." />
+
+## Le dépôt
+
+| Dossier | Ce que c'est | Technologies |
+|---|---|---|
+| `apps/mobile` | L'appli Android (version 2.4.0). | React Native 0.85, React 19, TypeScript ; code natif Kotlin pour le lecteur et la voiture. |
+| `apps/web` | Musonic Web, le lecteur web (version 1.2.0). Servi sous `/app/` du site et, une fois installé depuis la console, par chaque serveur. | React 19, Vite, TypeScript. |
+| `apps/admin` | La console d'administration, servie par le serveur à sa propre adresse. | React 19, Vite, TypeScript. |
+| `apps/server` | Musonic Server (version 1.2.1). | Rust (1.89 ou plus récent), axum, tokio, SQLite (rusqlite), ffmpeg en programme externe. |
+| `packages/core` | `@musonic/core` : le code TypeScript partagé par les applis. | TypeScript, tests avec Vitest. |
+| `packages/icons` | `@musonic/icons` : les icônes des applis web, générées à partir du jeu d'icônes de l'appli mobile. | Un script Python (`npm run generate`). |
+| `site` | Ce site. | Astro et Starlight. |
+
+Le `package.json` racine déclare un espace de travail npm avec `apps/web`, `apps/admin`, `packages/core` et `packages/icons`. L'appli mobile garde ses propres dépendances et n'en fait pas partie.
+
+### L'appli Android
+
+L'interface et la logique de lecture (file d'attente, aléatoire, répétition, décisions de fondu enchaîné) sont en TypeScript (`apps/mobile/src`). Le son est joué par du code natif dans `apps/mobile/android` :
+
+- `MusonicPlayerService` : ExoPlayer (AndroidX Media3) avec le déchargement audio, pour que la puce audio décode écran éteint, dans une session Media3 qui affiche la notification et les commandes de l'écran verrouillé et sert Android Auto.
+- `MusonicPlayerModule` : le pont par lequel le moteur TypeScript pilote ce lecteur.
+- `MusonicCarAppService` et les classes `MusonicAuto…` et `MusonicCar…` : les écrans de voiture, avec la bibliothèque AndroidX Car App.
+
+### Le serveur
+
+`apps/server/src` est découpé par sujet :
+
+| Module | Rôle |
+|---|---|
+| `server` | Le routeur HTTP, la compression, le CORS, les en-têtes de sécurité, `/health`. |
+| `subsonic` | L'API Subsonic / OpenSubsonic (`/rest`), son cache de réponses, la lecture en flux et les pochettes. |
+| `api` | L'API native (`/v1`), dont les routes de la console et le WebSocket `/v1/events`. |
+| `events`, `connect` | Les événements en temps réel et Musonic Connect. |
+| `library` | Le scanner, la surveillance du dossier, les tags, les imports dans la bibliothèque, l'import depuis Navidrome. |
+| `online` | Le catalogue en ligne (API publique de Deezer : métadonnées et extraits de 30 secondes). |
+| `providers`, `stream`, `remote` | L'interface des fournisseurs audio et le cache partagé par segments de leurs flux. |
+| `playlist_import`, `matcher` | Les imports de playlists et la correspondance des titres. |
+| `podcasts` | Flux, annuaire, épisodes, transcriptions. |
+| `users` | Comptes, empreintes argon2 des mots de passe, sessions, clés d'API, limitation des tentatives de connexion. |
+| `db` | SQLite et ses migrations. |
+| `journal`, `metrics`, `logs` | Le journal d'activité de la console, les mesures et les dernières lignes de journal technique. |
+| `config`, `settings` | La configuration (fichier TOML et environnement) et les réglages modifiés dans la console. |
+| `webapp` | Musonic Web hébergé sous `/app`. |
+
+La façon dont l'audio arrive pour les titres qui ne sont pas des fichiers de votre bibliothèque est décrite dans `apps/server/docs/PROVIDERS.md`.
+
+## Le parcours d'une requête
+
+<img class="diagram" src="/assets/img/docs/diagrams/request-flow.fr.svg" alt="Schéma : une requête entre par le proxy inverse, traverse les couches en-têtes de sécurité, CORS et compression, puis le routeur l'envoie vers /rest (connexion, cache de réponses, traitement, SQLite), /v1 (jeton Bearer, traitement), /v1/events (WebSocket), /app (fichiers de Musonic Web) ou tout autre chemin (fichiers de la console)." />
+
+1. Le client appelle le serveur, en général à travers un proxy inverse qui ajoute le HTTPS.
+2. Chaque réponse traverse trois couches : les en-têtes de sécurité, le CORS ouvert, et la compression gzip des réponses texte de plus de 1 Ko.
+3. Le routeur envoie la requête vers :
+   - `/health` : simple test de vie ;
+   - `/rest/<endpoint>` : l'API Subsonic. Le serveur lit les paramètres, vérifie les identifiants (clé d'API, mot de passe, ou jeton et sel), puis consulte le **cache de réponses**. Une réponse gardée part aussitôt, avec son `ETag` et sa version gzip. Sinon, le traitement lit SQLite (et le catalogue en ligne pour les identifiants `dz-…`), produit le XML ou le JSON, et garde la réponse si la route s'y prête ;
+   - `stream`, `download`, `getCoverArt` : des réponses binaires. Un fichier de la bibliothèque est envoyé avec les plages HTTP, ou transcodé par ffmpeg ; un titre sans fichier vient du premier fournisseur audio qui l'a ;
+   - `/v1/...` : l'API native, avec un jeton Bearer (session ou clé d'API) ;
+   - `/v1/events` : le WebSocket des événements en temps réel ;
+   - `/app/...` : les fichiers de Musonic Web, s'il est installé ;
+   - tout autre chemin : les fichiers de la console (ou une courte page « Musonic Server is running » si la console n'est pas installée).
+
+La liste complète des routes se trouve dans la [référence de l'API HTTP](/fr/docs/reference/api/).
+
+## Base de données
+
+- **SQLite**, un seul fichier : `musonic.db` dans le dossier de données. Mode WAL, clés étrangères activées, attente de 5 secondes en cas de verrou.
+- Une seule connexion derrière un verrou, utilisée depuis des fils bloquants : suffisant pour un serveur personnel de plusieurs milliers de titres et quelques comptes.
+- Les **migrations** sont des fichiers SQL dans `apps/server/migrations` (de `0001_initial.sql` à `0010_connect.sql` en 1.2.1), intégrés au programme et appliqués dans l'ordre à l'ouverture de la base. `PRAGMA user_version` indique combien sont appliquées ; chacune s'exécute dans sa propre transaction. Une migration publiée n'est jamais modifiée : on en ajoute une nouvelle.
+- Avant de migrer une base existante, le serveur la copie dans `musonic.db.before-schema-<n>`, pour pouvoir revenir en arrière à la main si une mise à jour tourne mal. Une base plus récente que le programme est refusée (« update the server »).
+- Le journal d'activité de la console est un fichier séparé, `events.db`.
+- Les sauvegardes quotidiennes vont dans `backups/` (`backup_days`, 14 gardées par défaut).
+
+Contenu du dossier de données :
+
+| Chemin | Contenu |
+|---|---|
+| `musonic.db` | La base de données. |
+| `events.db` | Le journal d'activité. |
+| `secret.key` | La clé qui chiffre les mots de passe gardés pour la connexion Subsonic par jeton (sauf si `MUSONIC_SECRET_KEY` est défini). |
+| `backups/` | Les sauvegardes quotidiennes de la base. |
+| `cache/covers/` | Les pochettes redimensionnées. |
+| `cache/transcoded/` | Les titres transcodés (`transcode_cache_mb`). |
+| `tmp/streams/` | Les flux des fournisseurs audio en cours de lecture. |
+| `web/` | Musonic Web, s'il est installé depuis la console. |
+
+<Aside type="caution">
+Gardez le dossier de données privé et sauvegardé : il contient la base, les empreintes des mots de passe et `secret.key`.
+</Aside>
+
+## Caches
+
+| Cache | Où | Comment il reste juste |
+|---|---|---|
+| Réponses Subsonic | En mémoire, 8 Mo au plus, réponses jusqu'à 2 Mo | Chaque écriture dans la base fait avancer un compteur ; une réponse n'est valable qu'au compteur où elle a été produite. Le compte fait partie de la clé. Les 16 réponses les plus demandées (sur 64 mémorisées) sont refaites en arrière-plan 150 ms après la dernière écriture. |
+| Versions gzip de ces réponses | En mémoire, avec la réponse | Produites au meilleur niveau en arrière-plan, puis servies à tous les clients. |
+| Instantanés de la bibliothèque | En mémoire | Identifiants des titres et albums présents (listes au hasard), genres, artistes d'album : refaits quand la bibliothèque change. |
+| Pochettes | `cache/covers/` | Redimensionnées à la demande, gardées sur disque ; les clients peuvent les garder un jour. |
+| Titres transcodés | `cache/transcoded/` | Gardés seulement quand ffmpeg a fini ; les plus anciens partent au-delà de `transcode_cache_mb`. |
+| Flux des fournisseurs | `tmp/streams/` | Découpés en segments de 1 Mio, chacun récupéré une fois et partagé par tous les auditeurs ; les suivants sont récupérés à l'avance. Les flux inutilisés sont libérés (vérification toutes les 5 minutes). |
+| Côté client | `packages/core` | Un cache en mémoire avec expiration, qui partage les requêtes en cours. |
+
+## Synchronisation en temps réel
+
+Quand quelque chose change pour un compte (un « j'aime », une note, une playlist, une écoute, la file enregistrée, un import), le serveur publie un événement vers chaque appareil de ce compte par `GET /v1/events`, un WebSocket. Cela fonctionne quel que soit le client à l'origine du changement, clients Subsonic compris.
+
+<img class="diagram" src="/assets/img/docs/diagrams/realtime-events.fr.svg" alt="Schéma : le téléphone aime un titre par l'API Subsonic ; le serveur l'écrit dans SQLite et publie un événement likes ; le lecteur web et la tablette du même compte le reçoivent sur leur WebSocket ; le téléphone le reçoit aussi, marqué by: phone, et ignore son propre écho." />
+
+- Les événements ne sont pas conservés : 512 au plus attendent en mémoire, et un appareil trop lent reçoit `resync` et recharge son affichage.
+- Un `ping` toutes les 30 secondes garde les connexions ouvertes à travers les proxys.
+- **Musonic Connect** (bêta) utilise le même WebSocket dans les deux sens : les appareils s'enregistrent, envoient ce qu'ils lisent et des commandes à distance. Le serveur garde leur dernier état en mémoire et le date avec sa propre horloge : les appareils calculent la position sans comparer leurs horloges. Quel appareil se met en pause quand un autre démarre est décidé par les appareils eux-mêmes (`packages/core/src/connect`).
+
+## Tâches de fond
+
+| Tâche | Quand |
+|---|---|
+| Scan de la bibliothèque | Au démarrage, quelques secondes après un changement dans le dossier de musique, et toutes les `scan_interval_minutes` (60 par défaut). Deux scans ne se chevauchent jamais. |
+| Imports dans la bibliothèque | Quand un titre en ligne est aimé ou ajouté à une playlist, si `import` est activé et qu'un fournisseur le permet. |
+| Imports de playlists | Quand un compte en lance un. |
+| Flux de podcasts | Toutes les heures. |
+| Sauvegarde de la base | Une fois par jour, si `backup_days` n'est pas 0. |
+| Recherche de nouvelles versions | Toutes les 6 heures, si `update_check` est activé (versions GitHub du serveur et de Musonic Web). |
+| Mesures | Débits toutes les 2 secondes, tailles de dossiers toutes les minutes, pour la console. |
+
+## Code partagé
+
+`packages/core` contient ce que les clients partagent, pour que les applis se comportent de la même façon :
+
+| Dossier | Contenu |
+|---|---|
+| `subsonic/` | Le client Subsonic, la connexion (jeton, clé d'API), les clés d'appareil, les types. |
+| `server/` | Les types de l'API native et des événements, **générés à partir du code Rust** avec `ts-rs` (`cargo test` les écrit dans `server/generated`). |
+| `home/` | La construction de l'écran d'accueil. |
+| `playback/` | La construction de la file, le fondu enchaîné, le suivi d'écoute (ce qui compte comme une écoute). |
+| `connect/` | Le client Musonic Connect. |
+| `ids/` | Les identifiants courts et la conversion des anciens. |
+| `lyrics/` | Les paroles depuis LRCLIB. |
+| `releases/` | La lecture des étiquettes de version. |
+| `cache.ts` | Le cache de requêtes en mémoire. |
+
+Musonic Web et la console dépendent de `@musonic/core` par l'espace de travail npm. L'appli mobile lit directement les mêmes fichiers : Metro surveille `packages/core`, et un alias Babel et des chemins TypeScript font pointer `@musonic/core/...` vers ses sources.
+
+## Compilation et publication
+
+Chaque partie a sa propre version et sa propre étiquette Git. Pousser une étiquette lance le workflow GitHub Actions correspondant :
+
+<img class="diagram" src="/assets/img/docs/diagrams/release-pipeline.fr.svg" alt="Schéma : trois étiquettes mènent à trois workflows. mobile-v* compile et signe l'APK Android et publie une version GitHub. web-v* compile Musonic Web et publie deux zips. server-v* compile l'image Docker pour x86 et ARM, la pousse sur ghcr.io et publie les programmes, compose.yml et les notes de version." />
+
+| Étiquette | Workflow | Ce qu'il publie |
+|---|---|---|
+| `mobile-v<version>` | `android-release.yml` | L'APK de production, signé par la CI, joint à une version GitHub « Musonic Mobile `<version>` ». |
+| `web-v<version>` | `web-release.yml` | `Musonic-Web.zip` (à héberger où vous voulez, avec `SELF-HOSTING.md`) et `Musonic-Web-app.zip` (compilé pour `/app/`, installé par la console). |
+| `server-v<version>` | `server-release.yml` | L'image `ghcr.io/doodzdev/musonic-server` pour `linux/amd64` et `linux/arm64`, étiquetée `<version>`, `<majeure>.<mineure>`, `<majeure>` et `latest` ; les programmes `musonic-server-<version>-linux-x86_64.tar.gz` et `…-aarch64.tar.gz` (avec la console dans `admin/`) ; `compose.yml` ; les notes de version tirées de `apps/server/CHANGELOG.md`. Elle n'est pas marquée « latest » sur GitHub, pour que les liens de téléchargement continuent de viser la version mobile. |
+
+L'image Docker est construite en trois étapes : la console avec Node, le serveur avec Rust sous Alpine, puis une petite image Alpine avec ffmpeg, qui tourne sous l'utilisateur `1000`, avec un test de santé sur `/health`.
+
+Des vérifications tournent sur les pull requests et sur les envois vers `main`, pour les parties modifiées :
+
+| Workflow | Vérifications |
+|---|---|
+| `ci.yml` (mobile) | ESLint sans avertissement, TypeScript, Jest. |
+| `ci-web.yml` (web, console, code partagé) | Types et tests de `@musonic/core`, lint et compilation de Musonic Web et de la console, icônes à jour par rapport au jeu mobile. |
+| `server-ci.yml` | `cargo fmt --check`, `cargo clippy` avec les avertissements en erreurs, `cargo test`, `cargo audit`, types TypeScript générés à jour. |
+
+À chaque envoi vers `main` qui les touche, `pages.yml` compile le site et Musonic Web (sous `/app/`) et les publie sur GitHub Pages.
+
+## Licences
+
+Le code source est public, sous des licences non commerciales (ce ne sont pas des licences approuvées par l'OSI) :
+
+| Dossier | Licence |
+|---|---|
+| `apps/server` | PolyForm Noncommercial 1.0.0 (`apps/server/LICENSE`) |
+| Tout le reste (`apps/mobile`, `apps/web`, `apps/admin`, `packages/…`) | Creative Commons BY-NC 4.0 (`LICENSE` à la racine) |
+
+Voir [Licence](/fr/docs/about/license/) pour ce qu'elles permettent.
+
+## Contribuer
+
+Les règles sont dans [CONTRIBUTING.md](https://github.com/DoodzDev/Musonic/blob/main/CONTRIBUTING.md). En résumé :
+
+- **Branches** : une branche courte par changement, nommée avec un préfixe : `feat/`, `fix/`, `refactor/`, `docs/`, `chore/`.
+- **Commits** : à l’impératif, avec le même préfixe (`feat: add crossfade setting to player`).
+- **Pull requests** : un seul changement logique chacune, avec le modèle de pull request rempli (description, plan de test, liste de vérification). Lancez les mêmes vérifications que la CI pour les parties modifiées (voir le tableau ci-dessus).
+- **Tickets** : utilisez les modèles, **Bug report** (étapes, comportement attendu et observé, appareil) ou **Feature request** (problème, solution proposée, alternatives).
+- **Code** : TypeScript partout, pas de `any` sans raison ; les textes affichés de l'appli mobile passent par `apps/mobile/src/i18n` ; des commentaires seulement quand le *pourquoi* n'est pas évident.
+- **Compiler l'appli Android** : Node 22.11.0 (`apps/mobile/.nvmrc`), JDK 17 et 21, SDK Android plateforme 36 avec Build-Tools 36.0.0, NDK 27.1.12297006 et CMake 3.22.1. La variante `debug` s'installe sous le nom « Musonic Dev » (`com.musonic.debug`) à côté de l'appli publiée (`com.musonic`). La clé de signature n'est jamais dans le dépôt : les APK officiels sont signés par la CI.
+- **Lancer le reste en local** : `npm run web` (Musonic Web), `npm run admin` (console), `npm run test:core` (code partagé) depuis la racine ; `cargo run --release` dans `apps/server`.
+
+## Pour aller plus loin
+
+- [API HTTP](/fr/docs/reference/api/)
+- [Ligne de commande](/fr/docs/reference/cli/)
+- [Comment fonctionne Musonic](/fr/docs/start/how-it-works/)

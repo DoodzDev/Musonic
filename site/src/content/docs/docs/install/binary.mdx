@@ -1,0 +1,236 @@
+---
+title: Install the server without Docker
+description: How to install Musonic Server as a single program on Linux (x86_64 or ARM64), with ffmpeg, a configuration file and a systemd service that starts it at boot.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+This page installs Musonic Server without Docker: you download one program, give it a configuration file, and let systemd start it at boot. Choose it if you do not want Docker on the machine. Otherwise, [Docker](/docs/install/docker/) is simpler.
+
+**What you need**
+
+- A Linux machine that stays on, **64-bit**: x86_64, or ARM64 (`aarch64`, such as a Raspberry Pi 3, 4 or 5 with a 64-bit system). The program is built to run on any distribution: it needs no other library.
+- systemd (Debian, Ubuntu, Raspberry Pi OS, Fedora, Arch… all use it), a terminal, and an account that can use `sudo`.
+- Your music in a folder on that machine.
+
+## Quick install
+
+<Steps>
+
+1. **Find your architecture.**
+
+   ```sh
+   uname -m
+   ```
+
+   It answers `x86_64` or `aarch64`: the release files use the same words.
+
+2. **Download the program and unpack it.**
+
+   ```sh
+   cd /tmp
+   curl -LO https://github.com/DoodzDev/Musonic/releases/download/server-v1.2.1/musonic-server-1.2.1-linux-x86_64.tar.gz
+   tar -xzf musonic-server-1.2.1-linux-x86_64.tar.gz
+   ```
+
+   Replace `x86_64` with `aarch64` on ARM, and `1.2.1` with the newest version (see [Download](#download)).
+
+3. **Put it in `/opt/musonic-server`.**
+
+   ```sh
+   sudo mkdir -p /opt/musonic-server
+   sudo cp -r musonic-server-1.2.1-linux-x86_64/. /opt/musonic-server/
+   ```
+
+4. **Install ffmpeg.**
+
+   ```sh
+   sudo apt install ffmpeg
+   ```
+
+   (Debian, Ubuntu, Raspberry Pi OS. Fedora: `sudo dnf install ffmpeg`, Arch: `sudo pacman -S ffmpeg`.)
+
+5. **Write the configuration file.**
+
+   ```sh
+   sudo mkdir -p /etc/musonic-server
+   sudo nano /etc/musonic-server/config.toml
+   ```
+
+   Paste the [configuration](#the-configuration-file) below, with your music folder.
+
+6. **Create the systemd service.**
+
+   ```sh
+   sudo nano /etc/systemd/system/musonic-server.service
+   ```
+
+   Paste the [service](#the-systemd-service) below, with your user name.
+
+7. **Start it, now and at every boot.**
+
+   ```sh
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now musonic-server
+   ```
+
+8. **Check that it answers.**
+
+   ```sh
+   curl http://127.0.0.1:4533/health
+   ```
+
+   The answer is `{"status":"ok"}`. Go on with the [first start](/docs/install/first-start/).
+
+</Steps>
+
+## Download
+
+Server versions are published on the [releases page](https://github.com/DoodzDev/Musonic/releases) of the repository, under tags named `server-v…` (for example `server-v1.2.1`, titled "Musonic Server 1.2.1"). The repository also has releases of the apps (`mobile-v…`, `web-v…`): take a **Musonic Server** one.
+
+Each server release has:
+
+| File | For |
+|---|---|
+| `musonic-server-<version>-linux-x86_64.tar.gz` | Most PCs and servers (Intel, AMD). |
+| `musonic-server-<version>-linux-aarch64.tar.gz` | ARM64: Raspberry Pi with a 64-bit system, ARM servers. |
+| `compose.yml` | The [Docker](/docs/install/docker/) install. |
+
+Each archive holds one folder, `musonic-server-<version>-linux-<arch>/`, with:
+
+| Inside | What it is |
+|---|---|
+| `musonic-server` | The server, a single program. |
+| `admin/` | The administration console. The server finds it on its own when it is **next to the program**. |
+| `LICENSE`, `README.md`, `CHANGELOG.md` | The licence, the server's readme and the list of changes. |
+
+These are the same program and console as in the Docker image.
+
+## ffmpeg
+
+The server uses ffmpeg to make songs lighter when an app asks for a lower bit rate (on mobile data, for example). Without it, files are sent as they are; everything else works. Install it from your distribution:
+
+| System | Command |
+|---|---|
+| Debian, Ubuntu, Raspberry Pi OS | `sudo apt install ffmpeg` |
+| Fedora | `sudo dnf install ffmpeg` (from RPM Fusion, or `ffmpeg-free`) |
+| Arch Linux | `sudo pacman -S ffmpeg` |
+
+The server looks for the `ffmpeg` command in the `PATH`. If it is somewhere else, give its path with the environment variable `MUSONIC_FFMPEG`. The console's **Playback** page says whether ffmpeg is present, and its version.
+
+## The configuration file
+
+Without Docker, the server's defaults are: listen on `127.0.0.1:4533`, data in a `data` folder **relative to the folder it is started from**, no music folder. A configuration file sets them once for all, for the service and for the commands you run yourself.
+
+`/etc/musonic-server/config.toml`:
+
+```toml
+# Address and port: only this machine (a reverse proxy in front).
+bind = "127.0.0.1:4533"
+# Database, caches, backups.
+data_dir = "/var/lib/musonic-server"
+# Your music folder.
+music_dir = "/path/to/music"
+```
+
+Replace `/path/to/music` with the real path of your music folder. Every other setting has the same name in this file (for example `scan_interval_minutes = 60`, `backup_days = 14`, `online = false`), and an environment variable overrides the file. The list is in the [configuration reference](/docs/admin/configuration/).
+
+<Aside type="caution">
+Never put a password in this file. The only secrets the server takes from the outside (`MUSONIC_SECRET_KEY`, `MUSONIC_SUBSONIC_PROVIDER_PASSWORD`) are read from the environment only.
+</Aside>
+
+## The systemd service
+
+`/etc/systemd/system/musonic-server.service`:
+
+```ini
+[Unit]
+Description=Musonic Server
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=<user>
+Environment=MUSONIC_CONFIG=/etc/musonic-server/config.toml
+ExecStart=/opt/musonic-server/musonic-server
+StateDirectory=musonic-server
+Restart=always
+RestartSec=3
+KillSignal=SIGINT
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Replace `<user>` with the name of the user who owns your music (yours: `whoami` shows it).
+
+| Line | Why |
+|---|---|
+| `User=<user>` | The server runs as this user, not as `root`. It must be able to read your music folder (and write in it for imports). |
+| `Environment=MUSONIC_CONFIG=…` | Where the configuration file is. |
+| `ExecStart=/opt/musonic-server/musonic-server` | The program, with no argument: it serves. The console in `/opt/musonic-server/admin` is found next to it. |
+| `StateDirectory=musonic-server` | systemd creates `/var/lib/musonic-server`, owned by `<user>`: the `data_dir` of the configuration. |
+| `Restart=always` | **Required**: the console's **Restart** button stops the server and counts on systemd to start it again. It also starts it again after a crash. |
+| `KillSignal=SIGINT` | `systemctl stop` asks the server to stop cleanly, as **Ctrl+C** would: it finishes the requests in progress. |
+| `NoNewPrivileges`, `PrivateTmp`, `ProtectSystem=full` | The service cannot gain rights, has its own `/tmp`, and cannot change system folders. |
+
+Then:
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now musonic-server
+systemctl status musonic-server
+```
+
+`active (running)` means it runs. The logs:
+
+```sh
+journalctl -u musonic-server -f
+```
+
+You should see `musonic-server starting`, `administration console: /opt/musonic-server/admin` and `listening on http://127.0.0.1:4533`.
+
+## Run a command of the server
+
+The program also has commands: `user add` (create an account), `scan` (scan the library once), `import-navidrome` (see [Coming from Navidrome](/docs/migration/navidrome/)). Run them **as the user of the service and with the same configuration**, otherwise they would use another `data` folder:
+
+```sh
+sudo -u <user> env MUSONIC_CONFIG=/etc/musonic-server/config.toml /opt/musonic-server/musonic-server user add <name> --admin
+```
+
+`<name>` is the name of the account. The full list of commands is in [Command line](/docs/reference/cli/).
+
+## Where the data lives
+
+| Path | What it is |
+|---|---|
+| `/opt/musonic-server/` | The program and its console. Replaced at each update. |
+| `/etc/musonic-server/config.toml` | Your configuration. |
+| `/var/lib/musonic-server/musonic.db` | The database: accounts, library, likes, playlists, plays, settings changed in the console. |
+| `/var/lib/musonic-server/secret.key` | The key that encrypts the passwords kept for older Subsonic apps. Keep it with the database. |
+| `/var/lib/musonic-server/backups/` | One copy of the database per day, the last 14 by default. |
+| `/var/lib/musonic-server/events.db` | The console's activity journal. |
+| `/var/lib/musonic-server/cache/`, `tmp/`, `web/` | Caches, songs being streamed, the web player installed from the console. |
+| Your music folder | Read only, except the `Musonic` folder inside it if an audio provider imports songs. |
+
+Back up `/var/lib/musonic-server` (at least `musonic.db`, `secret.key` and `backups/`): see [Backups and restore](/docs/admin/backups/).
+
+## Common errors
+
+| What you see | Why | What to do |
+|---|---|---|
+| `binding 127.0.0.1:4533` in the logs, `address already in use` | Another program uses port 4533 (Navidrome uses the same one by default). | Stop it, or set `bind = "127.0.0.1:4534"` and use port 4534 everywhere. |
+| `opening /var/lib/musonic-server/musonic.db` | The user of the service cannot write there. | Check `data_dir` and `StateDirectory`, then `sudo systemctl restart musonic-server`. |
+| `no administration console installed` | The `admin` folder is not next to the program. | Copy the whole unpacked folder into `/opt/musonic-server/` (or set `MUSONIC_ADMIN_DIR`). |
+| The library stays empty | Wrong `music_dir`, or the user cannot read it. | `sudo -u <user> ls /path/to/music` must list your files. |
+| `Exec format error` | The archive does not match the machine (`x86_64` on ARM, or a 32-bit system). | Download the file named after `uname -m`; install a 64-bit system on a Raspberry Pi. |
+| A `musonic.db` appears in a `data` folder where you ran a command | The command ran without `MUSONIC_CONFIG`. | Run it as shown in [Run a command of the server](#run-a-command-of-the-server). That stray `data` folder can be removed. |
+
+## Next steps
+
+- [First start](/docs/install/first-start/): your administrator account, the console, the invitations.
+- [Reach it from outside (HTTPS)](/docs/install/https/).
+- [Update the server](/docs/install/update/).

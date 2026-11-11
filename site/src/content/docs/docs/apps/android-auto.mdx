@@ -1,0 +1,113 @@
+---
+title: Musonic in the car
+description: How to make Musonic show up in Android Auto when it is not installed from the Play Store, and what you can do with it on the car's screen.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+This page shows how to use Musonic on your car's screen with Android Auto: the one-time setting that makes it appear, then what you can do with it while driving.
+
+**What you need**
+
+- Musonic installed on your phone and signed in ([Install the Android app](/docs/apps/android/), [Sign in to a server](/docs/apps/sign-in/)).
+- A car or a head unit compatible with Android Auto, and a phone that runs Android Auto (built into Android 10 and newer; on older phones, the Android Auto app from the Play Store).
+
+<Aside type="note" title="Android Auto in Musonic is in beta">
+Browsing, playback, search, the queue and lyrics work. Some cars may behave differently from the ones Musonic was tested with: if something goes wrong, please [report it](https://github.com/DoodzDev/Musonic/issues).
+</Aside>
+
+## Why a setting is needed
+
+Android Auto only shows apps installed from the Play Store. Musonic is installed from GitHub, so Android Auto hides it until you turn on **Unknown sources** in its developer settings. You do this once, on the phone. It does not change anything else in the phone, and it only concerns Android Auto.
+
+## Make Musonic appear in Android Auto
+
+Do this on the phone, parked, before your first drive. The names below are those of Android Auto in English; they may differ a little with its version.
+
+<Steps>
+
+1. **Open Android Auto's settings.**
+
+   On Android 10 and newer, open **Settings**, search for **Android Auto** and open it. On a Samsung phone it is in **Settings → Connected devices → Android Auto**. On older phones, open the **Android Auto** app.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android-auto/01-android-auto-settings.en.webp" alt="Android Auto's settings page on the phone, with its list of options." />
+
+2. **Scroll to the bottom and tap "Version" ten times in a row.**
+
+   After a few taps, Android Auto counts down the remaining taps.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android-auto/02-version.en.webp" alt="The bottom of Android Auto's settings, with the Version line and its number highlighted." />
+
+3. **Tap "OK" to allow the development settings.**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android-auto/03-allow-dev-settings.en.webp" alt="Android Auto's dialog asking whether to allow development settings, with the buttons Cancel and OK." />
+
+4. **Tap the ⋮ menu at the top right, then "Developer settings".**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android-auto/04-developer-menu.en.webp" alt="The ⋮ menu open at the top right of Android Auto's settings, showing Developer settings." />
+
+5. **Scroll down and tick "Unknown sources".**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android-auto/05-unknown-sources.en.webp" alt="Android Auto's developer settings, with the Unknown sources option ticked." />
+
+6. **Connect the phone to the car, with the cable or wirelessly.**
+
+7. **On the car's screen, open the app list and tap Musonic.**
+
+   Musonic is among the music apps, with its orange logo. It starts by itself even when the app is closed on the phone.
+
+   <img class="shot-wide" src="/assets/img/docs/apps-android-auto/06-car-launcher.en.webp" alt="The car's Android Auto app list, with the Musonic icon among the media apps." />
+
+</Steps>
+
+<Aside type="tip" title="GrapheneOS">
+On GrapheneOS, Android Auto may close as soon as the car connects. Open **Settings → Apps → Sandboxed Google Play → Android Auto** and turn on the permissions it lists, then connect again.
+</Aside>
+
+<Aside type="caution" title="Musonic still does not show up">
+Check that the phone is signed in to a server in Musonic, that **Unknown sources** is still ticked (an update of Android Auto can reset it), then unplug and reconnect the phone. If you installed a new version of Musonic while the car was connected, disconnect and reconnect it.
+</Aside>
+
+## What you can do in the car
+
+Musonic has its own screens in Android Auto, with three tabs.
+
+| Tab | What it shows |
+|---|---|
+| **Home** | **Resume**: the song playing, one tap to go on. **Recently played**: albums, playlists, artists and Liked Songs, as big covers. Then your playlists. The magnifier button opens the search. |
+| **Library** | **Playlists**, **Albums**, **Artists**, **Podcasts** (the shows you follow) and **Downloaded**. |
+| **Downloaded** | The songs saved on the phone, which play without a network. |
+
+<img class="shot-wide" src="/assets/img/docs/apps-android-auto/07-car-home.en.webp" alt="Musonic's Home tab on the car's screen: the tabs Home, Library and Downloaded at the top, the Resume row, the Recently played covers, and the round search button." />
+
+**Playlists and albums** open on their list of songs, with **Play** and **Shuffle** at the top. The song playing shows orange level bars in place of its cover. Tap a song to play the whole list from it.
+
+<img class="shot-wide" src="/assets/img/docs/apps-android-auto/08-car-playlist.en.webp" alt="A playlist on the car's screen: its name at the top with the Play and Shuffle buttons, and the songs, the one playing marked with orange level bars." />
+
+**The playback screen** is drawn by Android Auto: cover, title, artist, play and pause, previous and next, and the progress bar. Musonic adds:
+
+- **Shuffle** (off, on, Magic), **Repeat** and **Like**, kept in sync with the phone;
+- at the top, **Queue** (the next songs, to read) and **Lyrics**: the line being sung replaces the artist's name, on the car's own playback screen. It needs synced lyrics (otherwise "No synced lyrics") and the **Android audio player** setting, which is on by default (**Settings → Advanced options**);
+- for a podcast episode, **back 15 s**, **forward 30 s** and the **speed** instead of shuffle, repeat and like. An episode resumes where you left it.
+
+<img class="shot-wide" src="/assets/img/docs/apps-android-auto/09-car-playback.en.webp" alt="The car's playback screen with Musonic: the blurred cover, the song and artist, the playback buttons, Shuffle, Repeat and Like, and the Queue and Lyrics buttons at the top." />
+
+**Search.** The magnifier on the Home tab searches songs, albums and artists. The car allows typing only when parked. While driving, say to the car's assistant "Play *song or artist* on Musonic": Musonic searches and plays what it finds.
+
+**Without a network**, the Library keeps only Playlists and Downloaded, as in the app. See [Listen offline](/docs/apps/offline/).
+
+## Made for driving
+
+Android Auto draws every screen from templates designed by Google for use while driving; Musonic only chooses what goes in them. So:
+
+- the size of the text, covers and buttons is set by the car, and is the same as in the other music apps;
+- lists are cut to the number of items your car allows;
+- the keyboard works only when the car is parked; use your voice otherwise;
+- Musonic shows only the buttons the car accepts: two at most at the top of a screen, icons only.
+
+On older versions of Android Auto that do not support these screens, Musonic shows the standard media screens of Android Auto instead: tabs, lists and the playback screen, with fewer options.
+
+## Next steps
+
+- [Listen offline](/docs/apps/offline/): download playlists before a trip with no signal.
+- [Install the Android app](/docs/apps/android/): updates and uninstall.

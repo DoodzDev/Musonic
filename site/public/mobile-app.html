@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Musonic</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://musonic.doodz.dev/mobile/">
+<meta http-equiv="refresh" content="0; url=/mobile/">
+<script>
+  // Old single-file pages held both languages; send French readers to the French page.
+  try { var l = localStorage.getItem('musonic-lang') || ((navigator.language || '').slice(0, 2) === 'fr' ? 'fr' : 'en');
+        location.replace((l === 'fr' ? '/fr' : '') + '/mobile/' + location.hash); } catch (e) { location.replace('/mobile/'); }
+</script>
+</head>
+<body style="background:#111112;color:#f1f0ee;font-family:system-ui,sans-serif">
+<p>This page moved: <a href="/mobile/" style="color:#ff6b35">musonic.doodz.dev/mobile/</a></p>
+</body>
+</html>

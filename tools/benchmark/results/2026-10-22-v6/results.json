@@ -1,0 +1,2771 @@
+{
+ "config": {
+  "runs": 3,
+  "samples": 200,
+  "concurrency_seconds": 10,
+  "threads": [
+   1,
+   4,
+   16,
+   64
+  ],
+  "settle_seconds": 60,
+  "servers": [
+   {
+    "name": "musonic",
+    "kind": "musonic",
+    "port": 4580,
+    "command": [
+     "./musonic-server"
+    ],
+    "add_user": [
+     "./musonic-server",
+     "user",
+     "add",
+     "bench"
+    ],
+    "env": {
+     "MUSONIC_DATA_DIR": "{data}",
+     "MUSONIC_MUSIC_DIR": "/path/to/music",
+     "MUSONIC_BIND": "127.0.0.1:4580",
+     "MUSONIC_ONLINE": "false",
+     "MUSONIC_ONLINE_PREVIEWS": "false",
+     "MUSONIC_IMPORT": "false",
+     "MUSONIC_UPDATE_CHECK": "false",
+     "MUSONIC_FFMPEG": "ffmpeg/ffmpeg",
+     "RUST_LOG": "warn"
+    }
+   },
+   {
+    "name": "navidrome",
+    "kind": "navidrome",
+    "port": 4581,
+    "command": [
+     "./nd/navidrome"
+    ],
+    "env": {
+     "ND_DATAFOLDER": "{data}",
+     "ND_MUSICFOLDER": "/path/to/music",
+     "ND_ADDRESS": "127.0.0.1",
+     "ND_PORT": "4581",
+     "ND_DEVAUTOCREATEADMINPASSWORD": "***",
+     "ND_SCANNER_SCHEDULE": "0",
+     "ND_ENABLEINSIGHTSCOLLECTOR": "false",
+     "ND_ENABLEEXTERNALSERVICES": "false",
+     "ND_LASTFM_ENABLED": "false",
+     "ND_FFMPEGPATH": "ffmpeg/ffmpeg",
+     "ND_LOGLEVEL": "warn"
+    }
+   }
+  ],
+  "music_dir": "/path/to/music"
+ },
+ "started": "2026-10-22 21:17:04 UTC",
+ "machine": {
+  "cpus": 2,
+  "uname": "Linux <hostname> 6.17.0-1009-oracle #9~24.04.1-Ubuntu SMP Sat Mar  7 01:08:51 UTC 2026 aarch64"
+ },
+ "runs": [
+  {
+   "server": "musonic",
+   "run": 1,
+   "first_start_s": 0.147,
+   "scan": {
+    "wall_s": 2.01,
+    "reported_s": 1.97,
+    "cpu_s": 1.77,
+    "peak_rss_kb": 20304
+   },
+   "rss_idle_kb": 20156,
+   "library": {
+    "albums_listed": 500,
+    "artists": 797
+   },
+   "latency_warm": {
+    "search3 \"love\"": {
+     "median": 0.336,
+     "p95": 0.416,
+     "min": 0.298,
+     "bytes": 26573
+    },
+    "search3 \"mo\"": {
+     "median": 0.369,
+     "p95": 0.45,
+     "min": 0.313,
+     "bytes": 33801
+    },
+    "search3 two words": {
+     "median": 0.296,
+     "p95": 0.393,
+     "min": 0.277,
+     "bytes": 8853
+    },
+    "getAlbum": {
+     "median": 0.285,
+     "p95": 0.364,
+     "min": 0.263,
+     "bytes": 1836
+    },
+    "getArtist": {
+     "median": 0.279,
+     "p95": 0.378,
+     "min": 0.253,
+     "bytes": 707
+    },
+    "getArtists": {
+     "median": 0.423,
+     "p95": 0.587,
+     "min": 0.376,
+     "bytes": 106734
+    },
+    "getSong": {
+     "median": 0.281,
+     "p95": 0.362,
+     "min": 0.264,
+     "bytes": 1293
+    },
+    "getAlbumList2 newest 50": {
+     "median": 0.338,
+     "p95": 0.45,
+     "min": 0.296,
+     "bytes": 23641
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 0.51,
+     "p95": 0.632,
+     "min": 0.434,
+     "bytes": 240193
+    },
+    "getAlbumList2 random 50": {
+     "median": 2.133,
+     "p95": 2.249,
+     "min": 2.013,
+     "bytes": 24521
+    },
+    "getRandomSongs 50": {
+     "median": 3.267,
+     "p95": 4.794,
+     "min": 3.04,
+     "bytes": 48310
+    },
+    "getGenres": {
+     "median": 0.286,
+     "p95": 0.37,
+     "min": 0.265,
+     "bytes": 2552
+    },
+    "getStarred2": {
+     "median": 0.277,
+     "p95": 0.35,
+     "min": 0.254,
+     "bytes": 163
+    },
+    "getPlaylists": {
+     "median": 0.276,
+     "p95": 0.361,
+     "min": 0.255,
+     "bytes": 145
+    }
+   },
+   "latency_after_write": {
+    "search3 \"love\"": {
+     "median": 2.64,
+     "p95": 3.474,
+     "min": 2.357,
+     "bytes": 26573
+    },
+    "search3 \"mo\"": {
+     "median": 5.471,
+     "p95": 6.95,
+     "min": 4.999,
+     "bytes": 33801
+    },
+    "search3 two words": {
+     "median": 1.923,
+     "p95": 2.06,
+     "min": 1.524,
+     "bytes": 8853
+    },
+    "getAlbum": {
+     "median": 0.837,
+     "p95": 0.959,
+     "min": 0.507,
+     "bytes": 1836
+    },
+    "getArtist": {
+     "median": 0.47,
+     "p95": 0.565,
+     "min": 0.407,
+     "bytes": 707
+    },
+    "getArtists": {
+     "median": 4.256,
+     "p95": 6.788,
+     "min": 3.32,
+     "bytes": 106734
+    },
+    "getSong": {
+     "median": 0.77,
+     "p95": 0.917,
+     "min": 0.378,
+     "bytes": 1293
+    },
+    "getAlbumList2 newest 50": {
+     "median": 4.424,
+     "p95": 4.753,
+     "min": 3.53,
+     "bytes": 23641
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 23.412,
+     "p95": 26.408,
+     "min": 20.791,
+     "bytes": 240193
+    },
+    "getAlbumList2 random 50": {
+     "median": 2.201,
+     "p95": 2.411,
+     "min": 2.006,
+     "bytes": 23893
+    },
+    "getRandomSongs 50": {
+     "median": 3.272,
+     "p95": 3.534,
+     "min": 3.049,
+     "bytes": 48268
+    },
+    "getGenres": {
+     "median": 0.735,
+     "p95": 0.819,
+     "min": 0.429,
+     "bytes": 2552
+    },
+    "getStarred2": {
+     "median": 0.391,
+     "p95": 0.536,
+     "min": 0.329,
+     "bytes": 163
+    },
+    "getPlaylists": {
+     "median": 0.365,
+     "p95": 0.474,
+     "min": 0.311,
+     "bytes": 145
+    }
+   },
+   "latency_300ms_after_write": {
+    "search3 \"love\"": {
+     "median": 0.69,
+     "p95": 0.796,
+     "min": 0.652,
+     "bytes": 26573
+    },
+    "search3 \"mo\"": {
+     "median": 0.712,
+     "p95": 0.763,
+     "min": 0.657,
+     "bytes": 33801
+    },
+    "search3 two words": {
+     "median": 0.678,
+     "p95": 0.748,
+     "min": 0.626,
+     "bytes": 8853
+    },
+    "getAlbum": {
+     "median": 0.671,
+     "p95": 0.754,
+     "min": 0.638,
+     "bytes": 1836
+    },
+    "getArtist": {
+     "median": 0.665,
+     "p95": 0.813,
+     "min": 0.627,
+     "bytes": 707
+    },
+    "getArtists": {
+     "median": 0.728,
+     "p95": 0.877,
+     "min": 0.665,
+     "bytes": 106734
+    },
+    "getSong": {
+     "median": 0.678,
+     "p95": 0.74,
+     "min": 0.634,
+     "bytes": 1293
+    },
+    "getAlbumList2 newest 50": {
+     "median": 0.692,
+     "p95": 0.734,
+     "min": 0.666,
+     "bytes": 23641
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 0.802,
+     "p95": 0.93,
+     "min": 0.757,
+     "bytes": 240193
+    },
+    "getAlbumList2 random 50": {
+     "median": 3.252,
+     "p95": 3.381,
+     "min": 3.146,
+     "bytes": 24707
+    },
+    "getRandomSongs 50": {
+     "median": 4.639,
+     "p95": 5.07,
+     "min": 4.47,
+     "bytes": 47267
+    },
+    "getGenres": {
+     "median": 0.664,
+     "p95": 0.698,
+     "min": 0.634,
+     "bytes": 2552
+    },
+    "getStarred2": {
+     "median": 0.674,
+     "p95": 0.76,
+     "min": 0.62,
+     "bytes": 163
+    },
+    "getPlaylists": {
+     "median": 0.675,
+     "p95": 0.713,
+     "min": 0.624,
+     "bytes": 145
+    }
+   },
+   "auth": {
+    "ping token (t+s)": {
+     "median": 0.271,
+     "p95": 0.364,
+     "min": 0.246
+    },
+    "ping password (p)": {
+     "median": 0.377,
+     "p95": 0.527,
+     "min": 0.29
+    }
+   },
+   "bytes_gzip": {
+    "search3 \"love\"": 7169,
+    "search3 \"mo\"": 9090,
+    "search3 two words": 2526,
+    "getAlbum": 740,
+    "getArtist": 707,
+    "getArtists": 48873,
+    "getSong": 655,
+    "getAlbumList2 newest 50": 7013,
+    "getAlbumList2 alphabetical 500": 67361,
+    "getAlbumList2 random 50": 7542,
+    "getRandomSongs 50": 13475,
+    "getGenres": 791,
+    "getStarred2": 163,
+    "getPlaylists": 145
+   },
+   "covers": {
+    "300 first": {
+     "median": 21.039,
+     "p95": 30.54,
+     "min": 14.206,
+     "bytes_total": 1117246,
+     "count": 60
+    },
+    "300 cached": {
+     "median": 0.537,
+     "p95": 1.857,
+     "min": 0.436,
+     "bytes_total": 996352,
+     "count": 60
+    },
+    "300 cached later": {
+     "median": 0.537,
+     "p95": 0.894,
+     "min": 0.462,
+     "bytes_total": 936886,
+     "count": 60
+    },
+    "600 first": {
+     "median": 31.456,
+     "p95": 39.814,
+     "min": 8.046,
+     "bytes_total": 3789571,
+     "count": 60
+    },
+    "600 cached": {
+     "median": 0.596,
+     "p95": 1.364,
+     "min": 0.466,
+     "bytes_total": 3522743,
+     "count": 60
+    },
+    "600 cached later": {
+     "median": 0.637,
+     "p95": 2.313,
+     "min": 0.446,
+     "bytes_total": 3324352,
+     "count": 60
+    }
+   },
+   "streaming": {
+    "songs": [
+     "<song 1>",
+     "<song 2>",
+     "<song 3>",
+     "<song 4>",
+     "<song 5>",
+     "<song 6>",
+     "<song 7>",
+     "<song 8>",
+     "<song 9>",
+     "<song 10>"
+    ],
+    "raw first 64 KiB, first byte ms": {
+     "median": 0.808,
+     "p95": 1.033,
+     "min": 0.607
+    },
+    "raw whole file MB/s": 616.5,
+    "transcoded bytes vs file": [
+     [
+      3049162,
+      4257481
+     ],
+     [
+      2652936,
+      3833607
+     ],
+     [
+      2058285,
+      2892404
+     ],
+     [
+      1834154,
+      2735264
+     ],
+     [
+      2667983,
+      3672671
+     ]
+    ],
+    "transcode to mp3 96, first byte ms": {
+     "median": 42.0,
+     "p95": 42.78,
+     "min": 41.393
+    },
+    "transcode to mp3 96, whole song ms": {
+     "median": 2783.838,
+     "p95": 3586.715,
+     "min": 1840.367
+    },
+    "transcoded again, first byte ms": {
+     "median": 1.204,
+     "p95": 2.631,
+     "min": 1.051
+    },
+    "transcoded source bit rates": [
+     128,
+     128,
+     128,
+     128,
+     128
+    ]
+   },
+   "concurrency": [
+    {
+     "threads": 1,
+     "requests_per_s": 723.1,
+     "median": 0.41,
+     "p95": 2.53,
+     "errors": 0,
+     "cpu_s": 4.23
+    },
+    {
+     "threads": 4,
+     "requests_per_s": 927.9,
+     "median": 2.42,
+     "p95": 6.32,
+     "errors": 0,
+     "cpu_s": 5.59
+    },
+    {
+     "threads": 16,
+     "requests_per_s": 900.4,
+     "median": 9.24,
+     "p95": 24.92,
+     "errors": 0,
+     "cpu_s": 5.37
+    },
+    {
+     "threads": 64,
+     "requests_per_s": 913.3,
+     "median": 33.02,
+     "p95": 105.09,
+     "errors": 0,
+     "cpu_s": 5.38
+    }
+   ],
+   "rss_after_load_kb": 79444,
+   "rss_peak_kb": 80152,
+   "data_dir_bytes": 26912820,
+   "restart_s": 0.029,
+   "rss_after_restart_kb": 15864,
+   "total_run_s": 295.7
+  },
+  {
+   "server": "navidrome",
+   "run": 1,
+   "first_start_s": 0.769,
+   "scan": {
+    "wall_s": 18.88,
+    "reported_s": 16.78,
+    "cpu_s": 16.96,
+    "peak_rss_kb": 57012
+   },
+   "rss_idle_kb": 97180,
+   "library": {
+    "albums_listed": 500,
+    "artists": 797
+   },
+   "latency_warm": {
+    "search3 \"love\"": {
+     "median": 30.418,
+     "p95": 61.897,
+     "min": 5.177,
+     "bytes": 31511
+    },
+    "search3 \"mo\"": {
+     "median": 28.068,
+     "p95": 60.39,
+     "min": 6.842,
+     "bytes": 37393
+    },
+    "search3 two words": {
+     "median": 17.931,
+     "p95": 57.222,
+     "min": 4.266,
+     "bytes": 15406
+    },
+    "getAlbum": {
+     "median": 2.603,
+     "p95": 25.153,
+     "min": 1.577,
+     "bytes": 2029
+    },
+    "getArtist": {
+     "median": 2.035,
+     "p95": 28.731,
+     "min": 1.431,
+     "bytes": 915
+    },
+    "getArtists": {
+     "median": 51.791,
+     "p95": 84.63,
+     "min": 27.595,
+     "bytes": 128072
+    },
+    "getSong": {
+     "median": 2.432,
+     "p95": 25.921,
+     "min": 1.189,
+     "bytes": 1368
+    },
+    "getAlbumList2 newest 50": {
+     "median": 16.455,
+     "p95": 36.041,
+     "min": 4.378,
+     "bytes": 32328
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 35.429,
+     "p95": 60.552,
+     "min": 31.763,
+     "bytes": 330976
+    },
+    "getAlbumList2 random 50": {
+     "median": 8.306,
+     "p95": 11.21,
+     "min": 7.802,
+     "bytes": 32957
+    },
+    "getRandomSongs 50": {
+     "median": 5.698,
+     "p95": 7.971,
+     "min": 5.261,
+     "bytes": 54930
+    },
+    "getGenres": {
+     "median": 1.167,
+     "p95": 1.514,
+     "min": 1.041,
+     "bytes": 2787
+    },
+    "getStarred2": {
+     "median": 2.969,
+     "p95": 3.503,
+     "min": 1.381,
+     "bytes": 145
+    },
+    "getPlaylists": {
+     "median": 1.013,
+     "p95": 1.276,
+     "min": 0.895,
+     "bytes": 486
+    }
+   },
+   "latency_after_write": {
+    "search3 \"love\"": {
+     "median": 4.884,
+     "p95": 7.873,
+     "min": 4.125,
+     "bytes": 31579
+    },
+    "search3 \"mo\"": {
+     "median": 7.093,
+     "p95": 11.487,
+     "min": 5.264,
+     "bytes": 37461
+    },
+    "search3 two words": {
+     "median": 4.729,
+     "p95": 7.282,
+     "min": 3.52,
+     "bytes": 15423
+    },
+    "getAlbum": {
+     "median": 1.825,
+     "p95": 2.559,
+     "min": 1.682,
+     "bytes": 2029
+    },
+    "getArtist": {
+     "median": 1.657,
+     "p95": 2.23,
+     "min": 1.5,
+     "bytes": 915
+    },
+    "getArtists": {
+     "median": 30.233,
+     "p95": 33.031,
+     "min": 26.93,
+     "bytes": 128072
+    },
+    "getSong": {
+     "median": 1.364,
+     "p95": 1.957,
+     "min": 1.226,
+     "bytes": 1368
+    },
+    "getAlbumList2 newest 50": {
+     "median": 4.725,
+     "p95": 7.116,
+     "min": 4.462,
+     "bytes": 32328
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 35.36,
+     "p95": 37.424,
+     "min": 31.947,
+     "bytes": 330976
+    },
+    "getAlbumList2 random 50": {
+     "median": 8.415,
+     "p95": 10.94,
+     "min": 7.951,
+     "bytes": 33677
+    },
+    "getRandomSongs 50": {
+     "median": 5.54,
+     "p95": 7.94,
+     "min": 5.147,
+     "bytes": 55864
+    },
+    "getGenres": {
+     "median": 1.18,
+     "p95": 1.669,
+     "min": 1.034,
+     "bytes": 2787
+    },
+    "getStarred2": {
+     "median": 1.699,
+     "p95": 3.445,
+     "min": 1.447,
+     "bytes": 145
+    },
+    "getPlaylists": {
+     "median": 1.027,
+     "p95": 1.479,
+     "min": 0.893,
+     "bytes": 486
+    }
+   },
+   "latency_300ms_after_write": {
+    "search3 \"love\"": {
+     "median": 7.209,
+     "p95": 11.438,
+     "min": 5.442,
+     "bytes": 31579
+    },
+    "search3 \"mo\"": {
+     "median": 9.245,
+     "p95": 11.931,
+     "min": 7.916,
+     "bytes": 37461
+    },
+    "search3 two words": {
+     "median": 6.821,
+     "p95": 8.291,
+     "min": 5.386,
+     "bytes": 15423
+    },
+    "getAlbum": {
+     "median": 2.419,
+     "p95": 2.664,
+     "min": 2.31,
+     "bytes": 2029
+    },
+    "getArtist": {
+     "median": 2.205,
+     "p95": 3.217,
+     "min": 2.115,
+     "bytes": 915
+    },
+    "getArtists": {
+     "median": 30.217,
+     "p95": 32.238,
+     "min": 27.391,
+     "bytes": 128072
+    },
+    "getSong": {
+     "median": 1.908,
+     "p95": 2.406,
+     "min": 1.83,
+     "bytes": 1368
+    },
+    "getAlbumList2 newest 50": {
+     "median": 5.1,
+     "p95": 6.441,
+     "min": 5.031,
+     "bytes": 32328
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 35.489,
+     "p95": 37.082,
+     "min": 31.848,
+     "bytes": 330976
+    },
+    "getAlbumList2 random 50": {
+     "median": 8.901,
+     "p95": 11.415,
+     "min": 8.54,
+     "bytes": 33360
+    },
+    "getRandomSongs 50": {
+     "median": 5.998,
+     "p95": 10.745,
+     "min": 5.786,
+     "bytes": 55125
+    },
+    "getGenres": {
+     "median": 1.655,
+     "p95": 1.773,
+     "min": 1.562,
+     "bytes": 2787
+    },
+    "getStarred2": {
+     "median": 3.626,
+     "p95": 4.103,
+     "min": 2.102,
+     "bytes": 145
+    },
+    "getPlaylists": {
+     "median": 1.503,
+     "p95": 1.633,
+     "min": 1.432,
+     "bytes": 486
+    }
+   },
+   "auth": {
+    "ping token (t+s)": {
+     "median": 0.682,
+     "p95": 0.879,
+     "min": 0.585
+    },
+    "ping password (p)": {
+     "median": 0.664,
+     "p95": 0.834,
+     "min": 0.585
+    }
+   },
+   "bytes_gzip": {
+    "search3 \"love\"": 6097,
+    "search3 \"mo\"": 7072,
+    "search3 two words": 3272,
+    "getAlbum": 827,
+    "getArtist": 502,
+    "getArtists": 30813,
+    "getSong": 682,
+    "getAlbumList2 newest 50": 7042,
+    "getAlbumList2 alphabetical 500": 68674,
+    "getAlbumList2 random 50": 8104,
+    "getRandomSongs 50": 11424,
+    "getGenres": 707,
+    "getStarred2": 137,
+    "getPlaylists": 339
+   },
+   "covers": {
+    "300 first": {
+     "median": 72.089,
+     "p95": 90.151,
+     "min": 1.265,
+     "bytes_total": 1024660,
+     "count": 60
+    },
+    "300 cached": {
+     "median": 0.992,
+     "p95": 1.822,
+     "min": 0.841,
+     "bytes_total": 1024660,
+     "count": 60
+    },
+    "300 cached later": {
+     "median": 0.929,
+     "p95": 1.352,
+     "min": 0.844,
+     "bytes_total": 1024660,
+     "count": 60
+    },
+    "600 first": {
+     "median": 118.797,
+     "p95": 140.889,
+     "min": 1.376,
+     "bytes_total": 3572134,
+     "count": 60
+    },
+    "600 cached": {
+     "median": 1.021,
+     "p95": 1.272,
+     "min": 0.885,
+     "bytes_total": 3572134,
+     "count": 60
+    },
+    "600 cached later": {
+     "median": 0.977,
+     "p95": 2.04,
+     "min": 0.85,
+     "bytes_total": 3572134,
+     "count": 60
+    }
+   },
+   "streaming": {
+    "songs": [
+     "<song 1>",
+     "<song 2>",
+     "<song 3>",
+     "<song 4>",
+     "<song 5>",
+     "<song 6>",
+     "<song 7>",
+     "<song 8>",
+     "<song 9>",
+     "<song 10>"
+    ],
+    "raw first 64 KiB, first byte ms": {
+     "median": 1.43,
+     "p95": 1.804,
+     "min": 1.317
+    },
+    "raw whole file MB/s": 719.9,
+    "transcoded bytes vs file": [
+     [
+      3049339,
+      4257481
+     ],
+     [
+      2653126,
+      3833607
+     ],
+     [
+      2058593,
+      2892404
+     ],
+     [
+      1834289,
+      2735264
+     ],
+     [
+      2668124,
+      3672671
+     ]
+    ],
+    "transcode to mp3 96, first byte ms": {
+     "median": 33.51,
+     "p95": 44.653,
+     "min": 27.393
+    },
+    "transcode to mp3 96, whole song ms": {
+     "median": 2761.057,
+     "p95": 3515.712,
+     "min": 1781.54
+    },
+    "transcoded again, first byte ms": {
+     "median": 1.717,
+     "p95": 2.046,
+     "min": 1.644
+    },
+    "transcoded source bit rates": [
+     128,
+     128,
+     128,
+     128,
+     128
+    ]
+   },
+   "concurrency": [
+    {
+     "threads": 1,
+     "requests_per_s": 86.5,
+     "median": 5.68,
+     "p95": 32.98,
+     "errors": 0,
+     "cpu_s": 10.55
+    },
+    {
+     "threads": 4,
+     "requests_per_s": 133.8,
+     "median": 18.56,
+     "p95": 81.04,
+     "errors": 0,
+     "cpu_s": 16.26
+    },
+    {
+     "threads": 16,
+     "requests_per_s": 143.4,
+     "median": 101.93,
+     "p95": 211.78,
+     "errors": 0,
+     "cpu_s": 16.84
+    },
+    {
+     "threads": 64,
+     "requests_per_s": 156.3,
+     "median": 393.79,
+     "p95": 582.64,
+     "errors": 0,
+     "cpu_s": 17.21
+    }
+   ],
+   "rss_after_load_kb": 245088,
+   "rss_peak_kb": 249764,
+   "data_dir_bytes": 361336953,
+   "restart_s": 0.039,
+   "rss_after_restart_kb": 46004,
+   "total_run_s": 407.2
+  },
+  {
+   "server": "navidrome",
+   "run": 2,
+   "first_start_s": 0.782,
+   "scan": {
+    "wall_s": 19.07,
+    "reported_s": 17.15,
+    "cpu_s": 16.64,
+    "peak_rss_kb": 62876
+   },
+   "rss_idle_kb": 102400,
+   "library": {
+    "albums_listed": 500,
+    "artists": 797
+   },
+   "latency_warm": {
+    "search3 \"love\"": {
+     "median": 27.144,
+     "p95": 62.44,
+     "min": 5.009,
+     "bytes": 31514
+    },
+    "search3 \"mo\"": {
+     "median": 24.351,
+     "p95": 60.441,
+     "min": 7.041,
+     "bytes": 37393
+    },
+    "search3 two words": {
+     "median": 22.229,
+     "p95": 57.175,
+     "min": 4.171,
+     "bytes": 15407
+    },
+    "getAlbum": {
+     "median": 2.926,
+     "p95": 29.749,
+     "min": 1.649,
+     "bytes": 2029
+    },
+    "getArtist": {
+     "median": 2.268,
+     "p95": 34.179,
+     "min": 1.468,
+     "bytes": 915
+    },
+    "getArtists": {
+     "median": 53.296,
+     "p95": 81.292,
+     "min": 27.944,
+     "bytes": 128072
+    },
+    "getSong": {
+     "median": 2.005,
+     "p95": 24.762,
+     "min": 1.176,
+     "bytes": 1368
+    },
+    "getAlbumList2 newest 50": {
+     "median": 17.03,
+     "p95": 35.368,
+     "min": 4.303,
+     "bytes": 32328
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 35.288,
+     "p95": 39.016,
+     "min": 31.368,
+     "bytes": 330976
+    },
+    "getAlbumList2 random 50": {
+     "median": 8.371,
+     "p95": 11.415,
+     "min": 7.88,
+     "bytes": 32814
+    },
+    "getRandomSongs 50": {
+     "median": 5.899,
+     "p95": 8.208,
+     "min": 5.312,
+     "bytes": 55365
+    },
+    "getGenres": {
+     "median": 1.179,
+     "p95": 1.568,
+     "min": 1.036,
+     "bytes": 2787
+    },
+    "getStarred2": {
+     "median": 1.765,
+     "p95": 3.935,
+     "min": 1.491,
+     "bytes": 145
+    },
+    "getPlaylists": {
+     "median": 1.046,
+     "p95": 1.655,
+     "min": 0.88,
+     "bytes": 486
+    }
+   },
+   "latency_after_write": {
+    "search3 \"love\"": {
+     "median": 5.153,
+     "p95": 8.664,
+     "min": 4.044,
+     "bytes": 31582
+    },
+    "search3 \"mo\"": {
+     "median": 6.711,
+     "p95": 10.581,
+     "min": 5.276,
+     "bytes": 37461
+    },
+    "search3 two words": {
+     "median": 4.609,
+     "p95": 7.303,
+     "min": 3.475,
+     "bytes": 15424
+    },
+    "getAlbum": {
+     "median": 1.877,
+     "p95": 2.951,
+     "min": 1.688,
+     "bytes": 2029
+    },
+    "getArtist": {
+     "median": 1.667,
+     "p95": 2.516,
+     "min": 1.495,
+     "bytes": 915
+    },
+    "getArtists": {
+     "median": 30.328,
+     "p95": 33.049,
+     "min": 27.034,
+     "bytes": 128072
+    },
+    "getSong": {
+     "median": 1.374,
+     "p95": 1.935,
+     "min": 1.25,
+     "bytes": 1368
+    },
+    "getAlbumList2 newest 50": {
+     "median": 4.785,
+     "p95": 7.168,
+     "min": 4.402,
+     "bytes": 32328
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 35.343,
+     "p95": 37.124,
+     "min": 32.44,
+     "bytes": 330976
+    },
+    "getAlbumList2 random 50": {
+     "median": 8.65,
+     "p95": 10.741,
+     "min": 8.103,
+     "bytes": 32695
+    },
+    "getRandomSongs 50": {
+     "median": 5.631,
+     "p95": 8.241,
+     "min": 5.229,
+     "bytes": 53702
+    },
+    "getGenres": {
+     "median": 1.191,
+     "p95": 1.845,
+     "min": 1.058,
+     "bytes": 2787
+    },
+    "getStarred2": {
+     "median": 1.617,
+     "p95": 3.246,
+     "min": 1.435,
+     "bytes": 145
+    },
+    "getPlaylists": {
+     "median": 1.024,
+     "p95": 1.595,
+     "min": 0.893,
+     "bytes": 486
+    }
+   },
+   "latency_300ms_after_write": {
+    "search3 \"love\"": {
+     "median": 7.583,
+     "p95": 11.267,
+     "min": 5.477,
+     "bytes": 31582
+    },
+    "search3 \"mo\"": {
+     "median": 9.467,
+     "p95": 12.903,
+     "min": 8.301,
+     "bytes": 37461
+    },
+    "search3 two words": {
+     "median": 6.982,
+     "p95": 8.463,
+     "min": 4.874,
+     "bytes": 15424
+    },
+    "getAlbum": {
+     "median": 2.497,
+     "p95": 2.956,
+     "min": 2.339,
+     "bytes": 2029
+    },
+    "getArtist": {
+     "median": 2.264,
+     "p95": 2.396,
+     "min": 2.15,
+     "bytes": 915
+    },
+    "getArtists": {
+     "median": 30.039,
+     "p95": 32.259,
+     "min": 27.452,
+     "bytes": 128072
+    },
+    "getSong": {
+     "median": 1.907,
+     "p95": 2.096,
+     "min": 1.835,
+     "bytes": 1368
+    },
+    "getAlbumList2 newest 50": {
+     "median": 5.18,
+     "p95": 7.596,
+     "min": 4.97,
+     "bytes": 32328
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 35.395,
+     "p95": 37.755,
+     "min": 31.573,
+     "bytes": 330976
+    },
+    "getAlbumList2 random 50": {
+     "median": 8.948,
+     "p95": 10.07,
+     "min": 8.673,
+     "bytes": 32838
+    },
+    "getRandomSongs 50": {
+     "median": 6.14,
+     "p95": 7.866,
+     "min": 5.777,
+     "bytes": 56104
+    },
+    "getGenres": {
+     "median": 1.652,
+     "p95": 2.007,
+     "min": 1.577,
+     "bytes": 2787
+    },
+    "getStarred2": {
+     "median": 3.662,
+     "p95": 3.906,
+     "min": 2.299,
+     "bytes": 145
+    },
+    "getPlaylists": {
+     "median": 1.545,
+     "p95": 2.188,
+     "min": 1.443,
+     "bytes": 486
+    }
+   },
+   "auth": {
+    "ping token (t+s)": {
+     "median": 0.698,
+     "p95": 0.984,
+     "min": 0.586
+    },
+    "ping password (p)": {
+     "median": 0.719,
+     "p95": 2.326,
+     "min": 0.58
+    }
+   },
+   "bytes_gzip": {
+    "search3 \"love\"": 6095,
+    "search3 \"mo\"": 7086,
+    "search3 two words": 3278,
+    "getAlbum": 831,
+    "getArtist": 502,
+    "getArtists": 30694,
+    "getSong": 686,
+    "getAlbumList2 newest 50": 7042,
+    "getAlbumList2 alphabetical 500": 68657,
+    "getAlbumList2 random 50": 7765,
+    "getRandomSongs 50": 10798,
+    "getGenres": 707,
+    "getStarred2": 137,
+    "getPlaylists": 334
+   },
+   "covers": {
+    "300 first": {
+     "median": 72.837,
+     "p95": 98.691,
+     "min": 1.29,
+     "bytes_total": 1024660,
+     "count": 60
+    },
+    "300 cached": {
+     "median": 0.983,
+     "p95": 1.669,
+     "min": 0.836,
+     "bytes_total": 1024660,
+     "count": 60
+    },
+    "300 cached later": {
+     "median": 0.921,
+     "p95": 1.236,
+     "min": 0.814,
+     "bytes_total": 1024660,
+     "count": 60
+    },
+    "600 first": {
+     "median": 118.756,
+     "p95": 138.633,
+     "min": 1.231,
+     "bytes_total": 3572134,
+     "count": 60
+    },
+    "600 cached": {
+     "median": 1.049,
+     "p95": 1.882,
+     "min": 0.859,
+     "bytes_total": 3572134,
+     "count": 60
+    },
+    "600 cached later": {
+     "median": 0.956,
+     "p95": 1.753,
+     "min": 0.851,
+     "bytes_total": 3572134,
+     "count": 60
+    }
+   },
+   "streaming": {
+    "songs": [
+     "<song 1>",
+     "<song 2>",
+     "<song 3>",
+     "<song 4>",
+     "<song 5>",
+     "<song 6>",
+     "<song 7>",
+     "<song 8>",
+     "<song 9>",
+     "<song 10>"
+    ],
+    "raw first 64 KiB, first byte ms": {
+     "median": 1.547,
+     "p95": 1.76,
+     "min": 1.359
+    },
+    "raw whole file MB/s": 659.8,
+    "transcoded bytes vs file": [
+     [
+      3049339,
+      4257481
+     ],
+     [
+      2653126,
+      3833607
+     ],
+     [
+      2058593,
+      2892404
+     ],
+     [
+      1834289,
+      2735264
+     ],
+     [
+      2668124,
+      3672671
+     ]
+    ],
+    "transcode to mp3 96, first byte ms": {
+     "median": 40.357,
+     "p95": 44.322,
+     "min": 30.859
+    },
+    "transcode to mp3 96, whole song ms": {
+     "median": 2758.34,
+     "p95": 3437.376,
+     "min": 1772.854
+    },
+    "transcoded again, first byte ms": {
+     "median": 1.712,
+     "p95": 1.959,
+     "min": 1.524
+    },
+    "transcoded source bit rates": [
+     128,
+     128,
+     128,
+     128,
+     128
+    ]
+   },
+   "concurrency": [
+    {
+     "threads": 1,
+     "requests_per_s": 86.1,
+     "median": 5.67,
+     "p95": 32.89,
+     "errors": 0,
+     "cpu_s": 10.41
+    },
+    {
+     "threads": 4,
+     "requests_per_s": 135.1,
+     "median": 19.01,
+     "p95": 80.71,
+     "errors": 0,
+     "cpu_s": 16.25
+    },
+    {
+     "threads": 16,
+     "requests_per_s": 142.8,
+     "median": 100.18,
+     "p95": 212.22,
+     "errors": 0,
+     "cpu_s": 16.67
+    },
+    {
+     "threads": 64,
+     "requests_per_s": 158.1,
+     "median": 381.03,
+     "p95": 592.81,
+     "errors": 0,
+     "cpu_s": 17.04
+    }
+   ],
+   "rss_after_load_kb": 234736,
+   "rss_peak_kb": 240904,
+   "data_dir_bytes": 361361302,
+   "restart_s": 0.07,
+   "rss_after_restart_kb": 46288,
+   "total_run_s": 407.5
+  },
+  {
+   "server": "musonic",
+   "run": 2,
+   "first_start_s": 0.055,
+   "scan": {
+    "wall_s": 1.78,
+    "reported_s": 1.78,
+    "cpu_s": 1.77,
+    "peak_rss_kb": 19600
+   },
+   "rss_idle_kb": 19700,
+   "library": {
+    "albums_listed": 500,
+    "artists": 797
+   },
+   "latency_warm": {
+    "search3 \"love\"": {
+     "median": 0.355,
+     "p95": 0.445,
+     "min": 0.289,
+     "bytes": 26569
+    },
+    "search3 \"mo\"": {
+     "median": 0.377,
+     "p95": 0.455,
+     "min": 0.32,
+     "bytes": 34001
+    },
+    "search3 two words": {
+     "median": 0.299,
+     "p95": 0.368,
+     "min": 0.281,
+     "bytes": 8853
+    },
+    "getAlbum": {
+     "median": 0.288,
+     "p95": 0.372,
+     "min": 0.273,
+     "bytes": 1832
+    },
+    "getArtist": {
+     "median": 0.278,
+     "p95": 0.374,
+     "min": 0.26,
+     "bytes": 707
+    },
+    "getArtists": {
+     "median": 0.429,
+     "p95": 0.511,
+     "min": 0.387,
+     "bytes": 106734
+    },
+    "getSong": {
+     "median": 0.286,
+     "p95": 0.39,
+     "min": 0.263,
+     "bytes": 1291
+    },
+    "getAlbumList2 newest 50": {
+     "median": 0.335,
+     "p95": 0.415,
+     "min": 0.265,
+     "bytes": 23687
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 0.517,
+     "p95": 0.597,
+     "min": 0.452,
+     "bytes": 240231
+    },
+    "getAlbumList2 random 50": {
+     "median": 2.166,
+     "p95": 2.299,
+     "min": 2.053,
+     "bytes": 24445
+    },
+    "getRandomSongs 50": {
+     "median": 3.301,
+     "p95": 3.559,
+     "min": 3.092,
+     "bytes": 48990
+    },
+    "getGenres": {
+     "median": 0.289,
+     "p95": 0.363,
+     "min": 0.266,
+     "bytes": 2552
+    },
+    "getStarred2": {
+     "median": 0.279,
+     "p95": 0.395,
+     "min": 0.258,
+     "bytes": 163
+    },
+    "getPlaylists": {
+     "median": 0.294,
+     "p95": 0.753,
+     "min": 0.252,
+     "bytes": 145
+    }
+   },
+   "latency_after_write": {
+    "search3 \"love\"": {
+     "median": 2.778,
+     "p95": 3.591,
+     "min": 2.454,
+     "bytes": 26569
+    },
+    "search3 \"mo\"": {
+     "median": 5.432,
+     "p95": 6.362,
+     "min": 4.991,
+     "bytes": 34001
+    },
+    "search3 two words": {
+     "median": 1.93,
+     "p95": 2.073,
+     "min": 1.527,
+     "bytes": 8853
+    },
+    "getAlbum": {
+     "median": 0.845,
+     "p95": 0.988,
+     "min": 0.519,
+     "bytes": 1832
+    },
+    "getArtist": {
+     "median": 0.483,
+     "p95": 0.604,
+     "min": 0.419,
+     "bytes": 707
+    },
+    "getArtists": {
+     "median": 4.662,
+     "p95": 6.655,
+     "min": 3.621,
+     "bytes": 106734
+    },
+    "getSong": {
+     "median": 0.772,
+     "p95": 0.915,
+     "min": 0.426,
+     "bytes": 1291
+    },
+    "getAlbumList2 newest 50": {
+     "median": 4.458,
+     "p95": 5.168,
+     "min": 3.98,
+     "bytes": 23687
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 23.963,
+     "p95": 26.812,
+     "min": 21.127,
+     "bytes": 240231
+    },
+    "getAlbumList2 random 50": {
+     "median": 2.205,
+     "p95": 2.399,
+     "min": 2.053,
+     "bytes": 23833
+    },
+    "getRandomSongs 50": {
+     "median": 3.351,
+     "p95": 3.668,
+     "min": 3.12,
+     "bytes": 49136
+    },
+    "getGenres": {
+     "median": 0.739,
+     "p95": 0.841,
+     "min": 0.417,
+     "bytes": 2552
+    },
+    "getStarred2": {
+     "median": 0.414,
+     "p95": 0.503,
+     "min": 0.342,
+     "bytes": 163
+    },
+    "getPlaylists": {
+     "median": 0.377,
+     "p95": 0.502,
+     "min": 0.322,
+     "bytes": 145
+    }
+   },
+   "latency_300ms_after_write": {
+    "search3 \"love\"": {
+     "median": 0.706,
+     "p95": 0.926,
+     "min": 0.666,
+     "bytes": 26569
+    },
+    "search3 \"mo\"": {
+     "median": 0.708,
+     "p95": 0.769,
+     "min": 0.675,
+     "bytes": 34001
+    },
+    "search3 two words": {
+     "median": 0.683,
+     "p95": 0.719,
+     "min": 0.642,
+     "bytes": 8853
+    },
+    "getAlbum": {
+     "median": 0.67,
+     "p95": 0.724,
+     "min": 0.635,
+     "bytes": 1832
+    },
+    "getArtist": {
+     "median": 0.672,
+     "p95": 1.252,
+     "min": 0.609,
+     "bytes": 707
+    },
+    "getArtists": {
+     "median": 0.723,
+     "p95": 0.788,
+     "min": 0.692,
+     "bytes": 106734
+    },
+    "getSong": {
+     "median": 0.678,
+     "p95": 0.767,
+     "min": 0.63,
+     "bytes": 1291
+    },
+    "getAlbumList2 newest 50": {
+     "median": 0.7,
+     "p95": 0.839,
+     "min": 0.653,
+     "bytes": 23687
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 0.752,
+     "p95": 0.841,
+     "min": 0.7,
+     "bytes": 240231
+    },
+    "getAlbumList2 random 50": {
+     "median": 3.25,
+     "p95": 3.446,
+     "min": 3.068,
+     "bytes": 23867
+    },
+    "getRandomSongs 50": {
+     "median": 4.635,
+     "p95": 4.851,
+     "min": 4.439,
+     "bytes": 50069
+    },
+    "getGenres": {
+     "median": 0.672,
+     "p95": 0.747,
+     "min": 0.635,
+     "bytes": 2552
+    },
+    "getStarred2": {
+     "median": 0.67,
+     "p95": 0.833,
+     "min": 0.631,
+     "bytes": 163
+    },
+    "getPlaylists": {
+     "median": 0.67,
+     "p95": 0.766,
+     "min": 0.631,
+     "bytes": 145
+    }
+   },
+   "auth": {
+    "ping token (t+s)": {
+     "median": 0.269,
+     "p95": 0.364,
+     "min": 0.251
+    },
+    "ping password (p)": {
+     "median": 0.396,
+     "p95": 0.529,
+     "min": 0.3
+    }
+   },
+   "bytes_gzip": {
+    "search3 \"love\"": 7150,
+    "search3 \"mo\"": 9113,
+    "search3 two words": 2513,
+    "getAlbum": 743,
+    "getArtist": 707,
+    "getArtists": 48863,
+    "getSong": 654,
+    "getAlbumList2 newest 50": 6859,
+    "getAlbumList2 alphabetical 500": 67387,
+    "getAlbumList2 random 50": 7822,
+    "getRandomSongs 50": 13481,
+    "getGenres": 792,
+    "getStarred2": 163,
+    "getPlaylists": 145
+   },
+   "covers": {
+    "300 first": {
+     "median": 21.099,
+     "p95": 30.202,
+     "min": 13.093,
+     "bytes_total": 1117246,
+     "count": 60
+    },
+    "300 cached": {
+     "median": 0.516,
+     "p95": 1.51,
+     "min": 0.443,
+     "bytes_total": 1002503,
+     "count": 60
+    },
+    "300 cached later": {
+     "median": 0.54,
+     "p95": 0.725,
+     "min": 0.464,
+     "bytes_total": 940650,
+     "count": 60
+    },
+    "600 first": {
+     "median": 32.597,
+     "p95": 57.55,
+     "min": 6.819,
+     "bytes_total": 3789571,
+     "count": 60
+    },
+    "600 cached": {
+     "median": 0.599,
+     "p95": 1.508,
+     "min": 0.458,
+     "bytes_total": 3522743,
+     "count": 60
+    },
+    "600 cached later": {
+     "median": 0.605,
+     "p95": 1.591,
+     "min": 0.458,
+     "bytes_total": 3327105,
+     "count": 60
+    }
+   },
+   "streaming": {
+    "songs": [
+     "<song 1>",
+     "<song 2>",
+     "<song 3>",
+     "<song 4>",
+     "<song 5>",
+     "<song 6>",
+     "<song 7>",
+     "<song 8>",
+     "<song 9>",
+     "<song 10>"
+    ],
+    "raw first 64 KiB, first byte ms": {
+     "median": 0.838,
+     "p95": 1.126,
+     "min": 0.736
+    },
+    "raw whole file MB/s": 625.0,
+    "transcoded bytes vs file": [
+     [
+      3049162,
+      4257481
+     ],
+     [
+      2652936,
+      3833607
+     ],
+     [
+      2058285,
+      2892404
+     ],
+     [
+      1834154,
+      2735264
+     ],
+     [
+      2667983,
+      3672671
+     ]
+    ],
+    "transcode to mp3 96, first byte ms": {
+     "median": 41.946,
+     "p95": 42.24,
+     "min": 41.389
+    },
+    "transcode to mp3 96, whole song ms": {
+     "median": 2779.134,
+     "p95": 3528.527,
+     "min": 1811.003
+    },
+    "transcoded again, first byte ms": {
+     "median": 1.365,
+     "p95": 2.275,
+     "min": 0.944
+    },
+    "transcoded source bit rates": [
+     128,
+     128,
+     128,
+     128,
+     128
+    ]
+   },
+   "concurrency": [
+    {
+     "threads": 1,
+     "requests_per_s": 723.2,
+     "median": 0.42,
+     "p95": 2.53,
+     "errors": 0,
+     "cpu_s": 4.21
+    },
+    {
+     "threads": 4,
+     "requests_per_s": 899.3,
+     "median": 2.48,
+     "p95": 6.55,
+     "errors": 0,
+     "cpu_s": 5.4
+    },
+    {
+     "threads": 16,
+     "requests_per_s": 905.4,
+     "median": 9.22,
+     "p95": 23.82,
+     "errors": 0,
+     "cpu_s": 5.45
+    },
+    {
+     "threads": 64,
+     "requests_per_s": 917.1,
+     "median": 33.73,
+     "p95": 103.65,
+     "errors": 0,
+     "cpu_s": 5.48
+    }
+   ],
+   "rss_after_load_kb": 74144,
+   "rss_peak_kb": 74596,
+   "data_dir_bytes": 27003244,
+   "restart_s": 0.018,
+   "rss_after_restart_kb": 15792,
+   "total_run_s": 295.9
+  },
+  {
+   "server": "musonic",
+   "run": 3,
+   "first_start_s": 0.062,
+   "scan": {
+    "wall_s": 1.77,
+    "reported_s": 1.79,
+    "cpu_s": 1.75,
+    "peak_rss_kb": 19724
+   },
+   "rss_idle_kb": 19924,
+   "library": {
+    "albums_listed": 500,
+    "artists": 797
+   },
+   "latency_warm": {
+    "search3 \"love\"": {
+     "median": 0.353,
+     "p95": 0.454,
+     "min": 0.289,
+     "bytes": 26569
+    },
+    "search3 \"mo\"": {
+     "median": 0.378,
+     "p95": 0.493,
+     "min": 0.306,
+     "bytes": 33839
+    },
+    "search3 two words": {
+     "median": 0.329,
+     "p95": 0.39,
+     "min": 0.283,
+     "bytes": 8853
+    },
+    "getAlbum": {
+     "median": 0.293,
+     "p95": 0.446,
+     "min": 0.229,
+     "bytes": 1836
+    },
+    "getArtist": {
+     "median": 0.392,
+     "p95": 1.102,
+     "min": 0.303,
+     "bytes": 707
+    },
+    "getArtists": {
+     "median": 0.455,
+     "p95": 0.832,
+     "min": 0.385,
+     "bytes": 106734
+    },
+    "getSong": {
+     "median": 0.284,
+     "p95": 0.539,
+     "min": 0.257,
+     "bytes": 1293
+    },
+    "getAlbumList2 newest 50": {
+     "median": 0.352,
+     "p95": 0.456,
+     "min": 0.297,
+     "bytes": 23677
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 0.539,
+     "p95": 0.64,
+     "min": 0.462,
+     "bytes": 240175
+    },
+    "getAlbumList2 random 50": {
+     "median": 2.208,
+     "p95": 2.468,
+     "min": 2.05,
+     "bytes": 24274
+    },
+    "getRandomSongs 50": {
+     "median": 3.289,
+     "p95": 3.47,
+     "min": 3.11,
+     "bytes": 48836
+    },
+    "getGenres": {
+     "median": 0.291,
+     "p95": 0.366,
+     "min": 0.264,
+     "bytes": 2552
+    },
+    "getStarred2": {
+     "median": 0.282,
+     "p95": 0.394,
+     "min": 0.256,
+     "bytes": 163
+    },
+    "getPlaylists": {
+     "median": 0.276,
+     "p95": 0.355,
+     "min": 0.255,
+     "bytes": 145
+    }
+   },
+   "latency_after_write": {
+    "search3 \"love\"": {
+     "median": 2.802,
+     "p95": 3.664,
+     "min": 2.431,
+     "bytes": 26569
+    },
+    "search3 \"mo\"": {
+     "median": 5.568,
+     "p95": 6.849,
+     "min": 4.989,
+     "bytes": 33839
+    },
+    "search3 two words": {
+     "median": 1.936,
+     "p95": 2.082,
+     "min": 1.482,
+     "bytes": 8853
+    },
+    "getAlbum": {
+     "median": 0.853,
+     "p95": 1.16,
+     "min": 0.523,
+     "bytes": 1836
+    },
+    "getArtist": {
+     "median": 0.471,
+     "p95": 0.562,
+     "min": 0.405,
+     "bytes": 707
+    },
+    "getArtists": {
+     "median": 4.477,
+     "p95": 6.575,
+     "min": 3.297,
+     "bytes": 106734
+    },
+    "getSong": {
+     "median": 0.777,
+     "p95": 1.125,
+     "min": 0.39,
+     "bytes": 1293
+    },
+    "getAlbumList2 newest 50": {
+     "median": 4.508,
+     "p95": 4.906,
+     "min": 3.636,
+     "bytes": 23677
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 24.531,
+     "p95": 27.632,
+     "min": 21.801,
+     "bytes": 240175
+    },
+    "getAlbumList2 random 50": {
+     "median": 2.245,
+     "p95": 2.426,
+     "min": 2.103,
+     "bytes": 24382
+    },
+    "getRandomSongs 50": {
+     "median": 3.416,
+     "p95": 3.647,
+     "min": 3.181,
+     "bytes": 49062
+    },
+    "getGenres": {
+     "median": 0.74,
+     "p95": 0.878,
+     "min": 0.418,
+     "bytes": 2552
+    },
+    "getStarred2": {
+     "median": 0.405,
+     "p95": 0.499,
+     "min": 0.338,
+     "bytes": 163
+    },
+    "getPlaylists": {
+     "median": 0.375,
+     "p95": 0.546,
+     "min": 0.307,
+     "bytes": 145
+    }
+   },
+   "latency_300ms_after_write": {
+    "search3 \"love\"": {
+     "median": 0.694,
+     "p95": 0.739,
+     "min": 0.662,
+     "bytes": 26569
+    },
+    "search3 \"mo\"": {
+     "median": 0.707,
+     "p95": 0.793,
+     "min": 0.656,
+     "bytes": 33839
+    },
+    "search3 two words": {
+     "median": 0.689,
+     "p95": 0.761,
+     "min": 0.641,
+     "bytes": 8853
+    },
+    "getAlbum": {
+     "median": 0.68,
+     "p95": 0.726,
+     "min": 0.632,
+     "bytes": 1836
+    },
+    "getArtist": {
+     "median": 0.665,
+     "p95": 0.734,
+     "min": 0.589,
+     "bytes": 707
+    },
+    "getArtists": {
+     "median": 0.731,
+     "p95": 0.79,
+     "min": 0.677,
+     "bytes": 106734
+    },
+    "getSong": {
+     "median": 0.672,
+     "p95": 0.711,
+     "min": 0.633,
+     "bytes": 1293
+    },
+    "getAlbumList2 newest 50": {
+     "median": 0.699,
+     "p95": 0.883,
+     "min": 0.655,
+     "bytes": 23677
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 0.762,
+     "p95": 0.909,
+     "min": 0.702,
+     "bytes": 240175
+    },
+    "getAlbumList2 random 50": {
+     "median": 3.275,
+     "p95": 3.394,
+     "min": 3.077,
+     "bytes": 24081
+    },
+    "getRandomSongs 50": {
+     "median": 4.675,
+     "p95": 4.875,
+     "min": 4.558,
+     "bytes": 48239
+    },
+    "getGenres": {
+     "median": 0.673,
+     "p95": 0.747,
+     "min": 0.632,
+     "bytes": 2552
+    },
+    "getStarred2": {
+     "median": 0.665,
+     "p95": 0.711,
+     "min": 0.626,
+     "bytes": 163
+    },
+    "getPlaylists": {
+     "median": 0.675,
+     "p95": 0.762,
+     "min": 0.598,
+     "bytes": 145
+    }
+   },
+   "auth": {
+    "ping token (t+s)": {
+     "median": 0.27,
+     "p95": 0.378,
+     "min": 0.249
+    },
+    "ping password (p)": {
+     "median": 0.395,
+     "p95": 1.249,
+     "min": 0.351
+    }
+   },
+   "bytes_gzip": {
+    "search3 \"love\"": 7131,
+    "search3 \"mo\"": 9054,
+    "search3 two words": 2524,
+    "getAlbum": 740,
+    "getArtist": 707,
+    "getArtists": 48881,
+    "getSong": 654,
+    "getAlbumList2 newest 50": 6954,
+    "getAlbumList2 alphabetical 500": 67314,
+    "getAlbumList2 random 50": 7777,
+    "getRandomSongs 50": 12715,
+    "getGenres": 791,
+    "getStarred2": 163,
+    "getPlaylists": 145
+   },
+   "covers": {
+    "300 first": {
+     "median": 21.748,
+     "p95": 65.888,
+     "min": 12.612,
+     "bytes_total": 1117246,
+     "count": 60
+    },
+    "300 cached": {
+     "median": 0.531,
+     "p95": 2.777,
+     "min": 0.427,
+     "bytes_total": 985481,
+     "count": 60
+    },
+    "300 cached later": {
+     "median": 0.539,
+     "p95": 2.071,
+     "min": 0.448,
+     "bytes_total": 927959,
+     "count": 60
+    },
+    "600 first": {
+     "median": 30.069,
+     "p95": 41.624,
+     "min": 8.058,
+     "bytes_total": 3789571,
+     "count": 60
+    },
+    "600 cached": {
+     "median": 0.643,
+     "p95": 2.537,
+     "min": 0.496,
+     "bytes_total": 3522743,
+     "count": 60
+    },
+    "600 cached later": {
+     "median": 0.637,
+     "p95": 2.014,
+     "min": 0.429,
+     "bytes_total": 3299789,
+     "count": 60
+    }
+   },
+   "streaming": {
+    "songs": [
+     "<song 1>",
+     "<song 2>",
+     "<song 3>",
+     "<song 4>",
+     "<song 5>",
+     "<song 6>",
+     "<song 7>",
+     "<song 8>",
+     "<song 9>",
+     "<song 10>"
+    ],
+    "raw first 64 KiB, first byte ms": {
+     "median": 0.811,
+     "p95": 0.98,
+     "min": 0.639
+    },
+    "raw whole file MB/s": 659.7,
+    "transcoded bytes vs file": [
+     [
+      3049162,
+      4257481
+     ],
+     [
+      2652936,
+      3833607
+     ],
+     [
+      2058285,
+      2892404
+     ],
+     [
+      1834154,
+      2735264
+     ],
+     [
+      2667983,
+      3672671
+     ]
+    ],
+    "transcode to mp3 96, first byte ms": {
+     "median": 42.141,
+     "p95": 43.076,
+     "min": 41.831
+    },
+    "transcode to mp3 96, whole song ms": {
+     "median": 2760.603,
+     "p95": 3388.013,
+     "min": 1921.237
+    },
+    "transcoded again, first byte ms": {
+     "median": 1.254,
+     "p95": 2.291,
+     "min": 1.157
+    },
+    "transcoded source bit rates": [
+     128,
+     128,
+     128,
+     128,
+     128
+    ]
+   },
+   "concurrency": [
+    {
+     "threads": 1,
+     "requests_per_s": 729.2,
+     "median": 0.41,
+     "p95": 2.47,
+     "errors": 0,
+     "cpu_s": 4.2
+    },
+    {
+     "threads": 4,
+     "requests_per_s": 918.5,
+     "median": 2.44,
+     "p95": 6.27,
+     "errors": 0,
+     "cpu_s": 5.54
+    },
+    {
+     "threads": 16,
+     "requests_per_s": 902.3,
+     "median": 9.23,
+     "p95": 23.85,
+     "errors": 0,
+     "cpu_s": 5.42
+    },
+    {
+     "threads": 64,
+     "requests_per_s": 903.5,
+     "median": 33.49,
+     "p95": 106.47,
+     "errors": 0,
+     "cpu_s": 5.42
+    }
+   ],
+   "rss_after_load_kb": 81120,
+   "rss_peak_kb": 81384,
+   "data_dir_bytes": 26915851,
+   "restart_s": 0.019,
+   "rss_after_restart_kb": 15840,
+   "total_run_s": 296.2
+  },
+  {
+   "server": "navidrome",
+   "run": 3,
+   "first_start_s": 0.764,
+   "scan": {
+    "wall_s": 18.86,
+    "reported_s": 17.52,
+    "cpu_s": 16.93,
+    "peak_rss_kb": 57644
+   },
+   "rss_idle_kb": 111964,
+   "library": {
+    "albums_listed": 500,
+    "artists": 797
+   },
+   "latency_warm": {
+    "search3 \"love\"": {
+     "median": 29.436,
+     "p95": 60.698,
+     "min": 5.131,
+     "bytes": 31511
+    },
+    "search3 \"mo\"": {
+     "median": 25.641,
+     "p95": 60.273,
+     "min": 7.058,
+     "bytes": 37392
+    },
+    "search3 two words": {
+     "median": 20.157,
+     "p95": 57.116,
+     "min": 4.31,
+     "bytes": 15405
+    },
+    "getAlbum": {
+     "median": 2.6,
+     "p95": 21.898,
+     "min": 1.605,
+     "bytes": 2029
+    },
+    "getArtist": {
+     "median": 2.924,
+     "p95": 25.982,
+     "min": 1.396,
+     "bytes": 915
+    },
+    "getArtists": {
+     "median": 52.703,
+     "p95": 89.564,
+     "min": 28.513,
+     "bytes": 128072
+    },
+    "getSong": {
+     "median": 2.443,
+     "p95": 30.01,
+     "min": 1.212,
+     "bytes": 1368
+    },
+    "getAlbumList2 newest 50": {
+     "median": 16.649,
+     "p95": 41.436,
+     "min": 4.715,
+     "bytes": 32328
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 35.359,
+     "p95": 38.189,
+     "min": 31.337,
+     "bytes": 330976
+    },
+    "getAlbumList2 random 50": {
+     "median": 8.28,
+     "p95": 10.998,
+     "min": 7.835,
+     "bytes": 33746
+    },
+    "getRandomSongs 50": {
+     "median": 5.763,
+     "p95": 8.482,
+     "min": 5.168,
+     "bytes": 55487
+    },
+    "getGenres": {
+     "median": 1.136,
+     "p95": 1.484,
+     "min": 1.033,
+     "bytes": 2787
+    },
+    "getStarred2": {
+     "median": 2.172,
+     "p95": 3.357,
+     "min": 1.455,
+     "bytes": 145
+    },
+    "getPlaylists": {
+     "median": 0.994,
+     "p95": 1.34,
+     "min": 0.867,
+     "bytes": 486
+    }
+   },
+   "latency_after_write": {
+    "search3 \"love\"": {
+     "median": 4.699,
+     "p95": 8.24,
+     "min": 3.963,
+     "bytes": 31579
+    },
+    "search3 \"mo\"": {
+     "median": 7.119,
+     "p95": 11.64,
+     "min": 5.219,
+     "bytes": 37460
+    },
+    "search3 two words": {
+     "median": 4.342,
+     "p95": 7.101,
+     "min": 3.759,
+     "bytes": 15422
+    },
+    "getAlbum": {
+     "median": 1.845,
+     "p95": 2.701,
+     "min": 1.681,
+     "bytes": 2029
+    },
+    "getArtist": {
+     "median": 1.642,
+     "p95": 2.302,
+     "min": 1.481,
+     "bytes": 915
+    },
+    "getArtists": {
+     "median": 30.214,
+     "p95": 32.08,
+     "min": 27.295,
+     "bytes": 128072
+    },
+    "getSong": {
+     "median": 1.363,
+     "p95": 2.35,
+     "min": 1.225,
+     "bytes": 1368
+    },
+    "getAlbumList2 newest 50": {
+     "median": 4.76,
+     "p95": 7.13,
+     "min": 4.325,
+     "bytes": 32328
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 35.216,
+     "p95": 38.87,
+     "min": 31.777,
+     "bytes": 330976
+    },
+    "getAlbumList2 random 50": {
+     "median": 8.366,
+     "p95": 10.696,
+     "min": 7.918,
+     "bytes": 33659
+    },
+    "getRandomSongs 50": {
+     "median": 5.668,
+     "p95": 8.863,
+     "min": 5.312,
+     "bytes": 56581
+    },
+    "getGenres": {
+     "median": 1.195,
+     "p95": 1.933,
+     "min": 1.072,
+     "bytes": 2787
+    },
+    "getStarred2": {
+     "median": 1.621,
+     "p95": 3.386,
+     "min": 1.43,
+     "bytes": 145
+    },
+    "getPlaylists": {
+     "median": 1.004,
+     "p95": 1.452,
+     "min": 0.885,
+     "bytes": 486
+    }
+   },
+   "latency_300ms_after_write": {
+    "search3 \"love\"": {
+     "median": 6.864,
+     "p95": 9.431,
+     "min": 4.972,
+     "bytes": 31579
+    },
+    "search3 \"mo\"": {
+     "median": 9.557,
+     "p95": 12.033,
+     "min": 8.232,
+     "bytes": 37460
+    },
+    "search3 two words": {
+     "median": 6.939,
+     "p95": 8.92,
+     "min": 5.676,
+     "bytes": 15422
+    },
+    "getAlbum": {
+     "median": 2.421,
+     "p95": 3.243,
+     "min": 2.316,
+     "bytes": 2029
+    },
+    "getArtist": {
+     "median": 2.22,
+     "p95": 2.357,
+     "min": 2.074,
+     "bytes": 915
+    },
+    "getArtists": {
+     "median": 30.849,
+     "p95": 36.138,
+     "min": 27.2,
+     "bytes": 128072
+    },
+    "getSong": {
+     "median": 1.909,
+     "p95": 2.017,
+     "min": 1.791,
+     "bytes": 1368
+    },
+    "getAlbumList2 newest 50": {
+     "median": 5.14,
+     "p95": 6.947,
+     "min": 4.981,
+     "bytes": 32328
+    },
+    "getAlbumList2 alphabetical 500": {
+     "median": 35.342,
+     "p95": 39.806,
+     "min": 33.02,
+     "bytes": 330976
+    },
+    "getAlbumList2 random 50": {
+     "median": 8.851,
+     "p95": 9.852,
+     "min": 8.63,
+     "bytes": 33585
+    },
+    "getRandomSongs 50": {
+     "median": 6.012,
+     "p95": 8.462,
+     "min": 5.822,
+     "bytes": 55509
+    },
+    "getGenres": {
+     "median": 1.657,
+     "p95": 1.809,
+     "min": 1.565,
+     "bytes": 2787
+    },
+    "getStarred2": {
+     "median": 3.635,
+     "p95": 3.839,
+     "min": 2.033,
+     "bytes": 145
+    },
+    "getPlaylists": {
+     "median": 1.504,
+     "p95": 1.66,
+     "min": 1.409,
+     "bytes": 486
+    }
+   },
+   "auth": {
+    "ping token (t+s)": {
+     "median": 0.651,
+     "p95": 0.781,
+     "min": 0.574
+    },
+    "ping password (p)": {
+     "median": 0.705,
+     "p95": 1.426,
+     "min": 0.597
+    }
+   },
+   "bytes_gzip": {
+    "search3 \"love\"": 6096,
+    "search3 \"mo\"": 7070,
+    "search3 two words": 3278,
+    "getAlbum": 830,
+    "getArtist": 501,
+    "getArtists": 30704,
+    "getSong": 682,
+    "getAlbumList2 newest 50": 7042,
+    "getAlbumList2 alphabetical 500": 68659,
+    "getAlbumList2 random 50": 7982,
+    "getRandomSongs 50": 10846,
+    "getGenres": 707,
+    "getStarred2": 137,
+    "getPlaylists": 336
+   },
+   "covers": {
+    "300 first": {
+     "median": 72.534,
+     "p95": 101.303,
+     "min": 1.301,
+     "bytes_total": 1024660,
+     "count": 60
+    },
+    "300 cached": {
+     "median": 1.148,
+     "p95": 2.768,
+     "min": 0.925,
+     "bytes_total": 1024660,
+     "count": 60
+    },
+    "300 cached later": {
+     "median": 0.911,
+     "p95": 1.554,
+     "min": 0.79,
+     "bytes_total": 1024660,
+     "count": 60
+    },
+    "600 first": {
+     "median": 114.977,
+     "p95": 136.366,
+     "min": 1.271,
+     "bytes_total": 3572134,
+     "count": 60
+    },
+    "600 cached": {
+     "median": 1.051,
+     "p95": 1.285,
+     "min": 0.847,
+     "bytes_total": 3572134,
+     "count": 60
+    },
+    "600 cached later": {
+     "median": 0.978,
+     "p95": 2.436,
+     "min": 0.844,
+     "bytes_total": 3572134,
+     "count": 60
+    }
+   },
+   "streaming": {
+    "songs": [
+     "<song 1>",
+     "<song 2>",
+     "<song 3>",
+     "<song 4>",
+     "<song 5>",
+     "<song 6>",
+     "<song 7>",
+     "<song 8>",
+     "<song 9>",
+     "<song 10>"
+    ],
+    "raw first 64 KiB, first byte ms": {
+     "median": 1.61,
+     "p95": 3.232,
+     "min": 1.426
+    },
+    "raw whole file MB/s": 631.2,
+    "transcoded bytes vs file": [
+     [
+      3049339,
+      4257481
+     ],
+     [
+      2653126,
+      3833607
+     ],
+     [
+      2058593,
+      2892404
+     ],
+     [
+      1834289,
+      2735264
+     ],
+     [
+      2668124,
+      3672671
+     ]
+    ],
+    "transcode to mp3 96, first byte ms": {
+     "median": 33.363,
+     "p95": 44.642,
+     "min": 27.869
+    },
+    "transcode to mp3 96, whole song ms": {
+     "median": 2760.471,
+     "p95": 3514.194,
+     "min": 1784.725
+    },
+    "transcoded again, first byte ms": {
+     "median": 1.723,
+     "p95": 2.024,
+     "min": 1.6
+    },
+    "transcoded source bit rates": [
+     128,
+     128,
+     128,
+     128,
+     128
+    ]
+   },
+   "concurrency": [
+    {
+     "threads": 1,
+     "requests_per_s": 87.1,
+     "median": 5.68,
+     "p95": 32.89,
+     "errors": 0,
+     "cpu_s": 10.58
+    },
+    {
+     "threads": 4,
+     "requests_per_s": 135.5,
+     "median": 19.01,
+     "p95": 79.14,
+     "errors": 0,
+     "cpu_s": 16.33
+    },
+    {
+     "threads": 16,
+     "requests_per_s": 141.3,
+     "median": 102.79,
+     "p95": 210.08,
+     "errors": 0,
+     "cpu_s": 16.63
+    },
+    {
+     "threads": 64,
+     "requests_per_s": 151.6,
+     "median": 399.22,
+     "p95": 624.04,
+     "errors": 0,
+     "cpu_s": 16.88
+    }
+   ],
+   "rss_after_load_kb": 241192,
+   "rss_peak_kb": 243104,
+   "data_dir_bytes": 361361302,
+   "restart_s": 0.045,
+   "rss_after_restart_kb": 46180,
+   "total_run_s": 407.2
+  }
+ ],
+ "ended": "2026-10-22 21:52:14 UTC"
+}

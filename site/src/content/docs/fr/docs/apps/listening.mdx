@@ -1,0 +1,441 @@
+---
+title: Écouter de la musique
+description: Le fonctionnement au quotidien de l’appli Android et du lecteur web Musonic — accueil, recherche, bibliothèque, lecteur, file d’attente, paroles, likes, fondu, Mix Magiques, minuteur de veille et Musonic Connect.
+---
+
+import { Steps, Aside, Tabs, TabItem, Badge } from '@astrojs/starlight/components';
+
+Cette page explique tout ce que vous faites en écoutant, dans l’**appli Android** et dans le **lecteur web** (c’est aussi lui que vous utilisez sur iPhone). Quand les deux diffèrent, la page les montre côte à côte.
+
+**Ce qu’il vous faut**
+
+- L’appli ou le lecteur web, connecté à votre serveur (voir [Se connecter à un serveur](/fr/docs/apps/sign-in/)).
+- Quelques titres dans votre bibliothèque. L’accueil se remplit à mesure que vous écoutez et likez des titres.
+
+<Aside type="note" title="Musonic Server ou un autre serveur">
+Tout ce qui est décrit ici fonctionne avec Navidrome et les autres serveurs Subsonic, sauf ce qui est marqué **Avec Musonic Server** : le catalogue en ligne, l’import de titres en ligne, les podcasts et Musonic Connect.
+</Aside>
+
+## Se repérer
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+L’appli a trois onglets en bas : **Accueil**, **Recherche** et **Bibliothèque**. Le titre en cours s’affiche juste au-dessus dans une petite barre, le **mini-lecteur**. En haut de chaque onglet, l’initiale de votre profil ouvre votre profil (mode hors ligne, stockage, À propos, Se déconnecter) et la roue dentée à côté ouvre les **Réglages**.
+
+<img class="shot-phone" src="/assets/img/docs/apps-listening/01-tabs.fr.webp" alt="L’appli Musonic sur l’Accueil, avec le mini-lecteur au-dessus des trois onglets Accueil, Recherche et Bibliothèque, et l’initiale du profil et la roue dentée en haut." />
+
+</TabItem>
+<TabItem label="Web">
+
+Un panneau à gauche regroupe **Accueil**, **Rechercher**, **Bibliothèque** et vos playlists. La **barre de lecture** court en bas de l’écran. Votre profil, en haut à droite, ouvre **Réglages**, **À propos** et **Se déconnecter**.
+
+<img class="shot-wide" src="/assets/img/docs/apps-listening/02-web-layout.fr.webp" alt="Musonic Web sur l’Accueil : le panneau de gauche avec Accueil, Rechercher, Bibliothèque et les playlists, la barre de lecture en bas, le profil en haut à droite." />
+
+</TabItem>
+</Tabs>
+
+## L’accueil
+
+L’accueil est composé pour vous à partir de votre bibliothèque et de vos écoutes. Il change **chaque jour** (la sélection reste la même toute la journée, puis change le lendemain) et il est identique sur votre téléphone et dans le navigateur. Un album n’apparaît jamais deux fois sur la même page.
+
+Les puces en haut (**Tout**, **Playlists**, **Albums**, **Artistes**) n’affichent qu’un type de carte.
+
+<img class="shot-phone" src="/assets/img/docs/apps-listening/03-home.fr.webp" alt="L’accueil de l’appli : la date, le titre Accueil, les puces Tout, Playlists, Albums, Artistes, la grille d’accès rapide et la rangée Écoutés récemment." />
+
+| Rangée | Ce qu’elle montre | Comment elle est choisie |
+|---|---|---|
+| **Accès rapide** (les tuiles du haut) | Titres likés, vos playlists, des albums récents | Titres likés d’abord (dès que vous avez liké un titre), puis vos trois playlists modifiées le plus récemment, puis les albums écoutés dernièrement. 6 tuiles dans l’appli, jusqu’à 8 sur le web. |
+| **Écoutés récemment** | Des albums (dans l’appli : aussi les titres, playlists et mix lancés) | Ce que vous avez écouté en dernier. L’appli liste d’abord ce que vous avez vraiment écouté sur ce téléphone, puis les albums récents du serveur. |
+| **Vos artistes préférés** | Des artistes | Un score par artiste : les écoutes de vos albums les plus écoutés, plus 1 point par titre liké et 5 points si vous avez liké l’artiste. |
+| **Plus dans le style de …** | Des albums | Un de vos cinq artistes préférés est tiré pour la journée ; vous obtenez le dernier album de quatre artistes proches au plus. |
+| **Albums avec des titres que vous aimez** (appli : « Albums de vos titres likés ») | Des albums | Les albums qui contiennent vos titres likés, ceux qui en ont le plus d’abord (les albums likés en entier sont écartés). |
+| **Parce que vous avez aimé « … »** | Des titres | Un de vos titres likés est tiré pour la journée ; vous obtenez des titres proches. |
+| **Mix Magiques** | Des mix | Voir [Mix Magiques](#mix-magiques). |
+| **À redécouvrir** | Des albums | Parmi vos albums les plus écoutés, ceux que vous n’avez pas écoutés depuis plus de 60 jours. |
+| **Nouveautés dans votre bibliothèque** | Des albums | Les albums ajoutés le plus récemment à votre serveur. |
+| **Au hasard** | Des albums | Un tirage au hasard. Elle ferme toujours la page. |
+
+Après **Vos artistes préférés**, les rangées de **Plus dans le style de …** à **Nouveautés dans votre bibliothèque** changent d’ordre chaque jour ; une rangée avec très peu de cartes descend, une rangée vide n’est pas affichée.
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+L’appli ajoute deux rangées en ligne après **Écoutés récemment** <Badge text="Avec Musonic Server" variant="note" /> :
+
+- **Pour vous** : des albums trouvés dans le catalogue en ligne d’après les artistes écoutés dernièrement, marqués **En ligne**.
+- **Artistes à découvrir** : des artistes proches des vôtres que vous n’avez pas encore.
+
+Elles se chargent une fois par session et jamais hors ligne. Le dernier accueil reste sur le téléphone : il s’affiche même sans connexion (« Hors ligne : dernier accueil chargé »). Tirez la page vers le bas pour l’actualiser. Les cartes récentes ont un bouton lecture : il lance tout de suite, alors que toucher la carte l’ouvre. **Réglages → Options avancées → Date sur l’Accueil** affiche ou masque la date au-dessus du titre.
+
+</TabItem>
+<TabItem label="Web">
+
+L’accueil web a les mêmes rangées, sans les rangées en ligne. Si votre bibliothèque est encore vide, il vous le dit : écoutez quelques titres et il se remplira.
+
+<img class="shot-wide" src="/assets/img/docs/apps-listening/04-web-home.fr.webp" alt="L’accueil de Musonic Web avec Accès rapide, Écoutés récemment, Vos artistes préférés et une rangée Mix Magiques." />
+
+</TabItem>
+</Tabs>
+
+### Mix Magiques
+
+Un Mix Magique est une playlist composée pour vous chaque jour autour d’un **genre musical**.
+
+1. Musonic compte les genres des albums que vous écoutez le plus, des albums écoutés dernièrement, de vos albums likés et de vos titres likés.
+2. Il garde vos genres favoris et en tire quelques-uns pour la journée : **4 mix dans l’appli, 8 sur le web**.
+3. Pour chaque genre, il tire jusqu’à **30 titres au hasard de ce genre dans votre bibliothèque**. Un genre qui a moins de 5 titres n’a pas de mix.
+
+Le genre vient des tags de vos fichiers : sans genre dans vos fichiers, pas de mix. Un mix s’ouvre comme une playlist : sa pochette est une mosaïque de quatre pochettes d’albums au plus, et **Lecture** ou **Aléatoire** le lance.
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+Quand vous ouvrez un mix dans l’appli, environ **3 titres sur 10 sont des découvertes** : des titres du catalogue en ligne et des titres proches des vôtres, marqués **En ligne** et répartis dans la liste (jamais en premier). Rouvert depuis **Écoutés récemment**, un mix de ce genre est tiré à nouveau.
+
+</TabItem>
+<TabItem label="Web">
+
+Sur le web, un mix ne contient que des titres de votre bibliothèque (« Vos titres, par genre »). Les Mix Magiques apparaissent aussi sur la page Rechercher quand le champ est vide.
+
+</TabItem>
+</Tabs>
+
+## La recherche
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+<Steps>
+
+1. **Touchez l’onglet Recherche, puis le champ de recherche.**
+
+   Champ vide, vous voyez les genres de votre bibliothèque (chacun ouvre tous ses titres) et des suggestions d’après vos titres likés et vos dernières écoutes. Une fois le champ ouvert, vos recherches récentes s’affichent ; **Effacer** les supprime.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/05-search-home.fr.webp" alt="L’onglet Recherche avec le champ vide, les genres de la bibliothèque et des rangées de suggestions en dessous." />
+
+2. **Tapez ce que vous cherchez.**
+
+   Les résultats arrivent pendant la saisie : le **Meilleur résultat**, puis les artistes, les albums et les titres.
+
+3. **Choisissez un filtre : Tout, En ligne ou Podcasts.**
+
+   **Tout** mélange votre bibliothèque et le catalogue en ligne. **En ligne** ne garde que le catalogue en ligne (éléments marqués **En ligne**). **Podcasts** cherche des émissions et des épisodes (voir [Podcasts](/fr/docs/apps/podcasts/)).
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/06-search-results.fr.webp" alt="Les résultats de recherche d’un artiste avec les filtres Tout, En ligne et Podcasts, le meilleur résultat, des albums et des titres, dont un marqué En ligne." />
+
+4. **Touchez un titre pour l’écouter, ou un album ou un artiste pour l’ouvrir.**
+
+   Un titre trouvé par la recherche est joué seul, puis la **lecture automatique** enchaîne sur des titres proches. Un appui long sur un titre ouvre son menu.
+
+</Steps>
+
+</TabItem>
+<TabItem label="Web">
+
+<Steps>
+
+1. **Cliquez sur Rechercher dans le panneau de gauche.**
+
+   Champ vide, vous voyez les **Mix Magiques** et **Parcourir** : Ajoutés récemment, Les plus écoutés, Au hasard et une tuile par décennie (des années 1970 aux années 2020).
+
+2. **Tapez dans le champ « Que souhaitez-vous écouter ? ».**
+
+3. **Choisissez un filtre : Tout, Titres, Albums, Artistes ou Podcasts.**
+
+   **Tout** montre quelques résultats de chaque type avec **Tout afficher**. Avec un seul filtre, la liste charge la suite toute seule quand vous descendez. Collez l’adresse d’un flux RSS pour ouvrir un podcast (voir [Podcasts](/fr/docs/apps/podcasts/)).
+
+   <img class="shot-wide" src="/assets/img/docs/apps-listening/07-web-search.fr.webp" alt="Les résultats de recherche de Musonic Web avec les filtres Tout, Titres, Albums, Artistes, Podcasts, une liste de titres et une rangée d’albums." />
+
+4. **Double-cliquez sur un titre pour l’écouter, ou cliquez sur un album ou un artiste pour l’ouvrir.**
+
+   Un titre trouvé par la recherche est joué seul, puis la lecture automatique enchaîne. Clic droit sur une ligne (ou son « ⋯ ») pour son menu.
+
+</Steps>
+
+</TabItem>
+</Tabs>
+
+<Aside type="note" title="Le catalogue en ligne">
+**Avec Musonic Server**, si l’administrateur a laissé le catalogue en ligne actif et que votre compte y a droit, la recherche montre aussi des artistes, albums et titres absents de votre bibliothèque. Ils viennent du catalogue public de Deezer (noms, pochettes, extraits de 30 secondes). Si votre serveur peut importer des titres, un titre en ligne que vous likez ou ajoutez à une playlist entre dans votre bibliothèque ; sinon il reste en ligne et vous en écoutez l’extrait. Voir [Catalogue en ligne et imports](/fr/docs/library/online-catalogue/).
+</Aside>
+
+## La bibliothèque
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+L’onglet **Bibliothèque** contient deux tuiles, **Titres likés** et **Ma Musique** (tous les titres de votre bibliothèque, triables par titre, artiste ou date d’ajout, avec un index des lettres), puis les onglets **Playlists**, **Albums**, **Artistes**, **Podcasts** et **Téléchargés**.
+
+- **Trier par** : Récents, Ajoutés récemment, Alphabétique ou Personnalisé.
+- Le bouton grille / liste change l’affichage ; la loupe cherche dans la bibliothèque.
+- Un appui long sur une playlist permet de l’épingler en haut, de la renommer, de la télécharger ou de la supprimer.
+- Le bouton **+** crée une playlist (ou en importe une, voir [Importer vos playlists](/fr/docs/apps/import-playlists/)).
+
+<img class="shot-phone" src="/assets/img/docs/apps-listening/08-library.fr.webp" alt="L’onglet Bibliothèque avec les tuiles Titres likés et Ma Musique, les onglets Playlists, Albums, Artistes, Podcasts, Téléchargés, et une liste de playlists." />
+
+</TabItem>
+<TabItem label="Web">
+
+La **Bibliothèque** a les onglets **Playlists** (avec Titres likés et **Ma Musique**, toute votre bibliothèque), **Albums**, **Artistes** et, avec Musonic Server, **Podcasts**. **Jouer par genre** ouvre les titres d’un genre. **Nouvelle playlist** en crée une ; **Importer** (avec Musonic Server) en rapatrie une depuis un autre service. Le panneau de gauche liste vos playlists, les plus récemment écoutées d’abord, avec un bouton lecture au survol.
+
+<img class="shot-wide" src="/assets/img/docs/apps-listening/09-web-library.fr.webp" alt="La page Bibliothèque du web sur l’onglet Playlists, avec les boutons Importer et Nouvelle playlist en haut à droite." />
+
+</TabItem>
+</Tabs>
+
+## Le lecteur
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+**Le mini-lecteur** montre la pochette, le titre, l’artiste, Précédent, Lecture / Pause et Suivant.
+
+- **Touchez la pochette ou le titre, ou glissez vers le haut** : le lecteur plein écran s’ouvre.
+- **Glissez vers la gauche ou la droite** : titre suivant ou précédent.
+
+**Le lecteur plein écran** montre la pochette, le titre avec **+** (ajouter à une playlist) et **♥** (liker), la barre de progression avec la qualité audio réelle, les commandes et une rangée en bas : **Paroles · Aléatoire · Répéter · File d’attente**.
+
+- **Faites glisser vers le bas** depuis le haut ou la pochette pour le fermer.
+- **Glissez la pochette** vers la gauche ou la droite pour changer de titre.
+- Le bouton **« ⋯ »** ouvre le menu du titre : liker, ajouter à une playlist, ajouter à la file d’attente, télécharger, accéder à l’album ou à l’artiste, et le **Minuteur de veille**.
+
+<img class="shot-phone" src="/assets/img/docs/apps-listening/10-full-player.fr.webp" alt="Le lecteur plein écran de l’appli : fond de pochette floutée, grande pochette, titre avec + et cœur, barre de progression, commandes et la rangée Paroles, Aléatoire, Répéter, File d’attente." />
+
+Vous pouvez tourner le téléphone : en paysage, la pochette occupe une colonne et le reste l’autre (côté choisi dans **Réglages → Options avancées**).
+
+</TabItem>
+<TabItem label="Web">
+
+**La barre de lecture** montre le titre, l’aléatoire, Précédent, Lecture / Pause, Suivant, la répétition, la progression, le volume, et des boutons pour la file d’attente, les paroles, le minuteur de veille, le mini-lecteur flottant et le lecteur plein écran.
+
+- **Cliquez sur la pochette** dans la barre : le lecteur plein écran s’ouvre (pochette floutée en fond, grande pochette, paroles à côté). **Échap** ou le chevron le ferme ; son propre bouton passe le navigateur en plein écran.
+- **Le mini-lecteur flottant** (Brave, Chrome, Edge) est une petite fenêtre qui reste au-dessus de tout, même quand l’onglet est caché. Sa disposition suit sa taille.
+- **Clavier** : **Espace** lance ou met en pause, **Ctrl + →** titre suivant, **Ctrl + ←** précédent. Les touches multimédia et les commandes multimédia de votre ordinateur fonctionnent aussi.
+
+<img class="shot-wide" src="/assets/img/docs/apps-listening/11-web-full-player.fr.webp" alt="Le lecteur plein écran de Musonic Web avec la grande pochette à gauche et les paroles synchronisées à droite, la ligne en cours mise en avant." />
+
+</TabItem>
+</Tabs>
+
+**Précédent** revient au titre précédent pendant les 3 premières secondes ; ensuite, il reprend le titre au début. Dans l’appli, **Réglages → Options avancées → Toujours revenir au titre précédent** fait toujours revenir en arrière. Glisser le mini-lecteur change toujours de titre.
+
+### Aléatoire et répétition
+
+Le bouton **aléatoire** a trois positions : **désactivé**, **activé** et **Magique**.
+
+- **Activé** : les titres à venir sont mélangés. Quand vous touchez un titre dans une liste, il est joué en premier et le reste est mélangé.
+- **Magique** : vos titres dans un ordre mélangé, avec **une suggestion tous les deux titres** — des titres proches des mêmes artistes, marqués **Magique**. Dans l’appli, Magique demande une connexion ; **Réglages → Options avancées → Aléatoire magique** retire cette position, le bouton n’en a alors que deux.
+- **De nouveau désactivé** : la liste reprend son ordre d’origine, après le dernier de ses titres joué. Les suggestions à venir sont retirées.
+
+Le bouton **répétition** : **désactivée**, **tout** (la liste recommence à la fin, mélangée à nouveau si l’aléatoire est actif), **ce titre** (le titre se répète ; Suivant passe quand même au suivant).
+
+**Lecture automatique** : quand il ne reste rien après le titre en cours, des titres proches suivent. Elle ne joue jamais en « répéter tout ». Dans l’appli, vous pouvez la couper dans **Réglages → Lecture → Lecture automatique** ou avec la tuile **Lecture auto** de la file d’attente ; sur le web, elle est toujours active.
+
+## La file d’attente
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+<Steps>
+
+1. **Dans le lecteur plein écran, touchez « File d’attente ».**
+
+   En haut : le titre en cours (touchez-le pour revenir au lecteur) et trois tuiles, **Aléatoire**, **Répéter**, **Lecture auto**. En dessous : **À suivre**, puis les titres de la lecture automatique, en grisé.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/12-queue.fr.webp" alt="La file d’attente : le titre en cours, les tuiles Aléatoire, Répéter et Lecture auto, la liste À suivre avec ses poignées, et les titres de lecture automatique en grisé en bas." />
+
+2. **Pour déplacer un titre, faites-le glisser par sa poignée.**
+
+   Le changement s’applique tout de suite.
+
+3. **Pour retirer des titres ou les lire ensuite, touchez « Modifier », sélectionnez-les, puis « Lire ensuite » ou « Retirer ».**
+
+   **Tout effacer** retire tout ce qui suit. Un message propose **Annuler** pendant quelques secondes.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/13-queue-edit.fr.webp" alt="La file d’attente en mode Modifier avec deux titres sélectionnés et la barre Lire ensuite, Retirer (2), Tout effacer en bas." />
+
+</Steps>
+
+Pour ajouter un titre depuis n’importe où, ouvrez son menu (« ⋯ » ou appui long) et touchez **Ajouter à la file d’attente**.
+
+</TabItem>
+<TabItem label="Web">
+
+<Steps>
+
+1. **Cliquez sur le bouton de la file d’attente dans la barre de lecture.**
+
+   La file s’ouvre à droite, en sections : **En cours**, **Ajoutés par vous**, **À suivre**, **Lecture auto**.
+
+   <img class="shot-wide" src="/assets/img/docs/apps-listening/14-web-queue.fr.webp" alt="Le panneau de file d’attente du web à droite avec les sections En cours, Ajoutés par vous, À suivre et Lecture auto." />
+
+2. **Faites glisser un titre pour le déplacer ; cliquez dessus pour le jouer.**
+
+   Les titres placés avant lui sont passés.
+
+3. **Pour ajouter un titre, faites un clic droit dessus (ou « ⋯ ») et choisissez « Lire ensuite » ou « Ajouter à la file d’attente ».**
+
+   **Tout effacer** vide ce qui suit (sans annulation possible sur le web).
+
+</Steps>
+
+</TabItem>
+</Tabs>
+
+**Comment la file est organisée** (mêmes règles des deux côtés) :
+
+| Zone | Ce qu’elle contient |
+|---|---|
+| En cours | Le titre en lecture. Vider la file ne le retire jamais. |
+| **Ajoutés par vous** | Les titres que vous avez ajoutés. **Lire ensuite** place un titre en tête de cette zone, **Ajouter à la file d’attente** à sa fin. Ils passent avant le reste, ne sont jamais mélangés et **restent quand vous lancez un autre album ou une autre playlist**. |
+| **À suivre** | La suite de l’album, de la playlist ou du mix lancé, avec parfois des suggestions **Magique**. |
+| **Lecture auto** | Des titres proches, joués après tout le reste. |
+
+Un titre déposé parmi « Ajoutés par vous » en fait partie. Un même titre peut figurer deux fois dans la file.
+
+**Après un redémarrage** :
+
+- **Android** : la file et la position reviennent quand vous rouvrez l’appli (pour le même compte).
+- **Web** <Badge text="Avec Musonic Server" variant="note" /> : votre dernière écoute revient à l’ouverture de la page, en pause là où vous l’aviez laissée, sur cet appareil ou sur un autre. Avec un autre serveur, la file repart vide.
+
+## Les paroles
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+**Dans le lecteur plein écran, touchez « Paroles ».** La pochette se replie en une petite rangée et les paroles prennent la place. Les paroles synchronisées suivent la chanson (la ligne en cours en blanc) ; **touchez une ligne pour y aller**. Si vous faites défiler, le suivi reprend au bout de 3 secondes.
+
+<img class="shot-phone" src="/assets/img/docs/apps-listening/15-lyrics.fr.webp" alt="Des paroles synchronisées dans le lecteur plein écran de l’appli, la ligne en cours en blanc, les lignes passées estompées." />
+
+</TabItem>
+<TabItem label="Web">
+
+**Cliquez sur le bouton des paroles dans la barre de lecture** : elles s’ouvrent dans le panneau latéral. Elles s’affichent aussi à côté de la pochette dans le lecteur plein écran. **Cliquez sur une ligne pour y aller.**
+
+</TabItem>
+</Tabs>
+
+**D’où viennent les paroles**, dans cet ordre :
+
+1. **Votre serveur.** Musonic Server lit un fichier `.lrc` (synchronisé) ou `.txt` portant le même nom que le titre, placé à côté, puis les paroles des tags du fichier. Un `.lrc` l’emporte sur un `.txt`, et un fichier à côté du titre l’emporte sur les tags. Les autres serveurs donnent les paroles qu’ils connaissent.
+2. **LRCLIB** (lrclib.net), une base publique et gratuite de paroles, quand votre serveur n’en a pas. Seuls l’artiste, le titre et la durée sont envoyés. Les paroles synchronisées sont préférées, sinon le texte simple, et la durée doit correspondre à 3 secondes près.
+
+Les paroles non synchronisées s’affichent en entier, sans suivi. Quand rien n’est trouvé, l’appli affiche « Paroles non disponibles » et le web « Pas de paroles pour ce titre. ». Pour un épisode de podcast, sa transcription s’affiche à la place, quand l’émission en publie une.
+
+## Les likes
+
+Touchez le **♥** (dans le lecteur, ou à côté d’un titre dans une liste) pour ajouter un titre aux **Titres likés** ; touchez-le à nouveau pour le retirer. Vos likes nourrissent l’accueil (artistes préférés, « Parce que vous avez aimé », Mix Magiques) et s’affichent sur tous vos appareils.
+
+Dans l’appli, **Titres likés** propose aussi **Titres recommandés** (des titres proches de ceux que vous aimez) et **Tout télécharger**.
+
+<Aside type="note">
+Liker un titre en ligne (avec Musonic Server) l’ajoute à votre bibliothèque si votre serveur peut importer des titres : l’appli affiche « Envoi vers votre serveur… », le web « Ajout du titre à votre bibliothèque… ». Cela peut prendre quelques secondes.
+</Aside>
+
+## Le fondu entre les titres
+
+Le fondu fait monter le titre suivant par-dessus la fin du titre en cours. Il est **désactivé par défaut** et va de **0 à 12 secondes** (0 = désactivé).
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+<Steps>
+
+1. **Touchez la roue dentée en haut de n’importe quel onglet.**
+2. **Sous « Lecture », déplacez le curseur « Fondu entre les titres ».**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/16-crossfade.fr.webp" alt="Les Réglages de l’appli, section Lecture, avec Lecture automatique activée et le curseur Fondu entre les titres sur 6 s." />
+
+</Steps>
+
+Le fondu est fait par le lecteur d’Android lui-même : il fonctionne aussi écran éteint, et le titre affiché (appli, notification, voiture) change quand l’ancien se termine vraiment. Si vous coupez **Réglages → Options avancées → Lecteur audio Android**, le fondu n’a lieu que lorsque Musonic est à l’écran. Il consomme un peu plus de batterie.
+
+</TabItem>
+<TabItem label="Web">
+
+<Steps>
+
+1. **Cliquez sur votre profil en haut à droite, puis sur « Réglages ».**
+2. **Sous « Lecture », déplacez le curseur « Fondu entre les titres ».**
+
+   <img class="shot-wide" src="/assets/img/docs/apps-listening/17-web-crossfade.fr.webp" alt="La fenêtre Réglages du web avec le curseur Fondu entre les titres sur 6 s." />
+
+</Steps>
+
+Le réglage est retenu par ce navigateur.
+
+</TabItem>
+</Tabs>
+
+**Il n’y a jamais de fondu** :
+
+- quand vous changez de titre vous-même (Suivant, Précédent, un glissement, un appui sur un autre titre) ;
+- en répétition d’un seul titre ;
+- quand le minuteur de veille est réglé sur la fin du titre ;
+- à la fin de la file (rien ne suit) ;
+- sur un titre plus court que deux fois la durée du fondu ;
+- entre deux épisodes de podcast.
+
+## Le minuteur de veille
+
+Le minuteur de veille met la musique en pause après la durée choisie, ou à la fin du titre en cours.
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+<Steps>
+
+1. **Dans le lecteur plein écran, touchez « ⋯ », puis « Minuteur de veille ».**
+2. **Touchez une durée toute prête (15, 30, 45, 60 ou 90 minutes), ou tournez les roues et touchez « Arrêter dans … ».**
+
+   **Fin du titre** met en pause à la fin du titre. **Désactiver le minuteur** l’annule.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/18-sleep-timer.fr.webp" alt="Le panneau Minuteur de veille avec les roues heures, minutes et secondes, les durées 15, 30, 45, 60, 90 et le bouton Fin du titre." />
+
+</Steps>
+
+Il fonctionne écran éteint. Fermer l’appli l’annule ; le menu montre le temps restant (« Minuteur de veille · 12 min »).
+
+</TabItem>
+<TabItem label="Web">
+
+**Cliquez sur le bouton du minuteur de veille** dans la barre de lecture (ou dans le lecteur plein écran), choisissez une durée (heures, minutes, secondes) ou **Fin du titre**. Recharger la page l’annule, et dans un onglet caché depuis un moment, le navigateur peut arrêter la musique jusqu’à une minute en retard.
+
+</TabItem>
+</Tabs>
+
+## Musonic Connect
+
+<Badge text="bêta" variant="caution" /> **Avec Musonic Server.** Musonic Connect montre ce qui joue sur vos autres appareils (votre téléphone, chaque onglet de Musonic Web), vous permet de les piloter et fait passer la musique de l’un à l’autre à la seconde près.
+
+<Steps>
+
+1. **Ouvrez Musonic sur deux appareils avec le même compte.**
+
+2. **Sur l’un d’eux, touchez ou cliquez sur « Appareils ».**
+
+   Dans l’appli, le bouton est dans le lecteur plein écran ; sur le web, dans la barre de lecture. La liste « Écouter sur » montre vos appareils et ce que chacun joue.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-listening/19-connect-devices.fr.webp" alt="Le panneau Écouter sur de l’appli, avec Ce téléphone et un navigateur nommé Firefox sur PC, et l’interrupteur Lecture synchronisée." />
+
+3. **Touchez l’appareil qui doit jouer.**
+
+   La musique y passe, au même moment du titre. Pendant qu’un autre appareil joue, votre lecteur devient sa télécommande : son titre, sa position et ses boutons (« Lecture sur … »). **Écouter ici** ramène la musique.
+
+</Steps>
+
+**Lecture synchronisée** (un interrupteur dans la même fenêtre, et dans **Réglages → Musonic Connect**) : activée, un seul appareil joue à la fois et lancer la musique sur l’un met les autres en pause. Désactivée, chaque appareil joue de son côté. Sur le web, les réglages permettent aussi de nommer l’appareil.
+
+À l’ouverture, l’appli reprend votre dernière écoute si elle est plus récente que la sienne, en pause là où vous l’aviez laissée.
+
+<Aside type="note">
+Comme pour tout compte sur le serveur, la personne qui le gère voit le titre en cours et l’appareil utilisé, pour vous aider en cas de problème. Avec un autre serveur que Musonic Server, le bouton Appareils n’apparaît pas.
+</Aside>
+
+## Et ensuite
+
+- [Importer vos playlists](/fr/docs/apps/import-playlists/)
+- [Podcasts](/fr/docs/apps/podcasts/)
+- [Hors ligne et données mobiles](/fr/docs/apps/offline/)
+- [Android Auto](/fr/docs/apps/android-auto/)

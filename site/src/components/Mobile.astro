@@ -1,0 +1,164 @@
+---
+/**
+ * @file Mobile.astro
+ * @description Android app page, in either language: what the app is, the download, its main
+ *   features as rows of real screenshots, the rest in short facts, which server gives what, the
+ *   way for iPhone (web player) and the links to the step-by-step guides of the documentation.
+ * @author DoodzProg
+ * @version 0.1.0
+ * @license CC-BY-NC-4.0
+ */
+import Base from './Base.astro';
+import { localePath, type Lang } from '../i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const L = (p: string) => localePath(p, lang);
+const apk = 'https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.apk';
+const shots = '/assets/img/screenshots/';
+
+const t = {
+  en: {
+    title: 'Musonic for Android: the music app for your own server',
+    description: 'The Musonic Android app: synced lyrics, mixes, crossfade, offline downloads, podcasts and Android Auto, for the music of your own server. Free, no ads.',
+    h1: 'Your music, on your phone',
+    lead: 'The Musonic app plays the music of your own server on Android: synced lyrics, mixes built from what you listen to, downloads for places without signal, and Android Auto in the car.',
+    download: 'Download for Android',
+    guide: 'Step-by-step install',
+    iphone: 'On iPhone?',
+    fine: 'Android 7.0 or later · free · public code, non-commercial licence',
+    store: 'Not on the Play Store: the app tells you when an update is out.',
+    heroAlt: 'The Musonic app in landscape: home page with quick access and recently played albums.',
+    rows: [
+      { img: 'lyrics.jpg', alt: 'The full-screen player showing synced lyrics, the line being sung highlighted.', h: 'Lyrics that follow the song', p: 'Line by line inside the player, the sung line lit up. Tap a line to jump to it. The lyrics come from your server, or else from LRCLIB.' },
+      { img: 'magic_mix.jpg', alt: 'A Magic Mix: a list of songs, a few of them marked Online.', h: 'Mixes built from what you play', p: 'One Magic Mix per genre you love: your songs, with a few discoveries from the online catalogue in between, marked « Online ». The home page adds picks for you and artists to discover.' },
+      { img: 'player.jpg', alt: 'The full-screen player: large cover, title, progress bar and playback buttons.', h: 'Crossfade, done by Android', p: 'From 0 to 12 seconds: the next song fades in over the end of the current one. Android\'s own player does it, and never when you skip a song yourself. Shuffle, repeat, a sleep timer and a queue you reorder by dragging.' },
+      { img: 'library.jpg', alt: 'The Library: playlists, albums, artists and downloads.', h: 'Downloads for places without signal', p: 'Download playlists, albums or single songs and play them with no connection; downloads keep the original file and wait for Wi-Fi unless you say otherwise. Streaming quality is set apart for Wi-Fi and mobile data: original, 320, 192 or 128 kbit/s.' },
+    ],
+    factsTitle: 'And also',
+    facts: [
+      ['Android Auto (beta)', 'Your playlists, albums, artists, downloads and podcasts on the car\'s screen. Musonic starts on its own when the car asks for it.'],
+      ['Podcasts', 'Follow shows and pick up an episode where you left it, on any device. Change the speed, go back 15 s or ahead 30 s.'],
+      ['Your playlists from elsewhere', 'Paste a Spotify, Deezer or YouTube Music playlist link: your server rebuilds it, and a small pill shows the progress.'],
+      ['Musonic Connect (beta)', 'See what plays on your other devices, control them, and move the music from one to another at the same second.'],
+      ['English and French', 'Or the phone\'s language. Labels for TalkBack, large text sizes, and a landscape layout on every screen.'],
+      ['Nothing sent behind your back', 'No ads, nothing about how you use the app or when it crashes. Your password is used once to sign in, then only a key is kept.'],
+    ],
+    serverTitle: 'Which server?',
+    server: 'With Musonic Server you get everything. With Navidrome or another Subsonic server, you get your library, playlists, likes, lyrics and mixes; podcasts, playlist import and Musonic Connect need Musonic Server.',
+    serverLink: 'About the server',
+    iosTitle: 'On iPhone? Use the web player',
+    ios: 'There is no Musonic app for iPhone. The web player runs in Safari and can be added to your home screen, where it opens like an app.',
+    iosLink: 'Musonic on iPhone and iPad',
+    docsTitle: 'Guides',
+    docs: [
+      ['Install the Android app, step by step', '/docs/apps/android/'],
+      ['Sign in to your server', '/docs/apps/sign-in/'],
+      ['Set up Android Auto', '/docs/apps/android-auto/'],
+      ['Offline and mobile data', '/docs/apps/offline/'],
+      ['Import your playlists', '/docs/apps/import-playlists/'],
+      ['Podcasts', '/docs/apps/podcasts/'],
+    ],
+  },
+  fr: {
+    title: 'Musonic pour Android : l\'appli de musique de votre propre serveur',
+    description: 'L\'appli Android de Musonic : paroles synchronisées, mix, fondu entre les titres, téléchargements hors ligne, podcasts et Android Auto, pour la musique de votre serveur. Gratuite, sans pub.',
+    h1: 'Votre musique, sur votre téléphone',
+    lead: 'L\'appli Musonic lit la musique de votre propre serveur sur Android : paroles synchronisées, mix construits à partir de ce que vous écoutez, téléchargements pour les endroits sans réseau, et Android Auto en voiture.',
+    download: 'Télécharger pour Android',
+    guide: 'Installation pas à pas',
+    iphone: 'Sur iPhone ?',
+    fine: 'Android 7.0 ou plus récent · gratuite · code public, licence non commerciale',
+    store: 'Pas sur le Play Store : l\'appli vous prévient quand une mise à jour sort.',
+    heroAlt: 'L\'appli Musonic en paysage : l\'accueil avec l\'accès rapide et les albums écoutés récemment.',
+    rows: [
+      { img: 'lyrics.jpg', alt: 'Le lecteur plein écran avec les paroles synchronisées, la ligne chantée en surbrillance.', h: 'Des paroles qui suivent la chanson', p: 'Ligne par ligne dans le lecteur, la ligne chantée mise en avant. Touchez une ligne pour y aller. Les paroles viennent de votre serveur, sinon de LRCLIB.' },
+      { img: 'magic_mix.jpg', alt: 'Un Magic Mix : une liste de titres, dont quelques-uns marqués En ligne.', h: 'Des mix construits à partir de vos écoutes', p: 'Un Magic Mix par genre que vous aimez : vos titres, avec quelques découvertes du catalogue en ligne glissées entre eux, marquées « En ligne ». L\'accueil ajoute des suggestions pour vous et des artistes à découvrir.' },
+      { img: 'player.jpg', alt: 'Le lecteur plein écran : grande pochette, titre, barre de progression et boutons de lecture.', h: 'Le fondu entre les titres, fait par Android', p: 'De 0 à 12 secondes : le titre suivant monte pendant la fin du titre en cours. C\'est le lecteur d\'Android qui s\'en charge, et jamais quand vous passez un titre vous-même. Lecture aléatoire, répétition, minuteur de sommeil et une file d\'attente à réordonner du doigt.' },
+      { img: 'library.jpg', alt: 'La Bibliothèque : playlists, albums, artistes et téléchargements.', h: 'Des téléchargements pour les endroits sans réseau', p: 'Téléchargez des playlists, des albums ou des titres seuls, et écoutez-les sans connexion ; les téléchargements gardent le fichier d\'origine et attendent le Wi-Fi, sauf si vous en décidez autrement. La qualité de streaming se règle à part en Wi-Fi et en données mobiles : original, 320, 192 ou 128 kbit/s.' },
+    ],
+    factsTitle: 'Et aussi',
+    facts: [
+      ['Android Auto (bêta)', 'Vos playlists, albums, artistes, téléchargements et podcasts sur l\'écran de la voiture. Musonic se lance tout seul quand la voiture le demande.'],
+      ['Podcasts', 'Suivez des émissions et reprenez un épisode là où vous l\'aviez laissé, sur n\'importe quel appareil. Changez la vitesse, reculez de 15 s ou avancez de 30 s.'],
+      ['Vos playlists d\'ailleurs', 'Collez le lien d\'une playlist Spotify, Deezer ou YouTube Music : votre serveur la recrée, et une petite pastille montre la progression.'],
+      ['Musonic Connect (bêta)', 'Voyez ce qui joue sur vos autres appareils, pilotez-les, et passez la musique de l\'un à l\'autre à la seconde près.'],
+      ['Français et anglais', 'Ou la langue du téléphone. Des libellés pour TalkBack, les grands caractères, et une mise en page paysage sur chaque écran.'],
+      ['Rien d\'envoyé dans votre dos', 'Pas de pub, rien sur votre utilisation ni sur les plantages. Votre mot de passe sert une fois à vous connecter, puis l\'appli ne garde qu\'une clé.'],
+    ],
+    serverTitle: 'Quel serveur ?',
+    server: 'Avec Musonic Server, vous avez tout. Avec Navidrome ou un autre serveur Subsonic, vous avez votre bibliothèque, vos playlists, vos likes, les paroles et les mix ; les podcasts, l\'import de playlists et Musonic Connect demandent Musonic Server.',
+    serverLink: 'Découvrir le serveur',
+    iosTitle: 'Sur iPhone ? Utilisez le lecteur web',
+    ios: 'Il n\'y a pas d\'appli Musonic pour iPhone. Le lecteur web marche dans Safari et peut être ajouté à votre écran d\'accueil, d\'où il s\'ouvre comme une appli.',
+    iosLink: 'Musonic sur iPhone et iPad',
+    docsTitle: 'Guides',
+    docs: [
+      ['Installer l\'appli Android, pas à pas', '/docs/apps/android/'],
+      ['Se connecter à votre serveur', '/docs/apps/sign-in/'],
+      ['Configurer Android Auto', '/docs/apps/android-auto/'],
+      ['Hors ligne et données mobiles', '/docs/apps/offline/'],
+      ['Importer vos playlists', '/docs/apps/import-playlists/'],
+      ['Podcasts', '/docs/apps/podcasts/'],
+    ],
+  },
+}[lang];
+---
+<Base lang={lang} path="/mobile/" title={t.title} description={t.description} current="mobile">
+  <section class="wrap hero">
+    <h1>{t.h1}</h1>
+    <p class="lead">{t.lead}</p>
+    <div class="actions">
+      <a class="button" href={apk}>{t.download}</a>
+      <div class="textlinks">
+        <a href={L('/docs/apps/android/')}>{t.guide}</a>
+        <a href="#ios">{t.iphone}</a>
+      </div>
+    </div>
+    <p class="small">{t.fine}</p>
+    <p class="muted">{t.store}</p>
+    <img class="shot" src={shots + 'landscape_home.jpg'} alt={t.heroAlt} width="2424" height="1017" />
+  </section>
+
+  <section class="wrap">
+    {t.rows.map((r) => (
+      <div class="row row--phone">
+        <img class="row__img" src={shots + r.img} alt={r.alt} width="1080" height="2251" loading="lazy" />
+        <div>
+          <h3>{r.h}</h3>
+          <p>{r.p}</p>
+        </div>
+      </div>
+    ))}
+  </section>
+
+  <section class="wrap block">
+    <h2>{t.factsTitle}</h2>
+    <ul class="facts">
+      {t.facts.map(([h, p]) => (<li><h3>{h}</h3><p>{p}</p></li>))}
+    </ul>
+  </section>
+
+  <section class="wrap block note">
+    <h2>{t.serverTitle}</h2>
+    <div>
+      <p>{t.server}</p>
+      <p><a href={L('/server/')}>{t.serverLink} →</a></p>
+    </div>
+  </section>
+
+  <section class="wrap block note" id="ios">
+    <h2>{t.iosTitle}</h2>
+    <div>
+      <p>{t.ios}</p>
+      <p><a href={L('/docs/apps/iphone/')}>{t.iosLink} →</a></p>
+    </div>
+  </section>
+
+  <section class="wrap block note">
+    <h2>{t.docsTitle}</h2>
+    <ul class="links">
+      {t.docs.map(([label, href]) => (<li><a href={L(href)}>{label} →</a></li>))}
+    </ul>
+  </section>
+</Base>

@@ -1,0 +1,215 @@
+---
+title: Catalogue en ligne et imports
+description: Ce qu'est le catalogue en ligne de Musonic Server, ce que fait un like sur un titre en ligne, où sont rangés les titres importés, comment marchent les fournisseurs audio, et comment tout couper ou limiter par compte.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Cette page s'adresse à la personne qui fait tourner le serveur. Elle explique le catalogue en ligne (titres, albums et artistes au-delà de vos fichiers), ce qui se passe quand quelqu'un like un titre en ligne, où les titres importés arrivent dans votre dossier de musique, et les réglages pour limiter ou couper chaque partie.
+
+**Ce qu'il vous faut**
+
+- Un compte administrateur, pour la console.
+- Pour les imports : un dossier de musique où le serveur peut **écrire** (avec Docker, ne le montez pas en `:ro`).
+
+## Ce qu'est le catalogue en ligne
+
+La recherche des applis Musonic montre ensemble votre bibliothèque et le catalogue en ligne. Ce catalogue vient de **l'API publique officielle de Deezer** : informations sur les titres, albums et artistes, pochettes, images d'artistes, et un **extrait de 30 secondes** de chaque titre. Aucun compte n'est nécessaire, et le serveur ne se connecte nulle part pour cela.
+
+- **C'est votre serveur qui fait les requêtes**, pas les applis : le service en ligne voit l'adresse de votre serveur, pas celle de vos auditeurs. Les réponses sont gardées 30 minutes, et les requêtes restent sous la limite documentée de l'API.
+- **Parcourir n'écrit rien.** Ouvrir un album ou un artiste en ligne n'ajoute rien à votre bibliothèque.
+- **Utiliser un titre l'ajoute à votre bibliothèque, sous un seul identifiant.** La première fois que quelqu'un like un titre en ligne, l'ajoute à une playlist, l'écoute ou le met en file d'attente, il est enregistré comme titre de la bibliothèque **sans fichier**. Tous les comptes voient alors le même titre, avec le même identifiant.
+- Quand ce titre reçoit plus tard un fichier (importé, ou ajouté par vous au dossier de musique avec le même ISRC, ou le même nom, les mêmes artistes et la même durée), **le fichier rejoint le même titre** : likes, playlists et écoutes restent où ils sont.
+
+<img class="diagram" src="/assets/img/docs/diagrams/online-song-lifecycle.fr.svg" alt="Schéma de la vie d'un titre en ligne : 1. trouvé dans la recherche (en ligne, rien d'enregistré) ; 2. liké ou ajouté à une playlist (enregistré comme titre de la bibliothèque sans fichier, un identifiant) ; 3. importé par un fournisseur audio dans Musonic/Artiste de l'album/Album/ ; 4. scanné : le fichier rejoint le même titre, likes et playlists inchangés. Une branche montre que sans fournisseur le titre se lit en extrait de 30 secondes." />
+
+## Ce qui se lit quand vous appuyez sur lecture
+
+Un titre qui a un fichier dans votre bibliothèque se lit depuis ce fichier. Un titre sans fichier est demandé aux **fournisseurs audio**, dans cet ordre, et se lit depuis le premier qui l'a :
+
+1. les fournisseurs intégrés au programme serveur que vous faites tourner ;
+2. le **relais Subsonic**, si vous en avez réglé un (voir [Fournisseurs](#fournisseurs-audio)) ;
+3. les **extraits de 30 secondes** du catalogue en ligne, s'ils sont activés.
+
+Avec le serveur tel qu'il est publié, sans rien régler, **les titres en ligne se lisent en extraits de 30 secondes** et ne sont jamais importés. Les titres complets et les imports demandent un fournisseur que vous branchez.
+
+L'audio d'un titre en ligne passe par le cache de segments du serveur : plusieurs auditeurs le partagent, les lecteurs peuvent s'y déplacer, et il est libéré 10 minutes après le dernier auditeur.
+
+## Les imports
+
+Quand un fournisseur qui permet les imports est branché, un titre sans fichier est **importé** quand quelqu'un :
+
+- le like,
+- like son album,
+- l'ajoute à une playlist.
+
+Le serveur télécharge le titre entier depuis le premier fournisseur qui peut l'importer, écrit ses tags (titre, artistes, album, artiste de l'album, disque, numéro de piste, date, ISRC et pochette), le range, puis le scanne. Le titre garde son identifiant, ses likes et ses playlists.
+
+Les titres importés sont rangés dans votre dossier de musique ainsi :
+
+```text
+<dossier de musique>/Musonic/<Artiste de l'album>/<Album>/<NN> - <Titre>.<ext>
+```
+
+- `Musonic` est le réglage `import_dir` (`MUSONIC_IMPORT_DIR`) : un dossier à l'intérieur du dossier de musique.
+- `<NN>` est le numéro de piste sur deux chiffres ; à partir du deuxième disque, il est précédé du disque (`2-03 - Titre.flac`).
+- Les caractères refusés par certains systèmes de fichiers (`/ \ : * ? " < > |`) sont remplacés par des espaces.
+
+Deux imports tournent en même temps. Un import en échec est retenté après 5 minutes, 30 minutes, 2 heures et 12 heures, puis abandonné, jusqu'à ce que quelqu'un like à nouveau le titre ou l'ajoute à une playlist.
+
+### Suivre les imports dans la console
+
+<Steps>
+
+1. **Dans la console, cliquez sur « Imports » dans la partie « Musique » du menu.**
+
+   La page liste chaque import avec son état : En attente, En cours, En échec, Fait.
+
+   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/01-imports-page.fr.webp" alt="La page Imports de la console : la file avec les filtres Tout, En attente, En cours, En échec, Faits, un champ de recherche, et des lignes montrant le titre, qui l'a demandé, son état et le nombre de tentatives ; en dessous, les blocs Réglages des imports et Fournisseurs." />
+
+2. **Cliquez sur « Relancer » sur un import en échec pour le retenter tout de suite**, ou sur **« Retirer »** pour le sortir de la file.
+
+   Un titre retiré reste liké ou dans ses playlists, en ligne, sans fichier.
+
+3. **Regardez le bloc « Fournisseurs ».**
+
+   Chaque fournisseur affiche son nom, ce qu'il fait (« Titres complets et imports » ou « Extraits de 30 s, jamais importés ») et s'il fonctionne. Un fournisseur dont les identifiants ont expiré affiche une alerte, aussi sur le tableau de bord.
+
+</Steps>
+
+## Fournisseurs audio
+
+Un fournisseur audio donne au serveur l'audio des titres dont il n'a pas le fichier. Le serveur fait tout le reste : un identifiant par titre, un cache partagé, l'import dans votre bibliothèque, les tags, les pochettes et le rescan. Le serveur 1.2.1 a ces fournisseurs :
+
+| Fournisseur | Ce qu'il fait | Comment l'activer |
+|---|---|---|
+| **Extraits en ligne** | L'extrait de 30 secondes d'un titre en ligne, quand aucun autre fournisseur ne l'a. Jamais importé. | Activé par défaut (`online_previews`). |
+| **Relais Subsonic** | Un autre serveur compatible Subsonic (un Navidrome, un autre Musonic Server…). Le titre y est cherché (par ISRC quand les deux le connaissent, sinon par nom, artistes et durée) et son fichier relayé tel quel. Ses titres se lisent en entier et peuvent être importés. | `subsonic_provider_url`, `subsonic_provider_user` et `MUSONIC_SUBSONIC_PROVIDER_PASSWORD`. |
+| **Votre propre fournisseur** | N'importe quelle source que vous écrivez en Rust, derrière une interface documentée. | Un programme à vous construit sur la crate `musonic-server`. |
+
+Un **dossier d'import** (déposer n'importe quel fichier audio dans un dossier surveillé pour qu'il soit tagué, rangé et ajouté) est prévu ; il n'est pas dans le serveur 1.2.1.
+
+<Aside type="caution">
+N'utilisez que des sources que vous avez le droit d'utiliser. Vous êtes responsable des services que vous branchez et du respect de leurs conditions.
+</Aside>
+
+### Brancher un relais Subsonic
+
+<Steps>
+
+1. **Ouvrez votre `compose.yml`** (dans le dossier où vivent les données du serveur).
+
+2. **Ajoutez l'adresse, l'utilisateur et le mot de passe du relais sous `environment:`.**
+
+   ```yaml
+       environment:
+         MUSONIC_SUBSONIC_PROVIDER_URL: "https://<autre-serveur>"
+         MUSONIC_SUBSONIC_PROVIDER_USER: "<utilisateur>"
+         MUSONIC_SUBSONIC_PROVIDER_PASSWORD: "<mot-de-passe>"
+   ```
+
+   `<autre-serveur>` est l'adresse du serveur Subsonic à relayer ; `<utilisateur>` et `<mot-de-passe>` sont un compte sur ce serveur. Le mot de passe ne se règle que dans l'environnement, jamais dans le fichier de configuration.
+
+3. **Redémarrez le serveur :** `docker compose up -d`.
+
+4. **Vérifiez dans la console, page « Imports ».**
+
+   « Relais Subsonic » apparaît dans « Fournisseurs », avec son état.
+
+</Steps>
+
+Si `MUSONIC_SUBSONIC_PROVIDER_URL` est réglé sans l'utilisateur ou sans le mot de passe, le serveur ne démarre pas, et dit lequel manque dans ses journaux.
+
+### Écrire votre propre fournisseur
+
+Un fournisseur est un type Rust qui implémente l'interface `AudioProvider` : à partir d'un titre (nom, artistes, album, ISRC, durée, et son identifiant dans le catalogue du fournisseur quand il est connu), il répond par un fichier que le serveur lit par plages d'octets, ou dit qu'il n'a pas ce titre. Il indique aussi si ses fichiers peuvent être importés, et peut exposer un identifiant (un jeton, une clé d'API) que les administrateurs renouvellent depuis la console. Des tests de conformité vérifient un fournisseur avant de l'utiliser.
+
+Les fournisseurs sont passés au serveur par le programme qui le lance : un programme à vous, qui dépend de la crate `musonic-server`, ajoute ses fournisseurs sans modifier le code de Musonic. Tout est décrit dans [PROVIDERS.md](https://github.com/DoodzDev/Musonic/blob/main/apps/server/docs/PROVIDERS.md) (en anglais), avec le plus petit exemple complet (`MemoryProvider`).
+
+## Couper le catalogue en ligne, les extraits ou les imports
+
+<Tabs>
+<TabItem label="Depuis la console">
+
+<Steps>
+
+1. **Dans la console, ouvrez « Imports ».**
+
+2. **Utilisez les interrupteurs.**
+
+   Dans « Réglages des imports » : **Import automatique** et sa **Qualité**. Dans « Fournisseurs » : **Catalogue en ligne** et **Extraits de 30 s**.
+
+   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/02-import-settings.fr.webp" alt="Les blocs Réglages des imports et Fournisseurs de la page Imports de la console : interrupteur Import automatique, choix de Qualité MP3 128 / MP3 320 / FLAC, ligne Rangement, puis la liste des fournisseurs et les interrupteurs Catalogue en ligne et Extraits de 30 s." />
+
+3. **Cliquez sur « Redémarrer maintenant » dans le bandeau qui apparaît.**
+
+   Le changement s'applique après le redémarrage. La musique s'arrête quelques secondes.
+
+</Steps>
+
+</TabItem>
+<TabItem label="Par l'environnement">
+
+```yaml
+    environment:
+      MUSONIC_ONLINE: "false"            # pas de catalogue en ligne du tout
+      MUSONIC_ONLINE_PREVIEWS: "false"   # pas d'extraits de 30 secondes
+      MUSONIC_IMPORT: "false"            # pas d'imports
+      MUSONIC_IMPORT_QUALITY: "flac"     # mp3_128, mp3_320 ou flac
+```
+
+Puis `docker compose up -d`. Une valeur enregistrée dans la console l'emporte sur l'environnement.
+
+</TabItem>
+</Tabs>
+
+Ce que fait chaque interrupteur :
+
+| Coupé | Résultat |
+|---|---|
+| **Catalogue en ligne** (`online`) | La recherche et les pages ne montrent que votre bibliothèque. Plus d'extraits non plus. Les titres déjà enregistrés restent dans les likes et les playlists. Le serveur ne contacte plus le catalogue en ligne. |
+| **Extraits de 30 s** (`online_previews`) | Les titres en ligne sans fichier ne se lisent plus que par un autre fournisseur ; sans fournisseur, ils ne se lisent pas. |
+| **Import automatique** (`import`) | Les likes et les playlists gardent les titres en ligne sans les télécharger. |
+
+### Tous les réglages
+
+| Réglage (fichier) | Environnement | Par défaut | Rôle |
+|---|---|---|---|
+| `online` | `MUSONIC_ONLINE` | `true` | Le catalogue en ligne dans la recherche et les pages. |
+| `online_previews` | `MUSONIC_ONLINE_PREVIEWS` | `true` | Extraits de 30 secondes des titres en ligne qu'aucun fournisseur n'a. |
+| `import` | `MUSONIC_IMPORT` | `true` | Importer les titres en ligne likés ou ajoutés à une playlist. |
+| `import_dir` | `MUSONIC_IMPORT_DIR` | `Musonic` | Dossier des imports, à l'intérieur du dossier de musique. |
+| `import_quality` | `MUSONIC_IMPORT_QUALITY` | `mp3_320` | `mp3_128`, `mp3_320` ou `flac` : le meilleur qu'a le fournisseur, jusqu'à cette qualité. |
+| `subsonic_provider_url` | `MUSONIC_SUBSONIC_PROVIDER_URL` | aucun | Serveur Subsonic dont relayer l'audio. |
+| `subsonic_provider_user` | `MUSONIC_SUBSONIC_PROVIDER_USER` | aucun | Son utilisateur. |
+| (environnement seulement) | `MUSONIC_SUBSONIC_PROVIDER_PASSWORD` | aucun | Son mot de passe. |
+
+`online`, `online_previews`, `import` et `import_quality` se changent aussi dans la console ; `import_dir` et le relais seulement dans la configuration.
+
+## Droits et quotas par compte
+
+Par défaut, chaque compte peut utiliser le catalogue en ligne et importer, sans limite. Les administrateurs ne sont jamais limités. Pour chaque autre compte, vous pouvez couper des droits et fixer des quotas.
+
+<Steps>
+
+1. **Dans la console, cliquez sur « Comptes », puis sur le compte.**
+
+2. **Dans « Droits », coupez ce que ce compte ne peut pas faire.**
+
+   Le droit d'import (sa ligne indique « Ses likes et playlists de titres en ligne sont téléchargés. ») : ses likes et ses playlists gardent les titres en ligne sans les importer. **Voir le catalogue en ligne** : ni recherche, ni pages, ni écoute en ligne pour lui ; ses imports de playlists ne cherchent que dans votre bibliothèque.
+
+   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/03-account-rights.fr.webp" alt="La page d'un compte non administrateur dans la console : le bloc Droits avec quatre interrupteurs (import, Voir le catalogue en ligne, Télécharger les fichiers, Playlists publiques) et le bloc Quotas avec Imports par jour, Imports par mois et Place maximale de ses imports." />
+
+3. **Dans « Quotas », fixez les limites voulues**, puis attendez « Enregistré ».
+
+   **Imports par jour** et **Imports par mois** comptent les imports demandés par ce compte (jours et mois en UTC). **Place maximale de ses imports**, en Go, est la taille totale des fichiers importés pour lui. Vide = illimité.
+
+</Steps>
+
+Une fois un quota atteint, les likes et les playlists du compte continuent de fonctionner ; les titres restent simplement en ligne, sans fichier, jusqu'à ce que le quota le permette à nouveau et que quelqu'un les like ou les ajoute de nouveau.
+
+## Et ensuite
+
+- [Ranger vos fichiers de musique](/fr/docs/library/organize/) : tags, pochettes et paroles de vos propres fichiers.
+- [Scanner votre bibliothèque](/fr/docs/library/scan/) : comment les fichiers importés rejoignent leur titre.
+- [Podcasts](/fr/docs/library/podcasts/) : l'autre contenu en ligne que le serveur va chercher.

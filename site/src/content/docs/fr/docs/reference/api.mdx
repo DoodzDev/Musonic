@@ -1,0 +1,405 @@
+---
+title: API HTTP
+description: Toutes les routes HTTP de Musonic Server — l'API Subsonic et OpenSubsonic, l'API native /v1, les événements en temps réel par WebSocket, les en-têtes de cache et le format des identifiants.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Cette page recense tout ce que Musonic Server répond en HTTP. Elle s'adresse aux développeurs qui écrivent un client, un script ou une intégration. Elle est tirée du code source du serveur (`apps/server/src`), version 1.2.1.
+
+**Ce qu'il vous faut**
+
+- Un Musonic Server qui tourne et son adresse (dans les exemples : `https://music.example.com`).
+- Un compte sur ce serveur. Pour un script, créez une clé d'API pour l'appareil (voir [Authentification](#authentification)).
+
+Musonic Server expose trois choses :
+
+| Chemin | Ce que c'est | Format |
+|---|---|---|
+| `/rest/<endpoint>` | L'API Subsonic / OpenSubsonic, utilisée par Musonic et par tout client Subsonic | XML par défaut, JSON avec `f=json` |
+| `/v1/...` | L'API native de Musonic : comptes, connexion, événements en temps réel, administration | JSON |
+| `/health` | Test de vie, sans connexion | JSON |
+
+Il sert aussi deux applications web : la console d'administration à l'adresse du serveur (`/`, et tout chemin qui n'est pas une API), et Musonic Web sous `/app/` une fois installé depuis la console.
+
+<img class="diagram" src="/assets/img/docs/diagrams/api-surfaces.fr.svg" alt="Schéma : à gauche les clients (applis Musonic, autres clients Subsonic, la console, des scripts) appellent Musonic Server sur /rest, /v1, /v1/events et /health ; le serveur lit SQLite, le dossier de musique et les fournisseurs audio." />
+
+## API Subsonic et OpenSubsonic
+
+### Version et format des réponses
+
+- Version de l'API Subsonic annoncée : **1.16.1**.
+- Chaque réponse contient `status` (`ok` ou `failed`), `version` (`1.16.1`), `type` (`musonic`), `serverVersion` (la version du serveur) et `openSubsonic: true`.
+- Les routes répondent sur `/rest/<endpoint>` et `/rest/<endpoint>.view`, quelle que soit la méthode HTTP.
+- Les paramètres sont lus dans l'adresse **et** dans un corps de formulaire (`application/x-www-form-urlencoded`, l'extension OpenSubsonic `formPost`). Les clés répétées sont conservées (`id=a&id=b`).
+- Réponses en XML par défaut, en JSON avec `f=json`, en JSONP avec `f=jsonp&callback=<nom>` (lettres, chiffres, `_` et `.`, 64 caractères au plus ; sinon JSON).
+- Les erreurs suivent les codes Subsonic : `0` générique, `10` paramètre manquant, `40` identifiants incorrects, `41` connexion par jeton indisponible, `42` mécanisme non pris en charge, `43` mécanismes contradictoires, `44` clé d'API invalide, `50` non autorisé, `70` introuvable.
+
+### Authentification
+
+Toutes les routes sauf `getOpenSubsonicExtensions` demandent des identifiants. Trois méthodes sont acceptées :
+
+| Méthode | Paramètres | Remarques |
+|---|---|---|
+| Clé d'API (OpenSubsonic `apiKeyAuthentication`) | `apiKey=<clé>` | Recommandée. Les clés commencent par `msk_`. Ne pas la combiner avec `u`, `p`, `t` ou `s` (erreur `43`). |
+| Mot de passe | `u=<utilisateur>&p=<mot de passe>` ou `p=enc:<hex>` | Le mot de passe en clair, ou encodé en hexadécimal après `enc:`. Uniquement en HTTPS. |
+| Jeton et sel (Subsonic classique) | `u=<utilisateur>&t=<md5(mot de passe + sel)>&s=<sel>` | Fonctionne seulement tant que le réglage `legacy_auth` est activé (par défaut). Désactivé, le serveur répond l'erreur `41` et demande `apiKey`. |
+
+- `<clé>` : une clé d'API créée dans l'appli, dans la console, ou avec `POST /v1/me/api-keys` (affichée une seule fois).
+- `<utilisateur>`, `<mot de passe>` : le nom et le mot de passe du compte.
+- `<sel>` : une chaîne aléatoire que vous choisissez à chaque requête ; `<md5(mot de passe + sel)>` est l'empreinte MD5, en hexadécimal, du mot de passe suivi de ce sel.
+
+```sh
+curl "https://music.example.com/rest/ping?apiKey=<clé>&c=mon-script&f=json"
+```
+
+<Aside type="note">
+Après 10 mots de passe faux différents pour un même compte depuis une même adresse, cette adresse est refusée pour ce compte pendant 15 minutes, même avec le bon mot de passe. Réessayer le même mauvais mot de passe ne compte pas deux fois. L'adresse est prise dans `CF-Connecting-IP`, sinon `X-Forwarded-For`, sinon la connexion.
+</Aside>
+
+Un compte suspendu reçoit l'erreur `50` avec le message « This account is suspended ».
+
+### Extensions OpenSubsonic
+
+`getOpenSubsonicExtensions` répond sans identifiants :
+
+| Extension | Versions | Signification |
+|---|---|---|
+| `apiKeyAuthentication` | 1 | Paramètre `apiKey`, `tokenInfo` |
+| `formPost` | 1 | Paramètres dans un corps de formulaire |
+| `indexBasedQueue` | 1 | `savePlayQueueByIndex`, `getPlayQueueByIndex` |
+| `musonicServer` | 1, 2, 3, 4 | Le serveur est Musonic Server. 2 : les routes en une requête `getMusonicLibrary`, `getMusonicHome`, `getMusonicHomeMore`. 3 : identifiants courts (les anciens UUID restent acceptés). 4 : podcasts (`searchPodcasts`, `savePodcastPosition`, positions d'écoute). |
+
+Un client peut tester la présence de `musonicServer` (ou appeler [`GET /v1/info`](#serveur-et-connexion)) pour profiter des fonctions propres à Musonic, tout en restant compatible avec n'importe quel autre serveur Subsonic.
+
+### Routes implémentées
+
+Toute autre route répond l'erreur `0` « `<nom>` is not implemented yet ».
+
+#### Système
+
+| Route | Remarques |
+|---|---|
+| `ping` | Réponse vide. |
+| `getLicense` | Toujours `valid: true`. |
+| `getOpenSubsonicExtensions` | Sans identifiants. |
+| `tokenInfo` | Seulement avec `apiKey` (sinon erreur `42`). Renvoie le nom du compte. |
+| `getScanStatus` | `scanning`, nombre de fichiers et de dossiers, dernier scan. |
+| `startScan` | Administrateurs seulement. `fullScan=true` relit tous les fichiers. Erreur si aucun dossier de musique n'est configuré. |
+
+#### Comptes
+
+| Route | Remarques |
+|---|---|
+| `getUser` | Vous-même ; n'importe quel compte pour un administrateur. Les rôles sont fixes : `downloadRole`, `playlistRole`, `streamRole`, `coverArtRole`, `commentRole`, `settingsRole` valent `true` ; `uploadRole`, `podcastRole`, `jukeboxRole`, `shareRole`, `videoConversionRole` valent `false`. Les droits réglés dans la console n'y apparaissent pas. |
+| `getUsers` | Administrateurs seulement. |
+| `createUser` | Administrateurs seulement. `username`, `password` (en clair ou `enc:`), `adminRole=true`. 8 caractères minimum pour le mot de passe. |
+| `deleteUser` | Administrateurs seulement. |
+| `changePassword` | Vous-même ; n'importe quel compte pour un administrateur. |
+
+#### Navigation
+
+| Route | Remarques |
+|---|---|
+| `getMusicFolders` | Le dossier de musique configuré. Les autres routes ignorent `musicFolderId`. |
+| `getIndexes`, `getArtists` | Artistes d'album, de A à Z. |
+| `getMusicDirectory` | Navigation par dossiers. |
+| `getArtist`, `getAlbum`, `getSong` | Acceptent aussi les identifiants du catalogue en ligne (`dz-…`, voir [Identifiants](#identifiants)) quand le catalogue est activé et permis pour le compte. `getArtist` ajoute le reste de la discographie depuis le catalogue en ligne. |
+| `getGenres`, `getSongsByGenre` | |
+| `getAlbumList`, `getAlbumList2` | Les valeurs habituelles de `type` (`recent`, `frequent`, `newest`, `random`…). |
+| `getRandomSongs` | `size`, `genre`, `fromYear`, `toYear`. |
+| `getStarred`, `getStarred2` | Les « j'aime » du compte. |
+| `getTopSongs` | `artist` (un nom) : les titres de l'artiste classés par nombre d'écoutes **sur ce serveur** (aucun service extérieur). |
+| `getSimilarSongs`, `getSimilarSongs2` | Une radio construite à partir des mêmes artistes et genres, mélangée. |
+| `getArtistInfo`, `getArtistInfo2` | Pas de biographie. Les artistes similaires sont ceux qui partagent le plus de genres. |
+| `getAlbumInfo`, `getAlbumInfo2` | `notes` vide. |
+| `search2`, `search3` | La bibliothèque, plus des résultats en ligne quand le catalogue est activé et permis pour le compte. |
+
+#### J'aime, notes, écoutes, file d'attente
+
+| Route | Remarques |
+|---|---|
+| `star`, `unstar` | `id`, `albumId`, `artistId`. Un identifiant en ligne est d'abord ajouté à la bibliothèque (et peut être importé, voir [Catalogue en ligne](/fr/docs/library/online-catalogue/)). |
+| `setRating` | |
+| `scrobble` | `submission=false` indique seulement « en cours de lecture » ; sinon chaque `id` (avec son `time`, en ms) compte comme écouté. |
+| `getNowPlaying` | |
+| `savePlayQueue`, `getPlayQueue` | |
+| `savePlayQueueByIndex`, `getPlayQueueByIndex` | OpenSubsonic `indexBasedQueue`. |
+
+#### Playlists
+
+| Route | Remarques |
+|---|---|
+| `getPlaylists`, `getPlaylist` | |
+| `createPlaylist`, `updatePlaylist`, `deletePlaylist` | Seul le propriétaire modifie une playlist. La rendre publique demande le droit correspondant (réglé par compte dans la console). On peut y ajouter des identifiants en ligne. |
+
+#### Médias
+
+| Route | Remarques |
+|---|---|
+| `stream` | Le fichier lui-même, avec les plages HTTP, ou un transcodage par ffmpeg. Voir [Lecture en flux](#lecture-en-flux). |
+| `download` | Le fichier original. Demande le droit de téléchargement du compte. |
+| `getCoverArt` | `id`, `size` (de 1 à 4095 px). Les images redimensionnées sont mises en cache sur disque ; `Cache-Control: public, max-age=86400`. Accepte les identifiants `pl-…` (image de playlist) et `ar-…` (image d'artiste). |
+| `getLyrics` | `artist`, `title` : les paroles trouvées dans la bibliothèque. |
+| `getLyricsBySongId` | Paroles structurées OpenSubsonic (synchronisées quand le fichier a des horodatages). Pour un épisode de podcast (`pe-…`), sa transcription quand l'émission en publie une. |
+
+#### Podcasts
+
+| Route | Remarques |
+|---|---|
+| `getPodcasts` | `id`, `includeEpisodes`. Les émissions suivies par le compte ; 300 épisodes au plus par émission. |
+| `getNewestPodcasts` | `count`. |
+| `getPodcastEpisode` | OpenSubsonic. |
+| `createPodcastChannel` | `url` : suit une émission par l'adresse de son flux. |
+| `deletePodcastChannel` | Arrête de la suivre. |
+| `refreshPodcasts` | Relit les flux, en arrière-plan. Le serveur relit aussi les flux suivis toutes les heures. |
+| `searchPodcasts` | Musonic : `query`, `country`. Les émissions de l'annuaire, et celles que vous suivez. |
+| `savePodcastPosition` | Musonic : `id`, `position` (ms). |
+| `getPodcastShow` | Musonic : `id` ou `url`. Une émission et ses épisodes, suivie ou non. |
+
+Les épisodes se lisent par `stream` et leurs images par `getCoverArt`, comme des titres.
+
+#### Radio
+
+| Route | Remarques |
+|---|---|
+| `getInternetRadioStations` | Toujours une liste vide. |
+
+#### Routes Musonic
+
+Annoncées par l'extension `musonicServer` (version 2 et suivantes). Elles répondent en une requête à ce qu'un client générique demande en plusieurs.
+
+| Route | Réponse |
+|---|---|
+| `getMusonicLibrary` | `musonicLibrary` : `total` et chaque titre qui a un fichier, avec seulement `id`, `title`, `artist`, `artistId`, `artists`, `album`, `albumId`, `coverArt`, `duration`, `suffix`, `bitRate`, `created`, `track`, `year`, `genre`. Ni « j'aime » ni compteurs d'écoute (voir `getStarred2`). |
+| `getMusonicHome` | `musonicHome` : `recent` (24 albums), `frequent` (40), `newest` (16), `random` (16), `starred`, `playlists`. |
+| `getMusonicHomeMore` | `musonicHomeMore`, à partir de `artist` (identifiant d'artiste), `song` (identifiant de titre) et jusqu'à 8 valeurs `genre` (au moins l'un des trois) : `similarArtistAlbums` (le dernier album de 4 artistes similaires au plus), `similarSongs` (20), `genreMixes` (30 titres au hasard par genre). |
+
+### Non implémenté
+
+Signets (`getBookmarks`, `createBookmark`, `deleteBookmark`), partages, jukebox (`jukeboxControl`), vidéos, discussion, avatars (`getAvatar`), `updateUser`, `search` (Subsonic 1.x), téléchargement et suppression d'épisodes de podcast (`downloadPodcastEpisode`, `deletePodcastEpisode`), gestion des radios internet.
+
+### Lecture en flux
+
+`stream` envoie le fichier tel quel, avec les plages HTTP pour que les lecteurs puissent avancer dans le titre, sauf si le client demande autre chose :
+
+| Paramètre | Effet |
+|---|---|
+| `format=raw` | Jamais de transcodage. |
+| `format=mp3`, `opus`, `aac` (ou `m4a`), `ogg` | Transcode vers ce format quand le fichier est dans un autre. |
+| `maxBitRate=<kbit/s>` | Transcode quand le fichier dépasse ce débit (plafonné à 320). |
+| `timeOffset=<secondes>` | Démarre un flux transcodé plus loin. |
+
+- Quand seul le débit est trop élevé, le format utilisé est le réglage `transcode_format` du serveur (`mp3` par défaut ; `opus` et `aac` possibles).
+- Débits par défaut quand aucun n'est demandé : 192 kbit/s en MP3, 128 en Opus, 256 en AAC. Un fichier plus léger n'est jamais « gonflé ».
+- La limite de débit du compte et le réglage `max_bit_rate` du serveur l'emportent sur la demande du client : la plus basse s'applique.
+- Les titres transcodés sont gardés sur disque (`transcode_cache_mb`, 500 Mo par défaut) : un titre réécouté ou avancé repart aussitôt. Le titre suivant de la file enregistrée est préparé en arrière-plan.
+- Sans ffmpeg, les fichiers sont envoyés tels quels.
+- Un titre sans fichier est lu depuis le premier fournisseur audio qui l'a, à travers un cache disque partagé découpé en segments de 1 Mio, avec les plages HTTP également.
+
+## API native (`/v1`)
+
+JSON en entrée et en sortie. Les erreurs sont `{"error": "<message>"}` avec un statut HTTP (`400`, `401` « sign in required », `403` « administrators only », `404`, `409`, `429`, `500`).
+
+### Authentification
+
+`Authorization: Bearer <jeton>`, où `<jeton>` est :
+
+- soit un **jeton de session**, renvoyé par `POST /v1/auth/login` ou `POST /v1/setup`. Il dure 30 jours sans utilisation, et chaque utilisation le prolonge ;
+- soit une **clé d'API** (`msk_…`).
+
+```sh
+curl -X POST https://music.example.com/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"<utilisateur>","password":"<mot de passe>","client":"mon-script"}'
+# {"token":"…","user":{…}}
+
+curl https://music.example.com/v1/me -H "Authorization: Bearer <jeton>"
+```
+
+`POST /v1/auth/login` accepte aussi `token` et `salt` (le `md5(mot de passe + sel)` de Subsonic et son sel) à la place de `password`, sous le même réglage `legacy_auth`. `client` est le nom affiché dans le journal d'activité. La route répond `429` quand l'adresse est bloquée (voir plus haut) et `403` pour un compte suspendu.
+
+Quelques routes ne peuvent pas envoyer d'en-tête (un WebSocket, une balise `<img>` ou `<audio>`) : elles prennent le jeton en `?token=`, comme indiqué ci-dessous.
+
+### Serveur et connexion
+
+| Méthode et route | Connexion | Rôle |
+|---|---|---|
+| `GET /health` | aucune | `{"status":"ok"}`, ou `503` avec `degraded` si la base ne répond pas. Rien d'autre. |
+| `GET /v1/info` | aucune | `{server: "musonic", version, api: 1, features}`. `features` contient `events`, `connect`, et `online` et `imports` quand ils sont activés. |
+| `GET /v1/setup` | aucune | `{"needed": true}` tant qu'aucun compte n'existe. |
+| `POST /v1/setup` | aucune | `{username, password}` : crée le premier compte, administrateur, et renvoie `{token, user}`. `409` dès qu'un compte existe. |
+| `POST /v1/auth/login` | aucune | `{username, password}` (ou `token` + `salt`), `client` facultatif → `{token, user}`. |
+| `POST /v1/auth/logout` | compte | Termine cette session. |
+
+### Votre compte
+
+| Méthode et route | Connexion | Rôle |
+|---|---|---|
+| `GET /v1/me` | compte | Le compte connecté. |
+| `PUT /v1/me/password` | compte | `{current, new}`. |
+| `GET /v1/me/settings` | compte | `{connectSync}` : lecture synchronisée (Musonic Connect). |
+| `PUT /v1/me/settings` | compte | `{connectSync}`. Les appareils du compte reçoivent aussitôt un événement `settings`. |
+| `GET /v1/me/player` | compte | `{player, updatedAt}` : la dernière écoute du compte (Musonic Connect), pour la reprendre sur un autre appareil ; `player` vaut `null` s'il n'y en a pas. |
+| `GET /v1/me/api-keys` | compte | Les clés d'appareil du compte. |
+| `POST /v1/me/api-keys` | compte | `{name}` → une nouvelle clé, affichée une seule fois (seule son empreinte est gardée). |
+| `DELETE /v1/me/api-keys/{id}` | compte | Révoque une clé. |
+
+### Import de playlists
+
+Pour tout compte. Les sources sont Deezer (quand le catalogue en ligne est activé), YouTube (quand l'administrateur a saisi une clé YouTube Data API) et celles qu'ajoute une version du serveur.
+
+| Méthode et route | Connexion | Rôle |
+|---|---|---|
+| `POST /v1/playlist-imports/preview` | compte | `{url}` ou `{text}` (liens de titres collés) : ce qui serait importé, sans rien écrire. |
+| `POST /v1/playlist-imports` | compte | `{url}` ou `{text}`, `name`, `into` (un import à compléter) : lance un import. L'avancement arrive en événements `playlistImport`. |
+| `GET /v1/playlist-imports` | compte | Les imports du compte, du plus récent au plus ancien. |
+| `GET /v1/playlist-imports/{id}` | compte | Un import avec ses titres (trouvés, incertains, introuvables). |
+| `DELETE /v1/playlist-imports/{id}` | compte | Oublie l'import ; la playlist reste. |
+| `POST /v1/playlist-imports/{id}/retry` | compte | Recherche à nouveau les titres introuvables. |
+
+### Comptes et liens (administrateurs)
+
+| Méthode et route | Connexion | Rôle |
+|---|---|---|
+| `GET /v1/users` | admin | Les comptes, avec leurs droits, appareils et imports du mois. |
+| `POST /v1/users` | admin | Crée directement un compte. |
+| `GET /v1/users/{id}` | admin | Un compte et ses clés d'appareil. |
+| `PATCH /v1/users/{id}` | admin | `{isAdmin?, suspended?, displayName?}`. Il reste toujours un administrateur actif. |
+| `DELETE /v1/users/{id}` | admin | Supprime un compte. |
+| `PUT /v1/users/{id}/limits` | admin | Droits et quotas d'un compte non administrateur. |
+| `POST /v1/users/{id}/logout` | admin | Termine toutes ses sessions et révoque ses clés d'appareil. |
+| `DELETE /v1/users/{id}/api-keys/{key}` | admin | Révoque une clé d'appareil. |
+| `POST /v1/users/{id}/password-reset` | admin | `{seconds, logoutDevices}` → le jeton d'un lien de réinitialisation. |
+| `GET /v1/password-resets` | admin | Les liens de réinitialisation pas encore utilisés. |
+| `DELETE /v1/password-resets/{id}` | admin | En révoque un. |
+| `GET /v1/invitations` | admin | Les liens d'invitation. |
+| `POST /v1/invitations` | admin | `{note, isAdmin, seconds}` → un nouveau lien d'invitation. |
+| `DELETE /v1/invitations/{id}` | admin | En révoque un. |
+| `GET /v1/invite/{token}` | aucune | L'invitation derrière un lien. |
+| `POST /v1/invite/{token}` | aucune | `{username, password}` : crée le compte. |
+| `GET /v1/reset/{token}` | aucune | Le lien de réinitialisation. |
+| `POST /v1/reset/{token}` | aucune | `{password}` : enregistre le nouveau mot de passe. |
+
+### Administration (console)
+
+Toutes ces routes sont réservées aux administrateurs.
+
+| Méthode et route | Rôle |
+|---|---|
+| `GET /v1/admin/status` | Tableau de bord : chiffres en direct, disque, bibliothèque, écoutes en cours, alertes, nouvelles versions. |
+| `GET /v1/admin/health` | Le détail derrière `/health` : version, schéma, dernier scan, fournisseurs, alertes, imports. |
+| `GET /v1/admin/connect` | Chaque compte ayant un appareil en ligne, et ce que chacun lit. |
+| `POST /v1/admin/measures` | `{edges}` (secondes Unix) → un cumul de trafic, processeur, mémoire et disque entre chaque paire de bornes. |
+| `PUT /v1/admin/traffic-quota` | `{outBytes}` : ce que l'hébergeur autorise à envoyer chaque mois (0 = aucun). |
+| `GET /v1/admin/journal` | Journal d'activité, du plus récent au plus ancien. Filtres : `admin`, `before`, `after`, `kind`, `user`, `q`, `from`, `to`, `limit`. |
+| `PUT /v1/admin/journal/settings` | `{maxBytes}` : taille maximale du journal. |
+| `GET /v1/admin/imports` | File des imports : `state` (`pending`, `running`, `failed`, `done`), `q`, `offset`, `limit`, et les totaux. |
+| `POST /v1/admin/imports/{track}/retry` | Relance un import tout de suite. |
+| `DELETE /v1/admin/imports/{track}` | Le retire de la file. |
+| `POST /v1/admin/imports/retry-failed` | Relance tous les imports en échec. |
+| `GET /v1/admin/imports/youtube` | Indique si la clé d'API YouTube est enregistrée (la clé n'est jamais renvoyée). |
+| `PUT /v1/admin/imports/youtube` | Enregistre la clé après une requête de test ; une clé vide la supprime. |
+| `GET /v1/admin/providers` | Les fournisseurs audio, leur état, et si leur identifiant peut être changé. |
+| `PUT /v1/admin/providers/{id}/credential` | `{value}` : un nouveau jeton ou une nouvelle clé, vérifié avant de remplacer l'ancien. |
+| `GET /v1/admin/library` | État du scan et taille de chaque liste à vérifier. |
+| `POST /v1/admin/library/scan` | `{full}` : scanne maintenant (`full` : relit tous les fichiers). |
+| `GET /v1/admin/library/tracks` | Les titres : `q`, `filter` (`missing`, `nocover`, `duplicates`, `online`), `offset`, `limit`. |
+| `GET /v1/admin/library/tracks/{id}` | Un titre : tags, fichiers, sources, « j'aime » et écoutes. |
+| `GET /v1/admin/library/files/{id}?token=` | Le fichier lui-même, pour l'écouter ; plages HTTP acceptées. Jeton dans l'adresse. |
+| `GET /v1/admin/library/covers/{id}?token=&size=` | L'image d'un titre ou d'un album. Jeton dans l'adresse. |
+| `GET /v1/admin/devices` | Les clés d'appareil de tous les comptes, avec le lieu et la date de leur dernière connexion. |
+| `GET /v1/admin/blocked` | Les couples adresse et compte bloqués en ce moment. |
+| `DELETE /v1/admin/blocked?addr=&username=` | Les laisse réessayer. |
+| `GET /v1/admin/settings` | Les réglages du serveur, et ceux qui attendent un redémarrage. |
+| `PUT /v1/admin/settings` | `{key, value}` : modifie un réglage, appliqué au prochain démarrage. |
+| `POST /v1/admin/restart` | Arrête le serveur ; Docker (`restart: unless-stopped`) ou votre gestionnaire de services le relance. |
+| `GET /v1/admin/backups` | Les sauvegardes de la base. |
+| `POST /v1/admin/backups` | En fait une tout de suite. |
+| `GET /v1/admin/backups/{name}` | En télécharge une. |
+| `GET /v1/admin/logs` | Dernières lignes des journaux techniques : `level`, `after`. |
+| `POST /v1/admin/caches/clear?kind=` | Vide un cache : `covers`, `streams`, ou les deux. |
+| `GET /v1/admin/playback` | Version de ffmpeg et taille des caches. |
+| `GET /v1/admin/webapp` | Musonic Web hébergé sous `/app` : version installée et dernière version. |
+| `POST /v1/admin/webapp/install` | Installe la dernière version `web-v…` dans `/app`. |
+| `GET /v1/admin/podcasts` | `{indexConfigured, shows, episodes}`. |
+| `PUT /v1/admin/podcasts/index` | `{key, secret}` de Podcast Index : testés, puis gardés (vides : supprimés). |
+
+Quand la console est installée, une route `/v1/...` inconnue répond `404` avec `{"error": "no such route"}`.
+
+## Événements en temps réel (`/v1/events`)
+
+`GET /v1/events` est un **WebSocket**. Chaque appareil d'un compte apprend aussitôt ce qui a changé pour ce compte, quel que soit le client à l'origine du changement (clients Subsonic compris).
+
+- Connexion : `Authorization: Bearer <jeton>`, ou `?token=<jeton>` (un navigateur ne peut pas ajouter d'en-tête à un WebSocket).
+- Identifiant d'appareil : `?device=<id>` ou l'en-tête `X-Musonic-Device`, choisi par le client (64 caractères au plus). Envoyez le même en-tête ou paramètre `device` sur vos autres requêtes : les événements causés par votre appareil portent `by: <id>`, et il peut ignorer son propre écho.
+- Les événements ne sont pas conservés. Un appareil qui se reconnecte recharge ce qu'il affiche.
+
+```js
+const ws = new WebSocket('wss://music.example.com/v1/events?token=<jeton>&device=<id>');
+ws.onmessage = (e) => console.log(JSON.parse(e.data));
+```
+
+Chaque message est un objet JSON `{type, at, by?, …}` : `at` en secondes Unix, `by` l'appareil à l'origine du changement quand il l'a indiqué.
+
+| `type` | Champs | Quand |
+|---|---|---|
+| `hello` | `user {id, username}`, `device`, `features` | Premier message d'une connexion. |
+| `likes` | `items [{kind, id, starred}]` (`kind` : `track`, `album`, `artist`) | Les « j'aime » ont changé. |
+| `rating` | `kind`, `id`, `rating` | Une note a changé. |
+| `playlist` | `id`, `action` (`created`, `updated`, `deleted`) | Une playlist a changé. |
+| `play` | `ids` | Des écoutes ont été comptées. |
+| `queue` | — | La file d'attente enregistrée a changé. |
+| `import` | `id`, `state` (`done`, `failed`), `path` | Un titre en ligne a été importé dans la bibliothèque, ou a échoué. |
+| `playlistImport` | `id`, `state` (`running`, `done`, `failed`), `done`, `total`, `playlist` | Un import de playlist a avancé. |
+| `devices` | `devices` | Musonic Connect : la liste des appareils en ligne du compte a changé. |
+| `player` | `player`, `now` | Musonic Connect : ce que lit un appareil ; `now` est l'heure du serveur en ms. |
+| `command` | `command` | Musonic Connect : une commande à distance pour l'appareil `command.to`. |
+| `commandFailed` | `command`, `reason` (`offline`, `notAllowed`) | Une commande n'a pas atteint son appareil. |
+| `settings` | `connectSync` | Les réglages du compte ont changé. |
+| `ping` | — | Maintien de la connexion, toutes les 30 secondes. |
+| `resync` | — | L'appareil était trop lent et a manqué des événements : recharger l'affichage. |
+
+### Messages Musonic Connect
+
+Musonic Connect (bêta) utilise le même WebSocket dans les deux sens. Le serveur ne lit rien : il garde en mémoire le dernier état de chaque appareil, le date avec sa propre horloge et le relaie. Un appareil envoie :
+
+| `type` | Contenu |
+|---|---|
+| `register` | L'appareil : `name` (64 caractères au plus), `kind` (`phone`, `web`, `desktop`, `car`, `speaker`…), `canPlay`, `volume`, `alone`. Le serveur répond avec ce que lisent les appareils du compte. |
+| `player` | Ce qu'il lit : `track`, `title`, `artist`, `album`, `coverArt`, `duration` (s), `playing`, `position` (ms), `queue`, `shuffle` (`off`, `on`, `magic`), `repeat` (`none`, `all`, `one`), `volume` (0–100). Ignoré tant que l'appareil ne s'est pas enregistré. |
+| `command` | `to` (un identifiant d'appareil), `action` (`play`, `pause`, `toggle`, `next`, `previous`, `seek`, `volume`, `playItem`, `transfer`), `params`, et `user` pour un administrateur qui agit sur un autre compte. |
+
+Le serveur renseigne `player.device`, `player.positionAt` (heure du serveur de `position`, en ms) et `command.from`. Le dernier état est aussi enregistré par compte, pour `GET /v1/me/player`. Tout autre message reçu sur le WebSocket est ignoré.
+
+## Cache et compression
+
+- Les réponses texte (JSON, XML, JavaScript, HTML) de plus de 1 Ko sont compressées en gzip pour les clients qui envoient `Accept-Encoding: gzip`. L'audio et les images sont envoyés tels quels.
+- Les réponses Subsonic en lecture seule sont gardées en mémoire, par compte, jusqu'à ce que la base change : `getArtists`, `getIndexes`, `getMusicFolders`, `getGenres`, `getStarred`, `getStarred2`, `getPlaylists`, `getSongsByGenre`, `getMusonicLibrary` ; `getAlbum`, `getArtist`, `getSong`, `getPlaylist`, `getMusicDirectory` pour les identifiants de la bibliothèque ; `getAlbumList` et `getAlbumList2` sauf `type=random` ; `search2` et `search3` quand le catalogue en ligne est désactivé.
+- Ces réponses portent un `ETag` faible, `Cache-Control: private, no-cache` et `Vary: accept-encoding`. Renvoyez l'`ETag` dans `If-None-Match` : le serveur répond `304 Not Modified` tant que rien n'a changé.
+- Après une écriture (un « j'aime », une écoute), les réponses les plus demandées sont refaites en arrière-plan : l'écran suivant les trouve prêtes.
+- Le CORS est ouvert à toutes les origines, sans cookies. En-têtes de requête permis : `Authorization`, `Content-Type`, `Range`, `If-None-Match`. Exposés : `Content-Range`, `Content-Length`, `Accept-Ranges`, `ETag`.
+- Chaque réponse porte `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'` et `Referrer-Policy: no-referrer`.
+
+## Identifiants
+
+| Élément | Format | Exemple |
+|---|---|---|
+| Titres, albums, artistes, dossiers, playlists | Identifiant court : 64 bits en base 62, toujours 11 caractères | `3kQ9xZ0aB7c` |
+| Éléments du catalogue en ligne | `dz-track-<n>`, `dz-album-<n>`, `dz-artist-<n>` | `dz-track-3135556` |
+| Émissions, épisodes de podcast | `pc-…`, `pe-…` | |
+| Identifiants d'image | `pl-<id de playlist>` (image de playlist), `ar-<id d'artiste>` (image d'artiste) | |
+| Comptes, clés, liens | UUID | |
+
+- Un titre garde son identifiant à travers les rescans, les déplacements et les imports : un titre en ligne qui obtient un fichier garde l'identifiant qu'il avait.
+- Les anciens identifiants (UUID d'avant le serveur 1.0.3, ou identifiants de 22 caractères importés de Navidrome) restent acceptés dans `id`, `albumId`, `artistId`, `songId`, `songIdToAdd`, `playlistId`, `current` et `song`, et convertis en identifiant court.
+
+## Types TypeScript
+
+Les types JSON de l'API native et des événements sont écrits en Rust et générés en TypeScript avec `ts-rs` : `cargo test` dans `apps/server` les écrit dans `packages/core/src/server/generated` (par exemple `ServerInfo`, `EventMessage`, `Event`, `ConnectDevice`, `Player`, `Command`). La CI du serveur échoue si les types commités ne sont pas à jour. Les clients TypeScript les importent depuis `@musonic/core`.
+
+## Pour aller plus loin
+
+- [Ligne de commande](/fr/docs/reference/cli/)
+- [Architecture](/fr/docs/reference/architecture/)
+- [Référence de configuration](/fr/docs/admin/configuration/)

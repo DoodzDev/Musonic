@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 354" role="img" aria-labelledby="t d" font-family="Inter Variable, Inter, system-ui, sans-serif" lang="fr">
+<title id="t">Requêtes par seconde avec des clients simultanés</title>
+<desc id="d">Plus haut = mieux. 1 client : Musonic 723, Navidrome 86,5; 4 clients : Musonic 918, Navidrome 135; 16 clients : Musonic 902, Navidrome 143; 64 clients : Musonic 913, Navidrome 156. Médiane de 3 passes · Musonic Server 1.0.1 face à Navidrome 0.64.2 · 22/10/2026 · VPS ARM 2 cœurs, 1 871 fichiers.</desc>
+<text x="16.0" y="30.0" font-size="18" fill="#F1F0EE" text-anchor="start" font-weight="600">Requêtes par seconde avec des clients simultanés</text>
+<text x="16.0" y="52.0" font-size="12.5" fill="#7D7B77" text-anchor="start">Plus haut = mieux</text>
+<rect x="16" y="70" width="12" height="12" rx="2" fill="#FF6B35"/>
+<text x="34.0" y="80.5" font-size="13" fill="#B1AFAB" text-anchor="start">Musonic</text>
+<rect x="108" y="70" width="12" height="12" rx="2" fill="#8E8C88"/>
+<text x="126.0" y="80.5" font-size="13" fill="#B1AFAB" text-anchor="start">Navidrome</text>
+<line x1="248.0" y1="96" x2="248.0" y2="272" stroke="#2C2C2F" stroke-width="1"/>
+<text x="248.0" y="288.0" font-size="12" fill="#7D7B77" text-anchor="middle">0</text>
+<line x1="370.4" y1="96" x2="370.4" y2="272" stroke="#2C2C2F" stroke-width="1"/>
+<text x="370.4" y="288.0" font-size="12" fill="#7D7B77" text-anchor="middle">200</text>
+<line x1="492.8" y1="96" x2="492.8" y2="272" stroke="#2C2C2F" stroke-width="1"/>
+<text x="492.8" y="288.0" font-size="12" fill="#7D7B77" text-anchor="middle">400</text>
+<line x1="615.2" y1="96" x2="615.2" y2="272" stroke="#2C2C2F" stroke-width="1"/>
+<text x="615.2" y="288.0" font-size="12" fill="#7D7B77" text-anchor="middle">600</text>
+<line x1="737.6" y1="96" x2="737.6" y2="272" stroke="#2C2C2F" stroke-width="1"/>
+<text x="737.6" y="288.0" font-size="12" fill="#7D7B77" text-anchor="middle">800</text>
+<line x1="860.0" y1="96" x2="860.0" y2="272" stroke="#2C2C2F" stroke-width="1"/>
+<text x="860.0" y="288.0" font-size="12" fill="#7D7B77" text-anchor="middle">1 000</text>
+<text x="236.0" y="124.0" font-size="14" fill="#B1AFAB" text-anchor="end">1 client</text>
+<path d="M248.0 104.0h439.6a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-439.6z" fill="#FF6B35"/>
+<text x="696.6" y="116.0" font-size="14" fill="#F1F0EE" text-anchor="start">723</text>
+<path d="M248.0 120.0h49.9a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-49.9z" fill="#8E8C88"/>
+<text x="306.9" y="132.0" font-size="14" fill="#F1F0EE" text-anchor="start">86,5</text>
+<text x="236.0" y="168.0" font-size="14" fill="#B1AFAB" text-anchor="end">4 clients</text>
+<path d="M248.0 148.0h559.1a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-559.1z" fill="#FF6B35"/>
+<text x="816.1" y="160.0" font-size="14" fill="#F1F0EE" text-anchor="start">918</text>
+<path d="M248.0 164.0h79.7a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-79.7z" fill="#8E8C88"/>
+<text x="336.7" y="176.0" font-size="14" fill="#F1F0EE" text-anchor="start">135</text>
+<text x="236.0" y="212.0" font-size="14" fill="#B1AFAB" text-anchor="end">16 clients</text>
+<path d="M248.0 192.0h549.2a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-549.2z" fill="#FF6B35"/>
+<text x="806.2" y="204.0" font-size="14" fill="#F1F0EE" text-anchor="start">902</text>
+<path d="M248.0 208.0h84.4a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-84.4z" fill="#8E8C88"/>
+<text x="341.4" y="220.0" font-size="14" fill="#F1F0EE" text-anchor="start">143</text>
+<text x="236.0" y="256.0" font-size="14" fill="#B1AFAB" text-anchor="end">64 clients</text>
+<path d="M248.0 236.0h555.9a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-555.9z" fill="#FF6B35"/>
+<text x="812.9" y="248.0" font-size="14" fill="#F1F0EE" text-anchor="start">913</text>
+<path d="M248.0 252.0h92.7a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-92.7z" fill="#8E8C88"/>
+<text x="349.7" y="264.0" font-size="14" fill="#F1F0EE" text-anchor="start">156</text>
+<text x="16.0" y="314.0" font-size="12.5" fill="#B1AFAB" text-anchor="start">Musonic est plafonné par le client de test, sur les mêmes 2 cœurs.</text>
+<text x="16.0" y="342.0" font-size="12" fill="#7D7B77" text-anchor="start">Médiane de 3 passes · Musonic Server 1.0.1 face à Navidrome 0.64.2 · 22/10/2026 · VPS ARM 2 cœurs, 1 871 fichiers</text>
+</svg>

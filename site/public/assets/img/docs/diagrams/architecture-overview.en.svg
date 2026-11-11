@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 552" role="img" aria-labelledby="t d">
+<title id="t">Architecture overview</title>
+<desc id="d">The Android app, Musonic Web, the console and other Subsonic clients reach Musonic Server through an HTTPS reverse proxy; the server uses the music folder, SQLite, ffmpeg, the online catalogue and audio providers.</desc>
+<defs><marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0.8 L10 5 L0 9.2 Z" fill="#7D7B77"/></marker><marker id="aho" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0.8 L10 5 L0 9.2 Z" fill="#FF6B35"/></marker><marker id="asg" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M10 0.8 L0 5 L10 9.2 Z" fill="#7D7B77"/></marker><marker id="aso" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M10 0.8 L0 5 L10 9.2 Z" fill="#FF6B35"/></marker></defs>
+<rect x="96" y="16" width="572" height="44" rx="12" fill="none" stroke="#3A3A3D" stroke-width="1.5" stroke-dasharray="6 5"/>
+<text x="382" y="44" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#F1F0EE" text-anchor="end" font-weight="600">packages/core</text>
+<text x="394" y="44" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#B1AFAB" text-anchor="start">— shared TypeScript</text>
+<rect x="96" y="84" width="180" height="80" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="186" y="118.98" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600">Android app</text>
+<text x="186" y="138.64" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="middle">React Native + Media3</text>
+<path d="M186 60 L186 84" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+<path d="M186 164 L186 194" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="292" y="84" width="180" height="80" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="382" y="118.98" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600">Musonic Web</text>
+<text x="382" y="138.64" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="middle">React + Vite</text>
+<path d="M382 60 L382 84" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+<path d="M382 164 L382 194" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="488" y="84" width="180" height="80" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="578" y="118.98" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600">Console</text>
+<text x="578" y="138.64" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="middle">React + Vite</text>
+<path d="M578 60 L578 84" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+<path d="M578 164 L578 194" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="684" y="84" width="180" height="80" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="774" y="117.98" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600"><tspan x="774" dy="0">Other Subsonic</tspan><tspan x="774" dy="21">clients</tspan></text>
+<path d="M774 164 L774 194" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="96" y="200" width="768" height="36" rx="8" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="480" y="223" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#B1AFAB" text-anchor="middle">HTTPS (reverse proxy)</text>
+<path d="M480 236 L480 274" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="340" y="280" width="280" height="76" rx="12" fill="#1C1C1E" stroke="#FF6B35" stroke-width="1.5"/>
+<text x="480" y="313.04" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="middle" font-weight="600">Musonic Server</text>
+<text x="480" y="333.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#B1AFAB" text-anchor="middle">Rust</text>
+<rect x="20" y="420" width="172" height="112" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="106" y="471.23" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600">Music folder</text>
+<text x="106" y="490.5" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="middle">scan, imports</text>
+<path d="M400 356 L106 414" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)" marker-start="url(#asg)"/>
+<rect x="207" y="420" width="172" height="112" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="293" y="480.48" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600">SQLite database</text>
+<path d="M440 356 L293 414" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="394" y="420" width="172" height="112" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="480" y="471.23" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600">ffmpeg</text>
+<text x="480" y="490.5" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="middle">transcoding</text>
+<path d="M480 356 L480 414" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="581" y="420" width="172" height="112" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="667" y="443.23" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600"><tspan x="667" dy="0">Online</tspan><tspan x="667" dy="21">catalogue</tspan></text>
+<text x="667" y="483.89" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="middle">Deezer public API</text>
+<text x="667" y="502.5" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="middle"><tspan x="667" dy="0">metadata, 30 s</tspan><tspan x="667" dy="16">previews</tspan></text>
+<path d="M520 356 L667 414" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="768" y="420" width="172" height="112" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="854" y="470.98" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600">Audio providers</text>
+<text x="854" y="490.64" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="middle">plugged by the admin</text>
+<path d="M560 356 L854 414" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+</svg>

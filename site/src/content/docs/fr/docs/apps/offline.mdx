@@ -1,0 +1,111 @@
+---
+title: Écouter hors ligne
+description: Comment télécharger titres, albums, playlists et Titres likés dans l'appli Android Musonic, les écouter sans réseau, et régler la qualité de streaming pour économiser vos données.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Cette page montre comment garder de la musique sur votre téléphone pour l'écouter sans réseau (en avion, dans le métro, à l'étranger), comment la retirer, et comment choisir la qualité de streaming pour consommer moins de données mobiles.
+
+## Ce que vous pouvez télécharger
+
+| Quoi | Où | Bouton |
+|---|---|---|
+| Un titre | sa ligne dans une liste, ou son menu | la flèche de téléchargement, ou **Télécharger** |
+| Un album | la page de l'album | **Télécharger** |
+| Une playlist | le menu ⋯ de la playlist, dans la playlist ou la Bibliothèque | **Télécharger** |
+| Titres likés | la page Titres likés | **Tout télécharger** |
+| Ce que vous écoutez | automatiquement, voir [Téléchargement automatique](#téléchargement-automatique) | |
+
+Seuls les titres de votre bibliothèque se téléchargent. Les titres du catalogue en ligne, marqués **En ligne**, sont ignorés ; les épisodes de podcast se lisent toujours depuis le réseau.
+
+## Télécharger une playlist
+
+<Steps>
+
+1. **Ouvrez la playlist, puis touchez le bouton ⋯.**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-offline/01-playlist-options.fr.webp" alt="Le panneau d'options d'une playlist dans Musonic, avec la ligne Télécharger parmi Ajouter à la file d'attente, Épingler la playlist et Modifier la playlist." />
+
+2. **Touchez « Télécharger », puis à nouveau « Télécharger » pour confirmer.**
+
+   Musonic demande d'abord, avec le nombre de titres : « Télécharger « Ma playlist » pour l'écouter hors ligne ? (42 titres) ».
+
+   <img class="shot-phone" src="/assets/img/docs/apps-offline/02-download-confirm.fr.webp" alt="La fenêtre « Télécharger la playlist ? » avec le nom de la playlist et le nombre de titres, et les boutons Annuler et Télécharger." />
+
+3. **Attendez « … disponible hors ligne ».**
+
+   Chaque titre affiche une roue, puis une flèche de téléchargement verte. Trois titres se téléchargent à la fois. Vous pouvez continuer à utiliser l'appli pendant ce temps.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-offline/03-downloading.fr.webp" alt="Une playlist en cours de téléchargement : certains titres avec une roue, d'autres avec une flèche de téléchargement verte, et le badge Téléchargé pas encore affiché." />
+
+</Steps>
+
+Les albums fonctionnent de la même façon avec le bouton **Télécharger** de la page de l'album, et les Titres likés avec **Tout télécharger**. Quand tout est téléchargé, la playlist ou l'album affiche le badge **Téléchargé**.
+
+### En données mobiles
+
+**Wi-Fi uniquement** est activé par défaut. En données mobiles, Musonic demande avant chaque téléchargement que vous lancez : « Vous êtes en données mobiles. Les téléchargements se font en Wi-Fi uniquement. Télécharger ces 42 titres quand même avec vos données mobiles ? » Touchez **Télécharger** pour continuer, ou **Annuler** pour attendre le Wi-Fi. Désactivez l'option dans **Réglages → Qualité et téléchargements → Wi-Fi uniquement** pour ne plus être sollicité.
+
+### Téléchargement automatique
+
+**Réglages → Qualité et téléchargements → Téléchargement automatique** (désactivé par défaut) télécharge chaque titre que vous écoutez. Musonic vous demande de confirmer, car cela utilise de l'espace sur le téléphone et de la bande passante sur votre serveur. En données mobiles avec **Wi-Fi uniquement** activé, les téléchargements automatiques attendent le Wi-Fi sans rien demander.
+
+## Ce qui est téléchargé
+
+- **Le fichier d'origine**, quelle que soit la qualité de streaming choisie : un FLAC reste un FLAC. Seule exception : une limite de débit fixée par l'administrateur pour votre compte ou pour le serveur, qui s'applique aussi aux téléchargements.
+- **La pochette** de chaque titre, pour qu'elle s'affiche hors ligne dans les listes, le lecteur, la notification et l'écran verrouillé.
+
+Les fichiers sont rangés dans l'espace privé de Musonic sur le téléphone. Les autres applis et le gestionnaire de fichiers ne les voient pas, et ils ne vont pas sur la carte SD.
+
+## Espace utilisé
+
+- **Profil → Stockage** affiche l'espace occupé par vos téléchargements.
+- **Réglages → Qualité et téléchargements → Limite de stockage** fixe un maximum : **Sans limite** (par défaut), **2 Go**, **5 Go** ou **10 Go**. Il affiche « Utilisé : … ». Au-delà, les nouveaux téléchargements sont refusés avec « Limite de stockage atteinte : téléchargement refusé. »
+
+<img class="shot-phone" src="/assets/img/docs/apps-offline/04-settings-quality.fr.webp" alt="Les Réglages de Musonic, section Qualité et téléchargements : Qualité en Wi-Fi sur Originale, Qualité en données mobiles sur 192, les interrupteurs Wi-Fi uniquement et Téléchargement automatique, et les choix de Limite de stockage avec l'espace utilisé." />
+
+## Retirer des téléchargements
+
+| Quoi | Comment |
+|---|---|
+| Un album | Sur la page de l'album, touchez **Téléchargé**, puis **Supprimer**. |
+| Une playlist | Dans le menu ⋯ de la playlist, touchez **Supprimer les téléchargements**, puis **Supprimer**. |
+| Tout | Désinstallez l'appli (cela efface aussi le compte et les réglages). |
+
+Les titres restent dans votre bibliothèque sur le serveur : seule la copie sur le téléphone est retirée.
+
+<Aside type="note" title="Limites">
+Il n'y a pas encore de bouton pour retirer un seul titre téléchargé, ni les téléchargements des Titres likés. Se déconnecter ne retire pas les téléchargements.
+</Aside>
+
+## Sans réseau
+
+Quand le serveur ne répond pas, un bandeau indique **Pas de connexion internet** ou **Serveur injoignable**, avec un bouton **Mode hors ligne**. Après quelques vérifications ratées de suite, Musonic passe tout seul en mode hors ligne. Vous pouvez aussi l'activer à la main dans **Profil → Mode hors ligne**.
+
+En mode hors ligne :
+
+- la Bibliothèque affiche vos playlists et l'onglet **Téléchargés** ; les albums et artistes reviennent dès que vous êtes en ligne ;
+- les playlists ne montrent que leurs titres téléchargés ;
+- la recherche, le catalogue en ligne et l'Aléatoire magique ne sont pas disponibles ;
+- l'Accueil affiche la dernière version chargée.
+
+Musonic repasse en ligne tout seul dès que le serveur répond de nouveau. Pour décider vous-même, désactivez **Réglages → Options avancées → Reconnexion automatique**.
+
+## Qualité de streaming
+
+Quand vous écoutez sans télécharger, le serveur peut envoyer une version plus légère du titre pour consommer moins de données. Réglez-la séparément pour le Wi-Fi et les données mobiles dans **Réglages → Qualité et téléchargements**.
+
+| Choix | Ce que vous obtenez | Données, environ |
+|---|---|---|
+| **Originale** | le fichier tel quel, sans conversion | selon le format, beaucoup plus en FLAC |
+| **320** | haute qualité, 320 kbit/s | 145 Mo par heure |
+| **192** | qualité intermédiaire, 192 kbit/s | 85 Mo par heure |
+| **128** | économie de données, 128 kbit/s | 60 Mo par heure |
+
+Par défaut : **Originale** en Wi-Fi, **192** en données mobiles. Un fichier déjà plus léger que le niveau choisi est envoyé tel quel. C'est le serveur qui convertit ; si l'administrateur a fixé une limite plus basse pour votre compte ou le serveur, c'est elle qui l'emporte.
+
+## Pour aller plus loin
+
+- [Musonic en voiture](/fr/docs/apps/android-auto/) : l'onglet Téléchargés sur l'écran de la voiture.
+- [Se connecter à un serveur](/fr/docs/apps/sign-in/) : adresses et erreurs.

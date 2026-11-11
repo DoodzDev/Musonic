@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 380" role="img" aria-labelledby="t d">
+<title id="t">HTTPS in front of the server</title>
+<desc id="d">Devices reach the server over HTTPS through a reverse proxy or tunnel on the server machine, which passes requests in plain HTTP to Musonic Server on 127.0.0.1:4533; port 4533 is never opened.</desc>
+<defs><marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0.8 L10 5 L0 9.2 Z" fill="#7D7B77"/></marker><marker id="aho" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0.8 L10 5 L0 9.2 Z" fill="#FF6B35"/></marker><marker id="asg" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M10 0.8 L0 5 L10 9.2 Z" fill="#7D7B77"/></marker><marker id="aso" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M10 0.8 L0 5 L10 9.2 Z" fill="#FF6B35"/></marker></defs>
+<rect x="20" y="110" width="150" height="130" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<g transform="translate(48 130) scale(1.5)" fill="none" stroke="#B1AFAB" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/></g>
+<g transform="translate(88 130) scale(1.66667)" fill="none" stroke="#B1AFAB" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="5" width="15" height="10" rx="1.5"/><path d="M2 18.5h20"/></g>
+<text x="95" y="200.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#F1F0EE" text-anchor="middle"><tspan x="95" dy="0">Your devices,</tspan><tspan x="95" dy="18">anywhere</tspan></text>
+<path d="M170 175 L368 175" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<g transform="translate(259 146) scale(0.833333)" fill="none" stroke="#B1AFAB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></g>
+<text x="269" y="200" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" fill="#B1AFAB" text-anchor="middle">https://music.example.com</text>
+<g transform="translate(360 120) scale(4.58333)" fill="none" stroke="#B1AFAB" stroke-width="0.327273" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.2 4.7 4.7 0 0 0 7 18.5z"/></g>
+<text x="415" y="192" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#F1F0EE" text-anchor="middle" font-weight="600">Internet</text>
+<rect x="560" y="30" width="380" height="330" rx="12" fill="none" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="580" y="60" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#B1AFAB" text-anchor="start" font-weight="600">Server machine</text>
+<path d="M470 175 L580 145" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<g transform="translate(512 134) scale(0.833333)" fill="none" stroke="#B1AFAB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></g>
+<rect x="580" y="80" width="340" height="112" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="750" y="121.79" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="middle" font-weight="600">Reverse proxy or tunnel</text>
+<text x="750" y="142.67" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#B1AFAB" text-anchor="middle">Caddy, nginx · Cloudflare, Tailscale</text>
+<text x="750" y="161.5" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="middle">HTTPS certificate</text>
+<path d="M750 192 L750 250" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<text x="760" y="226" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="start"><tspan x="760" dy="0">plain HTTP, inside the</tspan><tspan x="760" dy="16">machine</tspan></text>
+<rect x="580" y="250" width="340" height="90" rx="12" fill="#1C1C1E" stroke="#FF6B35" stroke-width="1.5"/>
+<text x="750" y="290.04" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="middle" font-weight="600">Musonic Server</text>
+<text x="750" y="310.92" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#B1AFAB" text-anchor="middle">127.0.0.1:4533</text>
+<path d="M430 232 L430 295 L574 295" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5" marker-end="url(#ahg)"/>
+<g transform="translate(490 283) scale(1)" fill="none" stroke="#B1AFAB" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></g>
+<text x="430" y="325" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="start">port 4533 never opened</text>
+</svg>

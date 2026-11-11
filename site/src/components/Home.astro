@@ -5,7 +5,7 @@
  *   screenshot, a word for people a relative set it up for, then one row per part (app, web,
  *   server) and the benchmark in one sentence.
  * @author DoodzProg
- * @version 0.2.0
+ * @version 0.3.0
  * @license CC-BY-NC-4.0
  */
 import Base from './Base.astro';
@@ -19,19 +19,19 @@ const apk = 'https://github.com/DoodzDev/Musonic/releases/latest/download/Musoni
 const t = {
   en: {
     title: 'Musonic: your server, your data, your music',
-    description: 'A music app for Android and iOS, a web player and a server that runs at home. No ads, no subscription.',
+    description: 'A music app for Android, a web player for your computer and your iPhone, and a server that runs at home. No ads, no subscription.',
     h1: 'Your server, your data. And your music.',
-    lead: 'An app for Android and iOS, a player in the browser and a server that runs at home. No ads, no subscription, and you can add your own files, even songs no platform has.',
+    lead: 'An Android app, a player in the browser (on iPhone too) and a server that runs at home. No ads, no subscription, and you can add your own files, even songs no platform has.',
     download: 'Download for Android',
-    ios: 'iOS (manual install)',
+    ios: 'On iPhone? Use the web player',
     tryWeb: 'Try it in the browser',
     installServer: 'Install the server',
     fine: 'Free · public code · non-commercial licence',
     shotAlt: 'The Musonic web player: home page with recently played albums and favourite artists.',
     noteTitle: 'Someone installed Musonic for you?',
-    note: 'There is nothing more to learn: they look after the server, and the app works like the other music apps. Coming from Spotify or Deezer? Import your playlists from the Library. One thing is different: updates do not come from the Play Store or the App Store. The app tells you when one is out and gives you the link.',
+    note: 'There is nothing more to learn: they look after the server, and the app works like the other music apps. Coming from Spotify or Deezer? Import your playlists from the Library. One thing is different: updates do not come from the Play Store. The app tells you when one is out and gives you the link.',
     rows: [
-      { img: '/assets/img/screenshots/landscape_home.jpg', alt: 'The Musonic app in landscape: home page.', h: 'The app on your phone', p: 'Synced lyrics, mixes built from what you listen to, crossfade, podcasts, downloads for places without signal, and Android Auto in the car.', link: ['About the app', '/mobile/'] },
+      { img: '/assets/img/screenshots/landscape_home.jpg', alt: 'The Musonic app in landscape: home page.', h: 'The Android app', p: 'Synced lyrics, mixes built from what you listen to, crossfade, podcasts, downloads for places without signal, and Android Auto in the car.', link: ['About the app', '/mobile/'] },
       { img: '/assets/img/screenshots/web/album-en.jpg', alt: 'Musonic in a browser: an album page.', h: 'In your browser', p: 'The same home, mixes, lyrics and playlists on a big screen, nothing to install. Import your Spotify, Deezer and YouTube Music playlists from a link.', link: ['Open the web player', '/app/'] },
       { img: '/assets/img/screenshots/console/dashboard-en.jpg', alt: 'The administration console of Musonic Server: dashboard.', h: 'The server, at home', p: 'Your files stay on your disk. Accounts for your family and friends, podcasts, devices that pass the music to each other (Musonic Connect, beta), and a console to run it all.', link: ['About the server', '/server/'] },
     ],
@@ -40,19 +40,19 @@ const t = {
   },
   fr: {
     title: 'Musonic : votre serveur, vos données, ta musique',
-    description: 'Une appli de musique Android et iOS, un lecteur web et un serveur qui tourne chez vous. Pas de pub, pas d\'abonnement.',
+    description: 'Une appli de musique Android, un lecteur web pour votre ordinateur et votre iPhone, et un serveur qui tourne chez vous. Pas de pub, pas d\'abonnement.',
     h1: 'Votre serveur, vos données. Et ta musique.',
-    lead: 'Une appli Android et iOS, un lecteur web et un serveur qui tourne chez vous. Pas de pub, pas d\'abonnement, et vous pouvez ajouter vos propres fichiers, même les chansons qu\'aucune plateforme n\'a.',
+    lead: 'Une appli Android, un lecteur web (sur iPhone aussi) et un serveur qui tourne chez vous. Pas de pub, pas d\'abonnement, et vous pouvez ajouter vos propres fichiers, même les chansons qu\'aucune plateforme n\'a.',
     download: 'Télécharger pour Android',
-    ios: 'iOS (installation manuelle)',
+    ios: 'Sur iPhone ? Utilisez le lecteur web',
     tryWeb: 'Essayer dans le navigateur',
     installServer: 'Installer le serveur',
     fine: 'Gratuit · code public · licence non commerciale',
     shotAlt: 'Le lecteur web de Musonic : l\'accueil avec les albums écoutés récemment et les artistes préférés.',
     noteTitle: 'Un proche vous a installé Musonic ?',
-    note: 'Vous n\'avez rien de plus à savoir : c\'est lui qui s\'occupe du serveur, et l\'appli s\'utilise comme les autres. Vous venez de Spotify ou de Deezer ? Importez vos playlists depuis la Bibliothèque. Une seule chose change : les mises à jour ne passent ni par le Play Store ni par l\'App Store. L\'appli vous prévient et vous donne le lien.',
+    note: 'Vous n\'avez rien de plus à savoir : c\'est lui qui s\'occupe du serveur, et l\'appli s\'utilise comme les autres. Vous venez de Spotify ou de Deezer ? Importez vos playlists depuis la Bibliothèque. Une seule chose change : les mises à jour ne passent pas par le Play Store. L\'appli vous prévient et vous donne le lien.',
     rows: [
-      { img: '/assets/img/screenshots/landscape_home.jpg', alt: 'L\'appli Musonic en paysage : l\'accueil.', h: 'L\'appli sur votre téléphone', p: 'Paroles synchronisées, mix construits à partir de ce que vous écoutez, fondu entre les titres, podcasts, téléchargements pour les endroits sans réseau, et Android Auto en voiture.', link: ['Découvrir l\'appli', '/mobile/'] },
+      { img: '/assets/img/screenshots/landscape_home.jpg', alt: 'L\'appli Musonic en paysage : l\'accueil.', h: 'L\'appli Android', p: 'Paroles synchronisées, mix construits à partir de ce que vous écoutez, fondu entre les titres, podcasts, téléchargements pour les endroits sans réseau, et Android Auto en voiture.', link: ['Découvrir l\'appli', '/mobile/'] },
       { img: '/assets/img/screenshots/web/album-fr.jpg', alt: 'Musonic dans un navigateur : une page d\'album.', h: 'Dans votre navigateur', p: 'Le même accueil, les mêmes mix, paroles et playlists sur un grand écran, rien à installer. Importez vos playlists Spotify, Deezer et YouTube Music depuis un lien.', link: ['Ouvrir le lecteur web', '/app/'] },
       { img: '/assets/img/screenshots/console/dashboard-fr.jpg', alt: 'La console d\'administration de Musonic Server : le tableau de bord.', h: 'Le serveur, chez vous', p: 'Vos fichiers restent sur votre disque. Des comptes pour votre famille et vos amis, des podcasts, des appareils qui se passent la musique (Musonic Connect, bêta), et une console pour tout gérer.', link: ['Découvrir le serveur', '/server/'] },
     ],

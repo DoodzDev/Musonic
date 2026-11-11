@@ -1,0 +1,204 @@
+---
+title: First start
+description: How to create the administrator account of Musonic Server, open and sign in to the console, check the first scan, install the web player and invite people with a link.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+This page takes you from a server that answers to people listening: your administrator account, the console, the first scan, the web player, and the invitations. Do it once, right after [installing with Docker](/docs/install/docker/) or [without Docker](/docs/install/binary/).
+
+**What you need**
+
+- Musonic Server installed and answering (`curl http://127.0.0.1:4533/health` gives `{"status":"ok"}`).
+- A terminal on the server machine.
+- A browser, on the server machine or on another computer.
+
+## 1. Create the administrator account
+
+The first account is created on the command line. There is no account at all before it, and nobody can sign in.
+
+<Steps>
+
+1. **Run the command for your install.**
+
+   <Tabs syncKey="install">
+   <TabItem label="Docker">
+
+   From the folder of the server (where `compose.yml` is):
+
+   ```sh
+   cd ~/musonic-server
+   docker compose exec musonic-server musonic-server user add <name> --admin
+   ```
+
+   </TabItem>
+   <TabItem label="Without Docker">
+
+   ```sh
+   sudo -u <user> env MUSONIC_CONFIG=/etc/musonic-server/config.toml /opt/musonic-server/musonic-server user add <name> --admin
+   ```
+
+   `<user>` is the user of the service (the `User=` line of the service).
+
+   </TabItem>
+   </Tabs>
+
+   `<name>` is the name you will sign in with, for example `alice`.
+
+2. **Type your password, then press Enter.**
+
+   The command shows `Password for <name>:`. The password **shows on the screen as you type it**: make sure nobody is looking.
+
+3. **Check the answer.**
+
+   It says `created <name> (administrator)`. Your account exists.
+
+</Steps>
+
+`--admin` makes the account an administrator: it can sign in to the console. Without `--admin`, the command creates a regular user. Names are unique, upper and lower case do not matter.
+
+<Aside type="tip" title="Without typing the password">
+The command also reads the password from the environment variable `MUSONIC_PASSWORD`, for scripts. Typed on a command line, it would stay in your shell history: prefer typing it when asked.
+</Aside>
+
+## 2. Open the console
+
+The console is at the **address of the server itself**. The page you get depends on where your browser is:
+
+| Your browser is | Open |
+|---|---|
+| On the server machine | `http://127.0.0.1:4533` |
+| On another computer, HTTPS already set up | `https://music.example.com` (your address) |
+| On another computer, before HTTPS | Through an SSH tunnel (below) |
+
+**The SSH tunnel.** The server only listens on the machine itself (`127.0.0.1:4533`). From your computer, this command carries your computer's port 4533 to the server's:
+
+```sh
+ssh -L 4533:127.0.0.1:4533 <account>@<server-address>
+```
+
+`<account>` is your account on the server machine, `<server-address>` its address (for example `192.168.1.20`). Leave this window open, and open `http://localhost:4533` in the browser of your computer.
+
+## 3. Sign in
+
+<Steps>
+
+1. **Type your name and password, then click "Sign in".**
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/01-console-sign-in.en.webp" alt="The sign-in page of the console: the title Musonic Console, the text For this server's administrators, the Name and Password fields and the Sign in button." />
+
+2. **The dashboard opens.**
+
+   The menu on the left has every page of the console; the bar at the top shows the live state of the server.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/02-dashboard.en.webp" alt="The console's dashboard right after the first start: the left menu (Dashboard, Accounts, Devices and security, Library, Imports, Playback, Data, Settings and maintenance, Activity, Administration log) and the cards with the number of songs, albums and accounts." />
+
+</Steps>
+
+Only administrators can sign in to the console. A regular account sees "You are not an administrator": it listens with the apps, which are the same for every account.
+
+The console remembers your session in this browser. **Sign out** is the arrow next to your name, at the bottom of the menu.
+
+## 4. Check the first scan
+
+The server starts scanning your music folder **on its own** at its first start, and then watches it: a file you add later shows up without doing anything.
+
+<Steps>
+
+1. **Click "Library" in the menu.**
+
+   The top of the page shows the number of songs and the time of the last scan.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/03-library.en.webp" alt="The Library page of the console after the first scan: the number of songs and the time of the last scan at the top, the Quick scan and Full scan buttons, and the list of songs with their title, artist, album, format and source." />
+
+2. **If songs are missing, click "Quick scan".**
+
+   A quick scan reads only the folders that changed. **Full scan** reads every file again (after editing many tags, for example).
+
+</Steps>
+
+"No music folder is set on this server" means the server has no music folder: check the music folder line of `compose.yml` (Docker) or `music_dir` (without Docker). An empty list after a scan usually means a permission problem: see [Install with Docker](/docs/install/docker/#user-and-permissions). How the scan reads your files: [Scan and updates](/docs/library/scan/) and [Organise your files](/docs/library/organize/).
+
+## 5. Install the web player on your server (optional)
+
+Your server can also serve the web player, at the address of the server followed by `/app/` (for example `https://music.example.com/app/`), already set to connect to it. You can also use the [web player of this site](/docs/apps/web/), with your server's address.
+
+<Steps>
+
+1. **Click "Settings and maintenance" in the menu.**
+
+2. **In "Musonic Web on this server", click "Install".**
+
+   The server downloads the newest web player from the GitHub releases of Musonic.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/04-webapp-install.en.webp" alt="The Settings and maintenance page of the console, the Musonic Web on this server section with Not installed, the latest version on GitHub and the Install button." />
+
+3. **Click "Open" to try it.**
+
+</Steps>
+
+Later, the same section shows **Update** when a newer web player exists. Nothing is installed on its own.
+
+## 6. Invite people
+
+Each person creates their own account from a link: they choose their name and password, and you never see the password.
+
+<Aside type="caution" title="Open the console at its final address first">
+The invitation link starts with the address shown in your browser. Created from `http://localhost:4533`, it would only work on your computer. Create invitations once the console is open at the address people will use (for example `https://music.example.com`): see [HTTPS](/docs/install/https/).
+</Aside>
+
+<Steps>
+
+1. **Click "Accounts" in the menu, then "Invite someone".**
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/05-accounts.en.webp" alt="The Accounts page of the console: the list with the administrator account, the Invite someone button at the top right, and the Invitations section below with No invitation yet." />
+
+2. **Fill in the invitation, then click "Create the invitation".**
+
+   **Note**: for you only, to find the invitation in the list ("Invitation for my cousin Lea"). **Role**: User, or Administrator. **Valid**: 1 h, 24 h, 7 days (the default), 30 days, or a custom length.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/06-invite-form.en.webp" alt="The Invite someone window: the Note field filled with Invitation for my cousin Lea, the Role choice set to User, the Valid choice set to 7 d, and the Create the invitation button." />
+
+3. **Click "Copy", and send the link to the person.**
+
+   By message, by e-mail, as you like. **The link is shown only now**: if you lose it, cancel the invitation and create a new one.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/07-invite-link.en.webp" alt="The Invite someone window after creation: Link to send (shown once), with the link https://music.example.com/invite/… and the Copy button, and the Done button." />
+
+</Steps>
+
+**What the person sees.** The link opens a page of your server, without signing in:
+
+<Steps>
+
+1. **They choose a name and a password, then click "Create my account".**
+
+   The password needs at least 8 characters. A link works once, until the date written under the button.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/08-invite-page.en.webp" alt="The invitation page: the title Welcome to Musonic, the text alice invites you. Choose your name and your password, the Name, Password and Confirm the password fields, and the Create my account button." />
+
+2. **The page says "Your account is ready" and shows the server's address.**
+
+   They sign in to the app with this address, their name and their password.
+
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/09-invite-done.en.webp" alt="The page Your account is ready, with the server's address https://music.example.com in a box and the text and sign in with the name and password you just chose." />
+
+</Steps>
+
+The invitation list of the **Accounts** page shows each invitation's state: pending, used by whom, expired or cancelled. Rights, quotas, password reset links and suspensions are explained in [Accounts, rights and devices](/docs/admin/accounts/).
+
+## 7. Sign in to the apps
+
+In each app, you enter three things: the **server's address**, your **name** and your **password**.
+
+- **Android app**: "Server URL", "Username", "Password", then "Connect". See [Install the Android app](/docs/apps/android/).
+- **Web player** (computer, iPhone, iPad): "Server address", "Username", "Password", then "Sign in". See [The web player](/docs/apps/web/) and [On iPhone and iPad](/docs/apps/iphone/).
+- **Other Subsonic apps**: the same three things. See [Other Subsonic apps](/docs/apps/other-clients/).
+
+The address is the one of the server, with `https://` (for example `https://music.example.com`). At home, the Android app also accepts an `http://` address of your home network, such as `http://192.168.1.20:4533`. Step-by-step pictures: [Sign in to a server](/docs/apps/sign-in/).
+
+## Next steps
+
+- [Reach it from outside (HTTPS)](/docs/install/https/).
+- [The console](/docs/admin/console/): every page in detail.
+- [Backups and restore](/docs/admin/backups/).

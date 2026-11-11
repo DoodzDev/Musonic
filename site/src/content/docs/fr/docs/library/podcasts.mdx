@@ -1,0 +1,106 @@
+---
+title: Les podcasts sur votre serveur
+description: Comment Musonic Server trouve et lit les flux de podcasts, à quelle fréquence il les rafraîchit, ce qu'il garde, et comment ajouter la clé gratuite et facultative qui élargit la recherche.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Cette page s'adresse à la personne qui fait tourner le serveur : comment les podcasts fonctionnent côté serveur, ce qu'il contacte, ce qu'il garde, et le seul réglage facultatif. Écouter des podcasts dans les applis ne vous demande rien.
+
+**Ce qu'il vous faut**
+
+- Rien, pour que les podcasts fonctionnent : ils sont actifs dès que le serveur tourne.
+- Si vous le souhaitez, un compte administrateur et une clé gratuite de Podcast Index, pour une recherche plus large (voir [Élargir la recherche de podcasts](#élargir-la-recherche-de-podcasts)).
+
+## Comment ça marche
+
+- **La recherche** part de votre serveur vers **l'annuaire de podcasts d'iTunes** (sans clé). Les résultats sont gardés une journée. Avec une clé Podcast Index, le serveur cherche aussi dans Podcast Index en même temps : il trouve les émissions que l'annuaire d'iTunes ne connaît pas ou liste sans leur flux, et **les épisodes où une personne intervient** (comme animateur ou invité).
+- **Suivre une émission** lit son flux RSS tout de suite. Le serveur comprend le RSS 2.0 avec les balises iTunes et Podcasting 2.0 que publient la plupart des hébergeurs : durée, chapitres, transcriptions. Les éléments sans audio sont ignorés.
+- **Toutes les heures**, le serveur relit le flux de chaque émission suivie par quelqu'un, l'une après l'autre. Il envoie le dernier `ETag` / `Last-Modified` du flux, si bien qu'un flux inchangé ne coûte qu'une réponse courte. Une émission est aussi relue quand quelqu'un l'ouvre et qu'elle a été lue il y a plus d'une heure. Les clients qui ont une action « rafraîchir les podcasts » (Subsonic `refreshPodcasts`) lancent en arrière-plan un rafraîchissement de toutes les émissions suivies.
+- **Les épisodes se lisent à travers votre serveur** : il relaie l'audio depuis l'hébergeur de l'émission, avec déplacement dans l'épisode. L'hébergeur voit l'adresse de votre serveur, jamais celle de vos auditeurs. Les images des épisodes viennent aussi de l'hébergeur, en passant par le serveur.
+- **Les transcriptions** publiées par une émission (`podcast:transcript`, WebVTT ou SRT) s'affichent dans les applis comme des paroles synchronisées.
+
+<img class="diagram" src="/assets/img/docs/diagrams/podcasts-server.fr.svg" alt="Schéma : les applis ne parlent qu'à Musonic Server ; le serveur cherche dans l'annuaire d'iTunes (et dans Podcast Index si une clé est réglée), lit chaque heure le flux RSS des émissions suivies, et relaie l'audio et les images des épisodes depuis l'hébergeur ; la base garde émissions, épisodes, qui suit quoi et la position de chaque compte." />
+
+## Ce qui est gardé, et pour qui
+
+| Gardé | Où | Partagé ou par compte |
+|---|---|---|
+| Les émissions et leurs épisodes (titres, descriptions, dates, durées, adresses) | La base (`musonic.db` dans le dossier des données) | Partagé : une émission suivie par deux comptes est lue une seule fois. |
+| Qui suit quelle émission | La base | Par compte. |
+| Où chaque compte s'est arrêté dans chaque épisode, et ce qu'il a fini | La base | Par compte. Un épisode compte comme écouté au-delà de 95 %. |
+| L'audio des épisodes | **Pas gardé** : relayé depuis l'hébergeur à chaque écoute | — |
+
+Une émission que quelqu'un a seulement regardée (jamais suivie, personne n'y a de position) est supprimée au bout d'une semaine. Quand un compte arrête de suivre une émission, elle reste tant que quelqu'un d'autre la suit.
+
+## Élargir la recherche de podcasts
+
+Une clé Podcast Index est gratuite, et facultative. Elle ajoute la recherche par personne et les émissions que l'annuaire d'iTunes ne connaît pas.
+
+<Steps>
+
+1. **Créez un compte gratuit sur [api.podcastindex.org/signup](https://api.podcastindex.org/signup).**
+
+   Podcast Index vous donne une **API Key** et un **API Secret**.
+
+2. **Dans la console, cliquez sur « Imports » dans la partie « Musique » du menu, et descendez jusqu'à « Podcasts ».**
+
+   Le bloc indique le nombre d'émissions suivies et d'épisodes, et si une clé est réglée.
+
+   <img class="shot-wide" src="/assets/img/docs/library-podcasts/01-podcasts-block.fr.webp" alt="Le bloc Podcasts en bas de la page Imports de la console : « Podcast Index · N émissions suivies · N épisodes », la ligne « Clé absente : seul l'annuaire iTunes est utilisé (pas de recherche par personne). » et le bouton Ajouter la clé à droite." />
+
+3. **Cliquez sur « Ajouter la clé ».**
+
+4. **Collez l'API Key et l'API Secret, puis cliquez sur « Vérifier et enregistrer ».**
+
+   Le serveur teste la clé auprès de Podcast Index avant de la garder. Si elle est refusée, vérifiez que vous avez copié les deux valeurs en entier.
+
+   <img class="shot-wide" src="/assets/img/docs/library-podcasts/02-podcast-index-key.fr.webp" alt="La fenêtre Clé Podcast Index de la console : la ligne d'aide sur l'inscription gratuite, les champs API Key et API Secret (le secret masqué), la note indiquant qu'elle est gardée dans la base du serveur, et les boutons Annuler et Vérifier et enregistrer." />
+
+5. **Vérifiez que le bloc indique maintenant que la recherche par personne est activée.**
+
+   C'est immédiat, sans redémarrage.
+
+</Steps>
+
+Vous pouvez aussi régler la clé dans l'environnement plutôt que dans la console. Une clé enregistrée dans la console l'emporte sur l'environnement.
+
+<Tabs>
+<TabItem label="Docker">
+
+```yaml
+    environment:
+      MUSONIC_PODCASTINDEX_KEY: "<api-key>"
+      MUSONIC_PODCASTINDEX_SECRET: "<api-secret>"
+```
+
+Puis `docker compose up -d`. `<api-key>` et `<api-secret>` sont les deux valeurs que Podcast Index vous a données.
+
+</TabItem>
+<TabItem label="Programme">
+
+```sh
+export MUSONIC_PODCASTINDEX_KEY="<api-key>"
+export MUSONIC_PODCASTINDEX_SECRET="<api-secret>"
+```
+
+Puis relancez `musonic-server`.
+
+</TabItem>
+</Tabs>
+
+<Aside type="note">
+La clé est gardée dans la base du serveur, donc aussi dans ses sauvegardes quotidiennes : rangez les sauvegardes téléchargées en lieu sûr.
+</Aside>
+
+## Limites et sécurité
+
+- **Seulement des adresses publiques.** Flux, audio et images ne sont récupérés que depuis des adresses de l'internet public : un flux qui pointe vers votre réseau local, vers `localhost` ou vers un autre conteneur est refusé. Un podcast hébergé uniquement sur votre réseau domestique ne peut pas être suivi.
+- Un flux de plus de 20 Mo, ou une image de plus de 15 Mo, est refusé. Les requêtes vers les hébergeurs abandonnent après 20 secondes.
+- Il n'y a pas de réglage pour couper les podcasts, ni de droit par compte : chaque compte peut chercher et suivre des émissions.
+- Ce que le serveur contacte : l'annuaire d'iTunes pour les recherches, Podcast Index si une clé est réglée, et les hébergeurs des émissions que vos comptes suivent ou ouvrent.
+
+## Et ensuite
+
+- [Catalogue en ligne et imports](/fr/docs/library/online-catalogue/) : la musique que le serveur trouve au-delà de vos fichiers.
+- [Scanner votre bibliothèque](/fr/docs/library/scan/) : vos propres fichiers de musique.

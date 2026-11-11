@@ -1,0 +1,183 @@
+---
+/**
+ * @file About.astro
+ * @description About page, in either language: who makes Musonic and why, its principles, the
+ *   licences in plain words, how AI is used, what Musonic does not do yet, the benchmark in two
+ *   figures, and the project's links.
+ * @author DoodzProg
+ * @version 0.1.0
+ * @license CC-BY-NC-4.0
+ */
+import Base from './Base.astro';
+import { localePath, type Lang } from '../i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const L = (p: string) => localePath(p, lang);
+const gh = 'https://github.com/DoodzDev/Musonic';
+
+const t = {
+  en: {
+    title: 'About Musonic: who makes it and why',
+    description: 'Who makes Musonic and why, its principles, its licences, how AI is used, what it does not do yet, and how it compares with Navidrome.',
+    h1: 'About Musonic',
+    lead: 'Musonic is made by one person: me, Doodz. I write the server, the Android app, the web player and the console together.',
+    whyTitle: 'Why',
+    why: [
+      'I wanted to host my music myself. The existing servers and Subsonic apps work, but it felt like an MP3 player: a dull interface, no suggestions, nothing around it. What I wanted did not exist, so I made it.',
+      'Most self-hosted setups pair a server with apps made by other people. They talk through Subsonic, a protocol written years ago, so each side can only do what it allows. I write both sides: when I want something new, such as moving playback from the phone to the computer, I add it to both at the same time. Musonic Server still speaks Subsonic, so your Subsonic apps keep working.',
+    ],
+    principlesTitle: 'Principles',
+    principles: [
+      ['Your files stay yours', 'Your music stays on your disk, on your server. Nothing is uploaded anywhere.'],
+      ['No ads, no subscription', 'No account to create with me, nothing to pay.'],
+      ['No tracking', 'Neither the apps nor the server report how you use them or when they crash. What leaves your server is listed in the documentation.'],
+      ['Said as it is', 'The benchmark shows where Navidrome is ahead too, and the limits are on this page.'],
+    ],
+    privacyLink: 'Privacy and network',
+    licenceTitle: 'Licences',
+    licence: 'The code is public on GitHub, under non-commercial licences: the apps under CC BY-NC 4.0, the server under PolyForm Noncommercial 1.0.0. In plain words: you may use Musonic for free, read the code, change it and share it, keeping my name on it, but never to make money. These licences are not « open source » in the official sense, because they forbid commercial use.',
+    licenceLink: 'The licences in detail',
+    aiTitle: 'How AI is used',
+    ai: 'I organise everything and an AI writes most of the code. I make the decisions, draw the screens down to the pixel, bring the ideas, test on real phones and document every step and every mistake so it does not happen twice. The AI fills in the programming I cannot do. The method and every figure are public, including where Musonic is behind.',
+    limitsTitle: 'What Musonic does not do yet',
+    limitsLead: 'Things other servers have and Musonic does not, today:',
+    limits: [
+      'smart playlists (filled by rules)',
+      'several music libraries (one music folder only)',
+      'scrobbling to Last.fm or ListenBrainz (plays are counted on your server only)',
+      'public share links for a song, an album or a playlist',
+      'ReplayGain, every song at the same loudness',
+      'jukebox mode (playing on the server\'s own speakers)',
+      'sign-in handled by a reverse proxy',
+      'importing .m3u playlists',
+      'plugins loaded while the server runs',
+    ],
+    limitsNote: 'Missing something else? Ask for it in an issue.',
+    benchTitle: 'Measured against Navidrome',
+    bench: [
+      ['1.8 s', ' to scan the whole library, against 18.9 s for Navidrome; '],
+      ['19.5 MB', ' of memory at rest, against 100 MB.'],
+    ],
+    benchContext: 'Both servers on the same small ARM server (2 cores), with the same library of 1,871 files, one at a time, three passes each. 36 measures in all, including the few where Navidrome is ahead.',
+    benchLink: 'The whole benchmark',
+    linksTitle: 'The project',
+    links: [
+      ['The code on GitHub', gh],
+      ['Report a problem or ask for a feature', gh + '/issues'],
+      ['Every version and what changed', gh + '/releases'],
+      ['Frequent questions', '/docs/about/faq/'],
+    ],
+  },
+  fr: {
+    title: 'À propos de Musonic : qui le fait et pourquoi',
+    description: 'Qui fait Musonic et pourquoi, ses principes, ses licences, l\'usage de l\'IA, ce qu\'il ne fait pas encore, et la comparaison avec Navidrome.',
+    h1: 'À propos de Musonic',
+    lead: 'Musonic est fait par une seule personne : moi, Doodz. J\'écris ensemble le serveur, l\'appli Android, le lecteur web et la console.',
+    whyTitle: 'Pourquoi',
+    why: [
+      'Je voulais héberger ma musique moi-même. Les serveurs et les applis Subsonic existants marchent, mais on se croyait sur un lecteur MP3 : une interface terne, aucune suggestion, rien autour. Ce que je voulais n\'existait pas, alors je l\'ai fait.',
+      'La plupart des installations auto-hébergées associent un serveur à des applis faites par d\'autres. Ils se parlent par Subsonic, un protocole écrit il y a des années, et chaque côté ne peut faire que ce qu\'il permet. J\'écris les deux côtés : quand je veux quelque chose de nouveau, comme passer la lecture du téléphone à l\'ordinateur, je l\'ajoute aux deux en même temps. Musonic Server parle toujours Subsonic, donc vos applis Subsonic continuent de marcher.',
+    ],
+    principlesTitle: 'Principes',
+    principles: [
+      ['Vos fichiers restent à vous', 'Votre musique reste sur votre disque, sur votre serveur. Rien n\'est envoyé ailleurs.'],
+      ['Pas de pub, pas d\'abonnement', 'Aucun compte à créer chez moi, rien à payer.'],
+      ['Pas de pistage', 'Ni les applis ni le serveur ne rapportent votre utilisation ou leurs plantages. Ce qui sort de votre serveur est listé dans la documentation.'],
+      ['Dit tel quel', 'Le benchmark montre aussi où Navidrome est devant, et les limites sont sur cette page.'],
+    ],
+    privacyLink: 'Vie privée et réseau',
+    licenceTitle: 'Licences',
+    licence: 'Le code est public sur GitHub, sous licences non commerciales : les applis sous CC BY-NC 4.0, le serveur sous PolyForm Noncommercial 1.0.0. En clair : vous pouvez utiliser Musonic gratuitement, lire le code, le modifier et le partager, en gardant mon nom dessus, mais jamais pour gagner de l\'argent. Ces licences ne sont pas « open source » au sens officiel, puisqu\'elles interdisent l\'usage commercial.',
+    licenceLink: 'Les licences en détail',
+    aiTitle: 'L\'usage de l\'IA',
+    ai: 'J\'organise tout et une IA écrit l\'essentiel du code. Je prends les décisions, je dessine les écrans au pixel près, j\'apporte les idées, je teste sur de vrais téléphones et je documente chaque étape et chaque erreur pour qu\'elle ne se reproduise pas. L\'IA comble la programmation que je ne sais pas faire. La méthode et tous les chiffres sont publics, y compris là où Musonic est derrière.',
+    limitsTitle: 'Ce que Musonic ne fait pas encore',
+    limitsLead: 'Ce que d\'autres serveurs ont et que Musonic n\'a pas, aujourd\'hui :',
+    limits: [
+      'les playlists intelligentes (remplies par des règles)',
+      'plusieurs bibliothèques musicales (un seul dossier de musique)',
+      'le scrobbling vers Last.fm ou ListenBrainz (les écoutes ne sont comptées que sur votre serveur)',
+      'les liens de partage publics d\'un titre, d\'un album ou d\'une playlist',
+      'ReplayGain, le même volume pour chaque titre',
+      'le mode jukebox (lecture sur les haut-parleurs du serveur)',
+      'la connexion gérée par un reverse proxy',
+      'l\'import de playlists .m3u',
+      'les plugins chargés pendant que le serveur tourne',
+    ],
+    limitsNote: 'Il vous manque autre chose ? Demandez-le dans une issue.',
+    benchTitle: 'Mesuré face à Navidrome',
+    bench: [
+      ['1,8 s', ' pour analyser toute la bibliothèque, contre 18,9 s pour Navidrome ; '],
+      ['19,5 Mo', ' de mémoire au repos, contre 100 Mo.'],
+    ],
+    benchContext: 'Les deux serveurs sur le même petit serveur ARM (2 cœurs), avec la même bibliothèque de 1 871 fichiers, l\'un après l\'autre, trois passages chacun. 36 mesures en tout, y compris les quelques-unes où Navidrome est devant.',
+    benchLink: 'Tout le benchmark',
+    linksTitle: 'Le projet',
+    links: [
+      ['Le code sur GitHub', gh],
+      ['Signaler un problème ou demander une fonction', gh + '/issues'],
+      ['Toutes les versions et ce qui a changé', gh + '/releases'],
+      ['Questions fréquentes', '/docs/about/faq/'],
+    ],
+  },
+}[lang];
+const href = (h: string) => (h.startsWith('/') ? L(h) : h);
+---
+<Base lang={lang} path="/about/" title={t.title} description={t.description} current="about">
+  <section class="wrap hero">
+    <h1>{t.h1}</h1>
+    <p class="lead">{t.lead}</p>
+  </section>
+
+  <section class="wrap block note">
+    <h2>{t.whyTitle}</h2>
+    <div>{t.why.map((p) => <p>{p}</p>)}</div>
+  </section>
+
+  <section class="wrap block">
+    <h2>{t.principlesTitle}</h2>
+    <ul class="facts">
+      {t.principles.map(([h, p]) => (<li><h3>{h}</h3><p>{p}</p></li>))}
+    </ul>
+    <p class="after"><a href={L('/docs/reference/privacy/')}>{t.privacyLink} →</a></p>
+  </section>
+
+  <section class="wrap block note" id="licence">
+    <h2>{t.licenceTitle}</h2>
+    <div>
+      <p>{t.licence}</p>
+      <p><a href={L('/docs/about/license/')}>{t.licenceLink} →</a></p>
+    </div>
+  </section>
+
+  <section class="wrap block note" id="ai">
+    <h2>{t.aiTitle}</h2>
+    <p>{t.ai}</p>
+  </section>
+
+  <section class="wrap block note" id="limits">
+    <h2>{t.limitsTitle}</h2>
+    <div>
+      <p>{t.limitsLead}</p>
+      <ul class="plain">
+        {t.limits.map((x) => <li>{x}</li>)}
+      </ul>
+      <p><a href={gh + '/issues'}>{t.limitsNote}</a></p>
+    </div>
+  </section>
+
+  <section class="wrap block" id="benchmark">
+    <h2>{t.benchTitle}</h2>
+    <p class="figure"><strong>{t.bench[0][0]}</strong>{t.bench[0][1]}<strong>{t.bench[1][0]}</strong>{t.bench[1][1]}</p>
+    <p class="muted">{t.benchContext}</p>
+    <a href={L('/docs/about/benchmark/')}>{t.benchLink} →</a>
+  </section>
+
+  <section class="wrap block note">
+    <h2>{t.linksTitle}</h2>
+    <ul class="links">
+      {t.links.map(([label, h]) => (<li><a href={href(h)}>{label} →</a></li>))}
+    </ul>
+  </section>
+</Base>

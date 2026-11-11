@@ -1,0 +1,131 @@
+---
+title: Podcasts
+description: How to find, follow and listen to podcasts in the Musonic Android app and web player — search, episodes, resuming where you stopped, speed and jumps, and unfollowing a show.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+This page shows how to listen to podcasts in Musonic: find a show, follow it, play its episodes and pick up where you stopped, on any of your devices.
+
+**What you need**
+
+- An account on a **Musonic Server** (podcasts are not available with Navidrome or other servers).
+- The Android app or the web player.
+
+Shows are read by your server from their public RSS feed; the episode audio also goes through your server, so the podcast host never sees you.
+
+## Find a show
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+<Steps>
+
+1. **Open the Search tab and type the name of a show, or of a person.**
+
+2. **Tap the "Podcasts" filter.**
+
+   You get the shows found, then **Episodes with this person** when the server can search by person (see below).
+
+   <img class="shot-phone" src="/assets/img/docs/apps-podcasts/01-search.en.webp" alt="The app's Search with the Podcasts filter selected, a list of shows with their covers, and below it Episodes with this person." />
+
+3. **Tap a show to open its page.**
+
+   An episode found by person opens its show, scrolled to that episode, and plays it.
+
+</Steps>
+
+</TabItem>
+<TabItem label="Web">
+
+<Steps>
+
+1. **Open Search and type the name of a show, or of a person.**
+
+   Shows also appear under **All**.
+
+2. **Click the "Podcasts" filter.**
+
+   <img class="shot-wide" src="/assets/img/docs/apps-podcasts/02-web-search.en.webp" alt="Musonic Web search with the Podcasts filter selected, show cards and the list Episodes with this person." />
+
+3. **Click a show to open its page.**
+
+</Steps>
+
+You can also **paste the address of an RSS feed** (starting with `https://`) in the search field: an **RSS feed** card, **Open this feed**, opens that show.
+
+</TabItem>
+</Tabs>
+
+**Where results come from.** Shows are searched in the Apple Podcasts (iTunes) directory, in the country of your language (France for French, United States otherwise in the app). If the administrator added a **Podcast Index** key in the console, search also finds the shows that directory misses, and the episodes where a person (host or guest) speaks. Without it, **Episodes with this person** does not show.
+
+## Follow a show
+
+<Steps>
+
+1. **On the show's page, tap or click "Follow".**
+
+   The button becomes **Following**. The show is now in your Library.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-podcasts/03-show-page.en.webp" alt="A podcast's page in the app: cover, author, description, the Follow button, and the episodes newest first with their date and length." />
+
+2. **Find it later in Library → Podcasts.**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-podcasts/04-library-podcasts.en.webp" alt="The app's Library on the Podcasts tab, listing the shows followed." />
+
+</Steps>
+
+You can open a show and play its episodes without following it. Your server reads the feeds of followed shows **every hour**: new episodes appear on the show's page by themselves. Musonic does not send notifications for new episodes.
+
+## Listen to an episode
+
+**Tap or click an episode** on the show's page. Episodes are listed newest first, each with its date and its length, or **"12 min left"** when you started it, or **Played** once you listened past 95 %.
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+In the full player, an episode has, in place of Shuffle and Repeat:
+
+- **−15** and **+30**: back 15 seconds, forward 30 seconds;
+- the **speed** button, which shows the current speed; each tap moves to the next one: 1×, 1.25×, 1.5×, 1.75×, 2×, 0.75×.
+
+<img class="shot-phone" src="/assets/img/docs/apps-podcasts/05-episode-player.en.webp" alt="The app's full player playing a podcast episode, with the −15 and +30 buttons and the speed button showing 1.5×." />
+
+Podcasts are also in **Android Auto**: **Library → Podcasts** lists the shows you follow, then their episodes (see [Android Auto](/docs/apps/android-auto/)).
+
+</TabItem>
+<TabItem label="Web">
+
+In place of shuffle and repeat, the player bar shows **−15** and **+30** around the controls, and the **speed** button with the same steps (1×, 1.25×, 1.5×, 1.75×, 2×, 0.75×). The speed is remembered by the browser. On a show's page, **Play** starts the newest episode you have not listened to yet.
+
+<img class="shot-wide" src="/assets/img/docs/apps-podcasts/06-web-episode.en.webp" alt="Musonic Web's player bar playing an episode, with the −15 and +30 buttons and the speed control." />
+
+</TabItem>
+</Tabs>
+
+**Resume where you stopped.** Your place in each episode is saved by your server every few seconds and at pause, for your account. Start the episode again on your phone, in the browser or in the car: it goes on from there. An episode marked **Played** starts again from the beginning.
+
+**Transcripts.** When the show publishes a transcript, the **Lyrics** button shows it, line by line, like synced lyrics. An episode never shows song lyrics.
+
+**No crossfade** between episodes, even when crossfade is on.
+
+## Stop following a show
+
+<Steps>
+
+1. **Open the show's page (Library → Podcasts).**
+2. **Tap or click "Following".**
+
+   The show leaves your Library. Its page can still be found by search.
+
+</Steps>
+
+<Aside type="note" title="Not available for podcasts">
+Episodes cannot be downloaded for offline listening, and they are not added to the queue with your songs: an episode plays on its own, from where you stopped.
+</Aside>
+
+## Next steps
+
+- [Listen to music](/docs/apps/listening/)
+- [Android Auto](/docs/apps/android-auto/)
+- [Podcasts on the server](/docs/library/podcasts/) (for administrators)

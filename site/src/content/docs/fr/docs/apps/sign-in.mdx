@@ -1,0 +1,168 @@
+---
+title: Se connecter à un serveur
+description: Comment se connecter à son serveur de musique dans l'appli Android Musonic, accepter un lien d'invitation, résoudre les erreurs de connexion et se déconnecter.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Cette page explique l'écran de connexion de l'appli Android : quoi taper dans chaque champ, comment fonctionne un lien d'invitation, ce que veut dire chaque message d'erreur, et comment se déconnecter. Elle vaut pour Musonic Server et pour les autres serveurs Subsonic (Navidrome, par exemple).
+
+**Ce qu'il vous faut**
+
+- Musonic installé sur votre téléphone ([Installer l'appli Android](/fr/docs/apps/android/)).
+- L'**adresse** du serveur, votre **identifiant** et votre **mot de passe**. Si quelqu'un gère le serveur pour vous, il vous les donne, ou vous envoie un lien d'invitation.
+
+## Se connecter
+
+<Steps>
+
+1. **Ouvrez Musonic.**
+
+   La première fois, l'appli s'ouvre sur son écran de connexion : le logo Musonic, « Connectez votre serveur Subsonic », et trois champs.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-sign-in/01-sign-in-empty.fr.webp" alt="L'écran de connexion de Musonic, vide : le logo, la ligne « Connectez votre serveur Subsonic », les champs URL du serveur (avec https://), Identifiant et Mot de passe, et le bouton Se connecter grisé." />
+
+2. **Dans « URL du serveur », tapez l'adresse de votre serveur après `https://`.**
+
+   Par exemple `https://music.example.com`. Le champ contient déjà `https://` : gardez-le. Tapez seulement l'adresse, sans `/rest` ni rien après.
+
+3. **Dans « Identifiant », tapez votre identifiant.**
+
+4. **Dans « Mot de passe », tapez votre mot de passe.**
+
+5. **Touchez « Se connecter ».**
+
+   Le bouton laisse place à une roue pendant que Musonic vérifie le serveur, puis « Connecté ! Chargement… » s'affiche en vert et l'Accueil s'ouvre.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-sign-in/02-sign-in-filled.fr.webp" alt="L'écran de connexion rempli : URL du serveur https://music.example.com, un identifiant, un mot de passe masqué, et le message vert « Connecté ! Chargement… » au-dessus du bouton Se connecter." />
+
+</Steps>
+
+### Quelle adresse taper
+
+| Votre serveur est | Tapez | Exemple |
+|---|---|---|
+| Joignable depuis internet, avec un certificat | `https://` et son nom | `https://music.example.com` |
+| Sur votre réseau local | `http://`, son adresse locale et son port | `http://192.168.1.20:4533` |
+
+`4533` est le port de Musonic Server par défaut. En cas de doute, ouvrez la même adresse dans le navigateur du téléphone : Musonic Server répond avec sa console ou une page qui présente le serveur.
+
+**`http://` n'est accepté que sur votre réseau local.** Sur internet, une adresse en `http://` enverrait votre mot de passe sans chiffrement : Musonic la refuse. Ces adresses sont acceptées en `http://` :
+
+- les adresses IPv4 privées : `192.168.x.x`, `10.x.x.x`, `172.16.x.x` à `172.31.x.x` ;
+- les adresses Tailscale, `100.64.x.x` à `100.127.x.x` ;
+- `localhost`, les adresses lien-local et les adresses IPv6 locales (`fc..`, `fd..`, `fe80..`) ;
+- les noms qui finissent par `.local`, `.lan`, `.home.arpa` ou `.internal`, et les noms d'un seul mot comme `http://nas:4533`.
+
+Même dans ce cas, l'appli affiche sous l'adresse : « HTTP au lieu de HTTPS — vos identifiants peuvent transiter en clair. » C'est un rappel, pas une erreur.
+
+<Aside type="caution" title="Les certificats auto-signés ne sont pas acceptés">
+L'appli ne fait confiance qu'aux certificats reconnus par Android lui-même. Un certificat auto-signé, ou émis par votre propre autorité, fait échouer la connexion avec « Serveur introuvable — vérifiez l'URL ». Donnez au serveur un vrai certificat (par exemple un certificat Let's Encrypt gratuit via un proxy inverse), ou utilisez son adresse en `http://` sur votre réseau local.
+</Aside>
+
+### Ce que l'appli garde à la place de votre mot de passe
+
+Votre mot de passe ne sert qu'une fois, pour vous connecter. L'appli garde ensuite autre chose :
+
+- **Musonic Server** : une clé propre à ce téléphone, qui porte son nom (par exemple « Musonic Android · SM-A525F »). Elle apparaît parmi vos appareils dans la console, où elle peut être révoquée. Le mot de passe n'est pas gardé.
+- **Autres serveurs Subsonic** : un jeton calculé à partir du mot de passe. Si le serveur refuse les jetons (c'est le cas de certains serveurs qui vérifient les mots de passe dans un annuaire), c'est le mot de passe lui-même qui reste sur le téléphone.
+
+## Accepter une invitation
+
+Sur Musonic Server, l'administrateur peut vous envoyer un lien d'invitation au lieu de créer votre compte. Vous choisissez vous-même votre nom et votre mot de passe ; l'administrateur ne voit jamais le mot de passe.
+
+<Steps>
+
+1. **Ouvrez le lien d'invitation.**
+
+   Il ressemble à `https://music.example.com/invite/…`. Ouvrez-le dans le navigateur du téléphone, ou sur un ordinateur.
+
+2. **Choisissez votre nom, puis deux fois votre mot de passe.**
+
+   La page indique qui vous invite. Le nom est celui que vous taperez dans « Identifiant » pour vous connecter. Le mot de passe doit faire au moins 8 caractères.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-sign-in/03-invite-page.fr.webp" alt="La page d'invitation dans le navigateur du téléphone : le logo Musonic, « Bienvenue sur Musonic », la ligne « Lea vous invite. Choisissez votre nom et votre mot de passe. », les champs Nom, Mot de passe et Confirmer le mot de passe, le bouton Créer mon compte, et la date de validité du lien." />
+
+3. **Touchez « Créer mon compte ».**
+
+   La page indique « Votre compte est prêt » et affiche l'adresse du serveur à utiliser.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-sign-in/04-invite-ready.fr.webp" alt="La page d'invitation après la création du compte : « Votre compte est prêt », l'adresse du serveur dans un cadre, et la phrase qui invite à se connecter avec le nom et le mot de passe choisis." />
+
+4. **Dans Musonic, connectez-vous avec cette adresse, votre nom et votre mot de passe.**
+
+   Suivez [Se connecter](#se-connecter) ci-dessus.
+
+</Steps>
+
+Un lien d'invitation ne sert **qu'une fois**, jusqu'à la date indiquée sous le formulaire. Quand il ne peut pas servir, la page dit pourquoi :
+
+| La page indique | Que faire |
+|---|---|
+| Ce lien a déjà été utilisé. | Le compte existe : connectez-vous avec. |
+| Ce lien a expiré. Demandez-en un nouveau à l'administrateur. | Demandez un nouveau lien. |
+| Ce lien a été annulé par l'administrateur. | Demandez un nouveau lien. |
+| Ce lien n'existe pas. Vérifiez qu'il est complet. | Le lien a été coupé lors du copier-coller : recopiez-le en entier. |
+| Ce nom est déjà pris, choisissez-en un autre. | Choisissez un autre nom. |
+
+Un **lien de réinitialisation du mot de passe** (`…/reset/…`) fonctionne de la même façon : choisissez deux fois un nouveau mot de passe, puis reconnectez-vous avec dans vos applis.
+
+## Quand la connexion échoue
+
+Le message s'affiche en rouge au-dessus du bouton **Se connecter**.
+
+| Message | Ce qu'il veut dire | Que faire |
+|---|---|---|
+| URL, identifiant et mot de passe requis. | Un champ est vide, ou l'adresse ne commence pas par `http://` ou `https://`. | Remplissez les trois champs ; gardez `https://` au début. |
+| Adresse en HTTP refusée : utilisez HTTPS, ou une adresse de votre réseau local (ex. http://192.168.1.20:4533). | Une adresse en `http://` qui n'est pas sur votre réseau local. | Utilisez l'adresse en `https://`. |
+| Identifiant ou mot de passe incorrect | Le serveur a refusé le compte. | Vérifiez les deux, majuscules comprises. |
+| Serveur introuvable — vérifiez l'URL | Aucune réponse : faute dans l'adresse, serveur éteint, téléphone hors ligne, ou certificat que le téléphone ne reconnaît pas. | Ouvrez l'adresse dans le navigateur du téléphone pour la vérifier. |
+| Connexion trop lente — délai dépassé | Le serveur n'a pas répondu en 8 secondes. | Vérifiez la connexion du téléphone et que le serveur tourne. |
+| Aucun serveur Subsonic à cette adresse — vérifiez l'URL | Quelque chose a répondu, mais pas un serveur de musique (une page web, une box). | Vérifiez l'adresse et le port. |
+| Erreur serveur (404) — vérifiez l'URL | Le serveur a répondu par une erreur 400 et quelques, souvent un mauvais chemin. | Vérifiez l'adresse ; retirez ce qui suit le nom du serveur. |
+| Erreur serveur (502) — le serveur est en panne | Le serveur a répondu par une erreur 500 et quelques, souvent un proxy inverse dont le serveur est arrêté. | Prévenez la personne qui gère le serveur. |
+| Connexion impossible | Un autre problème. | Réessayez ; si cela dure, prévenez la personne qui gère le serveur. |
+
+Les nombres entre parenthèses sont des exemples : l'appli affiche le code envoyé par le serveur.
+
+### Quand l'appli vous renvoie à la connexion
+
+Plus tard, le serveur peut refuser le compte de lui-même. L'appli revient alors à l'écran de connexion, avec votre adresse et votre identifiant déjà remplis, et la raison au-dessus du bouton :
+
+| Message | Pourquoi |
+|---|---|
+| Cet appareil a été déconnecté de votre compte. Reconnectez-vous. | La clé de ce téléphone a été révoquée, depuis la console ou avec « Déconnecter partout ». |
+| Votre compte a été suspendu. Demandez à l'administrateur du serveur. | L'administrateur a suspendu le compte. Rien n'est supprimé. |
+| Votre mot de passe a changé ? Reconnectez-vous avec le nouveau. | Le mot de passe a changé, par exemple après un lien de réinitialisation. |
+
+Tapez votre mot de passe et touchez **Se connecter** : le compte est remplacé, vos téléchargements et vos réglages restent.
+
+## Se déconnecter
+
+<Steps>
+
+1. **Touchez votre photo de profil ronde en haut à droite des écrans principaux.**
+
+   Le panneau Profil s'ouvre, avec votre identifiant et le nom du serveur.
+
+2. **Touchez « Se déconnecter » tout en bas.**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-sign-in/05-profile-logout.fr.webp" alt="Le panneau Profil de Musonic : l'initiale du compte, l'identifiant et le nom du serveur, l'interrupteur Mode hors ligne, Réglages, À propos, et Se déconnecter en rouge tout en bas." />
+
+3. **Confirmez avec « Déconnecter ».**
+
+   L'appli demande d'abord, avec votre identifiant et le nom du serveur, et rappelle qu'il faudra saisir à nouveau votre mot de passe.
+
+</Steps>
+
+La déconnexion supprime la clé de ce téléphone sur Musonic Server (il disparaît de vos appareils) et l'appli oublie le compte. Vos titres téléchargés ne sont pas supprimés.
+
+## Plusieurs comptes ou serveurs
+
+L'appli utilise **un seul compte à la fois** et n'a pas de sélecteur de compte. Pour utiliser un autre compte ou un autre serveur, déconnectez-vous, puis connectez-vous avec l'autre. Vos playlists, vos likes et votre historique restent sur chaque serveur.
+
+## Pour aller plus loin
+
+- [Écouter hors ligne](/fr/docs/apps/offline/) : téléchargements et qualité de streaming.
+- [Musonic en voiture](/fr/docs/apps/android-auto/) : configurer Android Auto.
+- [Installer le serveur avec Docker](/fr/docs/install/docker/) : héberger votre propre serveur.

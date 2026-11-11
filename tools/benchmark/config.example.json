@@ -1,0 +1,62 @@
+{
+ "runs": 3,
+ "samples": 200,
+ "concurrency_seconds": 10,
+ "threads": [
+  1,
+  4,
+  16,
+  64
+ ],
+ "settle_seconds": 60,
+ "password": "__PASSWORD__",
+ "servers": [
+  {
+   "name": "musonic",
+   "kind": "musonic",
+   "port": 4580,
+   "command": [
+    "./musonic-server"
+   ],
+   "add_user": [
+    "./musonic-server",
+    "user",
+    "add",
+    "bench"
+   ],
+   "env": {
+    "MUSONIC_DATA_DIR": "{data}",
+    "MUSONIC_MUSIC_DIR": "/path/to/music",
+    "MUSONIC_BIND": "127.0.0.1:4580",
+    "MUSONIC_ONLINE": "false",
+    "MUSONIC_ONLINE_PREVIEWS": "false",
+    "MUSONIC_IMPORT": "false",
+    "MUSONIC_UPDATE_CHECK": "false",
+    "MUSONIC_FFMPEG": "ffmpeg/ffmpeg",
+    "RUST_LOG": "warn"
+   }
+  },
+  {
+   "name": "navidrome",
+   "kind": "navidrome",
+   "port": 4581,
+   "command": [
+    "./nd/navidrome"
+   ],
+   "env": {
+    "ND_DATAFOLDER": "{data}",
+    "ND_MUSICFOLDER": "/path/to/music",
+    "ND_ADDRESS": "127.0.0.1",
+    "ND_PORT": "4581",
+    "ND_DEVAUTOCREATEADMINPASSWORD": "__PASSWORD__",
+    "ND_SCANNER_SCHEDULE": "0",
+    "ND_ENABLEINSIGHTSCOLLECTOR": "false",
+    "ND_ENABLEEXTERNALSERVICES": "false",
+    "ND_LASTFM_ENABLED": "false",
+    "ND_FFMPEGPATH": "ffmpeg/ffmpeg",
+    "ND_LOGLEVEL": "warn"
+   }
+  }
+ ],
+ "music_dir": "/path/to/music"
+}

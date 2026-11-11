@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" role="img" aria-labelledby="t d">
+<title id="t">Build and release</title>
+<desc id="d">Pushing a mobile-v, web-v or server-v tag starts the matching GitHub Actions workflow, which publishes the signed APK, the Musonic Web zips, or the Docker image, programs, compose.yml and release notes.</desc>
+<defs><marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0.8 L10 5 L0 9.2 Z" fill="#7D7B77"/></marker><marker id="aho" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0.8 L10 5 L0 9.2 Z" fill="#FF6B35"/></marker><marker id="asg" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M10 0.8 L0 5 L10 9.2 Z" fill="#7D7B77"/></marker><marker id="aso" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M10 0.8 L0 5 L10 9.2 Z" fill="#FF6B35"/></marker></defs>
+<rect x="20" y="24" width="150" height="56" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="95" y="55.92" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#F1F0EE" text-anchor="middle" font-weight="600">mobile-v*</text>
+<path d="M170 52 L204 52" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="210" y="24" width="190" height="56" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="305" y="55.64" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#F1F0EE" text-anchor="middle" font-weight="600">android-release.yml</text>
+<path d="M400 52 L434 52" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="440" y="24" width="220" height="56" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="550" y="56.48" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600">Signed APK</text>
+<path d="M660 52 L694 52" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="700" y="24" width="240" height="56" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="820" y="56.48" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600">GitHub release</text>
+<rect x="20" y="142" width="150" height="56" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="95" y="173.92" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#F1F0EE" text-anchor="middle" font-weight="600">web-v*</text>
+<path d="M170 170 L204 170" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="210" y="142" width="190" height="56" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="305" y="173.64" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#F1F0EE" text-anchor="middle" font-weight="600">web-release.yml</text>
+<rect x="440" y="110" width="500" height="56" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="454" y="132.39" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#F1F0EE" text-anchor="start" font-weight="600">Musonic-Web.zip</text>
+<text x="454" y="151" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="start">self-hosting</text>
+<path d="M400 170 L434 138" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="440" y="174" width="500" height="56" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="454" y="196.39" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#F1F0EE" text-anchor="start" font-weight="600">Musonic-Web-app.zip</text>
+<text x="454" y="215" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="start">for /app/ of a server</text>
+<path d="M400 170 L434 202" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="20" y="328" width="150" height="56" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="95" y="359.92" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#F1F0EE" text-anchor="middle" font-weight="600">server-v*</text>
+<path d="M170 356 L204 356" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="210" y="328" width="190" height="56" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="305" y="359.64" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#F1F0EE" text-anchor="middle" font-weight="600">server-release.yml</text>
+<rect x="440" y="256" width="500" height="44" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="454" y="281.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#F1F0EE" text-anchor="start">Docker image (amd64 + arm64) on ghcr.io</text>
+<path d="M400 356 L434 278" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="440" y="308" width="500" height="44" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="454" y="333.5" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5" fill="#F1F0EE" text-anchor="start">musonic-server-…-linux-x86_64.tar.gz / …-aarch64.tar.gz</text>
+<path d="M400 356 L434 330" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="440" y="360" width="500" height="44" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="454" y="385.5" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5" fill="#F1F0EE" text-anchor="start">compose.yml</text>
+<path d="M400 356 L434 382" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="440" y="412" width="500" height="44" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="454" y="437.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#F1F0EE" text-anchor="start">release notes from CHANGELOG</text>
+<path d="M400 356 L434 434" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+</svg>

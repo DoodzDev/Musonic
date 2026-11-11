@@ -1,0 +1,55 @@
+---
+title: Versions and changes
+description: The current versions of the Musonic app, web player and server, where to read what changed in each, and how the release tags work.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+This page tells you which versions are current, where to read what changed, and how to tell the releases apart on GitHub.
+
+## Current versions
+
+| Part | Version | What changed | Release tag |
+|---|---|---|---|
+| Android app (Musonic Mobile) | **2.4.0** | [Changelog](https://github.com/DoodzDev/Musonic/blob/main/apps/mobile/CHANGELOG.md) | `mobile-v2.4.0` |
+| Web player (Musonic Web) | **1.2.0** | [Changelog](https://github.com/DoodzDev/Musonic/blob/main/apps/web/CHANGELOG.md) | `web-v1.2.0` |
+| Musonic Server (with its console) | **1.2.1** | [Changelog](https://github.com/DoodzDev/Musonic/blob/main/apps/server/CHANGELOG.md) | `server-v1.2.1` |
+
+All the downloads are on the [releases page](https://github.com/DoodzDev/Musonic/releases).
+
+<img class="shot-wide" src="/assets/img/docs/about-changelog/01-github-releases.en.webp" alt="The Musonic releases page on GitHub, showing a Musonic Mobile release marked Latest, a Musonic Web release and a Musonic Server release, each with its files" />
+
+## How the releases are organised
+
+The app, the web player and the server live in the same repository but are released separately, each with its own version number and its own tag prefix.
+
+| Tag | Release name | Files |
+|---|---|---|
+| `mobile-vX.Y.Z` | Musonic Mobile X.Y.Z | `Musonic.apk`, the Android app |
+| `web-vX.Y.Z` | Musonic Web X.Y.Z | `Musonic-Web.zip` (to serve at the root of a website) and `Musonic-Web-app.zip` (installed by Musonic Server's console, served at `/app/`) |
+| `server-vX.Y.Z` | Musonic Server X.Y.Z | `compose.yml`, and the program for Linux x86 and ARM (`musonic-server-…-linux-x86_64.tar.gz`, `…-aarch64.tar.gz`) with its console next to it |
+
+- **The release marked "Latest" on GitHub is always the Android app.** That way, the download link `releases/latest/download/Musonic.apk` always gives the newest app, even when a server or web release came out after it.
+- **The server is also published as a Docker image**, `ghcr.io/doodzdev/musonic-server`, with the tags `X.Y.Z`, `X.Y`, `X` and `latest`. For example, version 1.2.1 is tagged `1.2.1`, `1.2`, `1` and `latest`.
+- **The administration console has no release of its own**: it ships inside each server release and Docker image.
+- Before 2026-10-12, the app's releases were tagged `vX.Y.Z`; they were renamed `mobile-vX.Y.Z` that day.
+
+## Reading a version number
+
+Each part follows [semantic versioning](https://semver.org/): `MAJOR.MINOR.PATCH`.
+
+- **PATCH** (1.2.0 → 1.2.1): fixes only.
+- **MINOR** (1.1.0 → 1.2.0): new features, still compatible with the previous version.
+- **MAJOR** (1.x → 2.0): a large change, which may not work like the previous one: read its changelog before you update.
+
+The changelogs follow the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format: each version lists what was **Added**, **Changed**, **Fixed** and, when needed, **Security** fixes. When a feature of an app needs a recent server, the changelog says which server version.
+
+<Aside type="tip">
+You do not have to watch this page. The Android app checks for new versions (profile, then **About**, then **Check for updates**), and the console of Musonic Server shows on its dashboard, in the **Versions** card, the installed version and the latest one on GitHub.
+</Aside>
+
+## Next steps
+
+- [Update the server](/docs/install/update/)
+- [Install the Android app](/docs/apps/android/)
+- [FAQ](/docs/about/faq/)

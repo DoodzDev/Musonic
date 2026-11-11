@@ -1,0 +1,199 @@
+---
+title: Qualité audio
+description: Comment Musonic transporte votre musique du fichier jusqu’à vos oreilles, quand le serveur la convertit, ce que font l’enchaînement sans blanc et le fondu, et ce que Musonic ne fait pas (ReplayGain, bit-perfect).
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Cette page suit le son depuis votre fichier jusqu’à votre enceinte ou votre casque, et indique à chaque étape ce que fait Musonic et ce qu’il laisse à votre téléphone, à votre navigateur ou à votre voiture. Elle s’adresse à tous ceux qui tiennent à la qualité du son ou à leurs données mobiles, et aux administrateurs qui règlent les limites du serveur.
+
+**En bref :**
+
+- Par défaut, en Wi-Fi, l’appli Android et le lecteur web reçoivent **votre fichier tel quel**, sans conversion.
+- Le serveur convertit un titre (avec **ffmpeg**) seulement quand une appli, une limite du compte ou une limite du serveur demande un **débit plus faible**. L’appli Android le fait par défaut en données mobiles (192 kbit/s).
+- Les **téléchargements** de l’appli Android demandent le fichier original.
+- L’enchaînement sans blanc dépend du lecteur de votre téléphone ou de votre navigateur ; le **fondu** est une option à part, désactivée par défaut.
+- Musonic **n’égalise pas** le volume (pas de ReplayGain) et ne promet **aucune lecture bit-perfect** : Android et votre navigateur mixent le son et peuvent le rééchantillonner.
+
+## Le chemin du son
+
+<img class="diagram" src="/assets/img/docs/diagrams/audio-path.fr.svg" alt="Schéma : votre fichier musical est lu par Musonic Server, qui envoie soit le fichier original, soit une copie plus légère faite par ffmpeg ; l’appli Android ou le navigateur le décode ; le mélangeur du système du téléphone ou de l’ordinateur le mêle aux autres sons ; puis il sort vers une enceinte, un casque Bluetooth, un DAC USB ou la voiture." />
+
+1. **Le fichier** est dans votre dossier de musique, sur le serveur (MP3, FLAC, M4A…).
+2. **Le serveur** l’envoie à l’appli : soit le fichier lui-même, soit une copie plus légère que ffmpeg fabrique à la volée (voir [Quand le serveur convertit un titre](#quand-le-serveur-convertit-un-titre)).
+3. **Le lecteur le décode.** Sur Android, le lecteur de l’appli (Media3/ExoPlayer, réglage « Lecteur audio Android », activé par défaut) transforme le fichier compressé en son. Dans le lecteur web, c’est le navigateur qui s’en charge.
+4. **Le mélangeur du système** du téléphone ou de l’ordinateur mêle Musonic aux autres sons (notifications, GPS) et applique le volume du système. Cette étape appartient à Android ou à votre ordinateur, pas à Musonic.
+5. **La sortie** : le haut-parleur du téléphone, un casque filaire, un casque Bluetooth, un DAC USB ou la voiture. La qualité de ce dernier maillon (par exemple le codec Bluetooth) est choisie par votre téléphone et l’appareil, pas par Musonic.
+
+## Avec ou sans perte, simplement
+
+| | Sans perte | Avec perte |
+|---|---|---|
+| Ce que c’est | Une copie exacte de l’enregistrement, seulement compressée, comme un fichier zip. | Un fichier plus petit : les sons qu’on entend à peine sont supprimés. |
+| Formats courants | FLAC, ALAC, WAV, AIFF, WavPack, APE | MP3, AAC (M4A), Opus, Vorbis (OGG), WMA |
+| Taille, une heure | Souvent 200 à 400 Mo pour du FLAC qualité CD (selon la musique) | Environ 145 Mo à 320 kbit/s, 85 Mo à 192, 60 Mo à 128 |
+| Le convertir | Peut être converti dans un format avec perte sans autre perte que celle de ce format. | Le reconvertir dans un autre format avec perte dégrade un peu plus à chaque fois. |
+
+Le **débit** (kbit/s) est la quantité de données utilisée par seconde de son. Plus il est élevé, plus le fichier est gros et, pour les formats avec perte, meilleur est le son. Une copie avec perte ne retrouve jamais ce qui a été supprimé : convertir un MP3 à 128 kbit/s en 320 kbit/s ne l’améliore pas. C’est pourquoi le serveur n’augmente jamais le débit d’un fichier (voir plus bas).
+
+## Formats
+
+Musonic Server lit les fichiers portant ces extensions : `mp3`, `flac`, `m4a`, `mp4`, `aac`, `alac`, `ogg`, `oga`, `opus`, `wav`, `aif`, `aiff`, `wv`, `ape`, `mpc`, `wma`.
+
+Lire un fichier (l’ajouter à la bibliothèque, avec ses tags et sa pochette) ne veut pas dire que toutes les applis savent le **jouer** tel quel : cela dépend du décodeur du téléphone ou du navigateur. Le tableau ci-dessous donne la prise en charge habituelle ; elle varie selon l’appareil et la version du navigateur.
+
+| Format | Appli Android (Media3) | Chrome / Edge | Firefox | Safari (iPhone, Mac) |
+|---|---|---|---|---|
+| MP3 | Oui | Oui | Oui | Oui |
+| AAC / M4A | Oui | Oui | Oui | Oui |
+| FLAC | Oui | Oui | Oui | Oui (versions récentes) |
+| Opus | Oui | Oui | Oui | Versions récentes |
+| Vorbis (OGG) | Oui | Oui | Oui | Souvent non |
+| WAV | Oui | Oui | Oui | Oui |
+| ALAC (dans du M4A) | Selon le téléphone | Souvent non | Non | Oui |
+| AIFF | Souvent non | Souvent non | Souvent non | Oui |
+| WMA, APE, Musepack, WavPack | Non | Non | Non | Non |
+
+<Aside type="tip" title="Un format que votre appli ne lit pas">
+Pour un format des dernières lignes, convertissez vos fichiers une bonne fois (par exemple en FLAC, qui garde tout), ou, sur Android, choisissez une qualité autre que **Originale** : si le débit du fichier dépasse celui choisi, le serveur envoie un MP3 (ou le format du serveur) que tous les téléphones lisent. Le lecteur web demande toujours le fichier original : dans un navigateur, ces fichiers ne se lisent donc pas, sauf si le serveur ou votre compte a une limite de débit.
+</Aside>
+
+## Quand le serveur convertit un titre
+
+Le serveur envoie **le fichier tel quel**, sauf si un débit plus faible ou un autre format est demandé. Trois choses peuvent le demander, et **la limite la plus basse l’emporte** :
+
+| Qui | Où se règle | Valeurs |
+|---|---|---|
+| **L’appli** | Appli Android : **Réglages › Qualité et téléchargements** › **Qualité en Wi-Fi** et **Qualité en données mobiles**. Le lecteur web n’a pas de réglage de qualité : il demande toujours l’original. | **Originale**, **320 kbit/s**, **192 kbit/s**, **128 kbit/s**. Par défaut : **Originale** en Wi-Fi, **192 kbit/s** en données mobiles. |
+| **Le compte** | Console : **Comptes** › le compte › **Quotas** › **Débit maximal en lecture**. | Un nombre de kbit/s, ou vide pour aucune limite. Les administrateurs ne sont jamais limités. |
+| **Tout le serveur** | Console : **Lecture** › **Débit maximal par défaut** (réglage `max_bit_rate`, variable `MUSONIC_MAX_BIT_RATE`). | Aucune limite (par défaut), 320, 256, 192, 128 ou 96 kbit/s. |
+
+Ensuite, pour chaque titre, le serveur décide :
+
+- **Le débit du fichier est inférieur ou égal à la limite** (ou il n’y a pas de limite) : le fichier part tel quel, et on peut avancer dedans.
+- **Le débit du fichier dépasse la limite** : ffmpeg fabrique une copie plus légère à la limite (jamais au-delà de 320 kbit/s). Un fichier sans perte dépasse toujours n’importe quelle limite : il est donc converti.
+- **Le format** de la copie est celui que demande l’appli, s’il y en a un (paramètre Subsonic `format` : `mp3`, `opus`, `aac`/`m4a`, `ogg` ; `raw` veut dire « ne jamais convertir »). Les applis Musonic ne demandent pas de format : le serveur prend donc le sien, console **Lecture** › **Format des titres réduits** (réglage `transcode_format`, variable `MUSONIC_TRANSCODE_FORMAT`) : **MP3** (par défaut), **Opus** ou **AAC**.
+- **Le serveur n’augmente jamais le débit** : un MP3 à 128 kbit/s demandé à 192 kbit/s part tel quel.
+
+| Format de la copie | Encodeur utilisé par ffmpeg | Débit |
+|---|---|---|
+| MP3 | `libmp3lame` | La limite (320 kbit/s au plus) |
+| Opus | `libopus` | La limite (320 kbit/s au plus) |
+| AAC | `aac` (celui de ffmpeg) | La limite (320 kbit/s au plus) |
+| Vorbis (seulement si une appli demande `format=ogg`) | `libvorbis` | La limite (320 kbit/s au plus) |
+
+La copie ne contient pas de tags (`-map_metadata -1`) : l’appli a déjà les informations du titre grâce au serveur.
+
+<Aside type="caution" title="Sans ffmpeg">
+Si ffmpeg est absent, le serveur envoie chaque fichier tel quel, quelles que soient les limites : la consommation de données mobiles ne baisse pas. L’image Docker contient ffmpeg ; sans Docker, installez-le vous-même. La page **Lecture** de la console indique si ffmpeg est **Présent** ou **Absent**.
+</Aside>
+
+### Titres en ligne
+
+Pour un titre du catalogue en ligne joué grâce à un fournisseur audio branché par l’administrateur, le serveur demande au fournisseur du MP3 à 320 kbit/s, ou à 128 kbit/s quand la limite est de 192 kbit/s ou moins. Sans fournisseur, les titres en ligne se jouent en extraits de 30 secondes. Voir [Catalogue en ligne et imports](/fr/docs/library/online-catalogue/).
+
+### Le cache des titres convertis
+
+Un titre converti est gardé sur le disque du serveur : le réécouter, ou avancer dedans, est immédiat.
+
+- Taille : console **Lecture** › **Titres transcodés** (réglage `transcode_cache_mb`, variable `MUSONIC_TRANSCODE_CACHE_MB`) : **Aucun**, 250 Mo, **500 Mo** (par défaut), 1, 2 ou 5 Go. Au-delà, les titres inutilisés depuis le plus longtemps sont supprimés.
+- Un titre n’est gardé que si ffmpeg l’a terminé depuis le début : une lecture commencée au milieu d’un titre (`timeOffset`) n’est pas gardée.
+- Quand l’appli a enregistré sa file d’attente sur le serveur, celui-ci convertit le titre **suivant** en arrière-plan, un seul à la fois pour tout le serveur, pour qu’il démarre tout de suite.
+- Le bouton **Vider**, à côté de **Titres transcodés**, le vide.
+
+## Les téléchargements gardent l’original
+
+Quand l’appli Android télécharge un titre (à la main ou avec le **Téléchargement automatique**), elle le demande sans débit : vous recevez le fichier original, quels que soient les réglages **Qualité en Wi-Fi** et **Qualité en données mobiles**.
+
+<Aside type="caution" title="Limite du compte ou du serveur">
+Une limite fixée par l’administrateur s’applique aussi aux téléchargements : si votre compte ou le serveur a un **débit maximal**, un titre au-dessus est téléchargé sous forme de copie plus légère.
+</Aside>
+
+## L’enchaînement sans blanc (gapless)
+
+Certains albums (concerts, musique classique, mixes de DJ) ont des titres qui s’enchaînent sans aucun silence. La **lecture sans blanc** (gapless) consiste à les raccorder exactement.
+
+- **Appli Android** : l’appli confie à l’avance les titres suivants au lecteur d’Android (Media3), qui les raccorde. Pour le MP3 et l’AAC, un raccord parfait demande les informations d’encodage dans le fichier (la plupart des encodeurs les écrivent) ; le FLAC et le WAV se raccordent naturellement.
+- **Micro-coupure possible sur certains téléphones.** Pour économiser la batterie, l’appli laisse la puce audio du téléphone décoder la musique quand le fondu est désactivé (« audio offload »). Musonic le fait même sur les téléphones qui n’annoncent pas l’enchaînement sans blanc dans ce mode (`setIsGaplessSupportRequired(false)`), car sinon la plupart des téléphones décoderaient toujours sur le processeur principal. Sur ces téléphones, une très courte coupure peut s’entendre entre deux titres censés s’enchaîner. Régler un fondu désactive l’offload.
+- **Lecteur web** : le titre suivant est chargé quand le titre en cours se termine, donc un court silence entre deux titres est possible.
+
+## Le fondu entre les titres
+
+Le **fondu** (crossfade) est autre chose : la fin d’un titre baisse pendant que le début du suivant monte, en se chevauchant. L’enchaînement sans blanc garde la musique telle qu’elle a été enregistrée ; le fondu la modifie volontairement.
+
+<Tabs>
+<TabItem label="Appli Android">
+<Steps>
+
+1. **Ouvrez les Réglages.**
+
+2. **Dans « Lecture », déplacez le curseur « Fondu entre les titres ».**
+
+   De **0 s** (désactivé, par défaut) à **12 s**.
+
+   <img class="shot-phone" src="/assets/img/docs/reference-audio-quality/01-crossfade-setting.fr.webp" alt="L’écran Réglages de l’appli Android, section Lecture, avec le curseur Fondu entre les titres réglé sur 6 s." />
+
+</Steps>
+
+Le fondu est fait par le lecteur d’Android lui-même : il fonctionne aussi écran éteint. Si **Réglages › Options avancées › Lecteur audio Android** est désactivé, l’appli utilise son ancien lecteur, et le fondu n’a lieu que lorsque l’appli est à l’écran.
+</TabItem>
+<TabItem label="Lecteur web">
+<Steps>
+
+1. **Ouvrez les réglages du lecteur web.**
+
+2. **Déplacez le curseur « Fondu entre les titres ».**
+
+   De **Désactivé** à **12 s**.
+
+</Steps>
+
+Le navigateur mélange les deux titres avec Web Audio.
+</TabItem>
+</Tabs>
+
+Dans les deux cas, il n’y a **pas** de fondu :
+
+- quand vous passez un titre vous-même (Suivant, Précédent, ou en touchant un autre titre) ;
+- en répétition d’un seul titre ;
+- avec la minuterie de sommeil réglée sur la fin du titre ;
+- à la fin de la file d’attente ;
+- sur un titre plus court que deux fois la durée du fondu ;
+- pour les épisodes de podcast.
+
+Le fondu consomme un peu plus de batterie sur le téléphone : deux titres jouent en même temps, et l’audio offload est désactivé.
+
+## Normalisation du volume (ReplayGain)
+
+Musonic ne prend **pas** encore en charge ReplayGain ni aucune normalisation du volume : les tags comme `REPLAYGAIN_TRACK_GAIN` ne sont pas appliqués, et les titres jouent au niveau de leur mastering. La console indique **Normalisation du volume** : **Plus tard**.
+
+## Haute résolution et bit-perfect
+
+- Le serveur envoie les fichiers haute résolution (par exemple du FLAC 24 bits / 96 kHz) tels quels quand aucune limite ne s’applique.
+- Sur Android, le son passe ensuite par le **mélangeur d’Android**, qui le convertit en général à la fréquence de sortie du téléphone avant le haut-parleur, le casque ou un DAC USB. Musonic n’a **pas de mode USB exclusif** ni de mode bit-perfect : il ne contourne pas le mélangeur d’Android.
+- Dans un navigateur, le navigateur et le système de l’ordinateur mixent le son de la même façon.
+
+Si la lecture bit-perfect vers un DAC USB compte pour vous, Musonic n’est pas l’outil adapté pour cette partie aujourd’hui.
+
+## Bluetooth et Android Auto
+
+- **Bluetooth** : le codec (SBC, AAC, aptX, LDAC…) est choisi entre votre téléphone et votre casque ou votre voiture. Musonic ne le choisit pas. Un fichier sans perte envoyé en Bluetooth est de toute façon converti par ce codec ; en données mobiles, une qualité de 320 kbit/s suffit souvent pour le Bluetooth.
+- **Android Auto** : la voiture affiche les écrans de Musonic, mais le son vient du téléphone, par le même lecteur et avec les mêmes réglages de qualité, puis part vers la voiture en USB ou en Bluetooth selon ce que la voiture et le téléphone ont convenu.
+
+## Limites connues
+
+- Pas de ReplayGain ni de normalisation du volume.
+- Pas de sortie bit-perfect, pas de mode USB exclusif.
+- Pas d’égaliseur dans Musonic (utilisez celui du téléphone, s’il en a un).
+- Le lecteur web n’a pas de réglage de qualité : il demande toujours le fichier original et ne lit que les formats que votre navigateur sait lire.
+- Le serveur ne convertit pas un fichier simplement parce que l’appli ne sait pas lire son format : seule une limite de débit ou un format demandé déclenche une conversion.
+- Une micro-coupure entre titres enchaînés est possible sur les téléphones sans prise en charge du gapless en audio offload ; dans le lecteur web, un court silence entre les titres est possible.
+- Une limite de débit du compte ou du serveur s’applique aussi aux téléchargements.
+- Sans ffmpeg sur le serveur, aucun titre n’est jamais allégé.
+
+## Pour aller plus loin
+
+- [Hors ligne et données mobiles](/fr/docs/apps/offline/)
+- [Écouter de la musique](/fr/docs/apps/listening/)
+- [Comptes, droits et appareils](/fr/docs/admin/accounts/)
+- [Référence de configuration](/fr/docs/admin/configuration/)

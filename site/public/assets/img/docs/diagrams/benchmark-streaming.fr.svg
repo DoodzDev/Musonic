@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 262" role="img" aria-labelledby="t d" font-family="Inter Variable, Inter, system-ui, sans-serif" lang="fr">
+<title id="t">Streaming : durée jusqu’au 1er octet, ms</title>
+<desc id="d">Plus bas = mieux · chaque ligne a sa propre échelle. Fichier original : Musonic 0,811, Navidrome 1,55; Transcodé, 1re écoute : Musonic 42,0, Navidrome 33,5 (Navidrome devant); Transcodé, 2e écoute : Musonic 1,25, Navidrome 1,72. Médiane de 3 passes · Musonic Server 1.0.1 face à Navidrome 0.64.2 · 22/10/2026 · VPS ARM 2 cœurs, 1 871 fichiers.</desc>
+<text x="16.0" y="30.0" font-size="18" fill="#F1F0EE" text-anchor="start" font-weight="600">Streaming : durée jusqu’au 1er octet, ms</text>
+<text x="16.0" y="52.0" font-size="12.5" fill="#7D7B77" text-anchor="start">Plus bas = mieux · chaque ligne a sa propre échelle</text>
+<rect x="16" y="70" width="12" height="12" rx="2" fill="#FF6B35"/>
+<text x="34.0" y="80.5" font-size="13" fill="#B1AFAB" text-anchor="start">Musonic</text>
+<rect x="108" y="70" width="12" height="12" rx="2" fill="#8E8C88"/>
+<text x="126.0" y="80.5" font-size="13" fill="#B1AFAB" text-anchor="start">Navidrome</text>
+<text x="236.0" y="124.0" font-size="14" fill="#B1AFAB" text-anchor="end">Fichier original</text>
+<path d="M248.0 104.0h265.4a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-265.4z" fill="#FF6B35"/>
+<text x="522.4" y="116.0" font-size="14" fill="#F1F0EE" text-anchor="start">0,811</text>
+<path d="M248.0 120.0h509.0a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-509.0z" fill="#8E8C88"/>
+<text x="766.0" y="132.0" font-size="14" fill="#F1F0EE" text-anchor="start">1,55</text>
+<text x="236.0" y="168.0" font-size="14" fill="#B1AFAB" text-anchor="end">Transcodé, 1re écoute</text>
+<path d="M248.0 148.0h509.0a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-509.0z" fill="#FF6B35"/>
+<text x="766.0" y="160.0" font-size="14" fill="#F1F0EE" text-anchor="start">42,0</text>
+<path d="M248.0 164.0h405.5a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-405.5z" fill="#8E8C88"/>
+<text x="662.5" y="176.0" font-size="14" fill="#F1F0EE" text-anchor="start">33,5</text>
+<text x="944.0" y="167.5" font-size="12.5" fill="#7D7B77" text-anchor="end">Navidrome devant</text>
+<text x="236.0" y="212.0" font-size="14" fill="#B1AFAB" text-anchor="end">Transcodé, 2e écoute</text>
+<path d="M248.0 192.0h370.9a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-370.9z" fill="#FF6B35"/>
+<text x="627.9" y="204.0" font-size="14" fill="#F1F0EE" text-anchor="start">1,25</text>
+<path d="M248.0 208.0h509.0a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-509.0z" fill="#8E8C88"/>
+<text x="766.0" y="220.0" font-size="14" fill="#F1F0EE" text-anchor="start">1,72</text>
+<text x="16.0" y="250.0" font-size="12" fill="#7D7B77" text-anchor="start">Médiane de 3 passes · Musonic Server 1.0.1 face à Navidrome 0.64.2 · 22/10/2026 · VPS ARM 2 cœurs, 1 871 fichiers</text>
+</svg>

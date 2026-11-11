@@ -1,0 +1,177 @@
+---
+title: Ranger vos fichiers de musique
+description: Comment organiser votre dossier de musique pour Musonic Server, quels formats audio il lit, quels tags il utilise et comment il trouve pochettes et paroles.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Cette page s'adresse à la personne qui fait tourner le serveur. Elle explique comment ranger votre dossier de musique pour que Musonic Server affiche chaque album avec le bon artiste, la bonne pochette et les paroles, et ce qu'il fait de chaque tag de vos fichiers.
+
+**Ce qu'il vous faut**
+
+- Votre musique dans un dossier que le serveur peut lire (celui réglé dans `MUSONIC_MUSIC_DIR` ; avec Docker, le dossier monté sur `/music`).
+- Idéalement, des fichiers déjà tagués. Un éditeur de tags comme MusicBrainz Picard ou Mp3tag règle la plupart des problèmes en quelques minutes.
+
+<Aside type="tip" title="En bref">
+**Musonic regroupe les titres d'après leurs tags, pas d'après leurs dossiers.** Les dossiers ne comptent que pour deux choses : les pochettes (`cover.jpg` à côté des titres) et les fichiers de paroles (`titre.lrc` à côté de `titre.flac`). De bons tags comptent plus qu'une arborescence parfaite.
+</Aside>
+
+## L'organisation conseillée
+
+Un dossier par artiste de l'album, un dossier par album à l'intérieur, et dans chaque album ses titres, sa pochette et ses fichiers de paroles :
+
+```text
+Musique/
+├── Daft Punk/
+│   └── Discovery/
+│       ├── cover.jpg
+│       ├── 01 - One More Time.flac
+│       ├── 01 - One More Time.lrc
+│       └── 02 - Aerodynamic.flac
+├── Various Artists/
+│   └── Now Summer 2024/
+│       ├── folder.png
+│       └── 01 - …
+└── Musonic/            ← titres importés par le serveur (voir « Catalogue en ligne et imports »)
+```
+
+<img class="diagram" src="/assets/img/docs/diagrams/library-folder-layout.fr.svg" alt="Schéma : le dossier de musique contient un dossier par artiste de l'album, un dossier par album, chaque dossier d'album contenant ses titres, un cover.jpg et des fichiers de paroles .lrc ; des flèches montrent que les tags décident des pages d'album et d'artiste, tandis que la pochette et les paroles sont prises dans le même dossier que chaque titre." />
+
+<Steps>
+
+1. **Mettez chaque album dans son propre dossier.**
+
+   Le nom du dossier est libre : Musonic lit le nom de l'album dans les tags. Un album par dossier permet au serveur de trouver sa pochette.
+
+2. **Mettez l'image de pochette dans le même dossier que les titres.**
+
+   Appelez-la `cover.jpg` (ou `folder.jpg`, voir [Pochettes](#pochettes) pour tous les noms acceptés). Pour un album réparti en `CD1/` et `CD2/`, mettez une copie de la pochette dans chaque dossier de disque.
+
+3. **Mettez les fichiers de paroles à côté de leur titre, avec le même nom.**
+
+   `01 - One More Time.lrc` va avec `01 - One More Time.flac`.
+
+4. **Vérifiez le tag « artiste de l'album » de vos compilations.**
+
+   Mettez-le à `Various Artists` (ou activez l'indicateur de compilation), sinon l'album est éclaté en un album par artiste. Voir [Compilations](#compilations-et-artistes-variés).
+
+5. **Laissez le serveur scanner.**
+
+   Les fichiers nouveaux ou modifiés sont pris en compte tout seuls quelques secondes plus tard. Voir [Scanner votre bibliothèque](/fr/docs/library/scan/).
+
+</Steps>
+
+## Formats pris en charge
+
+Le scanner prend les fichiers qui ont ces extensions (majuscules ou minuscules) :
+
+| Famille | Extensions |
+|---|---|
+| MP3 | `.mp3` |
+| FLAC | `.flac` |
+| AAC / ALAC (MPEG-4) | `.m4a`, `.mp4`, `.aac`, `.alac` |
+| Ogg | `.ogg`, `.oga`, `.opus` |
+| Non compressés | `.wav`, `.aif`, `.aiff` |
+| Autres | `.wv` (WavPack), `.ape` (Monkey's Audio), `.mpc` (Musepack), `.wma` |
+
+Tous les autres fichiers sont ignorés, sauf les images (pochettes) et les fichiers `.lrc` / `.txt` (paroles). Les tags sont lus avec la bibliothèque Rust [lofty](https://github.com/Serial-ATA/lofty-rs). Un fichier dont l'audio ne peut pas être analysé (fichier abîmé, données AAC dans un fichier nommé `.mp3`…) voit quand même ses tags lus ; sa durée peut alors manquer.
+
+Qu'un format se lise ensuite dans une appli dépend de l'appli et de l'appareil. Quand une appli demande un débit plus bas, le serveur convertit le titre avec ffmpeg ; voir les réglages de lecture de votre serveur.
+
+## Les tags : ce que Musonic fait de chacun
+
+Musonic lit le tag principal de chaque fichier (ID3v2 pour le MP3, commentaires Vorbis pour FLAC et Ogg, atomes MP4 pour le M4A…), ou son premier tag s'il en a plusieurs.
+
+| Tag | Ce que Musonic en fait |
+|---|---|
+| Titre | Le nom du titre. **Sans titre, le nom du fichier est utilisé** (sans son extension). |
+| Artiste | Les artistes du titre. Une valeur peut contenir plusieurs noms (voir [Plusieurs artistes](#plusieurs-artistes-sur-un-titre)). **Sans artiste : « Unknown Artist ».** |
+| Artistes (`ARTISTS`, multivaleur) | Utilisé à la place d'Artiste s'il existe : une valeur par artiste, comme les écrit MusicBrainz Picard. |
+| Album | Le nom de l'album. **Sans album, le titre va dans « [Unknown Album] »** de son artiste d'album. |
+| Artiste de l'album | Sous qui l'album est rangé. **Sans lui, le premier artiste du titre** (« A feat. B » donne « A »), ou « Various Artists » pour une compilation. Plusieurs noms sont possibles, séparés comme les artistes. |
+| Numéro de piste, numéro de disque | L'ordre des titres dans l'album. `3/12` est lu 3. 0 est ignoré. |
+| Date / Année | La première date trouvée parmi date de sortie, date d'enregistrement, année et date de sortie originale : `2005`, `2005-09` ou `2005-09-12`. L'année d'un album est la plus ancienne de ses titres. |
+| Genre | Les genres du titre ; plusieurs valeurs, ou une valeur coupée sur `;`. Le `/` est gardé (`Rap/Hip Hop` est un seul genre). Un album reçoit les genres de tous ses titres. |
+| Compositeur | Crédité comme compositeur ; plusieurs valeurs, ou coupé sur `/` et `;`. |
+| Indicateur de compilation | Marque l'album comme compilation (la valeur doit être `1`). |
+| Tri du titre, tri de l'album | Servent à trier titres et albums (`TITLESORT`, `ALBUMSORT` et leurs équivalents). |
+| ISRC | Identifie l'enregistrement : sert à reconnaître le même titre entre vos fichiers, le catalogue en ligne et les playlists importées. |
+| Identifiants MusicBrainz d'enregistrement et de sortie | S'ils sont là, ce sont eux qui décident de ce qui est « le même titre » et « le même album », quoi que disent les autres tags. Voir [Scanner votre bibliothèque](/fr/docs/library/scan/#likes-et-playlists-quand-les-fichiers-changent). |
+| BPM | Gardé avec le titre. |
+| Paroles (intégrées) | Affichées dans les applis, sauf si un fichier de paroles est à côté du titre (le fichier l'emporte). |
+| Image intégrée | Sert de pochette d'album quand le dossier n'a pas d'image de pochette. |
+
+Musonic lit aussi les propriétés audio : durée, débit, fréquence d'échantillonnage, profondeur en bits et nombre de canaux (affichés dans la console).
+
+### Plusieurs artistes sur un titre
+
+Chaque valeur d'Artiste et d'Artiste de l'album est coupée sur ces séparateurs, en majuscules ou minuscules :
+
+| Séparateur | Exemple | Résultat |
+|---|---|---|
+| ` feat. ` / ` feat ` | `Daft Punk feat. Pharrell Williams` | Daft Punk, Pharrell Williams |
+| ` ft. ` / ` ft ` | `A ft. B` | A, B |
+| ` • ` | `113 • Rim'K` | 113, Rim'K |
+| `; ` | `A; B` | A, B |
+| ` / ` (avec espaces) | `A / B` | A, B |
+
+Une barre oblique sans espaces fait partie du nom : `AC/DC` reste un seul artiste. `&`, `,`, `and`, `x` et `with` **ne coupent pas** : `Simon & Garfunkel` reste un seul artiste. Pour créditer plusieurs artistes écrits avec `&`, utilisez le tag multivaleur `ARTISTS`, ou `; ` entre les noms.
+
+Chaque artiste nommé a sa propre page d'artiste, et le titre apparaît sur chacune. Dans les applis, les noms sont affichés reliés par ` • `.
+
+Deux noms qui ne diffèrent que par les majuscules, les accents ou la ponctuation sont le même artiste (`Beyonce` et `Beyoncé`).
+
+### Compilations et artistes variés
+
+Un album est identifié par **son artiste d'album et son titre** (ou par son identifiant de sortie MusicBrainz). Une compilation dont les titres n'ont que leur propre tag Artiste serait donc éclatée en autant d'albums que d'artistes. Pour la garder entière, faites l'un des deux :
+
+- **Renseignez le tag Artiste de l'album** de chaque titre avec `Various Artists` (ou n'importe quel nom commun), ou
+- **Activez l'indicateur de compilation** (`TCMP` en MP3, `COMPILATION` en FLAC/Ogg, `cpil` en M4A) et laissez Artiste de l'album vide : Musonic range alors l'album sous « Various Artists ».
+
+À l'inverse, deux albums différents qui ont le même titre et le même artiste d'album (un remaster, une édition deluxe) sont fusionnés, sauf s'ils ont des identifiants de sortie MusicBrainz différents ou des titres un peu différents (`Discovery` et `Discovery (Deluxe)`).
+
+## Pochettes
+
+Pour chaque album, le serveur prend, dans cet ordre :
+
+1. **Une image dans le dossier des titres de l'album**, selon son nom : `cover`, puis `folder`, `front`, `album`, `albumart`. Majuscules et minuscules ne comptent pas ; l'extension peut être `.jpg`, `.jpeg`, `.png` ou `.webp`. `Cover.JPG`, `folder.png` et `front.webp` fonctionnent donc tous.
+2. Sinon, **l'image intégrée au premier titre** de l'album qui en a une (dans l'ordre des disques et des pistes).
+3. Sinon, pour un titre aussi connu du catalogue en ligne, sa pochette en ligne.
+
+Une image avec un autre nom (`scan.jpg`, `back.jpg`, `livret.png`) ne sert pas de pochette. Seul le dossier qui contient le titre compte : une pochette dans un dossier parent n'est pas utilisée pour les titres des sous-dossiers `CD1/` et `CD2/`.
+
+<Aside type="caution" title="Ajouter une pochette après coup">
+Une image de pochette ajoutée (ou remplacée) à côté de titres qui n'ont pas changé est prise en compte par un **scan complet**, pas par le scan rapide automatique. Après avoir ajouté des pochettes à des albums existants, lancez un **Scan complet** depuis la console (page Bibliothèque). Voir [Scanner votre bibliothèque](/fr/docs/library/scan/).
+</Aside>
+
+La liste **Bibliothèque → Sans pochette** de la console montre les titres sans aucune image : ni dans le fichier, ni dans leur dossier, ni en ligne.
+
+## Images d'artistes
+
+Musonic ne lit pas d'images d'artistes dans vos dossiers (un `artist.jpg` est ignoré). L'image d'un artiste vient du catalogue en ligne, quand l'artiste y est aussi trouvé ; catalogue en ligne coupé, les artistes n'ont pas d'image. Voir [Catalogue en ligne et imports](/fr/docs/library/online-catalogue/).
+
+## Paroles
+
+Le serveur cherche les paroles à deux endroits, le premier l'emportant :
+
+1. **Un fichier de paroles à côté du titre, avec le même nom** : `titre.lrc` (paroles synchronisées, avec des temps `[mm:ss.xx]`) ou `titre.txt` (texte simple). Si les deux existent, le `.lrc` l'emporte. Le fichier doit être en UTF-8.
+2. **Les paroles intégrées au fichier** (le tag de paroles, `USLT` en MP3, `LYRICS` en FLAC…). Si elles ont des temps comme un `.lrc`, elles s'affichent synchronisées.
+
+Quand le serveur n'a pas de paroles pour un titre, les applis Musonic les cherchent sur [LRCLIB](https://lrclib.net), une base de paroles publique et gratuite, directement depuis l'appareil.
+
+<Aside type="note">
+Comme pour les pochettes, un fichier de paroles ajouté à côté d'un titre qui n'a pas changé est lu par un **scan complet**. Supprimer un fichier de paroles n'efface pas les paroles déjà lues.
+</Aside>
+
+## Ce qui est ignoré
+
+- **Les fichiers et dossiers cachés** : tout nom qui commence par un point (`.stfolder`, `.DS_Store`, `.trash/`…) est sauté, avec tout son contenu.
+- Les fichiers dont l'extension n'est pas dans [Formats pris en charge](#formats-pris-en-charge), sauf pochettes et fichiers de paroles.
+- Les dossiers que le serveur n'a pas le droit de lire : ils sont listés comme erreurs dans le bilan du scan, le reste de la bibliothèque est scanné.
+
+Les liens symboliques sont suivis, pour les dossiers comme pour les fichiers.
+
+## Et ensuite
+
+- [Scanner votre bibliothèque](/fr/docs/library/scan/) : quand les changements sont vus, scans rapide et complet, fichiers manquants et doublons.
+- [Catalogue en ligne et imports](/fr/docs/library/online-catalogue/) : les titres au-delà de vos fichiers, et où sont rangés les titres importés.

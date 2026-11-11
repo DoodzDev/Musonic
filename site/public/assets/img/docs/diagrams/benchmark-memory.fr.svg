@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 328" role="img" aria-labelledby="t d" font-family="Inter Variable, Inter, system-ui, sans-serif" lang="fr">
+<title id="t">Mémoire du serveur, RSS en Mio</title>
+<desc id="d">Plus bas = mieux. Au repos, 60 s après l’analyse : Musonic 19,5, Navidrome 100; Après tous les tests : Musonic 77,6, Navidrome 236; Maximum de la passe : Musonic 78,3, Navidrome 237; 5 s après un redémarrage : Musonic 15,5, Navidrome 45,1. Médiane de 3 passes · Musonic Server 1.0.1 face à Navidrome 0.64.2 · 22/10/2026 · VPS ARM 2 cœurs, 1 871 fichiers.</desc>
+<text x="16.0" y="30.0" font-size="18" fill="#F1F0EE" text-anchor="start" font-weight="600">Mémoire du serveur, RSS en Mio</text>
+<text x="16.0" y="52.0" font-size="12.5" fill="#7D7B77" text-anchor="start">Plus bas = mieux</text>
+<rect x="16" y="70" width="12" height="12" rx="2" fill="#FF6B35"/>
+<text x="34.0" y="80.5" font-size="13" fill="#B1AFAB" text-anchor="start">Musonic</text>
+<rect x="108" y="70" width="12" height="12" rx="2" fill="#8E8C88"/>
+<text x="126.0" y="80.5" font-size="13" fill="#B1AFAB" text-anchor="start">Navidrome</text>
+<line x1="248.0" y1="96" x2="248.0" y2="272" stroke="#2C2C2F" stroke-width="1"/>
+<text x="248.0" y="288.0" font-size="12" fill="#7D7B77" text-anchor="middle">0</text>
+<line x1="370.4" y1="96" x2="370.4" y2="272" stroke="#2C2C2F" stroke-width="1"/>
+<text x="370.4" y="288.0" font-size="12" fill="#7D7B77" text-anchor="middle">50</text>
+<line x1="492.8" y1="96" x2="492.8" y2="272" stroke="#2C2C2F" stroke-width="1"/>
+<text x="492.8" y="288.0" font-size="12" fill="#7D7B77" text-anchor="middle">100</text>
+<line x1="615.2" y1="96" x2="615.2" y2="272" stroke="#2C2C2F" stroke-width="1"/>
+<text x="615.2" y="288.0" font-size="12" fill="#7D7B77" text-anchor="middle">150</text>
+<line x1="737.6" y1="96" x2="737.6" y2="272" stroke="#2C2C2F" stroke-width="1"/>
+<text x="737.6" y="288.0" font-size="12" fill="#7D7B77" text-anchor="middle">200</text>
+<line x1="860.0" y1="96" x2="860.0" y2="272" stroke="#2C2C2F" stroke-width="1"/>
+<text x="860.0" y="288.0" font-size="12" fill="#7D7B77" text-anchor="middle">250</text>
+<text x="236.0" y="124.0" font-size="14" fill="#B1AFAB" text-anchor="end">Au repos, 60 s après l’analyse</text>
+<path d="M248.0 104.0h44.6a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-44.6z" fill="#FF6B35"/>
+<text x="301.6" y="116.0" font-size="14" fill="#F1F0EE" text-anchor="start">19,5</text>
+<path d="M248.0 120.0h241.8a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-241.8z" fill="#8E8C88"/>
+<text x="498.8" y="132.0" font-size="14" fill="#F1F0EE" text-anchor="start">100</text>
+<text x="236.0" y="168.0" font-size="14" fill="#B1AFAB" text-anchor="end">Après tous les tests</text>
+<path d="M248.0 148.0h186.9a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-186.9z" fill="#FF6B35"/>
+<text x="443.9" y="160.0" font-size="14" fill="#F1F0EE" text-anchor="start">77,6</text>
+<path d="M248.0 164.0h573.6a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-573.6z" fill="#8E8C88"/>
+<text x="830.6" y="176.0" font-size="14" fill="#F1F0EE" text-anchor="start">236</text>
+<text x="236.0" y="212.0" font-size="14" fill="#B1AFAB" text-anchor="end">Maximum de la passe</text>
+<path d="M248.0 192.0h188.6a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-188.6z" fill="#FF6B35"/>
+<text x="445.6" y="204.0" font-size="14" fill="#F1F0EE" text-anchor="start">78,3</text>
+<path d="M248.0 208.0h578.2a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-578.2z" fill="#8E8C88"/>
+<text x="835.2" y="220.0" font-size="14" fill="#F1F0EE" text-anchor="start">237</text>
+<text x="236.0" y="256.0" font-size="14" fill="#B1AFAB" text-anchor="end">5 s après un redémarrage</text>
+<path d="M248.0 236.0h34.9a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-34.9z" fill="#FF6B35"/>
+<text x="291.9" y="248.0" font-size="14" fill="#F1F0EE" text-anchor="start">15,5</text>
+<path d="M248.0 252.0h107.4a3.0 3.0 0 0 1 3.0 3.0v8.0a3.0 3.0 0 0 1 -3.0 3.0h-107.4z" fill="#8E8C88"/>
+<text x="364.4" y="264.0" font-size="14" fill="#F1F0EE" text-anchor="start">45,1</text>
+<text x="16.0" y="316.0" font-size="12" fill="#7D7B77" text-anchor="start">Médiane de 3 passes · Musonic Server 1.0.1 face à Navidrome 0.64.2 · 22/10/2026 · VPS ARM 2 cœurs, 1 871 fichiers</text>
+</svg>

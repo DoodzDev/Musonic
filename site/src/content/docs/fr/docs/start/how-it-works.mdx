@@ -1,0 +1,68 @@
+---
+title: Comment marche Musonic
+description: Ce que font Musonic Server, l'appli Android, le lecteur web et la console, ce qu'il faut installer, et sur quel genre de machine.
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Cette page présente les éléments de Musonic et la façon dont ils s'assemblent, pour que vous sachiez quoi installer. Lisez-la en premier si vous découvrez Musonic, que vous utilisiez le serveur de quelqu'un d'autre ou que vous vouliez le vôtre.
+
+<img class="diagram" src="/assets/img/docs/diagrams/how-it-works.fr.svg" alt="Schéma : un dossier de musique sur un disque est lu par Musonic Server, qui tourne sur une machine toujours allumée à la maison ; le serveur envoie la musique à un téléphone avec l'appli Musonic, à un navigateur avec le lecteur web, et à l'écran d'une voiture via le téléphone." />
+
+## Les trois éléments
+
+| Élément | Ce que c'est | Où il tourne |
+|---|---|---|
+| **Musonic Server** | Le programme qui tient votre bibliothèque : il lit votre dossier de musique, garde les comptes, les likes, les playlists et les écoutes, et envoie la musique aux applis. | Sur une machine qui reste allumée : un serveur maison, un NAS, un Raspberry Pi, un serveur loué (VPS). |
+| **Les applis** | Ce avec quoi vous écoutez : l'**appli Android**, et le **lecteur web** dans n'importe quel navigateur. Sur **iPhone et iPad**, vous utilisez le lecteur web, ajouté à l'écran d'accueil : il n'y a pas d'appli iOS. | Sur votre téléphone, votre ordinateur, votre tablette. En voiture avec Android Auto, depuis l'appli Android. |
+| **La console** | Les pages d'administration du serveur : comptes et invitations, bibliothèque, imports, réglages, sauvegardes. | Dans Musonic Server : vous ouvrez l'adresse du serveur dans un navigateur. Seuls les administrateurs peuvent s'y connecter. |
+
+Vos fichiers de musique restent sur le disque de la machine qui fait tourner le serveur. Les applis demandent chaque titre au serveur quand vous le lancez (et peuvent garder des titres pour l'écoute hors ligne).
+
+Musonic Server parle aussi l'**API Subsonic** : d'autres applis Subsonic (Substreamer, Symfonium et d'autres) peuvent s'y connecter, et les applis Musonic peuvent se connecter à d'autres serveurs Subsonic.
+
+## Ce que vous devez installer
+
+**Quelqu'un fait déjà tourner un Musonic Server pour vous** (un proche, un ami) :
+
+- Vous installez **seulement une appli** : l'appli Android, ou le lecteur web sur un ordinateur ou un iPhone.
+- Il vous faut l'**adresse du serveur** (par exemple `https://music.example.com`) et un compte. En général, l'administrateur vous envoie un **lien d'invitation** : vous l'ouvrez, choisissez votre nom et votre mot de passe, et vous vous connectez à l'appli avec.
+- Sur ce site, seules les pages sur les applis vous concernent.
+
+**Vous voulez votre propre Musonic Server :**
+
+1. Installez **Musonic Server** sur une machine qui reste allumée ([avec Docker](/fr/docs/install/docker/), le plus simple, ou [sans Docker](/fr/docs/install/binary/)).
+2. Créez votre compte administrateur et faites le [premier démarrage](/fr/docs/install/first-start/) dans la console.
+3. Rendez le serveur joignable depuis l'extérieur en [HTTPS](/fr/docs/install/https/), si vous voulez écouter hors de chez vous.
+4. Installez les applis et connectez-vous, puis invitez qui vous voulez.
+
+## La machine du serveur
+
+| Quoi | Détails |
+|---|---|
+| Une machine qui reste allumée | Les applis ne lisent que ce que le serveur leur envoie : quand il est éteint, seuls les titres gardés hors ligne se lisent. Un serveur maison, un NAS qui fait tourner des conteneurs Docker, un Raspberry Pi, un vieil ordinateur ou un serveur loué (VPS) conviennent. |
+| Linux, 64 bits | Musonic Server est publié pour **Linux x86_64** (la plupart des PC et serveurs) et **Linux ARM64** (`aarch64` : Raspberry Pi 3, 4, 5 et autres cartes ARM **avec un système 64 bits**). Il n'existe pas de version ARM 32 bits. |
+| Docker (conseillé) | L'image Docker `ghcr.io/doodzdev/musonic-server` existe pour les deux architectures et contient déjà ffmpeg et la console. Sans Docker, un programme unique par architecture est joint à chaque version du serveur. |
+| ffmpeg | Sert à alléger les titres quand une appli demande un débit plus bas (données mobiles). Inclus dans l'image Docker ; à installer vous-même sans Docker. Sans lui, les fichiers sont envoyés tels quels. |
+| Votre musique dans un dossier | N'importe quel dossier que le serveur peut lire, avec vos fichiers rangés comme vous voulez. |
+| De la place sur le disque | La base de données, les caches et les sauvegardes quotidiennes vont dans un dossier de données à côté du serveur. |
+
+<Aside type="note" title="Windows et macOS">
+Musonic Server n'est publié que pour Linux. Sur un autre système, faites-le tourner dans une machine virtuelle Linux, ou sur une autre machine sous Linux.
+</Aside>
+
+## Qui parle à qui
+
+- **Vos identifiants ne vont qu'à votre serveur.** Les applis lui envoient le nom du compte et le mot de passe (ou une clé propre à l'appareil), jamais à personne d'autre. Elles demandent aussi des compléments à deux services publics, sans compte ni donnée personnelle : le catalogue public de Deezer (photos d'artistes, suggestions) et LRCLIB (paroles manquantes). [Toutes les requêtes sont listées ici](/fr/docs/reference/privacy/).
+- **Le serveur lit votre dossier de musique** et le surveille : un fichier que vous ajoutez apparaît tout seul.
+- **Le serveur va sur internet pour quelques choses**, que vous pouvez couper : le catalogue en ligne (l'API publique officielle de Deezer, pour les informations des titres, les pochettes et les extraits de 30 secondes ; réglage `MUSONIC_ONLINE`), la recherche de nouvelles versions sur GitHub (`MUSONIC_UPDATE_CHECK`), et les podcasts quand quelqu'un s'en sert. Détails dans [Vie privée et réseau](/fr/docs/reference/privacy/).
+- **Les titres complets absents de votre dossier** ne viennent que d'un fournisseur audio branché sur le serveur par un administrateur. Sans fournisseur, les titres en ligne se lisent en extraits de 30 secondes. Voir [Catalogue en ligne et imports](/fr/docs/library/online-catalogue/).
+
+## Et ensuite
+
+<CardGrid>
+  <LinkCard title="Installer avec Docker" href="/fr/docs/install/docker/" description="Le plus simple pour avoir votre propre serveur." />
+  <LinkCard title="Installer sans Docker" href="/fr/docs/install/binary/" description="Un seul programme et un service systemd." />
+  <LinkCard title="Installer l'appli Android" href="/fr/docs/apps/android/" description="Si quelqu'un fait déjà tourner un serveur pour vous." />
+  <LinkCard title="Sur iPhone et iPad" href="/fr/docs/apps/iphone/" description="Le lecteur web, ajouté à l'écran d'accueil." />
+</CardGrid>

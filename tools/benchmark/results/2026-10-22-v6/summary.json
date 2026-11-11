@@ -1,0 +1,609 @@
+{
+ "machine": {
+  "cpus": 2,
+  "uname": "Linux <hostname> 6.17.0-1009-oracle #9~24.04.1-Ubuntu SMP Sat Mar  7 01:08:51 UTC 2026 aarch64"
+ },
+ "started": "2026-10-22 21:17:04 UTC",
+ "ended": "2026-10-22 21:52:14 UTC",
+ "runs_per_server": {
+  "musonic": 3,
+  "navidrome": 3
+ },
+ "measures": {
+  "Scan of the whole library (empty database)": {
+   "time (s)": {
+    "unit": "s",
+    "musonic": 1.78,
+    "navidrome": 18.88
+   },
+   "CPU time (s)": {
+    "unit": "s",
+    "musonic": 1.77,
+    "navidrome": 16.93
+   },
+   "peak memory during the scan (MB)": {
+    "unit": "s",
+    "musonic": 19.26171875,
+    "navidrome": 56.29296875
+   }
+  },
+  "Memory (RSS, MB)": {
+   "idle after the scan": {
+    "unit": "MB",
+    "musonic": 19.45703125,
+    "navidrome": 100.0
+   },
+   "after all the tests": {
+    "unit": "MB",
+    "musonic": 77.58203125,
+    "navidrome": 235.5390625
+   },
+   "peak": {
+    "unit": "MB",
+    "musonic": 78.2734375,
+    "navidrome": 237.40625
+   },
+   "after a restart": {
+    "unit": "MB",
+    "musonic": 15.46875,
+    "navidrome": 45.09765625
+   }
+  },
+  "Start and disk": {
+   "first start (s)": {
+    "unit": "",
+    "musonic": 0.062,
+    "navidrome": 0.769
+   },
+   "restart (s)": {
+    "unit": "",
+    "musonic": 0.019,
+    "navidrome": 0.045
+   },
+   "data folder (MB)": {
+    "unit": "",
+    "musonic": 26.915851,
+    "navidrome": 361.36130199999997
+   }
+  },
+  "Requests, warm (median ms)": {
+   "search3 \"love\"": {
+    "unit": "ms",
+    "musonic": 0.353,
+    "navidrome": 29.436
+   },
+   "search3 \"mo\"": {
+    "unit": "ms",
+    "musonic": 0.377,
+    "navidrome": 25.641
+   },
+   "search3 two words": {
+    "unit": "ms",
+    "musonic": 0.299,
+    "navidrome": 20.157
+   },
+   "getAlbum": {
+    "unit": "ms",
+    "musonic": 0.288,
+    "navidrome": 2.603
+   },
+   "getArtist": {
+    "unit": "ms",
+    "musonic": 0.279,
+    "navidrome": 2.268
+   },
+   "getArtists": {
+    "unit": "ms",
+    "musonic": 0.429,
+    "navidrome": 52.703
+   },
+   "getSong": {
+    "unit": "ms",
+    "musonic": 0.284,
+    "navidrome": 2.432
+   },
+   "getAlbumList2 newest 50": {
+    "unit": "ms",
+    "musonic": 0.338,
+    "navidrome": 16.649
+   },
+   "getAlbumList2 alphabetical 500": {
+    "unit": "ms",
+    "musonic": 0.517,
+    "navidrome": 35.359
+   },
+   "getAlbumList2 random 50": {
+    "unit": "ms",
+    "musonic": 2.166,
+    "navidrome": 8.306
+   },
+   "getRandomSongs 50": {
+    "unit": "ms",
+    "musonic": 3.289,
+    "navidrome": 5.763
+   },
+   "getGenres": {
+    "unit": "ms",
+    "musonic": 0.289,
+    "navidrome": 1.167
+   },
+   "getStarred2": {
+    "unit": "ms",
+    "musonic": 0.279,
+    "navidrome": 2.172
+   },
+   "getPlaylists": {
+    "unit": "ms",
+    "musonic": 0.276,
+    "navidrome": 1.013
+   }
+  },
+  "Requests right after a like (median ms)": {
+   "search3 \"love\"": {
+    "unit": "ms",
+    "musonic": 2.778,
+    "navidrome": 4.884
+   },
+   "search3 \"mo\"": {
+    "unit": "ms",
+    "musonic": 5.471,
+    "navidrome": 7.093
+   },
+   "search3 two words": {
+    "unit": "ms",
+    "musonic": 1.93,
+    "navidrome": 4.609
+   },
+   "getAlbum": {
+    "unit": "ms",
+    "musonic": 0.845,
+    "navidrome": 1.845
+   },
+   "getArtist": {
+    "unit": "ms",
+    "musonic": 0.471,
+    "navidrome": 1.657
+   },
+   "getArtists": {
+    "unit": "ms",
+    "musonic": 4.477,
+    "navidrome": 30.233
+   },
+   "getSong": {
+    "unit": "ms",
+    "musonic": 0.772,
+    "navidrome": 1.364
+   },
+   "getAlbumList2 newest 50": {
+    "unit": "ms",
+    "musonic": 4.458,
+    "navidrome": 4.76
+   },
+   "getAlbumList2 alphabetical 500": {
+    "unit": "ms",
+    "musonic": 23.963,
+    "navidrome": 35.343
+   },
+   "getAlbumList2 random 50": {
+    "unit": "ms",
+    "musonic": 2.205,
+    "navidrome": 8.415
+   },
+   "getRandomSongs 50": {
+    "unit": "ms",
+    "musonic": 3.351,
+    "navidrome": 5.631
+   },
+   "getGenres": {
+    "unit": "ms",
+    "musonic": 0.739,
+    "navidrome": 1.191
+   },
+   "getStarred2": {
+    "unit": "ms",
+    "musonic": 0.405,
+    "navidrome": 1.621
+   },
+   "getPlaylists": {
+    "unit": "ms",
+    "musonic": 0.375,
+    "navidrome": 1.024
+   }
+  },
+  "Requests 300 ms after a like (median ms)": {
+   "search3 \"love\"": {
+    "unit": "ms",
+    "musonic": 0.694,
+    "navidrome": 7.209
+   },
+   "search3 \"mo\"": {
+    "unit": "ms",
+    "musonic": 0.708,
+    "navidrome": 9.467
+   },
+   "search3 two words": {
+    "unit": "ms",
+    "musonic": 0.683,
+    "navidrome": 6.939
+   },
+   "getAlbum": {
+    "unit": "ms",
+    "musonic": 0.671,
+    "navidrome": 2.421
+   },
+   "getArtist": {
+    "unit": "ms",
+    "musonic": 0.665,
+    "navidrome": 2.22
+   },
+   "getArtists": {
+    "unit": "ms",
+    "musonic": 0.728,
+    "navidrome": 30.217
+   },
+   "getSong": {
+    "unit": "ms",
+    "musonic": 0.678,
+    "navidrome": 1.908
+   },
+   "getAlbumList2 newest 50": {
+    "unit": "ms",
+    "musonic": 0.699,
+    "navidrome": 5.14
+   },
+   "getAlbumList2 alphabetical 500": {
+    "unit": "ms",
+    "musonic": 0.762,
+    "navidrome": 35.395
+   },
+   "getAlbumList2 random 50": {
+    "unit": "ms",
+    "musonic": 3.252,
+    "navidrome": 8.901
+   },
+   "getRandomSongs 50": {
+    "unit": "ms",
+    "musonic": 4.639,
+    "navidrome": 6.012
+   },
+   "getGenres": {
+    "unit": "ms",
+    "musonic": 0.672,
+    "navidrome": 1.655
+   },
+   "getStarred2": {
+    "unit": "ms",
+    "musonic": 0.67,
+    "navidrome": 3.635
+   },
+   "getPlaylists": {
+    "unit": "ms",
+    "musonic": 0.675,
+    "navidrome": 1.504
+   }
+  },
+  "Requests, warm (p95 ms)": {
+   "search3 \"love\"": {
+    "unit": "ms",
+    "musonic": 0.445,
+    "navidrome": 61.897
+   },
+   "search3 \"mo\"": {
+    "unit": "ms",
+    "musonic": 0.455,
+    "navidrome": 60.39
+   },
+   "search3 two words": {
+    "unit": "ms",
+    "musonic": 0.39,
+    "navidrome": 57.175
+   },
+   "getAlbum": {
+    "unit": "ms",
+    "musonic": 0.372,
+    "navidrome": 25.153
+   },
+   "getArtist": {
+    "unit": "ms",
+    "musonic": 0.378,
+    "navidrome": 28.731
+   },
+   "getArtists": {
+    "unit": "ms",
+    "musonic": 0.587,
+    "navidrome": 84.63
+   },
+   "getSong": {
+    "unit": "ms",
+    "musonic": 0.39,
+    "navidrome": 25.921
+   },
+   "getAlbumList2 newest 50": {
+    "unit": "ms",
+    "musonic": 0.45,
+    "navidrome": 36.041
+   },
+   "getAlbumList2 alphabetical 500": {
+    "unit": "ms",
+    "musonic": 0.632,
+    "navidrome": 39.016
+   },
+   "getAlbumList2 random 50": {
+    "unit": "ms",
+    "musonic": 2.299,
+    "navidrome": 11.21
+   },
+   "getRandomSongs 50": {
+    "unit": "ms",
+    "musonic": 3.559,
+    "navidrome": 8.208
+   },
+   "getGenres": {
+    "unit": "ms",
+    "musonic": 0.366,
+    "navidrome": 1.514
+   },
+   "getStarred2": {
+    "unit": "ms",
+    "musonic": 0.394,
+    "navidrome": 3.503
+   },
+   "getPlaylists": {
+    "unit": "ms",
+    "musonic": 0.361,
+    "navidrome": 1.34
+   }
+  },
+  "Answer size with gzip (KB)": {
+   "search3 \"love\"": {
+    "unit": "KB",
+    "musonic": 6.982421875,
+    "navidrome": 5.953125
+   },
+   "search3 \"mo\"": {
+    "unit": "KB",
+    "musonic": 8.876953125,
+    "navidrome": 6.90625
+   },
+   "search3 two words": {
+    "unit": "KB",
+    "musonic": 2.46484375,
+    "navidrome": 3.201171875
+   },
+   "getAlbum": {
+    "unit": "KB",
+    "musonic": 0.72265625,
+    "navidrome": 0.810546875
+   },
+   "getArtist": {
+    "unit": "KB",
+    "musonic": 0.6904296875,
+    "navidrome": 0.490234375
+   },
+   "getArtists": {
+    "unit": "KB",
+    "musonic": 47.7275390625,
+    "navidrome": 29.984375
+   },
+   "getSong": {
+    "unit": "KB",
+    "musonic": 0.638671875,
+    "navidrome": 0.666015625
+   },
+   "getAlbumList2 newest 50": {
+    "unit": "KB",
+    "musonic": 6.791015625,
+    "navidrome": 6.876953125
+   },
+   "getAlbumList2 alphabetical 500": {
+    "unit": "KB",
+    "musonic": 65.7822265625,
+    "navidrome": 67.0498046875
+   },
+   "getAlbumList2 random 50": {
+    "unit": "KB",
+    "musonic": 7.5947265625,
+    "navidrome": 7.794921875
+   },
+   "getRandomSongs 50": {
+    "unit": "KB",
+    "musonic": 13.1591796875,
+    "navidrome": 10.591796875
+   },
+   "getGenres": {
+    "unit": "KB",
+    "musonic": 0.7724609375,
+    "navidrome": 0.6904296875
+   },
+   "getStarred2": {
+    "unit": "KB",
+    "musonic": 0.1591796875,
+    "navidrome": 0.1337890625
+   },
+   "getPlaylists": {
+    "unit": "KB",
+    "musonic": 0.1416015625,
+    "navidrome": 0.328125
+   }
+  },
+  "Sign-in on each request (median ms)": {
+   "ping token (t+s)": {
+    "unit": "ms",
+    "musonic": 0.27,
+    "navidrome": 0.682
+   },
+   "ping password (p)": {
+    "unit": "ms",
+    "musonic": 0.395,
+    "navidrome": 0.705
+   }
+  },
+  "Covers (60 albums)": {
+   "300 first, median ms": {
+    "unit": "",
+    "musonic": 21.099,
+    "navidrome": 72.534
+   },
+   "300 cached, median ms": {
+    "unit": "",
+    "musonic": 0.531,
+    "navidrome": 0.992
+   },
+   "300 cached later, median ms": {
+    "unit": "",
+    "musonic": 0.539,
+    "navidrome": 0.921
+   },
+   "600 first, median ms": {
+    "unit": "",
+    "musonic": 31.456,
+    "navidrome": 118.756
+   },
+   "600 cached, median ms": {
+    "unit": "",
+    "musonic": 0.599,
+    "navidrome": 1.049
+   },
+   "600 cached later, median ms": {
+    "unit": "",
+    "musonic": 0.637,
+    "navidrome": 0.977
+   },
+   "300 first, total KB": {
+    "unit": "",
+    "musonic": 1091.060546875,
+    "navidrome": 1000.64453125
+   },
+   "300 cached later, total KB": {
+    "unit": "",
+    "musonic": 914.927734375,
+    "navidrome": 1000.64453125
+   },
+   "600 first, total KB": {
+    "unit": "",
+    "musonic": 3700.7529296875,
+    "navidrome": 3488.412109375
+   },
+   "600 cached later, total KB": {
+    "unit": "",
+    "musonic": 3246.4375,
+    "navidrome": 3488.412109375
+   }
+  },
+  "Streaming": {
+   "first byte, original file (ms)": {
+    "unit": "ms",
+    "musonic": 0.811,
+    "navidrome": 1.547
+   },
+   "first byte, transcoded to MP3 96 (ms)": {
+    "unit": "ms",
+    "musonic": 42.0,
+    "navidrome": 33.51
+   },
+   "whole song transcoded (ms)": {
+    "unit": "ms",
+    "musonic": 2779.134,
+    "navidrome": 2760.471
+   },
+   "first byte, transcoded song played again (ms)": {
+    "unit": "ms",
+    "musonic": 1.254,
+    "navidrome": 1.717
+   }
+  },
+  "Streaming throughput": {
+   "original file (MB/s)": {
+    "unit": "MB/s",
+    "musonic": 625.0,
+    "navidrome": 659.8
+   }
+  },
+  "Concurrent clients: throughput (the load generator runs on the same 2 CPUs)": {
+   "1 clients: requests/s": {
+    "unit": "req/s",
+    "musonic": 723.2,
+    "navidrome": 86.5
+   },
+   "4 clients: requests/s": {
+    "unit": "req/s",
+    "musonic": 918.5,
+    "navidrome": 135.1
+   },
+   "16 clients: requests/s": {
+    "unit": "req/s",
+    "musonic": 902.3,
+    "navidrome": 142.8
+   },
+   "64 clients: requests/s": {
+    "unit": "req/s",
+    "musonic": 913.3,
+    "navidrome": 156.3
+   }
+  },
+  "Concurrent clients: latency": {
+   "1 clients: median ms": {
+    "unit": "ms",
+    "musonic": 0.41,
+    "navidrome": 5.68
+   },
+   "1 clients: p95 ms": {
+    "unit": "ms",
+    "musonic": 2.53,
+    "navidrome": 32.89
+   },
+   "4 clients: median ms": {
+    "unit": "ms",
+    "musonic": 2.44,
+    "navidrome": 19.01
+   },
+   "4 clients: p95 ms": {
+    "unit": "ms",
+    "musonic": 6.32,
+    "navidrome": 80.71
+   },
+   "16 clients: median ms": {
+    "unit": "ms",
+    "musonic": 9.23,
+    "navidrome": 101.93
+   },
+   "16 clients: p95 ms": {
+    "unit": "ms",
+    "musonic": 23.85,
+    "navidrome": 211.78
+   },
+   "64 clients: median ms": {
+    "unit": "ms",
+    "musonic": 33.49,
+    "navidrome": 393.79
+   },
+   "64 clients: p95 ms": {
+    "unit": "ms",
+    "musonic": 105.09,
+    "navidrome": 592.81
+   }
+  },
+  "Server CPU time per 1,000 requests": {
+   "1 clients": {
+    "unit": "s",
+    "musonic": 0.5821349557522124,
+    "navidrome": 12.146957520091847
+   },
+   "4 clients": {
+    "unit": "s",
+    "musonic": 0.6024356072852678,
+    "navidrome": 12.051660516605166
+   },
+   "16 clients": {
+    "unit": "s",
+    "musonic": 0.6006871328826333,
+    "navidrome": 11.743375174337517
+   },
+   "64 clients": {
+    "unit": "s",
+    "musonic": 0.5975357103914514,
+    "navidrome": 11.010876519513756
+   }
+  }
+ }
+}

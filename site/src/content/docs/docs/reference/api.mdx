@@ -1,0 +1,405 @@
+---
+title: HTTP API
+description: Every HTTP route of Musonic Server — the Subsonic and OpenSubsonic API, the native /v1 API, real-time events over WebSocket, caching headers and id formats.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+This page lists everything Musonic Server answers over HTTP, for developers who write a client, a script or an integration. It is taken from the server's source code (`apps/server/src`), version 1.2.1.
+
+**What you need**
+
+- A running Musonic Server and its address (in the examples: `https://music.example.com`).
+- An account on it. For scripts, create an API key for the device (see [Authentication](#authentication)).
+
+Musonic Server exposes three things:
+
+| Base path | What it is | Format |
+|---|---|---|
+| `/rest/<endpoint>` | The Subsonic / OpenSubsonic API, used by Musonic and by any Subsonic client | XML by default, JSON with `f=json` |
+| `/v1/...` | The native API of Musonic: accounts, sign-in, real-time events, administration | JSON |
+| `/health` | Liveness check, without sign-in | JSON |
+
+It also serves two web apps: the administration console at the server's address (`/`, and any path that is not an API), and Musonic Web at `/app/` once it is installed from the console.
+
+<img class="diagram" src="/assets/img/docs/diagrams/api-surfaces.en.svg" alt="Diagram: clients on the left (Musonic apps, other Subsonic clients, the console, scripts) call Musonic Server on /rest, /v1, /v1/events and /health; the server reads SQLite, the music folder and the audio providers." />
+
+## Subsonic and OpenSubsonic API
+
+### Version and answer format
+
+- Subsonic API version advertised: **1.16.1**.
+- Every answer carries `status` (`ok` or `failed`), `version` (`1.16.1`), `type` (`musonic`), `serverVersion` (the server's version) and `openSubsonic: true`.
+- Routes answer at `/rest/<endpoint>` and `/rest/<endpoint>.view`, with any HTTP method.
+- Parameters are read from the query string **and** from a form body (`application/x-www-form-urlencoded`, the OpenSubsonic `formPost` extension). Repeated keys are kept (`id=a&id=b`).
+- Answers are XML by default, JSON with `f=json`, JSONP with `f=jsonp&callback=<name>` (letters, digits, `_` and `.`, 64 characters at most; otherwise JSON).
+- Errors use the Subsonic codes: `0` generic, `10` missing parameter, `40` wrong credentials, `41` token sign-in not available, `42` mechanism not supported, `43` conflicting mechanisms, `44` invalid API key, `50` not authorized, `70` not found.
+
+### Authentication
+
+Every route except `getOpenSubsonicExtensions` needs credentials. Three methods are accepted:
+
+| Method | Parameters | Notes |
+|---|---|---|
+| API key (OpenSubsonic `apiKeyAuthentication`) | `apiKey=<key>` | Recommended. Keys start with `msk_`. Must not be combined with `u`, `p`, `t` or `s` (error `43`). |
+| Password | `u=<user>&p=<password>` or `p=enc:<hex>` | The password in clear or hex-encoded after `enc:`. Use it only over HTTPS. |
+| Token and salt (classic Subsonic) | `u=<user>&t=<md5(password + salt)>&s=<salt>` | Works only while the server setting `legacy_auth` is on (the default). When it is off, the server answers error `41` and asks for `apiKey`. |
+
+- `<key>`: an API key created in the app, in the console, or with `POST /v1/me/api-keys` (shown once).
+- `<user>`, `<password>`: the account's username and password.
+- `<salt>`: a random string you choose for each request; `<md5(password + salt)>` is the MD5 hash, in hex, of the password followed by that salt.
+
+```sh
+curl "https://music.example.com/rest/ping?apiKey=<key>&c=my-script&f=json"
+```
+
+<Aside type="note">
+After 10 different wrong passwords for one account from one address, that address is refused for that account for 15 minutes, even with the right password. Retrying the same wrong password does not count again. The address is taken from `CF-Connecting-IP`, else `X-Forwarded-For`, else the connection.
+</Aside>
+
+A suspended account gets error `50` with the message "This account is suspended".
+
+### OpenSubsonic extensions
+
+`getOpenSubsonicExtensions` answers without credentials:
+
+| Extension | Versions | Meaning |
+|---|---|---|
+| `apiKeyAuthentication` | 1 | `apiKey` parameter, `tokenInfo` |
+| `formPost` | 1 | Parameters in a form body |
+| `indexBasedQueue` | 1 | `savePlayQueueByIndex`, `getPlayQueueByIndex` |
+| `musonicServer` | 1, 2, 3, 4 | The server is Musonic Server. 2: the one-request routes `getMusonicLibrary`, `getMusonicHome`, `getMusonicHomeMore`. 3: short ids (old UUIDs still accepted). 4: podcasts (`searchPodcasts`, `savePodcastPosition`, listening positions). |
+
+A client can check for `musonicServer` (or call [`GET /v1/info`](#server-and-sign-in)) to use Musonic's extras, and keep working with any other Subsonic server.
+
+### Implemented endpoints
+
+Any other endpoint answers error `0` "`<name>` is not implemented yet".
+
+#### System
+
+| Endpoint | Notes |
+|---|---|
+| `ping` | Empty answer. |
+| `getLicense` | Always `valid: true`. |
+| `getOpenSubsonicExtensions` | No credentials needed. |
+| `tokenInfo` | Only with `apiKey` (error `42` otherwise). Returns the username. |
+| `getScanStatus` | `scanning`, number of files and folders, last scan. |
+| `startScan` | Administrators only. `fullScan=true` reads every file again. Error if no music folder is configured. |
+
+#### Users
+
+| Endpoint | Notes |
+|---|---|
+| `getUser` | Yourself; any account for an administrator. Roles are fixed: `downloadRole`, `playlistRole`, `streamRole`, `coverArtRole`, `commentRole`, `settingsRole` are `true`; `uploadRole`, `podcastRole`, `jukeboxRole`, `shareRole`, `videoConversionRole` are `false`. Rights set in the console are not reflected here. |
+| `getUsers` | Administrators only. |
+| `createUser` | Administrators only. `username`, `password` (clear or `enc:`), `adminRole=true`. Passwords need 8 characters or more. |
+| `deleteUser` | Administrators only. |
+| `changePassword` | Yourself; any account for an administrator. |
+
+#### Browsing
+
+| Endpoint | Notes |
+|---|---|
+| `getMusicFolders` | The configured music folder. `musicFolderId` is accepted by clients but ignored by the other routes. |
+| `getIndexes`, `getArtists` | Album artists, A–Z. |
+| `getMusicDirectory` | Folder browsing. |
+| `getArtist`, `getAlbum`, `getSong` | Also take online ids (`dz-…`, see [Ids](#ids)) when the online catalog is on and the account may use it. `getArtist` adds the rest of the artist's discography from the online catalog. |
+| `getGenres`, `getSongsByGenre` | |
+| `getAlbumList`, `getAlbumList2` | The usual `type` values (`recent`, `frequent`, `newest`, `random`…). |
+| `getRandomSongs` | `size`, `genre`, `fromYear`, `toYear`. |
+| `getStarred`, `getStarred2` | The account's likes. |
+| `getTopSongs` | `artist` (a name): the artist's songs ordered by play counts **on this server** (no external service). |
+| `getSimilarSongs`, `getSimilarSongs2` | A radio built from the same artists and genres, shuffled. |
+| `getArtistInfo`, `getArtistInfo2` | No biography. Similar artists are the ones sharing the most genres. |
+| `getAlbumInfo`, `getAlbumInfo2` | Empty `notes`. |
+| `search2`, `search3` | Library, plus online results when the online catalog is on and allowed for the account. |
+
+#### Likes, ratings, plays, queue
+
+| Endpoint | Notes |
+|---|---|
+| `star`, `unstar` | `id`, `albumId`, `artistId`. An online id is added to the library first (and may be imported, see [Online catalogue](/docs/library/online-catalogue/)). |
+| `setRating` | |
+| `scrobble` | `submission=false` only marks "now playing"; otherwise each `id` (with its `time`, in ms) counts as played. |
+| `getNowPlaying` | |
+| `savePlayQueue`, `getPlayQueue` | |
+| `savePlayQueueByIndex`, `getPlayQueueByIndex` | OpenSubsonic `indexBasedQueue`. |
+
+#### Playlists
+
+| Endpoint | Notes |
+|---|---|
+| `getPlaylists`, `getPlaylist` | |
+| `createPlaylist`, `updatePlaylist`, `deletePlaylist` | Only the owner edits a playlist. Making it public needs the right to do so (set per account in the console). Online ids can be added. |
+
+#### Media
+
+| Endpoint | Notes |
+|---|---|
+| `stream` | The file itself, with HTTP ranges, or a transcoding by ffmpeg. See [Streaming](#streaming). |
+| `download` | The original file. Needs the download right of the account. |
+| `getCoverArt` | `id`, `size` (1 to 4095 px). Resized pictures are cached on disk; `Cache-Control: public, max-age=86400`. Ids `pl-…` (playlist picture) and `ar-…` (artist picture) are accepted. |
+| `getLyrics` | `artist`, `title`: lyrics found in the library. |
+| `getLyricsBySongId` | OpenSubsonic structured lyrics (synced when the file has timings). For a podcast episode (`pe-…`), its transcript when the show publishes one. |
+
+#### Podcasts
+
+| Endpoint | Notes |
+|---|---|
+| `getPodcasts` | `id`, `includeEpisodes`. Shows the account follows; up to 300 episodes per show. |
+| `getNewestPodcasts` | `count`. |
+| `getPodcastEpisode` | OpenSubsonic. |
+| `createPodcastChannel` | `url`: follows a show by its feed address. |
+| `deletePodcastChannel` | Stops following it. |
+| `refreshPodcasts` | Reads the feeds again, in the background. The server also reads followed feeds every hour. |
+| `searchPodcasts` | Musonic: `query`, `country`. Shows in the directory, and which ones you follow. |
+| `savePodcastPosition` | Musonic: `id`, `position` (ms). |
+| `getPodcastShow` | Musonic: `id` or `url`. One show and its episodes, followed or not. |
+
+Episodes play through `stream` and their pictures through `getCoverArt`, like songs.
+
+#### Radio
+
+| Endpoint | Notes |
+|---|---|
+| `getInternetRadioStations` | Always an empty list. |
+
+#### Musonic routes
+
+Announced by the `musonicServer` extension (version 2 and later). They answer in one request what a generic client asks in many.
+
+| Endpoint | Answer |
+|---|---|
+| `getMusonicLibrary` | `musonicLibrary`: `total` and every song with a file, with only `id`, `title`, `artist`, `artistId`, `artists`, `album`, `albumId`, `coverArt`, `duration`, `suffix`, `bitRate`, `created`, `track`, `year`, `genre`. No likes or play counts (use `getStarred2`). |
+| `getMusonicHome` | `musonicHome`: `recent` (24 albums), `frequent` (40), `newest` (16), `random` (16), `starred`, `playlists`. |
+| `getMusonicHomeMore` | `musonicHomeMore`, from `artist` (an artist id), `song` (a song id) and up to 8 `genre` values (at least one of them): `similarArtistAlbums` (the latest album of up to 4 similar artists), `similarSongs` (20), `genreMixes` (30 random songs per genre). |
+
+### Not implemented
+
+Bookmarks (`getBookmarks`, `createBookmark`, `deleteBookmark`), shares, jukebox (`jukeboxControl`), videos, chat, avatars (`getAvatar`), `updateUser`, `search` (Subsonic 1.x), podcast episode download and deletion (`downloadPodcastEpisode`, `deletePodcastEpisode`), internet radio management.
+
+### Streaming
+
+`stream` sends the file as it is, with HTTP ranges so players can seek, unless the client asks otherwise:
+
+| Parameter | Effect |
+|---|---|
+| `format=raw` | Never transcode. |
+| `format=mp3`, `opus`, `aac` (or `m4a`), `ogg` | Transcode to that format when the file is in another one. |
+| `maxBitRate=<kbit/s>` | Transcode when the file is above it (capped at 320). |
+| `timeOffset=<seconds>` | Start a transcoded stream later. |
+
+- When only the bit rate is too high, the format used is the server setting `transcode_format` (`mp3` by default; `opus` and `aac` possible).
+- Default bit rates when none is asked: 192 kbit/s for MP3, 128 for Opus, 256 for AAC. A smaller file is never "upscaled".
+- The account's bit-rate limit and the server's `max_bit_rate` win over what the client asks: the lowest applies.
+- Transcoded songs are kept on disk (`transcode_cache_mb`, 500 MB by default), so a song played again or seeked starts at once. The next song of the saved queue is prepared in the background.
+- Without ffmpeg, files are sent as they are.
+- A track without a file is streamed from the first audio provider that has it, through a shared disk cache split in 1 MiB segments, with ranges too.
+
+## Native API (`/v1`)
+
+JSON in and out. Errors are `{"error": "<message>"}` with an HTTP status (`400`, `401` "sign in required", `403` "administrators only", `404`, `409`, `429`, `500`).
+
+### Authentication
+
+`Authorization: Bearer <token>`, where `<token>` is either:
+
+- a **session token**, returned by `POST /v1/auth/login` or `POST /v1/setup`. It lasts 30 days without use, and each use extends it;
+- an **API key** (`msk_…`).
+
+```sh
+curl -X POST https://music.example.com/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"<user>","password":"<password>","client":"my-script"}'
+# {"token":"…","user":{…}}
+
+curl https://music.example.com/v1/me -H "Authorization: Bearer <token>"
+```
+
+`POST /v1/auth/login` also accepts `token` and `salt` (the Subsonic `md5(password + salt)` and its salt) instead of `password`, under the same `legacy_auth` setting. `client` is the name shown in the activity journal. It returns `429` when the address is locked out (see above) and `403` for a suspended account.
+
+A few routes cannot send a header (a WebSocket, an `<img>`, an `<audio>`): they take the token as `?token=` instead, as noted below.
+
+### Server and sign-in
+
+| Method and route | Sign-in | Purpose |
+|---|---|---|
+| `GET /health` | none | `{"status":"ok"}`, or `503` with `degraded` when the database does not answer. Nothing else. |
+| `GET /v1/info` | none | `{server: "musonic", version, api: 1, features}`. `features` lists `events`, `connect`, and `online` and `imports` when enabled. |
+| `GET /v1/setup` | none | `{"needed": true}` while there is no account. |
+| `POST /v1/setup` | none | `{username, password}`: creates the first account, as administrator, and returns `{token, user}`. `409` once an account exists. |
+| `POST /v1/auth/login` | none | `{username, password}` (or `token` + `salt`), optional `client` → `{token, user}`. |
+| `POST /v1/auth/logout` | user | Ends this session. |
+
+### Your account
+
+| Method and route | Sign-in | Purpose |
+|---|---|---|
+| `GET /v1/me` | user | The signed-in account. |
+| `PUT /v1/me/password` | user | `{current, new}`. |
+| `GET /v1/me/settings` | user | `{connectSync}`: synced playback (Musonic Connect). |
+| `PUT /v1/me/settings` | user | `{connectSync}`. The account's devices get a `settings` event at once. |
+| `GET /v1/me/player` | user | `{player, updatedAt}`: the account's last listening (Musonic Connect), to resume it on another device; `player` is `null` when there is none. |
+| `GET /v1/me/api-keys` | user | The account's device keys. |
+| `POST /v1/me/api-keys` | user | `{name}` → a new key, shown once (only its hash is kept). |
+| `DELETE /v1/me/api-keys/{id}` | user | Revokes a key. |
+
+### Playlist imports
+
+Any account. The playlist sources are Deezer (when the online catalog is on), YouTube (when the administrator set a YouTube Data API key), and those a server build adds.
+
+| Method and route | Sign-in | Purpose |
+|---|---|---|
+| `POST /v1/playlist-imports/preview` | user | `{url}` or `{text}` (pasted song links): what would be imported, nothing written. |
+| `POST /v1/playlist-imports` | user | `{url}` or `{text}`, `name`, `into` (an import to complete): starts an import. Progress comes as `playlistImport` events. |
+| `GET /v1/playlist-imports` | user | The account's imports, newest first. |
+| `GET /v1/playlist-imports/{id}` | user | One import with its songs (found, uncertain, not found). |
+| `DELETE /v1/playlist-imports/{id}` | user | Forgets the import; the playlist stays. |
+| `POST /v1/playlist-imports/{id}/retry` | user | Looks for the songs not found again. |
+
+### Accounts and links (administrators)
+
+| Method and route | Sign-in | Purpose |
+|---|---|---|
+| `GET /v1/users` | admin | Accounts, with their rights, devices and imports this month. |
+| `POST /v1/users` | admin | Creates an account directly. |
+| `GET /v1/users/{id}` | admin | One account and its device keys. |
+| `PATCH /v1/users/{id}` | admin | `{isAdmin?, suspended?, displayName?}`. There is always one active administrator left. |
+| `DELETE /v1/users/{id}` | admin | Deletes an account. |
+| `PUT /v1/users/{id}/limits` | admin | Rights and quotas of an account that is not administrator. |
+| `POST /v1/users/{id}/logout` | admin | Ends all its sessions and revokes its device keys. |
+| `DELETE /v1/users/{id}/api-keys/{key}` | admin | Revokes one device key. |
+| `POST /v1/users/{id}/password-reset` | admin | `{seconds, logoutDevices}` → a reset link token. |
+| `GET /v1/password-resets` | admin | Reset links not used yet. |
+| `DELETE /v1/password-resets/{id}` | admin | Revokes one. |
+| `GET /v1/invitations` | admin | Invitation links. |
+| `POST /v1/invitations` | admin | `{note, isAdmin, seconds}` → a new invitation link. |
+| `DELETE /v1/invitations/{id}` | admin | Revokes one. |
+| `GET /v1/invite/{token}` | none | The invitation behind a link. |
+| `POST /v1/invite/{token}` | none | `{username, password}`: creates the account. |
+| `GET /v1/reset/{token}` | none | The reset link. |
+| `POST /v1/reset/{token}` | none | `{password}`: sets the new password. |
+
+### Administration (console)
+
+All of these are for administrators only.
+
+| Method and route | Purpose |
+|---|---|
+| `GET /v1/admin/status` | Dashboard: live figures, disk, library, now playing, alerts, new releases. |
+| `GET /v1/admin/health` | Detail behind `/health`: version, schema, last scan, providers, alerts, imports. |
+| `GET /v1/admin/connect` | Every account with a device online, and what each plays. |
+| `POST /v1/admin/measures` | `{edges}` (Unix seconds) → one bucket of traffic, processor, memory and disk between each two edges. |
+| `PUT /v1/admin/traffic-quota` | `{outBytes}`: what the host allows to send each month (0 = none). |
+| `GET /v1/admin/journal` | Activity journal, newest first. Filters: `admin`, `before`, `after`, `kind`, `user`, `q`, `from`, `to`, `limit`. |
+| `PUT /v1/admin/journal/settings` | `{maxBytes}`: maximum size of the journal. |
+| `GET /v1/admin/imports` | Import queue: `state` (`pending`, `running`, `failed`, `done`), `q`, `offset`, `limit`, and counts. |
+| `POST /v1/admin/imports/{track}/retry` | Tries one import again now. |
+| `DELETE /v1/admin/imports/{track}` | Removes it from the queue. |
+| `POST /v1/admin/imports/retry-failed` | Tries every failed import again. |
+| `GET /v1/admin/imports/youtube` | Whether the YouTube API key is set (the key is never sent back). |
+| `PUT /v1/admin/imports/youtube` | Sets the key after a test request; an empty key removes it. |
+| `GET /v1/admin/providers` | Audio providers, their state, whether their credential can be changed. |
+| `PUT /v1/admin/providers/{id}/credential` | `{value}`: a new token or key, checked before it replaces the old one. |
+| `GET /v1/admin/library` | Scan state and the size of each list to check. |
+| `POST /v1/admin/library/scan` | `{full}`: scans now (`full`: reads every file again). |
+| `GET /v1/admin/library/tracks` | Songs: `q`, `filter` (`missing`, `nocover`, `duplicates`, `online`), `offset`, `limit`. |
+| `GET /v1/admin/library/tracks/{id}` | One song: tags, files, sources, likes and plays. |
+| `GET /v1/admin/library/files/{id}?token=` | The file itself, to listen to it; ranges allowed. Token in the address. |
+| `GET /v1/admin/library/covers/{id}?token=&size=` | A song's or album's picture. Token in the address. |
+| `GET /v1/admin/devices` | Device keys of every account, with where and when each last signed in. |
+| `GET /v1/admin/blocked` | Address and account pairs locked out now. |
+| `DELETE /v1/admin/blocked?addr=&username=` | Lets them try again. |
+| `GET /v1/admin/settings` | Server settings, and which ones wait for a restart. |
+| `PUT /v1/admin/settings` | `{key, value}`: changes a setting, applied at the next start. |
+| `POST /v1/admin/restart` | Stops the server; Docker (`restart: unless-stopped`) or your service manager starts it again. |
+| `GET /v1/admin/backups` | Database backups. |
+| `POST /v1/admin/backups` | Makes one now. |
+| `GET /v1/admin/backups/{name}` | Downloads one. |
+| `GET /v1/admin/logs` | Last lines of the technical logs: `level`, `after`. |
+| `POST /v1/admin/caches/clear?kind=` | Empties a cache: `covers`, `streams`, or both. |
+| `GET /v1/admin/playback` | ffmpeg's version and the caches' sizes. |
+| `GET /v1/admin/webapp` | Musonic Web hosted at `/app`: installed and latest versions. |
+| `POST /v1/admin/webapp/install` | Installs the latest `web-v…` release in `/app`. |
+| `GET /v1/admin/podcasts` | `{indexConfigured, shows, episodes}`. |
+| `PUT /v1/admin/podcasts/index` | `{key, secret}` of Podcast Index: tested, then kept (empty: removed). |
+
+When the console is installed, an unknown `/v1/...` route answers `404` with `{"error": "no such route"}`.
+
+## Real-time events (`/v1/events`)
+
+`GET /v1/events` is a **WebSocket**. Every device of an account learns at once what changed for that account, whichever client made the change (Subsonic clients included).
+
+- Sign-in: `Authorization: Bearer <token>`, or `?token=<token>` (browsers cannot set headers on a WebSocket).
+- Device id: `?device=<id>` or the `X-Musonic-Device` header, chosen by the client (64 characters at most). Send the same header or `device` parameter on your other requests: events caused by your device carry `by: <id>`, so it can ignore its own echo.
+- Events are not stored. A device that connects again reloads what it shows.
+
+```js
+const ws = new WebSocket('wss://music.example.com/v1/events?token=<token>&device=<id>');
+ws.onmessage = (e) => console.log(JSON.parse(e.data));
+```
+
+Each message is a JSON object `{type, at, by?, …}`: `at` in Unix seconds, `by` the device that made the change when it said so.
+
+| `type` | Fields | When |
+|---|---|---|
+| `hello` | `user {id, username}`, `device`, `features` | First message of a connection. |
+| `likes` | `items [{kind, id, starred}]` (`kind`: `track`, `album`, `artist`) | Likes changed. |
+| `rating` | `kind`, `id`, `rating` | A rating changed. |
+| `playlist` | `id`, `action` (`created`, `updated`, `deleted`) | A playlist changed. |
+| `play` | `ids` | Plays were counted. |
+| `queue` | — | The saved play queue changed. |
+| `import` | `id`, `state` (`done`, `failed`), `path` | An online track was imported into the library, or failed. |
+| `playlistImport` | `id`, `state` (`running`, `done`, `failed`), `done`, `total`, `playlist` | A playlist import went on. |
+| `devices` | `devices` | Musonic Connect: the account's devices online changed. |
+| `player` | `player`, `now` | Musonic Connect: what a device plays; `now` is the server time in ms. |
+| `command` | `command` | Musonic Connect: a remote command for the device `command.to`. |
+| `commandFailed` | `command`, `reason` (`offline`, `notAllowed`) | A command did not reach its device. |
+| `settings` | `connectSync` | The account's settings changed. |
+| `ping` | — | Keep-alive, every 30 seconds. |
+| `resync` | — | The device was too slow and missed events: reload what is shown. |
+
+### Musonic Connect messages
+
+Musonic Connect (beta) uses the same WebSocket in both directions. The server plays nothing: it keeps the last state of each device in memory, dates it with its own clock and relays it. A device sends:
+
+| `type` | Content |
+|---|---|
+| `register` | The device: `name` (64 characters at most), `kind` (`phone`, `web`, `desktop`, `car`, `speaker`…), `canPlay`, `volume`, `alone`. The server answers with what the account's devices play. |
+| `player` | What it plays: `track`, `title`, `artist`, `album`, `coverArt`, `duration` (s), `playing`, `position` (ms), `queue`, `shuffle` (`off`, `on`, `magic`), `repeat` (`none`, `all`, `one`), `volume` (0–100). Ignored until the device registered. |
+| `command` | `to` (a device id), `action` (`play`, `pause`, `toggle`, `next`, `previous`, `seek`, `volume`, `playItem`, `transfer`), `params`, and `user` for an administrator acting on another account. |
+
+The server sets `player.device`, `player.positionAt` (server time of `position`, ms) and `command.from`. The last state is also saved per account, for `GET /v1/me/player`. Anything else sent on the socket is ignored.
+
+## Caching and compression
+
+- Text answers (JSON, XML, JavaScript, HTML) over 1 KB are compressed with gzip for clients that send `Accept-Encoding: gzip`. Audio and pictures are sent as they are.
+- Read-only Subsonic answers are kept in memory, per account, until the database changes: `getArtists`, `getIndexes`, `getMusicFolders`, `getGenres`, `getStarred`, `getStarred2`, `getPlaylists`, `getSongsByGenre`, `getMusonicLibrary`; `getAlbum`, `getArtist`, `getSong`, `getPlaylist`, `getMusicDirectory` for library ids; `getAlbumList` and `getAlbumList2` except `type=random`; `search2` and `search3` when the online catalog is off.
+- Those answers carry a weak `ETag`, `Cache-Control: private, no-cache` and `Vary: accept-encoding`. Send the `ETag` back in `If-None-Match`: the server answers `304 Not Modified` while nothing changed.
+- After a write (a like, a play), the most requested answers are rebuilt in the background, so the next screen finds them ready.
+- CORS is open to any origin, without cookies. Allowed request headers: `Authorization`, `Content-Type`, `Range`, `If-None-Match`. Exposed: `Content-Range`, `Content-Length`, `Accept-Ranges`, `ETag`.
+- Every answer carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'` and `Referrer-Policy: no-referrer`.
+
+## Ids
+
+| Item | Format | Example |
+|---|---|---|
+| Tracks, albums, artists, folders, playlists | Short id: 64 bits in base 62, always 11 characters | `3kQ9xZ0aB7c` |
+| Online catalog items | `dz-track-<n>`, `dz-album-<n>`, `dz-artist-<n>` | `dz-track-3135556` |
+| Podcast shows, episodes | `pc-…`, `pe-…` | |
+| Cover ids | `pl-<playlist id>` (playlist picture), `ar-<artist id>` (artist picture) | |
+| Accounts, keys, links | UUID | |
+
+- A track keeps its id across rescans, moves and imports: an online track that gets a file keeps the id it had.
+- Older ids (UUIDs from before server 1.0.3, or 22-character ids imported from Navidrome) are still accepted in `id`, `albumId`, `artistId`, `songId`, `songIdToAdd`, `playlistId`, `current` and `song`, and turned into the current short id.
+
+## TypeScript types
+
+The JSON types of the native API and of the events are written in Rust and generated as TypeScript with `ts-rs`: `cargo test` in `apps/server` writes them to `packages/core/src/server/generated` (for example `ServerInfo`, `EventMessage`, `Event`, `ConnectDevice`, `Player`, `Command`). The server's CI fails when the committed types are out of date. TypeScript clients import them from `@musonic/core`.
+
+## Next steps
+
+- [Command line](/docs/reference/cli/)
+- [Architecture](/docs/reference/architecture/)
+- [Configuration reference](/docs/admin/configuration/)

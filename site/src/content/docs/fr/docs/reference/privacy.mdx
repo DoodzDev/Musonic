@@ -1,0 +1,96 @@
+---
+title: Vie privée et réseau
+description: Toutes les requêtes que Musonic Server, l’appli Android, le lecteur web et ce site envoient sur Internet, ce que chacune contient, comment la couper, et ce qui est gardé sur votre téléphone et sur le serveur.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Cette page liste toutes les connexions que Musonic établit en dehors de celle entre vos applis et votre propre serveur : qui est contacté, ce qui est envoyé, quand, et comment le couper. Elle s’adresse à ceux qui veulent savoir où vont leurs données, et aux administrateurs qui doivent en informer leurs utilisateurs.
+
+## En bref
+
+- **Aucune mesure d’audience, aucun pistage, aucune publicité, aucun rapport de plantage** dans le serveur, l’appli Android, le lecteur web ou ce site. Musonic n’a pas de compte à lui ni de serveur central : je ne reçois rien.
+- **Vos fichiers de musique ne quittent jamais votre serveur.** Les applis les reçoivent de votre serveur uniquement.
+- **Le serveur** contacte Internet pour : l’API publique officielle de Deezer (catalogue en ligne, pochettes, extraits de 30 secondes), GitHub (nouvelles versions), l’annuaire de podcasts d’Apple et les hébergeurs de podcasts (seulement si les podcasts sont utilisés), Podcast Index et l’API YouTube Data (seulement si un administrateur ajoute une clé). Chacun peut être coupé ou est coupé par défaut.
+- **L’appli Android** contacte aussi, directement depuis le téléphone : **LRCLIB** pour les paroles que le serveur n’a pas, **l’API publique de Deezer** pour les photos d’artistes, les titres populaires et les artistes proches, et **GitHub** quand vous touchez **Vérifier les mises à jour**. Aucun réglage ne coupe les deux premiers aujourd’hui.
+- **Le lecteur web** contacte uniquement votre serveur et **LRCLIB**. Il ne charge aucune police, aucun script ni aucune image chez quelqu’un d’autre.
+- **Ce site** ne dépose aucun cookie, n’a aucune mesure d’audience et sert lui-même sa police.
+
+<img class="diagram" src="/assets/img/docs/diagrams/privacy-network.fr.svg" alt="Schéma : au centre, votre Musonic Server, relié à l’appli Android et au lecteur web. Des flèches partent du serveur vers l’API publique de Deezer, GitHub, l’annuaire de podcasts d’Apple et les hébergeurs de podcasts, Podcast Index (avec une clé), l’API YouTube Data (avec une clé). Des flèches partent de l’appli Android vers LRCLIB, l’API publique de Deezer et GitHub (à la demande). Une flèche part du lecteur web vers LRCLIB. Aucune flèche ne transporte vos fichiers de musique." />
+
+## Musonic Server
+
+| Qui est contacté | Ce qui est envoyé | Quand | Comment le couper |
+|---|---|---|---|
+| **API publique de Deezer** (`api.deezer.com`) et serveurs d’images et d’extraits de Deezer | Les mots recherchés, les identifiants d’albums, d’artistes et de titres, l’adresse d’une pochette ou d’un extrait. Aucun compte, aucun nom de vos utilisateurs. | Quand quelqu’un fait une recherche, ouvre un album ou un artiste en ligne, like ou ajoute un titre en ligne, importe une playlist Deezer ou écoute un extrait de 30 secondes. Les pochettes des albums en ligne sont récupérées par le serveur et gardées dans son cache d’images. | Console **Imports** › **Catalogue en ligne** (réglage `online`, variable `MUSONIC_ONLINE=false`). Les extraits seuls : **Extraits de 30 s** (`online_previews`, `MUSONIC_ONLINE_PREVIEWS=false`). |
+| **API GitHub** (`api.github.com`) | Une demande de la liste des versions de Musonic, avec l’agent `musonic-server/<version>`. | Toutes les 6 heures, dès le démarrage. Aussi quand un administrateur ouvre **Musonic Web sur ce serveur** dans la console, et quand il l’installe (le fichier est téléchargé depuis GitHub). | Console **Réglages et maintenance** › **Vérifier les mises à jour** (`update_check`, `MUSONIC_UPDATE_CHECK=false`). La page **Musonic Web sur ce serveur** interroge quand même GitHub quand on l’ouvre. |
+| **Annuaire de podcasts d’Apple** (`itunes.apple.com/search`) | Les mots tapés dans une recherche de podcasts. | Quand quelqu’un cherche un podcast. Les résultats sont gardés une journée. | Ne pas utiliser la recherche de podcasts. Il n’y a pas d’interrupteur. |
+| **Hébergeurs de podcasts** (l’adresse de chaque flux) | Une demande du flux, de l’audio d’un épisode, de son image ou de sa transcription, depuis l’adresse du serveur. | Toutes les heures pour les émissions suivies par quelqu’un (un flux inchangé répond en une courte réponse), et quand un épisode est écouté. Les épisodes passent par le serveur : **l’hébergeur ne voit jamais l’adresse de l’auditeur**. Seules les adresses publiques d’Internet sont contactées. | Ne suivre aucune émission. |
+| **Podcast Index** (`api.podcastindex.org`) | Les mots recherchés, signés avec la clé de l’administrateur. | Seulement si une clé est enregistrée (console **Imports** › **Clé Podcast Index**, ou `MUSONIC_PODCASTINDEX_KEY` et `MUSONIC_PODCASTINDEX_SECRET`), quand quelqu’un cherche un podcast. | Coupé par défaut : n’enregistrez pas de clé, ou retirez-la. |
+| **API YouTube Data** (`www.googleapis.com/youtube/v3`) | L’identifiant de la playlist importée, avec la clé de l’administrateur. | Seulement si une clé est enregistrée (console **Imports** › **Import YouTube Music**), quand quelqu’un importe une playlist YouTube ou YouTube Music. | Coupé par défaut : n’enregistrez pas de clé, ou retirez-la. |
+| **Un fournisseur audio** branché par l’administrateur (un dossier d’import, une adresse directe, un autre serveur Subsonic) | Ce dont ce fournisseur a besoin pour trouver un titre (titre, artiste, identifiants). | Quand un titre en ligne est écouté ou importé. | Ne brancher aucun fournisseur. Voir [Catalogue en ligne et imports](/fr/docs/library/online-catalogue/). |
+
+Le serveur n’envoie rien d’autre : pas de statistiques, pas de rapports d’erreur, aucun « appel à la maison ».
+
+## L’appli Android
+
+| Qui est contacté | Ce qui est envoyé | Quand | Comment le couper |
+|---|---|---|---|
+| **Votre serveur** | La clé d’appareil de votre compte (ou, sur d’autres serveurs Subsonic, un jeton), ce que vous parcourez et écoutez. | Tout le temps que vous utilisez l’appli. | — |
+| **LRCLIB** (`lrclib.net`) | L’artiste, le titre et la durée du morceau. L’agent indique `Musonic`. Ni l’adresse de votre serveur ni votre compte ne sont envoyés. | Quand le lecteur plein écran (ou l’écran des paroles dans Android Auto) affiche un titre dont votre serveur n’a pas les paroles. | Aucun réglage. Les paroles intégrées à vos fichiers passent en premier et ne déclenchent jamais cette requête. |
+| **API publique de Deezer** (`api.deezer.com`) et serveurs d’images de Deezer | Des noms d’artistes ; des identifiants d’artistes et d’albums Deezer. | Pages d’artiste (photo, titres populaires, artistes proches), photos d’artistes dans les résultats de recherche quand votre serveur n’en a pas, suggestions en ligne des pages Accueil et Recherche, lecture automatique et lecture aléatoire magique. | Pas de réglage dédié. Le **Mode hors ligne** arrête les suggestions de l’Accueil et de la Recherche. |
+| **API GitHub** (`api.github.com`) | Une demande de la liste des versions de Musonic. | Seulement quand vous touchez **Vérifier les mises à jour** dans votre profil. Jamais toute seule. | Ne pas la toucher. |
+
+L’appli ne contient **aucune bibliothèque de mesure d’audience, de publicité ou de rapport de plantage**. Elle n’utilise les services Google pour rien.
+
+## Le lecteur web
+
+Le lecteur web est un ensemble de fichiers statiques : servi par votre propre serveur (à `/app/`), ou la copie hébergée sur ce site à `musonic.doodz.dev/app/` (servie par GitHub Pages, comme tout le site).
+
+| Qui est contacté | Ce qui est envoyé | Quand | Comment le couper |
+|---|---|---|---|
+| **Votre serveur** | Votre session (clé d’appareil ou jeton), ce que vous parcourez et écoutez. Les pochettes et les images de podcasts passent aussi par votre serveur. | Tout le temps que vous l’utilisez. | — |
+| **LRCLIB** (`lrclib.net`) | L’artiste, le titre et la durée du morceau, depuis votre navigateur. | Quand les paroles s’affichent pour un titre dont votre serveur n’a pas les paroles. | Aucun réglage. |
+| **L’hébergeur des fichiers** (votre serveur, ou GitHub Pages pour la copie hébergée) | La requête habituelle d’un navigateur qui charge une page (votre adresse IP, votre navigateur). | Quand vous ouvrez le lecteur web. | Utiliser la copie servie par votre propre serveur. |
+
+Le lecteur web ne charge **aucune police, aucun script, aucune image ni aucun style chez un tiers** : il utilise les polices de votre système. Il n’a ni mesure d’audience ni service worker.
+
+## Ce site
+
+- **Aucun cookie**, aucune mesure d’audience, aucune publicité, aucun script tiers.
+- La police (Inter) est **servie par le site lui-même**, pas par Google Fonts.
+- Le site est hébergé sur GitHub Pages : GitHub reçoit la requête habituelle de toute visite.
+- Ce que votre navigateur garde, uniquement pour votre confort et jamais envoyé nulle part :
+  - `musonic-lang` (stockage local) : la langue choisie avec le lien EN / FR. Le lecteur web hébergé ici lit le même choix.
+  - `starlight-theme` (stockage local) : le thème clair ou sombre choisi dans la documentation.
+  - `sl-sidebar-state` (stockage de session, effacé à la fermeture de l’onglet) : les groupes du menu de la documentation ouverts.
+
+## Ce qui est gardé sur votre téléphone
+
+- **Votre mot de passe n’est pas gardé.** Sur Musonic Server, l’appli garde une **clé d’appareil** créée pour ce téléphone ; sur un autre serveur Subsonic, un jeton fixe (ou le mot de passe, seulement pour les serveurs qui refusent les jetons). Une clé d’appareil se révoque depuis la console (**Appareils et sécurité**) ou en se déconnectant.
+- Les réglages, les comptes, la file d’attente, les caches et l’historique de recherche sont dans le stockage privé de l’appli (un fichier MMKV). Ce fichier **n’est pas chiffré par Musonic** aujourd’hui ; il est protégé par le cloisonnement des applis d’Android, et l’appli interdit la sauvegarde dans le cloud d’Android (`allowBackup="false"`).
+- Les titres téléchargés et leurs pochettes sont des fichiers dans le stockage de l’appli, supprimés avec elle.
+
+Dans le **lecteur web**, la session est gardée dans le stockage de session de l’onglet (effacé à sa fermeture), ou dans le stockage local seulement si vous cochez **Se souvenir de moi**. Le mot de passe lui-même n’est jamais gardé.
+
+## Ce qui est gardé sur le serveur
+
+| Quoi | Comment |
+|---|---|
+| Mots de passe | Hachés avec **argon2id**. Avec l’**Ancienne connexion Subsonic** activée (`legacy_auth`, activée par défaut, nécessaire à la connexion actuelle des applis Musonic et de la plupart des applis Subsonic), une copie est aussi gardée **chiffrée en AES-256-GCM**, avec une clé hors de la base (`MUSONIC_SECRET_KEY`, sinon `secret.key` dans le dossier de données, lisible par son seul propriétaire). |
+| Clés d’appareil et jetons de session | Aléatoires, gardés uniquement sous forme d’**empreintes SHA-256**. |
+| Likes, playlists, écoutes, files d’attente, positions dans les podcasts | Dans la base `musonic.db`, pour chaque compte. |
+| Le journal (connexions, connexions refusées, actions des administrateurs) | Dans `events.db`, avec l’heure, le compte, l’**adresse IP** et l’appli. Taille limitée (50 Mo par défaut, réglable dans la console) : les lignes les plus anciennes partent en premier. |
+| Clés des fournisseurs, de Podcast Index et de YouTube | Dans la base. Rangez les sauvegardes téléchargées en lieu sûr. |
+| Sauvegardes quotidiennes | Des copies de la base dans le dossier de données (`backups`), 14 jours par défaut (`backup_days`). |
+
+<Aside type="caution" title="Si vous faites tourner un serveur pour d’autres">
+Vous détenez l’historique d’écoute de vos utilisateurs et les adresses IP du journal. Prévenez-les, rangez les sauvegardes en lieu sûr, et gardez en tête que l’administrateur d’un serveur voit l’activité des comptes dans la console.
+</Aside>
+
+## Pour aller plus loin
+
+- [Catalogue en ligne et imports](/fr/docs/library/online-catalogue/)
+- [Référence de configuration](/fr/docs/admin/configuration/)
+- [Comptes, droits et appareils](/fr/docs/admin/accounts/)
+- [Sauvegarde et restauration](/fr/docs/admin/backups/)

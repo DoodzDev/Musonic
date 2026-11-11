@@ -1,0 +1,132 @@
+---
+title: FAQ
+description: Short answers to the questions people ask about Musonic, from price and safety to iPhone, the car, Navidrome and how the project is made.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The questions people really ask about Musonic, with a short answer and a link to the page that explains it in full.
+
+## Using it
+
+### Is it free?
+
+Yes. There is no account to create with me, no subscription and no ads. The apps and the server are free to use for any non-commercial purpose: for yourself, your family and your friends. You may also change the code, as long as you keep my name on it and never use it to make money. See [Licence](/docs/about/license/).
+
+### Do I need a server?
+
+Yes. Musonic plays music from a Musonic Server (or any Subsonic-compatible server, such as Navidrome). Either someone close to you runs one and gives you an account, or you run your own on a small Linux machine, a Raspberry Pi or a rented server. See [How Musonic works](/docs/start/how-it-works/) and [Install with Docker](/docs/install/docker/).
+
+### Can I use it without my own music?
+
+Partly, and it is worth being clear about what that means.
+
+- Musonic Server has an **online catalogue**: search shows artists, albums and songs from Deezer's official public API next to your own library, even when your library is empty.
+- Without anything else, those online songs play as **30-second previews** only.
+- Full playback of a song you have no file for needs an **audio provider** that the server's administrator plugs in, for example another Subsonic server to relay. With one, a song you like or add to a playlist can be imported into your library as a file.
+
+Podcasts work without any music of your own. See [Online catalogue and imports](/docs/library/online-catalogue/) and [Podcasts](/docs/apps/podcasts/).
+
+### Can several people use one server?
+
+Yes. The administrator creates an account for each person, or sends them an invitation link. Everyone shares the same music library, but each account has its own likes, playlists, plays and devices. The administrator can limit what a non-administrator account may do (the online catalogue, imports and their quotas, downloads, public playlists) and revoke a device. See [Accounts, rights and devices](/docs/admin/accounts/).
+
+### Does it work on iPhone?
+
+Yes, through the **web player** in Safari, which you can add to your home screen so it opens like an app. There is no Musonic app for iPhone. On an iPhone you do not get offline downloads, Android Auto or CarPlay, and iOS may pause a web page in the background. See [On iPhone and iPad](/docs/apps/iphone/).
+
+### Does it work in the car?
+
+On Android, yes: **Android Auto** (beta) lets you browse your playlists, albums, artists, downloads and podcasts on the car's screen. Because Musonic is not on the Play Store, you have to turn on *Unknown sources* in Android Auto's developer settings once. On iPhone there is no CarPlay: play through Bluetooth. See [Android Auto](/docs/apps/android-auto/).
+
+### Does it work offline?
+
+The **Android app** does: download playlists, albums or single songs and play them without a connection. Downloads keep the original file and wait for Wi-Fi by default. When the server cannot be reached, the app switches to offline mode on its own. The web player has no downloads. See [Offline and data usage](/docs/apps/offline/).
+
+### Can I keep my Subsonic app?
+
+Yes. Musonic Server speaks the Subsonic and OpenSubsonic API, so Symfonium, Substreamer and the other Subsonic apps work with it. They just do not get what only the Musonic apps can do with it, such as live sync between your devices or importing a playlist from a link. See [Other Subsonic apps](/docs/apps/other-clients/).
+
+### Does it replace Navidrome?
+
+It can. Musonic Server reads the same music folder and can take over your Navidrome playlists, likes, ratings, play counts and plays, keeping their identifiers so your apps' downloads keep working. Passwords never come over: each person sets one again. You can also run it next to Navidrome first, with your music folder read-only.
+
+A few things Navidrome has are not in Musonic yet, including smart playlists, several music libraries, Last.fm and ListenBrainz scrobbling, public share links, volume levelling (ReplayGain) and jukebox mode. See the [Migration guide](/docs/migration/navidrome/).
+
+### Is it faster than Navidrome?
+
+In my measurements, on the same small ARM machine with the same library, Musonic Server answered everyday requests much faster and used about 5 times less memory at rest. Navidrome is ahead on a few measures, and the page lists them. See [Benchmark](/docs/about/benchmark/).
+
+## Installing the Android app
+
+### Why is it not on the Play Store?
+
+I chose to publish Musonic on GitHub only. Every version is out the same day for everyone, with no review delay, and nothing to pay. Publishing a new app on the Play Store from a personal developer account first requires a closed test with at least 12 testers for 14 days, which is a lot for a project made by one person. Musonic is not on F-Droid either: F-Droid only accepts apps under a free-software licence, and Musonic's licence is non-commercial. See [Install the Android app](/docs/apps/android/).
+
+### Is it safe to install an APK?
+
+An APK is the normal install file of an Android app, the same kind the Play Store installs for you. What matters is where it comes from.
+
+- Download Musonic only from [its GitHub releases page](https://github.com/DoodzDev/Musonic/releases) or from this website, which links to it.
+- Each release APK is built by GitHub from the public code of that version, and signed with my key.
+- Android refuses to install an update signed with another key over the app you have, so an update can only come from the same source.
+- Android asks you once to allow installs from your browser or file manager. That permission is only about installing apps; you can turn it off again afterwards.
+
+See [Install the Android app](/docs/apps/android/), step by step.
+
+## The project
+
+### Who makes it? Will it last?
+
+Musonic is made by one person, me, Doodz. I keep adding the features people ask for, fixing bugs, and making the app smoother, even on old phones. If I ever stop, I will say so. Without an announcement, a quiet spell only means there was nothing to update.
+
+And if Musonic stopped tomorrow, your music would not be locked in:
+
+- **Your files stay as they are.** Musonic Server reads your music folder and never changes, moves or deletes your files. The only files it writes there are the songs it imports, in their own folder (`Musonic` by default), as ordinary tagged audio files that any player can read. Mount the folder read-only and it writes nothing at all.
+- **Your data is in one SQLite file**, in the server's data folder, with daily backups next to it.
+- **The code is public** on GitHub, so it can still be read, built and run.
+- **Your apps are not tied to it**: any Subsonic app works with Musonic Server, and Musonic's apps work with Navidrome.
+
+One honest limit: there is no export of playlists to another server yet.
+
+### Is it made with AI?
+
+Yes, and I say so. I organise everything and the AI programs. I decide what is built, design the screens down to the pixel, test every change on real phones, write down each step, test and mistake so it does not happen twice, publish the releases and answer the issues. AI coding tools write most of the code, the part I could not program alone. The code is public, and the [benchmark](/docs/about/benchmark/) shows its method and every number, including where Navidrome wins.
+
+### Why build a new server and new apps when there are alternatives?
+
+Because I wanted what they do not offer: the server and the apps built together. Navidrome, Jellyfin and Music Assistant are good at what they do. I wanted the server, the apps, Android Auto and the console from the same person, so that a new feature, such as moving playback from your phone to your computer, can land on both sides at once instead of waiting for a standard to allow it. See [How Musonic works](/docs/start/how-it-works/).
+
+### What does it offer that other servers do not?
+
+- **Live sync** across all your devices: a like on your phone shows at once on your computer.
+- **One identifier per song**, whether it is in your library or in the online catalogue, so likes and playlists stay in place when a song is imported.
+- **Playlists from Spotify, Deezer and YouTube Music** imported from a link (see [Import your playlists](/docs/apps/import-playlists/)).
+- **Musonic Connect** (beta): move playback from one of your devices to another at the same second.
+- **Less memory and faster answers** than Navidrome in [my measurements](/docs/about/benchmark/).
+
+### Why a non-commercial licence?
+
+Because I do not want anyone to sell what I make, or to run it as a paid service. Licences approved as open source by the OSI (such as MIT or AGPL) all allow selling. So the apps are under CC BY-NC 4.0 and the server under PolyForm Noncommercial 1.0.0: free for any non-commercial use, never for profit. This also means Musonic is **not open source** in the OSI sense: its source code is public, under a non-commercial licence. See [Licence](/docs/about/license/).
+
+### How do I report a bug or ask for a feature?
+
+Open an issue on GitHub: [github.com/DoodzDev/Musonic/issues/new/choose](https://github.com/DoodzDev/Musonic/issues/new/choose). Pick **Bug report** or **Feature request** and fill in the form. You need a free GitHub account.
+
+For a bug, say:
+
+- what you did, what you expected and what happened instead;
+- the app and its version (Android app and web player: profile, then **About**);
+- the server and its version (Musonic Server: the **Versions** card on the console's dashboard; or the name of your Subsonic server);
+- your phone or browser.
+
+<Aside type="caution">
+Never paste a password, an API key or your server's private address in an issue: issues are public.
+</Aside>
+
+## Next steps
+
+- [Install the Android app](/docs/apps/android/)
+- [Install the server with Docker](/docs/install/docker/)
+- [Licence](/docs/about/license/)
+- [Versions and changes](/docs/about/changelog/)

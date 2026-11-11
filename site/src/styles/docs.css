@@ -43,3 +43,20 @@ starlight-theme-select { display: none; }
   box-shadow: inset 2px 0 0 var(--accent);
 }
 .sl-anchor-link { color: var(--text-3); }
+
+/* Screenshots: phone shots (9:16) stay narrow so a step and its picture fit on one screen;
+   wide shots (16:9) and diagrams take the column. */
+.sl-markdown-content img.shot-phone {
+  display: block; width: 100%; max-width: 280px; height: auto; margin: 0.75rem 0 1.25rem;
+  border-radius: 18px; border: 1px solid var(--line);
+}
+.sl-markdown-content img.shot-wide {
+  display: block; width: 100%; height: auto; margin: 0.75rem 0 1.25rem;
+  border-radius: 10px; border: 1px solid var(--line);
+}
+.sl-markdown-content img.diagram {
+  display: block; width: 100%; height: auto; margin: 1rem 0 1.5rem;
+}
+/* Two phone shots side by side when a step shows a before/after. */
+.sl-markdown-content .shots { display: flex; flex-wrap: wrap; gap: 16px; }
+.sl-markdown-content .shots img.shot-phone { margin: 0.75rem 0 1.25rem; max-width: 240px; }

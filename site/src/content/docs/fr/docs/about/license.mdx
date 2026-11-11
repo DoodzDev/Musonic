@@ -1,0 +1,64 @@
+---
+title: Licence
+description: Ce que les licences de Musonic (CC BY-NC 4.0 et PolyForm Noncommercial 1.0.0) vous permettent, ce qu'elles interdisent, et pourquoi Musonic n'est pas open source au sens de l'OSI.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Cette page explique simplement ce que vous pouvez faire ou non avec le code et les applis de Musonic. Elle s'adresse à tous ceux qui veulent héberger Musonic, le modifier ou le partager.
+
+<Aside type="note">
+Ceci est un résumé simple, pas un conseil juridique. Seuls les textes complets des licences, en lien ci-dessous, font foi.
+</Aside>
+
+## Deux licences, une règle : non commercial
+
+| Partie de Musonic | Licence | Texte complet |
+|---|---|---|
+| Musonic Server (`apps/server`) | PolyForm Noncommercial 1.0.0 | [`apps/server/LICENSE`](https://github.com/DoodzDev/Musonic/blob/main/apps/server/LICENSE) · [polyformproject.org](https://polyformproject.org/licenses/noncommercial/1.0.0) |
+| Tout le reste du dépôt : l'appli Android, le lecteur web, la console d'administration, les paquets partagés et ce site | CC BY-NC 4.0 (Creative Commons Attribution - Pas d'utilisation commerciale 4.0 International) | [`LICENSE`](https://github.com/DoodzDev/Musonic/blob/main/LICENSE) · [creativecommons.org](https://creativecommons.org/licenses/by-nc/4.0/legalcode.fr) |
+
+Le serveur a son propre fichier `LICENSE` dans son dossier. Le fichier `LICENSE` à la racine du dépôt couvre le reste.
+
+## Ce que vous pouvez faire
+
+- **L'utiliser**, gratuitement : installer les applis, faire tourner votre propre Musonic Server.
+- **L'héberger pour vos proches** : votre famille et vos amis peuvent avoir un compte sur votre serveur.
+- **Lire, étudier et modifier le code**, et le compiler vous-même.
+- **Le partager**, tel quel ou modifié, tant que cela reste non commercial et que vous :
+  - citez l'auteur (gardez mon nom et un lien vers le projet, et indiquez ce que vous avez changé) ;
+  - transmettez la licence : un lien vers elle, ou une copie. Pour le serveur, gardez aussi la ligne `Required Notice:` de son fichier `LICENSE`.
+
+La licence du serveur autorise explicitement les usages sans but lucratif : étude personnelle, projets de loisir, divertissement privé, et usage par des associations caritatives, des établissements d'enseignement, la recherche publique ou les administrations.
+
+## Ce que vous ne pouvez pas faire
+
+- **Vendre** Musonic, une appli ou un serveur tirés de son code, ou des copies.
+- **Le proposer comme service payant**, par exemple un hébergement payant de Musonic Server ou des comptes payants dessus.
+- **L'utiliser à des fins commerciales** : dans un produit que vous vendez, ou pour gagner de l'argent de toute autre façon.
+- **Laisser entendre que je soutiens** votre version ou votre usage.
+
+Si vous avez un usage en tête et doutez qu'il soit non commercial, demandez-moi d'abord dans un [ticket GitHub](https://github.com/DoodzDev/Musonic/issues/new/choose).
+
+## Pas open source, et pourquoi
+
+Le code source de Musonic est public, mais Musonic n'est **pas open source** au sens de l'Open Source Initiative (OSI). Les licences reconnues par l'OSI, comme MIT, GPL ou AGPL, doivent permettre à chacun d'utiliser le logiciel pour n'importe quel usage, vente comprise. Je ne veux pas que quelqu'un vende ce que je fais : j'ai donc choisi des licences qui le laissent gratuit pour tous tout en interdisant l'usage commercial :
+
+- **PolyForm Noncommercial 1.0.0** pour le serveur, parce qu'elle est écrite pour du logiciel ;
+- **CC BY-NC 4.0** pour les applis et le reste.
+
+Une conséquence : Musonic ne peut pas figurer dans les catalogues qui n'acceptent que des licences libres, comme F-Droid.
+
+## Aucune garantie
+
+Les deux licences fournissent Musonic « tel quel », sans garantie : dans la mesure où la loi le permet, je ne suis pas responsable des dommages liés à son utilisation. Gardez des sauvegardes de votre musique et du dossier de données du serveur (voir [Sauvegarde et restauration](/fr/docs/admin/backups/)).
+
+## Votre musique n'est pas concernée
+
+Ces licences ne couvrent que Musonic lui-même. Vos fichiers de musique, et les services que vous branchez sur votre serveur, gardent leurs propres droits et conditions : n'utilisez que des sources que vous avez le droit d'utiliser.
+
+## Et ensuite
+
+- [FAQ](/fr/docs/about/faq/)
+- [Versions et changements](/fr/docs/about/changelog/)
+- [Le code sur GitHub](https://github.com/DoodzDev/Musonic)

@@ -1,0 +1,8 @@
+# Your own configuration holds the benchmark account's password.
+config.json
+# Data folders and server logs of the passes.
+runs/
+# Binaries you place next to the scripts.
+musonic-server
+nd/
+ffmpeg/

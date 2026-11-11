@@ -1,0 +1,190 @@
+---
+title: Installer l'appli Android
+description: Comment installer Musonic sur un téléphone Android depuis GitHub, étape par étape en images, puis le mettre à jour et le désinstaller.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Cette page montre comment installer l'appli Musonic sur un téléphone Android, du premier appui jusqu'au premier lancement. Elle s'adresse à celles et ceux qui n'ont jamais installé d'appli en dehors du Play Store : suivez les phrases en gras et les images.
+
+**Ce qu'il vous faut**
+
+- Un téléphone Android sous **Android 7.0 ou plus récent**, avec un processeur 64 bits (presque tous les téléphones vendus depuis 2017, voir [Quels téléphones](#quels-téléphones)).
+- Une connexion internet.
+- L'adresse d'un serveur de musique et un compte dessus. Si quelqu'un gère le serveur pour vous, demandez-lui les deux.
+
+<Aside type="note" title="Pourquoi Musonic n'est pas sur le Play Store">
+Musonic est publié sur GitHub, le site qui héberge son code source, et pas sur le Play Store. Android se méfie des applis venues d'ailleurs : il affiche quelques avertissements et vous demande une fois d'autoriser l'installation. C'est normal, et c'est pareil pour toute appli installée de cette façon. Les étapes ci-dessous passent par chacun de ces écrans.
+</Aside>
+
+## Installer, étape par étape
+
+Les images ont été prises sur un Samsung Galaxy A52 sous Android 14, avec Chrome, et les textes cités ci-dessous sont ceux qu'il affiche. Les formulations changent un peu d'une marque de téléphone à l'autre (un Pixel, par exemple, dit « Autoriser depuis cette source » au lieu de « Octroi d'autorisation »), mais les étapes sont les mêmes.
+
+<Steps>
+
+1. **Sur votre téléphone, ouvrez ce lien dans Chrome : [Musonic.apk](https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.apk).**
+
+   Il télécharge toujours la dernière version. Vous pouvez aussi ouvrir la [page de la version sur GitHub](https://github.com/DoodzDev/Musonic/releases/latest) et toucher **Musonic.apk** sous **Assets**.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/01-release-page.fr.webp" alt="La page de la version de Musonic sur GitHub dans Chrome sur un téléphone, la liste Assets ouverte avec Musonic.apk en haut." />
+
+2. **Chrome affiche « Fichier potentiellement dangereux » : touchez « Télécharger quand même ».**
+
+   La fenêtre demande : « Voulez-vous quand même télécharger "Musonic.apk" (31,24 Mo) depuis release-assets.githubusercontent.com ? » Chrome dit cela pour tout fichier d'appli téléchargé depuis un site ; `release-assets.githubusercontent.com` est l'endroit où GitHub range les fichiers de ses versions. Musonic.apk est le fichier publié par le projet : vous pouvez continuer.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/02-download-warning.fr.webp" alt="La fenêtre de Chrome « Fichier potentiellement dangereux » qui demande s'il faut quand même télécharger Musonic.apk (31,24 Mo) depuis release-assets.githubusercontent.com, avec les boutons Annuler et Télécharger quand même." />
+
+3. **Quand « Fichier téléchargé » s'affiche en bas de l'écran, touchez « Ouvrir ».**
+
+   Si vous l'avez manqué, touchez le menu **⋮** de Chrome en haut à droite, puis **Téléchargements**, et touchez **Musonic.apk**.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/03-download-complete.fr.webp" alt="La barre de Chrome en bas de l'écran indiquant Fichier téléchargé, avec un bouton Ouvrir." />
+
+4. **Android indique qu'il ne peut pas encore installer d'applis inconnues depuis cette source : touchez « Paramètres ».**
+
+   Le message dit : « Pour votre sécurité, l'installation d'applis inconnues provenant de cette source n'est pas autorisée sur ce téléphone actuellement. Vous pouvez modifier cette option dans les paramètres. » Android ne le demande que la première fois que vous installez une appli depuis Chrome.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/04-unknown-apps-blocked.fr.webp" alt="Le message d'Android : pour votre sécurité, l'installation d'applis inconnues provenant de cette source n'est pas autorisée sur ce téléphone actuellement ; avec les boutons Annuler et Paramètres." />
+
+5. **Sur la page « Installation applis inconnues », activez « Octroi d'autorisation » pour Chrome.**
+
+   Chrome a ainsi le droit d'installer des applis. Vous pourrez le désactiver une fois Musonic installé (voir [Après l'installation](#après-linstallation)).
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/05-allow-from-source.fr.webp" alt="La page de réglage « Installation applis inconnues » pour Chrome, avec l'interrupteur « Octroi d'autorisation » activé." />
+
+6. **Touchez « Installer ».**
+
+   La fenêtre « Voulez-vous installer cette appli ? » s'affiche par-dessus la page de réglage dès que l'interrupteur est activé. Sinon, revenez en arrière avec le geste ou le bouton Retour.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/06-install.fr.webp" alt="La fenêtre d'installation d'Android avec l'icône et le nom de Musonic, qui demande « Voulez-vous installer cette appli ? », avec les boutons Annuler et Installer." />
+
+7. **Patientez quelques secondes pendant qu'Android affiche « Installation… ».**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/06b-installing.fr.webp" alt="La fenêtre d'installation d'Android avec l'icône de Musonic et la ligne Installation… avec une barre de progression." />
+
+8. **Si une fenêtre Google Play Protect apparaît, touchez « Plus de détails », puis « Installer quand même ».**
+
+   Play Protect vérifie les applis qui ne viennent pas du Play Store. Il peut aussi proposer d'envoyer l'appli pour analyse : acceptez ou refusez, cela ne change rien à l'installation. Le plus souvent, aucune fenêtre ne s'affiche : passez à l'étape suivante.
+
+9. **Quand Android indique « Application installée. », touchez « Ouvrir ».**
+
+   Musonic est installé. Son icône est maintenant avec vos autres applis.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/08-installed-open.fr.webp" alt="La fenêtre d'installation d'Android indiquant « Application installée. », avec les boutons OK et Ouvrir." />
+
+10. **Connectez-vous à votre serveur.**
+
+    Musonic s'ouvre sur son écran de connexion. Entrez l'adresse du serveur, votre identifiant et votre mot de passe, puis touchez **Se connecter**. La page suivante explique chaque champ : [Se connecter à un serveur](/fr/docs/apps/sign-in/).
+
+    <img class="shot-phone" src="/assets/img/docs/apps-android/09-first-launch.fr.webp" alt="L'écran de connexion de Musonic au premier lancement : le logo Musonic, les champs URL du serveur, Identifiant et Mot de passe, et le bouton Se connecter." />
+
+</Steps>
+
+<Aside type="caution" title="Samsung : Blocage automatique">
+Sur les Samsung récents, l'option **Blocage automatique** (Auto Blocker) bloque toute appli qui ne vient pas d'un magasin officiel, et les étapes ci-dessus n'affichent pas le bouton « Paramètres ». Si l'installation est refusée, désactivez-la dans **Paramètres → Sécurité et confidentialité → Blocage automatique**, installez Musonic, puis réactivez-la si vous le souhaitez.
+</Aside>
+
+### Après l'installation
+
+Vous pouvez maintenant retirer l'autorisation à Chrome : **Paramètres → Applications → Chrome → Installation applis inconnues** (l'interrupteur **Octroi d'autorisation**, ou **Autoriser depuis cette source** sur d'autres téléphones). Musonic continue de fonctionner. Il faudra le réactiver pour la prochaine mise à jour : Android vous le demande de la même façon qu'à l'étape 4.
+
+### Quels téléphones
+
+| | |
+|---|---|
+| Version d'Android | **7.0 ou plus récente** (niveau d'API Android 24) |
+| Processeur | **ARM 64 bits uniquement** (`arm64-v8a`) |
+| Play Store, compte Google | Inutiles |
+
+L'appli est construite uniquement pour les processeurs ARM 64 bits, ce qui couvre presque tous les téléphones et tablettes de ces dernières années. Elle ne fonctionne pas sur les vieux téléphones 32 bits, ni sur les appareils Android à processeur Intel ou AMD (certains boîtiers TV, émulateurs sur ordinateur). Sur un tel appareil, ou sous un Android antérieur à 7.0, Android refuse le fichier à l'étape 6 ou 7 avec un message du type « Application non installée ». Vous n'y pouvez rien : Musonic ne peut pas tourner sur cet appareil. Utilisez plutôt le [lecteur web](/app/) dans le navigateur du téléphone.
+
+## Mises à jour
+
+Musonic ne se met pas à jour par le Play Store. L'appli vous prévient elle-même quand une nouvelle version sort.
+
+<Steps>
+
+1. **Quand la fenêtre « Mise à jour disponible » s'affiche, touchez « Voir la release ».**
+
+   Environ trois secondes après l'ouverture de Musonic, l'appli vérifie sur GitHub s'il existe une version plus récente de l'appli Android. Si oui, elle indique « La version … est disponible sur GitHub. », avec le numéro de la nouvelle version. **Annuler** ferme la fenêtre ; elle reviendra au prochain lancement.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/10-update-available.fr.webp" alt="La fenêtre « Mise à jour disponible » de Musonic indiquant qu'une version est disponible sur GitHub, avec les boutons Annuler et Voir la release." />
+
+2. **Sur la page de la version, touchez « Musonic.apk » sous « Assets ».**
+
+   La page de cette version s'ouvre dans votre navigateur. Son texte liste ce qui a changé.
+
+3. **Téléchargez-le et ouvrez-le, comme aux étapes 2 et 3 ci-dessus.**
+
+4. **Touchez « Mettre à jour ».**
+
+   Android voit que Musonic est déjà installé et propose de le mettre à jour.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/11-update-confirm.fr.webp" alt="La fenêtre d'installation d'Android qui demande « Voulez-vous mettre à jour cette application ? » sous l'icône de Musonic, avec les boutons Annuler et Mettre à jour." />
+
+5. **Touchez « Ouvrir ».**
+
+</Steps>
+
+<Aside type="danger" title="Ne désinstallez jamais Musonic pour le mettre à jour">
+Installez la nouvelle version **par-dessus** l'ancienne, comme ci-dessus. Votre compte, vos téléchargements, vos réglages et votre file d'attente sont conservés. Si vous désinstallez d'abord, tout cela est effacé du téléphone : les téléchargements sont perdus et il faut vous reconnecter. Android ne sauvegarde pas les données de Musonic : rien ne revient.
+</Aside>
+
+**Vérifier à la main.** Touchez votre photo de profil ronde en haut à droite des écrans principaux, puis **À propos**, puis **Vérifier les mises à jour**. L'appli répond soit « Mise à jour disponible », soit « Vous êtes à jour » avec votre version et la dernière en ligne. Sans connexion, elle indique « Vérification impossible. Vérifiez votre connexion. »
+
+**Ce qu'envoie la vérification.** Une seule requête à la liste publique des versions du projet sur GitHub, sans rien sur vous ni sur votre serveur. Elle ne regarde que les versions de l'appli Android (étiquettes `mobile-v…`) : une nouvelle version du lecteur web ou du serveur ne déclenche jamais la fenêtre. Les brouillons et les versions de test sont ignorés.
+
+**« Application non installée » lors d'une mise à jour.** Android refuse une mise à jour quand l'appli installée a été signée par quelqu'un d'autre, par exemple une version que vous avez compilée vous-même. Dans ce cas seulement, désinstallez-la d'abord (en perdant ses données), puis installez la version de GitHub.
+
+## Désinstaller
+
+<Steps>
+
+1. **Déconnectez-vous d'abord.**
+
+   Touchez votre photo de profil en haut à droite, puis **Se déconnecter**, et confirmez. Sur Musonic Server, cela supprime aussi la clé de ce téléphone sur le serveur : il disparaît de vos appareils dans la console.
+
+2. **Appuyez longuement sur l'icône de Musonic, puis touchez « Désinstaller ».**
+
+   Vous pouvez aussi passer par **Paramètres → Applications → Musonic → Désinstaller**.
+
+3. **Confirmez.**
+
+</Steps>
+
+La désinstallation efface tout ce que Musonic a gardé sur le téléphone : titres téléchargés, réglages et compte. Rien ne change sur le serveur : vos playlists, vos likes et votre historique vous attendent quand vous vous reconnectez, sur n'importe quel appareil.
+
+## Depuis un ordinateur avec adb
+
+Pour les utilisateurs avancés qui se servent déjà des outils de débogage d'Android.
+
+<Tabs>
+<TabItem label="Installer ou mettre à jour">
+
+Activez le **débogage USB** dans les options pour les développeurs du téléphone, branchez le téléphone, puis :
+
+```sh
+curl -LO https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.apk
+adb install -r Musonic.apk
+```
+
+`-r` remplace l'appli installée en gardant ses données : utilisez la même commande à chaque mise à jour.
+
+</TabItem>
+<TabItem label="Désinstaller">
+
+```sh
+adb uninstall com.musonic
+```
+
+`com.musonic` est le nom de paquet de l'appli. Cela efface ses données, comme une désinstallation depuis le téléphone.
+
+</TabItem>
+</Tabs>
+
+## Pour aller plus loin
+
+- [Se connecter à un serveur](/fr/docs/apps/sign-in/) : l'écran de connexion, les liens d'invitation et les messages d'erreur.
+- [Écouter hors ligne](/fr/docs/apps/offline/) : téléchargements, qualité de streaming et consommation de données.
+- [Musonic en voiture](/fr/docs/apps/android-auto/) : configurer Android Auto.

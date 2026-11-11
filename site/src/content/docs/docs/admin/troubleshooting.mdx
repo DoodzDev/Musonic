@@ -1,0 +1,305 @@
+---
+title: Troubleshooting the server
+description: Fixes for the common Musonic Server problems, permission denied, port in use, phone cannot connect, empty scan, missing covers, no transcoding, console sign-in, forgotten administrator password, and how to read the logs and report a bug.
+---
+
+import { Steps, Aside, Tabs, TabItem, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+This page lists the problems people really meet when running Musonic Server, how to recognise them and how to fix them. Commands are for the Docker setup; run them in the folder that holds `compose.yml`.
+
+## First: read the logs
+
+Almost every problem is written in the logs.
+
+<Tabs>
+  <TabItem label="Docker">
+
+```sh
+docker compose logs -f musonic-server
+```
+
+`-f` keeps following new lines; press <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop. `docker compose logs --tail 200 musonic-server` shows only the last 200 lines.
+
+  </TabItem>
+  <TabItem label="systemd">
+
+```sh
+journalctl -u musonic-server -f
+```
+
+Replace `musonic-server` by the name of your service.
+
+  </TabItem>
+  <TabItem label="Console">
+
+**Settings and maintenance → Server logs**: the last 2,000 lines since the last start. Choose **Warnings** or **Errors** to see only problems.
+
+  </TabItem>
+</Tabs>
+
+**How to read a line**: each line starts with the date and time (UTC), then the level (`INFO`, `WARN`, `ERROR`), then the message. A normal start looks like this:
+
+```text
+INFO musonic_server: musonic-server starting version="1.2.1" ...
+INFO musonic_server: administration console: /usr/share/musonic/admin
+INFO musonic_server: listening on http://0.0.0.0:4533
+INFO musonic_server::library::scanner: scan done full=false folders=… files=… added=… errors=0 ...
+```
+
+Lines with `WARN` or `ERROR` are the ones to look at. For more detail, set `RUST_LOG: debug` in `compose.yml` for a while, then `docker compose up -d` (see [Logs](/docs/admin/configuration/#logs)).
+
+To check whether the server answers at all:
+
+```sh
+curl http://127.0.0.1:4533/health
+```
+
+`{"status":"ok"}` means the server and its database work.
+
+## Permission denied on the music or data folder
+
+**Signs**: the scan finds no song, and the logs show a line like `scan: /music: Permission denied (os error 13)`. Or the server does not start, with `creating /data` or `opening /data/musonic.db` in the error, and the container restarts again and again.
+
+**Why**: the server runs as the user set on the `user:` line of `compose.yml` (`1000:1000` in the example). That user must be able to read the music folder and to write the data folder.
+
+<Steps>
+
+1. **Find the owner of your folders, as numbers.**
+
+   ```sh
+   ls -ln /path/to/music
+   ls -ln data
+   ```
+
+   The third and fourth columns are the user and group numbers (for example `1000 1000`).
+
+2. **Put these numbers on the `user:` line of `compose.yml`.**
+
+   ```yaml
+   user: "1000:1000"
+   ```
+
+3. **If the data folder belongs to someone else (often `root`), give it to that user.**
+
+   ```sh
+   sudo chown -R 1000:1000 data
+   ```
+
+4. **Restart.**
+
+   ```sh
+   docker compose up -d
+   ```
+
+</Steps>
+
+- The music folder only needs to be **readable**. It needs to be **writable** only for imports: with `:ro` at the end of its volume line, imports fail.
+- `id -u` and `id -g` print the numbers of your own user.
+
+## Port already in use
+
+**Signs**: `docker compose up -d` says `address already in use` or `port is already allocated`; without Docker, the logs say `binding 127.0.0.1:4533` followed by `Address already in use`.
+
+**Why**: another program (often another music server) already listens on port 4533.
+
+<Steps>
+
+1. **See who uses the port.**
+
+   ```sh
+   sudo ss -ltnp | grep 4533
+   ```
+
+2. **Either stop that program, or give Musonic another port.** In `compose.yml`, change only the left number:
+
+   ```yaml
+   ports:
+     - "127.0.0.1:4534:4533"
+   ```
+
+   Without Docker, set `MUSONIC_BIND=127.0.0.1:4534`.
+
+3. **Restart, then point your reverse proxy to the new port.**
+
+</Steps>
+
+## The phone (or another computer) cannot reach the server
+
+**Why, most of the time**: the example `compose.yml` publishes the server on `127.0.0.1:4533`, which only the machine itself can reach. This is on purpose: from outside, the server must be reached through a **reverse proxy with HTTPS**.
+
+Check, in this order:
+
+1. **On the server machine, the server answers**: `curl http://127.0.0.1:4533/health` gives `{"status":"ok"}`.
+2. **From the phone's browser, the address answers**: open `https://<your-address>/health`. `<your-address>` is your domain name. You must see `{"status":"ok"}`. If not, the problem is the reverse proxy, the domain name or the firewall, not Musonic.
+3. **Use `https://`**. A page served in HTTPS (such as Musonic Web) cannot talk to a server in plain `http://`: browsers block it. Give the apps the `https://` address.
+4. **The firewall** of the machine (and of your host, for a rented server) lets port 443 in, for the reverse proxy. Port 4533 does not need to be open.
+5. **The reverse proxy passes WebSockets**: live updates between devices use `/v1/events`. Without it, music plays but devices do not update each other at once.
+
+A minimal reverse proxy, as examples:
+
+<Tabs>
+  <TabItem label="Caddy">
+
+```text
+music.example.com {
+    reverse_proxy 127.0.0.1:4533
+}
+```
+
+Caddy gets the HTTPS certificate and passes WebSockets on its own.
+
+  </TabItem>
+  <TabItem label="nginx">
+
+```text
+location / {
+    proxy_pass http://127.0.0.1:4533;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_buffering off;
+    client_max_body_size 0;
+}
+```
+
+Put it in the `server` block of your HTTPS site.
+
+  </TabItem>
+</Tabs>
+
+The server reads the visitor's address from `X-Forwarded-For` (or `CF-Connecting-IP` behind a Cloudflare tunnel). Without it, every sign-in seems to come from the proxy, and one person's wrong passwords could block everybody at that address.
+
+## The scan finds nothing
+
+**Signs**: the Library screen shows 0 songs, or says "No music folder is set on this server."
+
+<Steps>
+
+1. **Check the music folder is set.** With Docker, the image uses `/music`: the volume line must end with `:/music`. Without Docker, set `MUSONIC_MUSIC_DIR`.
+
+2. **Check the container sees your files.**
+
+   ```sh
+   docker compose exec musonic-server ls /music
+   ```
+
+   Empty? The path on the left of `:/music` is wrong: Docker then creates an empty folder. Fix the path and run `docker compose up -d`.
+
+3. **Check the rights** (see [Permission denied](#permission-denied-on-the-music-or-data-folder)).
+
+4. **Run a scan by hand and read its summary.**
+
+   ```sh
+   docker compose exec musonic-server musonic-server scan --full
+   ```
+
+   It prints the number of folders, files read, songs added and the errors.
+
+</Steps>
+
+- The scanner reads these audio files: `mp3`, `flac`, `m4a`, `mp4`, `aac`, `alac`, `ogg`, `oga`, `opus`, `wav`, `aif`, `aiff`, `wv`, `ape`, `mpc`, `wma`.
+- Files and folders whose name starts with a dot are skipped.
+- New files are seen as they arrive. If your folder is on a network share where changes are not reported, the scheduled scan (every 60 minutes by default) catches them, or click **Quick scan** in Library.
+
+## Covers are missing
+
+The server takes a song's cover, in this order, from:
+
+1. the picture inside the file (its tags);
+2. a picture in the album's folder named `cover`, `folder`, `front`, `album` or `albumart`, in `jpg`, `jpeg`, `png` or `webp` (any case);
+3. the online catalog, when it is on.
+
+To fix:
+
+- Add a `cover.jpg` in the album's folder, then click **Quick scan** in Library.
+- The **No cover** tab of Library lists the songs without any picture.
+- If an old or wrong picture keeps showing, empty the **Pictures** cache in **Playback**: covers are made again when needed.
+
+## Transcoding does not work (ffmpeg missing)
+
+**Signs**: on mobile data, songs are not lighter; the **Playback** screen shows **Missing** next to Streaming; the logs show `ffmpeg unavailable (…): sending the file as is`.
+
+**Why**: the server uses ffmpeg to make songs smaller. Without it, it sends files as they are, which still plays but uses more data.
+
+- **Docker**: the image includes ffmpeg. If it is missing, you are running an image you built differently: use `ghcr.io/doodzdev/musonic-server`.
+- **Without Docker**: install ffmpeg with your system's package manager (for example `sudo apt install ffmpeg` on Debian or Ubuntu, `sudo pacman -S ffmpeg` on Arch), then restart the server. If ffmpeg is not in the `PATH`, give its full path in `MUSONIC_FFMPEG`.
+
+The Playback screen checks ffmpeg once per start: restart the server after installing it.
+
+## The console does not open
+
+| What you see | Why | Fix |
+|---|---|---|
+| A short page "Musonic Server is running" | The console files are not found. The logs say `no administration console installed`. | With the downloaded program, keep the `admin/` folder next to `musonic-server`, or set `MUSONIC_ADMIN_DIR`. The Docker image has it. |
+| "Wrong name or password." | The name or password is wrong. | Check both (the password is case-sensitive, the name is not). See [Forgot the administrator password](#forgot-the-administrator-password). |
+| "too many failed attempts, try again later" | 10 different wrong passwords from your address for this account: blocked for 15 minutes. | Wait 15 minutes, or have another administrator click **Unblock** in Devices and security. |
+| "This account is suspended" | The account was suspended. | Another administrator turns **Active account** back on. |
+| "You are not an administrator" | This account is a user. | Sign in with an administrator account, or have one change its role. |
+| Nothing loads from another computer | The server is only reachable from its machine. | See [The phone cannot reach the server](#the-phone-or-another-computer-cannot-reach-the-server). |
+
+### "Restart" in the console and the server does not come back
+
+The **Restart** button stops the server and counts on Docker or systemd to start it again. The console then says "The server does not come back".
+
+- **Docker**: keep `restart: unless-stopped` in `compose.yml`, then `docker compose up -d`.
+- **systemd**: the service needs `Restart=always` (the server exits normally on a restart, so `Restart=on-failure` is not enough).
+
+## Forgot the administrator password
+
+There is no command to reset a password. But you can create a second administrator from the command line, and use it to send yourself a reset link.
+
+<Steps>
+
+1. **Create a temporary administrator.**
+
+   ```sh
+   docker compose exec musonic-server musonic-server user add rescue --admin
+   ```
+
+   Type a password of 8 characters at least when asked. `rescue` is any name not used yet.
+
+2. **Sign in to the console with this account.**
+
+3. **Open "Accounts", click your usual account, then "Password reset link".** Create the link and copy it.
+
+4. **Open the link and choose a new password.**
+
+5. **Sign in again with your usual account, open the `rescue` account and delete it.**
+
+</Steps>
+
+## Other messages
+
+| Message | Meaning | Fix |
+|---|---|---|
+| `database schema N is newer than this server (M): update the server` | The database comes from a newer version of the server. | Update the server, or restore the `musonic.db.before-schema-…` copy (see [Backups](/docs/admin/backups/#restore-a-backup)). |
+| `cannot decrypt (secret key changed?)` | `secret.key` or `MUSONIC_SECRET_KEY` is not the one the passwords were saved with. | Put the old key back. Otherwise, each account needs a new password (reset link). |
+| `subsonic_provider_url needs MUSONIC_SUBSONIC_PROVIDER_PASSWORD` | The Subsonic relay is set without its password. | Add the variable, or remove the URL. |
+| Alert "No backup for more than 2 days" | The daily backup fails. | Look for `database backup:` in the logs: often a full disk or the rights on `data/backups/`. |
+| Alert "Disk almost full" | Less than 10 % free. | Empty the caches in Playback, lower **Days kept**, or free space. |
+
+## Report a bug
+
+If nothing here helps, open an issue on GitHub: [github.com/DoodzDev/Musonic/issues](https://github.com/DoodzDev/Musonic/issues). One problem per issue.
+
+Include:
+
+- **Versions**: Musonic Server (under the logo in the console), and the app with its version (Android app, Musonic Web) if the problem shows there.
+- **How you installed**: Docker image tag, or the downloaded program; the machine (x86 or ARM) and its system.
+- **What you did**, step by step, **what you expected**, and **what happened**.
+- **The log lines** around the moment of the problem (`docker compose logs --tail 200 musonic-server`), as text rather than a screenshot.
+- Your `compose.yml` **without** any password or key.
+
+<Aside type="danger">
+Never post on GitHub: passwords, provider credentials, API keys, `secret.key`, `musonic.db` or its backups, invitation or reset links. Replace your domain name and other people's names with placeholders if you prefer to keep them private.
+</Aside>
+
+## Next steps
+
+<CardGrid>
+  <LinkCard title="Configuration" href="/docs/admin/configuration/" description="Every setting and environment variable." />
+  <LinkCard title="Backups" href="/docs/admin/backups/" description="Save and restore the server." />
+  <LinkCard title="The console" href="/docs/admin/console/" description="Every screen of the console." />
+</CardGrid>

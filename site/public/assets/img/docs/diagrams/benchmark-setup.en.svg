@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 492" role="img" aria-labelledby="t d" font-family="Inter Variable, Inter, system-ui, sans-serif" lang="en">
+<title id="t">Benchmark setup</title>
+<desc id="d">On one ARM virtual server with 2 cores, 12 GB and Ubuntu 24.04, the benchmark script (serverbench.py, Python) talks over HTTP on 127.0.0.1 with the Subsonic API to one server under test at a time, Musonic Server 1.0.1 or Navidrome 0.64.2, and reads their memory and CPU time in /proc. Both read the same music folder (1,871 files, 7.0 GB, read only) and use the same ffmpeg n8.1 binary; each pass starts from an empty data folder. Pass 1: Musonic then Navidrome; pass 2: Navidrome then Musonic; pass 3: Musonic then Navidrome. Result = median of the 3 passes.</desc>
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7D7B77"/></marker></defs>
+<rect x="16" y="16" width="928" height="340" rx="14" fill="none" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="36.0" y="46.0" font-size="14" fill="#B1AFAB" text-anchor="start" font-weight="600">ARM virtual server · 2 cores · 12 GB · Ubuntu 24.04</text>
+<rect x="32" y="80" width="180" height="192" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="122.0" y="170.0" font-size="15" fill="#F1F0EE" text-anchor="middle" font-weight="600">Benchmark script</text>
+<text x="122.0" y="192.0" font-size="12.5" fill="#B1AFAB" text-anchor="middle">serverbench.py, Python</text>
+<rect x="428" y="66" width="216" height="272" rx="14" fill="none" stroke="#3A3A3D" stroke-width="1"/>
+<rect x="440" y="80" width="192" height="52" rx="12" fill="#1C1C1E" stroke="#FF6B35" stroke-width="1.5"/>
+<text x="536.0" y="111.0" font-size="15" fill="#F1F0EE" text-anchor="middle" font-weight="600">Musonic Server 1.0.1</text>
+<rect x="448" y="140" width="176" height="40" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1"/>
+<text x="536.0" y="156.0" font-size="12" fill="#B1AFAB" text-anchor="middle">empty data folder</text>
+<text x="536.0" y="171.0" font-size="12" fill="#B1AFAB" text-anchor="middle">at each pass</text>
+<text x="536.0" y="203.0" font-size="12.5" fill="#7D7B77" text-anchor="middle" font-style="italic">one at a time</text>
+<rect x="440" y="220" width="192" height="52" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5" stroke-dasharray="6 5"/>
+<text x="536.0" y="251.0" font-size="15" fill="#F1F0EE" text-anchor="middle" font-weight="600">Navidrome 0.64.2</text>
+<rect x="448" y="280" width="176" height="40" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1"/>
+<text x="536.0" y="296.0" font-size="12" fill="#B1AFAB" text-anchor="middle">empty data folder</text>
+<text x="536.0" y="311.0" font-size="12" fill="#B1AFAB" text-anchor="middle">at each pass</text>
+<text x="326.0" y="90.0" font-size="12" fill="#B1AFAB" text-anchor="middle">HTTP on 127.0.0.1 · Subsonic API</text>
+<line x1="212" y1="98" x2="438" y2="98" stroke="#7D7B77" stroke-width="1.5" marker-end="url(#ah)"/>
+<line x1="212" y1="116" x2="438" y2="116" stroke="#7D7B77" stroke-width="1" marker-end="url(#ah)"/>
+<text x="326.0" y="134.0" font-size="12" fill="#B1AFAB" text-anchor="middle">reads /proc: memory, CPU</text>
+<line x1="212" y1="238" x2="438" y2="238" stroke="#7D7B77" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+<line x1="212" y1="256" x2="438" y2="256" stroke="#7D7B77" stroke-width="1" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+<rect x="732" y="80" width="196" height="80" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="830.0" y="104.0" font-size="14" fill="#F1F0EE" text-anchor="middle" font-weight="600">Music folder</text>
+<text x="830.0" y="123.0" font-size="12.5" fill="#B1AFAB" text-anchor="middle">1,871 files · 7.0 GB</text>
+<text x="830.0" y="142.0" font-size="12.5" fill="#B1AFAB" text-anchor="middle">read only</text>
+<line x1="732" y1="128" x2="646" y2="128" stroke="#7D7B77" stroke-width="1.5" marker-end="url(#ah)"/>
+<text x="689.0" y="104.0" font-size="12" fill="#B1AFAB" text-anchor="middle">same</text>
+<text x="689.0" y="118.0" font-size="12" fill="#B1AFAB" text-anchor="middle">folder</text>
+<rect x="732" y="204" width="196" height="56" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="830.0" y="228.0" font-size="14" fill="#F1F0EE" text-anchor="middle" font-weight="600">ffmpeg n8.1</text>
+<text x="830.0" y="246.0" font-size="12.5" fill="#B1AFAB" text-anchor="middle">(same binary)</text>
+<line x1="732" y1="232" x2="646" y2="232" stroke="#7D7B77" stroke-width="1.5" marker-end="url(#ah)"/>
+<text x="157.3" y="392.0" font-size="12.5" fill="#B1AFAB" text-anchor="middle" font-weight="600">Pass 1</text>
+<rect x="16.0" y="404" width="129.3" height="40" rx="10" fill="#1C1C1E" stroke="#FF6B35" stroke-width="1.5"/>
+<text x="80.7" y="429.0" font-size="13.5" fill="#F1F0EE" text-anchor="middle">Musonic</text>
+<rect x="169.3" y="404" width="129.3" height="40" rx="10" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="234.0" y="429.0" font-size="13.5" fill="#F1F0EE" text-anchor="middle">Navidrome</text>
+<line x1="148.3" y1="424" x2="166.3" y2="424" stroke="#7D7B77" stroke-width="1.2" marker-end="url(#ah)"/>
+<line x1="302.7" y1="424" x2="334.7" y2="424" stroke="#7D7B77" stroke-width="1.2" marker-end="url(#ah)"/>
+<text x="480.0" y="392.0" font-size="12.5" fill="#B1AFAB" text-anchor="middle" font-weight="600">Pass 2</text>
+<rect x="338.7" y="404" width="129.3" height="40" rx="10" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="403.3" y="429.0" font-size="13.5" fill="#F1F0EE" text-anchor="middle">Navidrome</text>
+<rect x="492.0" y="404" width="129.3" height="40" rx="10" fill="#1C1C1E" stroke="#FF6B35" stroke-width="1.5"/>
+<text x="556.7" y="429.0" font-size="13.5" fill="#F1F0EE" text-anchor="middle">Musonic</text>
+<line x1="471.0" y1="424" x2="489.0" y2="424" stroke="#7D7B77" stroke-width="1.2" marker-end="url(#ah)"/>
+<line x1="625.3" y1="424" x2="657.3" y2="424" stroke="#7D7B77" stroke-width="1.2" marker-end="url(#ah)"/>
+<text x="802.7" y="392.0" font-size="12.5" fill="#B1AFAB" text-anchor="middle" font-weight="600">Pass 3</text>
+<rect x="661.3" y="404" width="129.3" height="40" rx="10" fill="#1C1C1E" stroke="#FF6B35" stroke-width="1.5"/>
+<text x="726.0" y="429.0" font-size="13.5" fill="#F1F0EE" text-anchor="middle">Musonic</text>
+<rect x="814.7" y="404" width="129.3" height="40" rx="10" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="879.3" y="429.0" font-size="13.5" fill="#F1F0EE" text-anchor="middle">Navidrome</text>
+<line x1="793.7" y1="424" x2="811.7" y2="424" stroke="#7D7B77" stroke-width="1.2" marker-end="url(#ah)"/>
+<text x="480.0" y="476.0" font-size="14" fill="#F1F0EE" text-anchor="middle" font-weight="600">Result = median of the 3 passes</text>
+</svg>

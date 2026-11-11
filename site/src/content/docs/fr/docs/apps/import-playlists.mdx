@@ -1,0 +1,202 @@
+---
+title: Importer vos playlists
+description: Comment rapatrier une playlist Spotify, Deezer ou YouTube Music dans Musonic en collant son adresse, dans l’appli Android ou le lecteur web, et comment lire et corriger le bilan de l’import.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Cette page montre comment retrouver dans Musonic une playlist créée sur un autre service. Vous collez son adresse ; votre serveur recrée la même playlist avec des titres de votre bibliothèque et du catalogue en ligne. Elle s’adresse aux auditeurs : aucun réglage à changer, seulement un lien à copier.
+
+**Ce qu’il vous faut**
+
+- Un compte sur un **Musonic Server** (l’import n’existe pas avec Navidrome ni les autres serveurs Subsonic).
+- Une playlist **publique** sur Deezer, YouTube Music ou Spotify, et son lien de partage.
+- Pour YouTube Music : l’administrateur de votre serveur doit avoir ajouté une clé YouTube dans la console (voir [Limites](#limites)).
+- Pour Spotify : votre serveur doit le proposer. Sinon, Musonic vous l’indique : « Spotify n’est pas disponible sur ce serveur. »
+
+## 1. Copier l’adresse de la playlist
+
+<Tabs>
+<TabItem label="Deezer">
+
+Dans l’appli ou le site Deezer, ouvrez la playlist, puis **Partager → Copier le lien**. Les deux formes fonctionnent :
+
+- `https://www.deezer.com/fr/playlist/<numéro>` (quelle que soit la langue dans l’adresse)
+- un lien court qui commence par `https://link.deezer.com/…`, `https://deezer.page.link/…` ou `https://dzr.page.link/…`
+
+</TabItem>
+<TabItem label="YouTube Music">
+
+Dans YouTube Music ou YouTube, ouvrez la playlist, puis **Partager → Copier le lien**. Ces formes fonctionnent :
+
+- `https://music.youtube.com/playlist?list=<id>`
+- `https://www.youtube.com/playlist?list=<id>` (aussi `m.youtube.com`)
+- le lien d’une vidéo ouverte depuis la playlist, qui contient `&list=<id>`
+- `https://music.youtube.com/browse/VL<id>`
+
+Ceux-ci sont refusés, avec la raison :
+
+- **un album** YouTube Music : importez une playlist à la place ;
+- **vos titres likés** et **À regarder plus tard** : ils sont privés, copiez-les d’abord dans une playlist publique ;
+- **un mix ou une radio** (ils changent à chaque écoute) : enregistrez d’abord les titres dans une playlist ;
+- **une vidéo seule** (par exemple un lien `youtu.be/…`) : partagez la playlist elle-même.
+
+</TabItem>
+<TabItem label="Spotify">
+
+Dans Spotify, ouvrez la playlist, puis **Partager → Copier le lien de la playlist**. L’adresse ressemble à `https://open.spotify.com/playlist/<id>`. Spotify n’est disponible que sur les serveurs qui le proposent.
+
+</TabItem>
+</Tabs>
+
+<img class="diagram" src="/assets/img/docs/diagrams/copy-playlist-link.fr.svg" alt="Deux écrans de téléphone. À gauche : une playlist ouverte dans un service de musique, le bouton Partager en évidence. À droite : le menu de partage, Copier le lien en évidence." />
+
+Les mots et les icônes varient un peu entre Spotify, Deezer et YouTube Music.
+
+La playlist doit être **publique** : une playlist privée donne « Playlist introuvable ou privée : elle doit être publique. »
+
+## 2. L’importer
+
+<Tabs syncKey="client">
+<TabItem label="Android">
+
+<Steps>
+
+1. **Ouvrez l’onglet Bibliothèque, puis touchez « + » en haut à droite.**
+
+   La fenêtre « Nouvelle playlist » s’ouvre.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-import-playlists/02-library-plus.fr.webp" alt="L’onglet Bibliothèque de l’appli avec le bouton + entouré en haut à droite." />
+
+2. **Touchez « Importer une playlist ».**
+
+   La ligne se trouve sous le champ du nom : « Retrouvez une playlist Spotify, Deezer, YouTube Music… ». Si vous ne la voyez pas, vous n’êtes pas connecté à un Musonic Server.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-import-playlists/03-new-playlist-dialog.fr.webp" alt="La fenêtre Nouvelle playlist avec le champ Nom de la playlist et, en dessous, la ligne Importer une playlist." />
+
+3. **Collez le lien dans le champ « Lien de la playlist », puis touchez « Importer ».**
+
+   Appuyez longuement dans le champ, puis touchez **Coller**.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-import-playlists/04-paste-link.fr.webp" alt="La fenêtre Importer une playlist avec un lien Deezer collé dans le champ Lien de la playlist et le bouton Importer." />
+
+4. **Patientez : l’import tourne sur le serveur.**
+
+   L’appli affiche d’abord « Import lancé : la playlist apparaîtra dans la Bibliothèque. » Pour une longue playlist, une petite pastille en haut montre ensuite la progression (« Import playlist : 15/100 »). Vous pouvez utiliser l’appli, et même la fermer.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-import-playlists/05-import-pill.fr.webp" alt="La Bibliothèque de l’appli avec le message Import lancé : la playlist apparaîtra dans la Bibliothèque, en bas de l’écran." />
+
+5. **Quand « Playlist importée : … » s’affiche, ouvrez la playlist dans la Bibliothèque.**
+
+   Elle porte le nom de la playlist d’origine.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-import-playlists/06-imported-playlist.fr.webp" alt="La playlist importée ouverte dans l’appli, avec son nom, sa pochette et ses titres." />
+
+</Steps>
+
+L’appli n’affiche pas le bilan de l’import : ouvrez-le depuis le lecteur web (voir [Lire le bilan](#3-lire-le-bilan)).
+
+</TabItem>
+<TabItem label="Web">
+
+<Steps>
+
+1. **Ouvrez Bibliothèque, puis cliquez sur « Importer » en haut à droite.**
+
+   Le bouton n’apparaît qu’avec un Musonic Server.
+
+   <img class="shot-wide" src="/assets/img/docs/apps-import-playlists/07-web-import-button.fr.webp" alt="La page Bibliothèque du web avec le bouton Importer en haut à droite, à côté de Nouvelle playlist." />
+
+2. **Collez l’adresse dans « Adresse de la playlist », puis cliquez sur « Lire la playlist ».**
+
+   <img class="shot-wide" src="/assets/img/docs/apps-import-playlists/08-web-paste.fr.webp" alt="La fenêtre Importer une playlist avec une adresse de playlist collée et le bouton Lire la playlist." />
+
+3. **Vérifiez le nom, la pochette et le nombre de titres, puis cliquez sur « Importer ».**
+
+   La fenêtre indique le service, le propriétaire et le nombre de titres. Vous pouvez changer le **Nom dans Musonic**. Si des titres ne sont plus disponibles sur le service (supprimés ou privés), elle dit combien et qu’ils ne seront pas importés.
+
+   <img class="shot-wide" src="/assets/img/docs/apps-import-playlists/09-web-preview.fr.webp" alt="L’aperçu d’une playlist avant l’import : pochette, nom, Deezer, par son propriétaire, 87 titres, le champ Nom dans Musonic et le bouton Importer." />
+
+4. **Suivez la progression, ou fermez la fenêtre.**
+
+   « 12 / 87 titres ». « Vous pouvez fermer cette fenêtre : l’import continue sur le serveur. »
+
+   <img class="shot-wide" src="/assets/img/docs/apps-import-playlists/10-web-progress.fr.webp" alt="L’import en cours : le nom de la playlist, une barre de progression et 12 / 87 titres." />
+
+5. **Lisez le bilan, puis cliquez sur « Voir la playlist ».**
+
+   Voir ci-dessous.
+
+</Steps>
+
+</TabItem>
+</Tabs>
+
+## 3. Lire le bilan
+
+À la fin de l’import, la fenêtre du web affiche le bilan. Vous pouvez le rouvrir à tout moment : sur la page de la playlist importée, cliquez sur **Bilan de l’import**.
+
+<img class="shot-wide" src="/assets/img/docs/apps-import-playlists/11-web-report.fr.webp" alt="Le bilan de l’import : 84 titres trouvés, 80 dans votre bibliothèque, 2 en ligne, 2 incertains, 3 introuvables, la liste À vérifier avec les mentions Incertain et Introuvable, et les boutons Chercher à nouveau les introuvables et Voir la playlist." />
+
+La première ligne compte les titres trouvés, puis les répartit :
+
+| Dans le bilan | Ce que cela veut dire |
+|---|---|
+| **dans votre bibliothèque** | Le titre était déjà dans votre bibliothèque. Rien n’est retéléchargé. |
+| **en ligne** | Le même enregistrement a été trouvé dans le catalogue en ligne et mis dans la playlist. |
+| **incertain** | Un remplaçant proche a été utilisé : un autre enregistrement du même titre ou de la même œuvre, ou une autre durée. Il est dans la playlist ; vérifiez-le. |
+| **introuvable** | Le titre n’est pas dans la playlist. La raison est indiquée : **Introuvable**, **Catalogue en ligne non autorisé pour votre compte** ou **Service indisponible pendant l’import**. |
+
+**Comment chaque titre est cherché** : d’abord dans votre bibliothèque, par son ISRC (un code qui identifie un enregistrement) quand le service le fournit, sinon par titre, artistes et durée ; puis, de la même façon, dans le catalogue en ligne.
+
+**Ce que deviennent les titres trouvés en ligne** : si votre serveur peut importer des titres, ils entrent dans votre bibliothèque comme tout titre ajouté à une playlist ; sinon ils restent en ligne et se jouent en extraits de 30 secondes. Voir [Catalogue en ligne et imports](/fr/docs/library/online-catalogue/).
+
+## 4. Corriger les introuvables et les incertains
+
+<Steps>
+
+1. **Cliquez sur « Chercher à nouveau les introuvables ».**
+
+   Utile quand la raison était « Service indisponible pendant l’import ». Le bouton n’apparaît que s’il manque des titres.
+
+2. **Pour un titre toujours introuvable, cherchez-le et ajoutez-le vous-même à la playlist.**
+
+   Cherchez-le (essayez moins de mots, ou une autre orthographe du titre), puis **Ajouter à une playlist** depuis son menu.
+
+3. **Pour un titre incertain dont vous ne voulez pas, retirez-le de la playlist.**
+
+   Ouvrez la playlist, puis le menu du titre, puis **Retirer de cette playlist**.
+
+</Steps>
+
+<Aside type="note" title="Une playlist Spotify dont tous les titres n’ont pas été lus">
+Si l’aperçu indique que la playlist a plus de titres que Spotify n’en donne par son adresse, le bilan explique comment ajouter les autres : dans Spotify, sélectionnez les titres restants, **Ajouter à la playlist → Nouvelle playlist**, copiez l’adresse de cette nouvelle playlist (**Partager → Copier le lien**), collez-la dans **Adresse de la playlist avec les titres restants**, puis cliquez sur **Ajouter ces titres**. Ils rejoignent la même playlist Musonic.
+</Aside>
+
+## Limites
+
+| Limite | Détail |
+|---|---|
+| Serveur | Musonic Server uniquement. |
+| Playlists publiques seulement | Les playlists privées, les titres likés et « À regarder plus tard » ne peuvent pas être lus. |
+| Taille | 2 000 titres au plus sont lus dans une playlist. |
+| Imports en attente | 5 imports en attente ou en cours au plus par compte ; au-delà : « Trop d’imports en attente : patientez qu’ils se terminent. » Les imports passent l’un après l’autre, dans l’ordre demandé, et reprennent après un redémarrage du serveur. |
+| YouTube Music | L’administrateur doit ajouter une **clé YouTube Data API** dans la console (page **Imports**, **Import YouTube Music → Ajouter la clé**). Sans elle : « L’import YouTube n’est pas encore activé : l’administrateur doit ajouter une clé YouTube dans la console. » |
+| Catalogue en ligne | Si l’administrateur l’a coupé, les playlists Deezer ne peuvent pas être importées (« Le catalogue en ligne est coupé sur ce serveur. »). Si votre compte n’y a pas droit, seuls les titres déjà dans votre bibliothèque sont trouvés ; les autres affichent « Catalogue en ligne non autorisé pour votre compte ». |
+| Quotas | L’administrateur peut limiter, par compte, le nombre de titres importés dans la bibliothèque par jour ou par mois, ou leur taille totale. Au-delà d’un quota, les titres trouvés en ligne restent en ligne. |
+
+## Messages d’erreur
+
+| Message | Que faire |
+|---|---|
+| Ce n’est pas une adresse de playlist Spotify, Deezer ou YouTube Music. | Copiez à nouveau le lien de partage de la playlist. |
+| Playlist introuvable ou privée : elle doit être publique. | Rendez la playlist publique sur le service, ou copiez-la dans une playlist publique. |
+| Spotify n’est pas disponible sur ce serveur. | Votre serveur ne propose pas l’import Spotify. |
+| Le service ne répond pas. Réessayez dans un instant. | L’autre service n’a pas répondu : réessayez plus tard. |
+| Le catalogue en ligne est coupé sur ce serveur. | L’import Deezer a besoin du catalogue en ligne : demandez à votre administrateur. (L’appli affiche dans ce cas « Le service ne répond pas ».) |
+
+## Et ensuite
+
+- [Écouter de la musique](/fr/docs/apps/listening/)
+- [Catalogue en ligne et imports](/fr/docs/library/online-catalogue/)
+- [Hors ligne et données mobiles](/fr/docs/apps/offline/)

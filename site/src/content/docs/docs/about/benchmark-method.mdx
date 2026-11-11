@@ -1,0 +1,257 @@
+---
+title: Benchmark method
+description: The full protocol of the Musonic Server against Navidrome benchmark (machine, versions, settings, library, every request, how memory and CPU are measured, how the summary is computed) and how to run it yourself.
+---
+
+import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+This page describes exactly how the [benchmark](/docs/about/benchmark/) was run, so that anyone can check it or run it again. It is for readers who want to judge the method, and for anyone who wants to measure their own machine and library. The scripts are in [`tools/benchmark`](https://github.com/DoodzDev/Musonic/tree/main/tools/benchmark) on GitHub.
+
+**In short:** the same machine, the same music folder and the same ffmpeg for both servers; each server run on its own, without Docker, from an empty data folder; 3 passes per server, alternating; for each measure, the median of the 3 passes.
+
+## The machine
+
+| | As recorded on 2026-10-22 |
+|---|---|
+| Server | Oracle Cloud virtual server, Ampere A1 shape (ARM, aarch64) |
+| Processor | Ampere Altra (Arm Neoverse-N1), 2 cores (`os.cpu_count()` = 2 in the results file) |
+| Memory | 12 GB |
+| Storage | Oracle block volume, ext4 |
+| System | Ubuntu 24.04 LTS |
+| Kernel | `6.17.0-1009-oracle`, aarch64 (from `machine.uname` in the results file) |
+| Other load | Other services were running on the same server during the run, the same for both servers |
+
+## Versions
+
+| Program | Version and origin |
+|---|---|
+| Musonic Server | **1.0.1**, static aarch64 Linux binary. 1.0.1 has no release tag of its own: its code is commit `4642944` of the repository (2026-10-22), and the next tagged release is `server-v1.0.2`. |
+| Navidrome | **0.64.2**, the official archive `navidrome_0.64.2_linux_arm64.tar.gz` from the Navidrome releases, SHA-256 checked before use (the hash itself is not in the results file). |
+| ffmpeg | The **same** binary for both servers: static build `n8.1` from BtbN's FFmpeg-Builds, SHA-256 checked. Musonic gets its path from `MUSONIC_FFMPEG`, Navidrome from `ND_FFMPEGPATH`. |
+| Test client | `serverbench.py` 1.0.0, Python 3, standard library only (the Python version was not recorded). |
+
+Both servers ran **without Docker**, as plain processes started by the script, so that it could read their memory and CPU time in `/proc`. Only one server ran at a time.
+
+## Settings
+
+Each server kept its default settings, except the following, set through environment variables:
+
+| Musonic Server | Navidrome | Why |
+|---|---|---|
+| `MUSONIC_DATA_DIR={data}` | `ND_DATAFOLDER={data}` | A new, empty data folder for each pass. |
+| `MUSONIC_MUSIC_DIR=/path/to/music` | `ND_MUSICFOLDER=/path/to/music` | The same music folder. |
+| `MUSONIC_BIND=127.0.0.1:4580` | `ND_ADDRESS=127.0.0.1`, `ND_PORT=4581` | Local only. |
+| `MUSONIC_FFMPEG=ffmpeg/ffmpeg` | `ND_FFMPEGPATH=ffmpeg/ffmpeg` | The same ffmpeg. |
+| `MUSONIC_ONLINE=false`, `MUSONIC_ONLINE_PREVIEWS=false` | `ND_ENABLEEXTERNALSERVICES=false`, `ND_LASTFM_ENABLED=false` | No calls to online services. |
+| `MUSONIC_IMPORT=false` | — | No imports. |
+| — | `ND_SCANNER_SCHEDULE=0` | No scheduled scan (the first scan still runs). |
+| `MUSONIC_UPDATE_CHECK=false` | — | No update check. |
+| — | `ND_ENABLEINSIGHTSCOLLECTOR=false` | No usage statistics. |
+| `RUST_LOG=warn` | `ND_LOGLEVEL=warn` | Fewer log lines. |
+| Account `bench`, created with `musonic-server user add bench` (password in `MUSONIC_PASSWORD`) | Account `admin`, created from `ND_DEVAUTOCREATEADMINPASSWORD` | The test account. |
+
+`{data}` is replaced by the script with the data folder of the pass (`runs/<server>-<pass>`).
+
+## The library
+
+- One music folder, the same for both servers, which they only read: **1,871 files, 7.0 GB**, mostly MP3 between 128 and 320 kbit/s, **797 artists** (as both servers reported), about 1,000 albums.
+- It is a real personal library, not a public dataset, so it cannot be shared. This is why a test on a public, larger library is planned (see [Planned](#planned)).
+- Of the 10 files used for streaming, the 5 that are transcoded are all at 128 kbit/s (as both servers reported).
+
+## One pass, step by step
+
+For each pass, the script does the following, in this order:
+
+1. **Empty data folder.** It deletes and recreates `runs/<server>-<pass>`.
+2. **First start.** It starts the server and sends `GET /rest/ping?f=json` every 2 ms until any HTTP answer arrives. The time since the start is the "first start".
+3. **Account.** For Musonic, it runs `musonic-server user add bench`. Navidrome has created its `admin` account itself.
+4. **Scan.** It waits for the end of the first full scan, checking every 0.1 s: for Musonic 1.0.1, `GET /health` until `scan.last` is set and `scan.scanning` is false; for Navidrome, `getScanStatus` until `scanning` is false, `lastScan` is set and `count` is above 0. Meanwhile it samples the resident memory every 0.1 s and keeps the highest value (peak during the scan). It reads the CPU time of the server before and after the wait.
+5. **Rest.** It waits 60 s, then reads the idle memory.
+6. **Items.** It lists the 500 first albums in alphabetical order (`getAlbumList2`, `type=alphabeticalByName`, `size=500`) and every artist (`getArtists`). It picks the album and the artist at one third of the lists sorted by name, and the first song of that album. The names are the same in both servers, so the same items are measured.
+7. **Requests.** The 14 routes, in four series, then sign-in and size (see below).
+8. **Covers**, then **streaming**, then **concurrent clients** (see below).
+9. **Memory after the tests**: the resident memory now, and the peak of the whole pass (`VmHWM`).
+10. **Stop and disk.** It stops the server (`SIGTERM`, then `SIGKILL` after 30 s if needed) and adds up the size of every file in the data folder.
+11. **Restart.** It starts the server again on the same data folder, times the first answer as in step 2, waits 5 s and reads the memory.
+
+## Order of the passes
+
+3 passes per server, alternating, so that a slow period of the machine does not hit only one server:
+
+| Pass | Order |
+|---|---|
+| 1 | Musonic, then Navidrome |
+| 2 | Navidrome, then Musonic |
+| 3 | Musonic, then Navidrome |
+
+The run of 2026-10-22 lasted from 21:17:04 to 21:52:14 UTC: about 296 s per Musonic pass and 407 s per Navidrome pass. No pass failed, and no request failed under load (0 errors at every step).
+
+## The requests
+
+Every request goes to `http://127.0.0.1:<port>/rest/<route>`, on one HTTP/1.1 connection kept open, with these parameters:
+
+| Parameter | Value |
+|---|---|
+| `u` | `bench` (Musonic) or `admin` (Navidrome) |
+| `t`, `s` | Subsonic token sign-in: `s` is 6 random bytes in hex, new for **every request**; `t` = MD5 of the password followed by `s` |
+| `v` | `1.16.1` |
+| `c` | `bench` |
+| `f` | `json` |
+
+The 14 routes measured:
+
+| Name on the results page | Route | Parameters |
+|---|---|---|
+| Search "love" | `search3` | `query=love` |
+| Search "mo" | `search3` | `query=mo` |
+| Search "the love" | `search3` | `query=the love` |
+| One album | `getAlbum` | `id=` the album picked in step 6 |
+| One artist | `getArtist` | `id=` the artist picked in step 6 |
+| Every artist | `getArtists` | none |
+| One song | `getSong` | `id=` the song picked in step 6 |
+| 50 newest albums | `getAlbumList2` | `type=newest`, `size=50` |
+| 500 albums A–Z | `getAlbumList2` | `type=alphabeticalByName`, `size=500` |
+| 50 random albums | `getAlbumList2` | `type=random`, `size=50` |
+| 50 random songs | `getRandomSongs` | `size=50` |
+| Genres | `getGenres` | none |
+| Likes | `getStarred2` | none |
+| Playlists | `getPlaylists` | none |
+
+Search parameters other than `query` (`songCount`, `albumCount`, `artistCount`…) are left to each server's default.
+
+### The series
+
+| Series | What happens | Requests per route |
+|---|---|---|
+| Warm (median and p95) | 20 warm-up requests, then 200 measured, back to back. | 200 |
+| Right after a like | 20 warm-up requests, then before **each** measured request: `star` then `unstar` on the song picked in step 6 (not timed). | 200 |
+| 300 ms after a like | The same, plus a 300 ms wait before each measured request. | 30 |
+| Sign-in (`ping`) | `ping` with the token sign-in, then `ping` with the password in clear (`p`). | 200 with the token, 50 with `p` |
+| Answer size | One request per route with `Accept-Encoding: gzip`; size of the body received (compressed bytes). | 1 |
+
+These series ask for **uncompressed** answers (no `Accept-Encoding` header), except "Answer size" and the concurrent clients. The time of a request is measured from just before sending it to the reception of the last byte of the answer, with Python's `time.perf_counter()`. The uncompressed size of each answer is recorded too.
+
+### Covers
+
+- The `coverArt` ids of the first 60 albums that have one in the alphabetical list of step 6.
+- For 300 px, then 600 px (`getCoverArt`, `id`, `size`): the 60 covers once ("first request"), again at once ("asked again at once"), then after a 10 s wait, again ("10 s later").
+- For each series: the median of the 60 times, and the total size of the 60 answers.
+
+### Streaming
+
+1. **Choice of the files.** The script lists the audio files of the music folder (`.mp3`, `.flac`, `.m4a`, `.ogg`, `.opus`), sorts them by path, takes one every tenth of the list starting in the middle of the first tenth, keeps those over 1,000,000 bytes with a size not already taken, and stops at 10. It then finds them in each server by their `size`, going through every album. The 10 files are the same for both servers.
+2. **Disk cache.** Each of the 10 files is read once in full (`stream`, `format=raw`) before the measures.
+3. **Original file, first byte.** The 5 first files, 4 times each, with `Range: bytes=0-65535`: time to the first byte of the answer's body. Median of the 20.
+4. **Original file, throughput.** The 5 first files, read in full: size ÷ time, in MB/s. Median of the 5.
+5. **Transcoded, first play.** The 5 other files with `format=mp3`, `maxBitRate=96`: time to the first byte, and time for the whole song. Median of the 5. At 96 kbit/s, below the bit rate of the files (128 kbit/s), both servers have to transcode.
+6. **Transcoded, second play.** After a 2 s wait, the same 5 files again: time to the first byte. Median of the 5.
+
+### Concurrent clients
+
+- 1, 4, 16, then 64 threads, **10 s each**, in one Python process. Each thread has its own connection, accepts gzip, and picks each request at random among 5: `getAlbum` of a random album among the 500 listed; `getAlbumList2` `type=newest` `size=50`; `search3` of a random word among `love`, `mo`, `the`, `night`, `mozart`, `you`, `me`, `de`, `la`, `blue`; `getArtists`; `getRandomSongs` `size=20`.
+- Measured: the number of answers ÷ the duration of the step (requests per second); the median and the p95 of all the request times of the step; the errors; the CPU time of the server during the step.
+
+## How the process measures are read
+
+| Measure | How |
+|---|---|
+| Memory (RSS) | The `VmRSS` line of `/proc/<pid>/status` (kB, written in MiB on the results page: kB ÷ 1,024). |
+| Peak memory of the pass | The `VmHWM` line of the same file. |
+| Peak memory during the scan | The highest `VmRSS` sampled every 0.1 s during the scan. |
+| CPU time | `utime + stime + cutime + cstime` from `/proc/<pid>/stat`, divided by the clock ticks per second (`SC_CLK_TCK`): the server's user and system time, plus that of its finished child processes (such as ffmpeg). |
+| Data folder | The sum of the sizes of every file under the data folder, after the server has stopped. |
+| Start and restart | The time from starting the process to the first HTTP answer to `/rest/ping`. |
+
+Only the server's own process is measured: the memory of ffmpeg while it runs is not counted.
+
+## How the summary is computed
+
+`summarize.py` reads the raw results and writes `summary.md` and `summary.json`:
+
+- **Inside a pass**, a latency is the **median** of its requests (`statistics.median`: for 200 values, the mean of the 100th and 101st), or its **p95**: the values sorted, then the one at index `int(n × 0.95)`, the 191st of 200 (the 29th of 30, the 58th of 60).
+- **Across passes**, each measure is the **median of the 3 passes**. The min–max shows the lowest and highest pass.
+- **Ratio** = Navidrome ÷ Musonic when lower is better, Musonic ÷ Navidrome for requests per second and throughput. In the summary file, `÷` marks a ratio below 1 (Navidrome ahead); the results page writes every ratio as "better ÷ worse" and says who is ahead.
+- **CPU per 1,000 requests** = CPU seconds during the step ÷ (requests per second × 10 s) × 1,000, computed in each pass, then the median of the 3.
+- **Geometric mean** (not in `summarize.py`): the exponential of the mean of the logarithms of the ratios, each written as Navidrome ÷ Musonic (Musonic ÷ Navidrome for throughputs). Over the 36 measures the previous site used: 6.95; over the 113 measures of the summary: 5.14. The [results page](/docs/about/benchmark/#about-the-single-average-number) explains why it is not the headline.
+
+## Run it yourself
+
+**What you need**
+
+- A Linux machine with Python 3 and `git`.
+- A music folder.
+- The Musonic Server program for your machine (each `server-v…` [release](https://github.com/DoodzDev/Musonic/releases) has `musonic-server-…-linux-x86_64.tar.gz` and `…-aarch64.tar.gz`), the Navidrome program from [its releases](https://github.com/navidrome/navidrome/releases), and one static ffmpeg (for example from [BtbN's FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds/releases)).
+- About 35 minutes for 3 passes per server on a library like the one used here (longer on a larger one).
+
+<Steps>
+
+1. **Get the scripts.**
+
+   ```sh
+   git clone https://github.com/DoodzDev/Musonic.git
+   cd Musonic/tools/benchmark
+   ```
+
+2. **Put the three programs next to the scripts.** `musonic-server` in this folder, Navidrome in `nd/`, ffmpeg in `ffmpeg/`:
+
+   ```text
+   tools/benchmark/musonic-server
+   tools/benchmark/nd/navidrome
+   tools/benchmark/ffmpeg/ffmpeg
+   ```
+
+   These paths are ignored by Git.
+
+3. **Copy the configuration.**
+
+   ```sh
+   cp config.example.json config.json
+   ```
+
+4. **Edit `config.json`.** Replace `__PASSWORD__` in its two places (`password` and `ND_DEVAUTOCREATEADMINPASSWORD`) with a password of your choice, and `/path/to/music` in its three places with your music folder.
+
+5. **Stop anything heavy on the machine.** Close other programs if you can. Make sure ports `4580` and `4581` are free.
+
+6. **Run the passes.**
+
+   ```sh
+   python3 -I serverbench.py config.json results.json
+   ```
+
+   The script prints each step. `results.json` is written after each pass.
+
+7. **Make the summary.**
+
+   ```sh
+   python3 -I summarize.py results.json summary.md summary.json
+   ```
+
+   Open `summary.md`: one table per family, with the median, the min–max and the ratio.
+
+</Steps>
+
+<Aside type="note" title="With Musonic Server 1.0.3 or later">
+Since 1.0.3, `/health` only answers `{"status":"ok"}`. Version 1.1.0 of the script then waits for the scan with `getScanStatus`, as for Navidrome. The server's own scan duration (`scan.reported_s`) is then 0 for Musonic; the measured duration (`scan.wall_s`) and CPU time are unchanged.
+</Aside>
+
+The [README of the folder](https://github.com/DoodzDev/Musonic/tree/main/tools/benchmark) lists every field of the configuration.
+
+## Limits of the method
+
+- The test client is a Python program on the same 2 cores as the server: it takes CPU from the server, it caps the throughput Musonic can show (about 900 requests per second), and its own time is part of every latency.
+- One machine, one library, one evening, and other services running on the machine.
+- Both servers keep caches (covers, transcoded songs; Musonic also keeps ready answers). The "warm" series measure servers whose caches are full; the "after a like" series and the first requests of covers and transcoding measure the other case.
+- The scan time starts when the server answers, not when it was started: a scan that begins during startup is a little shorter than measured from the start of the program.
+- The results page lists [everything this benchmark does not show](/docs/about/benchmark/#what-this-benchmark-does-not-show).
+
+## Planned
+
+These tests have not been run yet:
+
+- **A large library.** A generator of synthetic libraries of 30,000 and 100,000 songs, so that anyone can produce the same library, and a run on the Free Music Archive (FMA) dataset, a public collection of songs that each carry their own licence.
+- **Mobile tests** of the Android app, run in the same conditions on each phone (same build, same account, same library), so that the results can be compared.
+
+<CardGrid>
+  <LinkCard title="Benchmark results" description="Every measure, where Navidrome is ahead, what the test does not show." href="/docs/about/benchmark/" />
+  <LinkCard title="Scripts and raw results" description="tools/benchmark on GitHub." href="https://github.com/DoodzDev/Musonic/tree/main/tools/benchmark" />
+</CardGrid>

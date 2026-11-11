@@ -1,0 +1,318 @@
+---
+title: Reach it from outside (HTTPS)
+description: How to make Musonic Server reachable from outside your home safely, with HTTPS through Caddy, nginx or a Cloudflare Tunnel, or privately with Tailscale, and what the proxy must pass for streaming and live sync.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+This page makes your server reachable from anywhere (on mobile data, at work, at a friend's) with an `https://` address, such as `https://music.example.com`. It is for the person who runs the server. Choose one of the four ways below.
+
+<img class="diagram" src="/assets/img/docs/diagrams/https-proxy.en.svg" alt="Diagram: a phone and a browser on the internet connect with HTTPS to music.example.com; a reverse proxy on the server machine receives them and passes them in plain HTTP to Musonic Server at 127.0.0.1:4533, which is not reachable from outside." />
+
+## Why HTTPS
+
+- **Your password travels with every sign-in**, and many Subsonic apps send it (or a token made from it) with every request. Without HTTPS, anyone on the way (public Wi-Fi, your operator) can read it.
+- **The Android app refuses plain `http://`** for any address outside your home network.
+- **The web player on an `https://` page cannot talk to an `http://` server**: browsers block it.
+
+The server itself listens in plain HTTP, only on the machine (`127.0.0.1:4533`). Something in front of it handles HTTPS: a **reverse proxy** (Caddy, nginx), a **tunnel** (Cloudflare), or a **private network** (Tailscale).
+
+## Which way to choose
+
+| Way | You need | Good for |
+|---|---|---|
+| [Caddy](#caddy) | A domain name, ports 80 and 443 open on your box (router) towards the server. | The simplest reverse proxy: it gets and renews the certificate on its own. |
+| [nginx](#nginx) | The same, plus certbot for the certificate. | You already use nginx. |
+| [Cloudflare Tunnel](#cloudflare-tunnel) | A domain name managed by Cloudflare, a free Cloudflare account. No port to open. | Your box cannot open ports (4G box, shared connection, CGNAT). |
+| [Tailscale](#tailscale-private-access) | Tailscale on the server and on each device. No domain, no port to open. | Only you and a few people, never public. |
+
+<Aside type="note" title="Its own address">
+Give the server an address of its own (a domain or subdomain, such as `music.example.com`). It cannot be served under a path such as `example.com/music/`: the console, the web player (`/app/`) and the APIs (`/rest/`, `/v1/`) all live at the root.
+</Aside>
+
+## What the proxy must pass
+
+Whatever you choose, check these points. The configurations below already do it.
+
+| Need | Why |
+|---|---|
+| **WebSocket** on `/v1/events` | Live sync between your devices (a like on the phone shows on the computer at once) and Musonic Connect go through a WebSocket. The server sends a ping every 30 seconds, so a proxy that closes idle connections after 60 seconds or more is fine. |
+| **No buffering of audio** | Songs, and above all songs made lighter by ffmpeg, are sent while they are read or converted. A proxy that waits for the whole file before sending it delays playback. |
+| **`Range` requests** | Seeking in a song asks for a part of the file. Proxies pass it by default: do not remove it. |
+| **The client's address** | The server limits wrong passwords per address (too many block it for a while). It reads the address from `CF-Connecting-IP`, then the **first** address of `X-Forwarded-For`. Your proxy must **set** these headers itself, never pass on what the visitor sent, or anyone could pick the address that gets blocked. |
+| **Request size** | No request to the server carries a large body (there is no upload through the apps): the default size limits of proxies are enough. |
+
+The server already adds the browser protections it needs to its answers (`X-Frame-Options`, `Referrer-Policy`…): do not add others that would block the console or the web player.
+
+## Before you start: your domain
+
+For Caddy and nginx:
+
+<Steps>
+
+1. **Point your domain to your home.**
+
+   At the company that manages your domain, create an `A` record `music.example.com` → the public IP address of your home (and an `AAAA` record for IPv6 if you have one). If that address changes, use a dynamic DNS service.
+
+2. **Open ports 80 and 443 on your box, towards the server machine.**
+
+   In your box's settings ("port forwarding", "NAT/PAT"), send TCP 80 and 443 to the local address of the server (for example `192.168.1.20`). **Do not open port 4533.**
+
+3. **Check the domain answers.**
+
+   ```sh
+   ping music.example.com
+   ```
+
+   The address shown must be your home's public address.
+
+</Steps>
+
+## Caddy
+
+Caddy gets a free certificate (Let's Encrypt) on its own and renews it, and passes WebSockets without settings.
+
+<Steps>
+
+1. **Install Caddy on the server machine.**
+
+   Follow [caddyserver.com/docs/install](https://caddyserver.com/docs/install) for your system (Debian and Ubuntu: the official `apt` repository; Fedora: `sudo dnf install caddy`; Arch: `sudo pacman -S caddy`).
+
+2. **Write `/etc/caddy/Caddyfile`.**
+
+   ```sh
+   sudo nano /etc/caddy/Caddyfile
+   ```
+
+   Replace its content with the file below, with your domain.
+
+3. **Reload Caddy.**
+
+   ```sh
+   sudo systemctl reload caddy
+   ```
+
+4. **Open `https://music.example.com` in a browser.**
+
+   The console's sign-in page opens, with a padlock in the address bar.
+
+</Steps>
+
+`/etc/caddy/Caddyfile`:
+
+```txt
+music.example.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:4533 {
+		# Send audio as it comes, without buffering.
+		flush_interval -1
+		# Only Cloudflare may set this header: remove what visitors send.
+		header_up -Cf-Connecting-Ip
+	}
+}
+```
+
+| Line | Why |
+|---|---|
+| `music.example.com {` | Your domain: Caddy gets its certificate and redirects `http://` to `https://`. |
+| `encode zstd gzip` | Compresses text answers that the server did not compress already. |
+| `reverse_proxy 127.0.0.1:4533` | Passes everything to the server. Caddy sets `X-Forwarded-For` to the real visitor's address, and passes WebSockets. |
+| `flush_interval -1` | Sends audio right away. |
+| `header_up -Cf-Connecting-Ip` | See [What the proxy must pass](#what-the-proxy-must-pass). |
+
+If something goes wrong: `journalctl -u caddy -e` shows Caddy's errors (often: the domain does not point to you yet, or port 80 is closed, and the certificate cannot be obtained).
+
+## nginx
+
+<Steps>
+
+1. **Install nginx and certbot.**
+
+   ```sh
+   sudo apt install nginx certbot python3-certbot-nginx
+   ```
+
+   (Debian, Ubuntu. Other systems: [certbot.eff.org](https://certbot.eff.org/).)
+
+2. **Get the certificate.**
+
+   ```sh
+   sudo certbot certonly --nginx -d music.example.com
+   ```
+
+   It puts the certificate in `/etc/letsencrypt/live/music.example.com/` and renews it on its own.
+
+3. **Write the site's configuration.**
+
+   ```sh
+   sudo nano /etc/nginx/conf.d/musonic.conf
+   ```
+
+   Paste the file below, with your domain.
+
+4. **Check the configuration, then reload nginx.**
+
+   ```sh
+   sudo nginx -t
+   sudo systemctl reload nginx
+   ```
+
+   `nginx -t` must say `syntax is ok` and `test is successful`.
+
+5. **Open `https://music.example.com` in a browser.**
+
+</Steps>
+
+`/etc/nginx/conf.d/musonic.conf`:
+
+```nginx
+# "Connection: upgrade" only for WebSocket requests.
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name music.example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name music.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/music.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/music.example.com/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:4533;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        # The visitor's real address, replacing anything it sent.
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Only Cloudflare may set this header: an empty value removes it.
+        proxy_set_header CF-Connecting-IP "";
+
+        # WebSocket (/v1/events): live sync and Musonic Connect.
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        # Audio sent as it comes; long songs and open WebSockets.
+        proxy_buffering off;
+        proxy_read_timeout 1h;
+        proxy_send_timeout 1h;
+    }
+}
+```
+
+| Lines | Why |
+|---|---|
+| `map … $connection_upgrade` | Asks the server to switch to WebSocket only when the visitor asks for it. |
+| The first `server` block | Sends `http://` visitors to `https://`. |
+| `ssl_certificate…` | The certificate from certbot. |
+| `proxy_http_version 1.1`, `Upgrade`, `Connection` | Needed for WebSockets. |
+| `X-Forwarded-For $remote_addr` | The real address, not `$proxy_add_x_forwarded_for`, which would keep what the visitor sent first. |
+| `proxy_buffering off` | Sends audio right away. |
+| `proxy_read_timeout 1h` | Keeps long streams and WebSockets open. |
+
+## Cloudflare Tunnel
+
+A tunnel needs no open port: a small program, `cloudflared`, on the server machine connects to Cloudflare, and Cloudflare sends your visitors through it. Cloudflare handles HTTPS and sets `CF-Connecting-IP` itself.
+
+<Steps>
+
+1. **Add your domain to Cloudflare.**
+
+   Your domain must use Cloudflare's name servers (Cloudflare explains how when you add it).
+
+2. **Create a tunnel in the Cloudflare dashboard.**
+
+   In **Zero Trust**, open the **Tunnels** page (under **Networks**), click **Create a tunnel**, choose **Cloudflared** and give it a name.
+
+3. **Install `cloudflared` on the server machine with the command Cloudflare shows.**
+
+   Choose your system and architecture, and run the command on the server: it installs `cloudflared` as a service, linked to your tunnel.
+
+4. **Add a public hostname: `music.example.com` → `http://127.0.0.1:4533`.**
+
+   Subdomain `music`, your domain, service type **HTTP**, URL `127.0.0.1:4533`. Save.
+
+5. **Open `https://music.example.com` in a browser.**
+
+</Steps>
+
+WebSockets go through Cloudflare without settings. Cloudflare closes connections idle for 100 seconds; the server's ping every 30 seconds keeps live sync open. Cloudflare's documentation: [developers.cloudflare.com/cloudflare-one/connections/connect-networks](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/).
+
+<Aside type="note">
+With a tunnel, every song you play goes through Cloudflare's network, encrypted between your devices and Cloudflare, and between Cloudflare and your server.
+</Aside>
+
+## Tailscale (private access)
+
+Tailscale links your devices in a private network: the server is never on the public internet, only your devices (and the people you share it with) reach it.
+
+<Steps>
+
+1. **Install Tailscale on the server, and sign in.**
+
+   ```sh
+   curl -fsSL https://tailscale.com/install.sh | sh
+   sudo tailscale up
+   ```
+
+   Open the link it shows, and sign in to your Tailscale account.
+
+2. **Install Tailscale on your phone and computers, with the same account.**
+
+   From [tailscale.com/download](https://tailscale.com/download).
+
+3. **Turn on HTTPS in the Tailscale admin console.**
+
+   On the **DNS** page: turn on **MagicDNS**, then **HTTPS Certificates**.
+
+4. **Serve Musonic on your private network with HTTPS.**
+
+   ```sh
+   sudo tailscale serve --bg 4533
+   ```
+
+   It prints an address like `https://<machine>.<tailnet>.ts.net`, passed to `127.0.0.1:4533`.
+
+5. **Use this address in the apps.**
+
+   It works from any device signed in to your Tailscale.
+
+</Steps>
+
+The Android app also accepts plain `http://` for Tailscale addresses (`100.64.0.0` to `100.127.255.255`), but the server only listens on `127.0.0.1` by default: `tailscale serve` is the simplest way, and it gives HTTPS to the web player too. To let someone else in, share the machine with them from the Tailscale admin console.
+
+## Check it works
+
+<Steps>
+
+1. **Ask for the server's status from outside.**
+
+   On a phone **on mobile data** (not your Wi-Fi), open `https://music.example.com/health`. The page shows `{"status":"ok"}`.
+
+2. **Sign in to the console at this address.**
+
+   Create your invitations from here: their links use this address (see [First start](/docs/install/first-start/#6-invite-people)).
+
+3. **Check the live sync.**
+
+   Sign in to the web player on a computer and to the app on your phone, like a song on one: the heart shows on the other at once. If it only shows after a reload, the WebSocket does not go through the proxy.
+
+</Steps>
+
+From a terminal, `curl -I https://music.example.com/health` must answer `HTTP/2 200` (or `HTTP/1.1 200`).
+
+## Next steps
+
+- [First start](/docs/install/first-start/): invite people with your final address.
+- [Sign in to a server](/docs/apps/sign-in/).
+- [Privacy and network](/docs/reference/privacy/).

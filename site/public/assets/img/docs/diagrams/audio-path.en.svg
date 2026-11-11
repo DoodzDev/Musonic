@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" role="img" aria-labelledby="t d">
+<title id="t">The path of the sound</title>
+<desc id="d">Your file is read by Musonic Server, which sends the original or a lighter ffmpeg copy; the player decodes it; the system mixer mixes it; then it goes to the output.</desc>
+<defs><marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0.8 L10 5 L0 9.2 Z" fill="#7D7B77"/></marker><marker id="aho" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0.8 L10 5 L0 9.2 Z" fill="#FF6B35"/></marker><marker id="asg" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M10 0.8 L0 5 L10 9.2 Z" fill="#7D7B77"/></marker><marker id="aso" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M10 0.8 L0 5 L10 9.2 Z" fill="#FF6B35"/></marker></defs>
+<rect x="10" y="20" width="120" height="320" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<g transform="translate(52 120) scale(1.5)" fill="none" stroke="#B1AFAB" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.8h8l4.5 4.5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.8a1 1 0 0 1 1-1z"/><path d="M14 2.8v4.5h4.5"/><circle cx="10" cy="16" r="2"/><path d="M12 16V10.5l3 1"/></g>
+<text x="70" y="181.73" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600"><tspan x="70" dy="0">Your music</tspan><tspan x="70" dy="21">file</tspan></text>
+<text x="70" y="222" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="middle"><tspan x="70" dy="0">MP3, FLAC,</tspan><tspan x="70" dy="16">M4A…</tspan></text>
+<rect x="150" y="20" width="230" height="320" rx="12" fill="#1C1C1E" stroke="#FF6B35" stroke-width="1.5"/>
+<text x="265" y="54" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="middle" font-weight="600">Musonic Server</text>
+<rect x="180" y="80" width="180" height="70" rx="12" fill="none" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="196" y="108" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#F1F0EE" text-anchor="start">Original file</text>
+<text x="196" y="128" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="start">(default)</text>
+<rect x="180" y="180" width="180" height="130" rx="12" fill="none" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="196" y="208" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#F1F0EE" text-anchor="start"><tspan x="196" dy="0">Lighter copy by</tspan><tspan x="196" dy="18">ffmpeg</tspan></text>
+<text x="196" y="246" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="start">(bit rate limit)</text>
+<rect x="196" y="262" width="130" height="26" rx="13" fill="none" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="261" y="279" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12" fill="#B1AFAB" text-anchor="middle">MP3 / Opus / AAC</text>
+<path d="M130 180 L162 180 L162 115 L174 115" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<path d="M162 180 L162 245 L174 245" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<path d="M360 115 L370 115 L370 245 L360 245" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M370 180 L394 180" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
+<rect x="400" y="20" width="150" height="320" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="475" y="54" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="middle" font-weight="600">Player</text>
+<text x="475" y="74" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="middle">decodes</text>
+<rect x="412" y="100" width="126" height="70" rx="12" fill="none" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="475" y="129.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#F1F0EE" text-anchor="middle"><tspan x="475" dy="0">Android app:</tspan><tspan x="475" dy="18">Media3</tspan></text>
+<rect x="412" y="190" width="126" height="70" rx="12" fill="none" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="475" y="219.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#F1F0EE" text-anchor="middle"><tspan x="475" dy="0">Web player:</tspan><tspan x="475" dy="18">the browser</tspan></text>
+<path d="M550 180 L564 180" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="570" y="20" width="150" height="320" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="645" y="156.23" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600">System mixer</text>
+<text x="645" y="175.5" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="middle"><tspan x="645" dy="0">Android or your</tspan><tspan x="645" dy="16">computer: volume,</tspan><tspan x="645" dy="16">other sounds,</tspan><tspan x="645" dy="16">resampling</tspan></text>
+<path d="M720 180 L734 180" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="740" y="20" width="210" height="320" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="845" y="54" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="middle" font-weight="600">Output</text>
+<g transform="translate(754 74) scale(0.833333)" fill="none" stroke="#B1AFAB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></g>
+<text x="782" y="89" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#B1AFAB" text-anchor="start">Speaker</text>
+<g transform="translate(754 117) scale(0.833333)" fill="none" stroke="#B1AFAB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3.5" y="14" width="4" height="6.5" rx="1.3"/><rect x="16.5" y="14" width="4" height="6.5" rx="1.3"/></g>
+<text x="782" y="132" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#B1AFAB" text-anchor="start">Wired headphones</text>
+<g transform="translate(754 160) scale(0.833333)" fill="none" stroke="#B1AFAB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7.5l10 9-5 4.5V3l5 4.5-10 9"/></g>
+<text x="782" y="175" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#B1AFAB" text-anchor="start"><tspan x="782" dy="0">Bluetooth (codec</tspan><tspan x="782" dy="16">chosen by the phone)</tspan></text>
+<g transform="translate(754 219) scale(0.833333)" fill="none" stroke="#B1AFAB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V4M12 4l-2.5 3M12 4l2.5 3M12 15l-4.5-3V9.5M12 17l4.5-3v-2.5"/><circle cx="7.5" cy="8.5" r="1"/><rect x="15.5" y="9.5" width="2" height="2"/></g>
+<text x="782" y="234" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#B1AFAB" text-anchor="start">USB DAC</text>
+<g transform="translate(754 262) scale(0.833333)" fill="none" stroke="#B1AFAB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15.5v-3l2-5.2A1.5 1.5 0 0 1 7.4 6.3h9.2a1.5 1.5 0 0 1 1.4 1l2 5.2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4.5 12.5h15M7 16.5v2M17 16.5v2"/><circle cx="7.5" cy="14" r=".6"/><circle cx="16.5" cy="14" r=".6"/></g>
+<text x="782" y="277" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#B1AFAB" text-anchor="start">Car</text>
+<path d="M10 360 L10 368 L550 368 L550 360" fill="none" stroke="#7D7B77" stroke-width="1.2" stroke-linejoin="round"/>
+<text x="280" y="390" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#B1AFAB" text-anchor="middle">Musonic</text>
+<path d="M570 360 L570 368 L950 368 L950 360" fill="none" stroke="#7D7B77" stroke-width="1.2" stroke-linejoin="round"/>
+<text x="760" y="390" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#B1AFAB" text-anchor="middle">Your phone or computer</text>
+</svg>

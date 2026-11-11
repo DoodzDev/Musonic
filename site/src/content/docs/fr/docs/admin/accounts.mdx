@@ -1,0 +1,200 @@
+---
+title: Comptes et rôles
+description: Comment inviter des personnes sur votre Musonic Server, choisir leur rôle, régler leurs droits et quotas, réinitialiser un mot de passe, révoquer un appareil et supprimer un compte.
+---
+
+import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Cette page montre à l'administrateur du serveur comment ouvrir l'accès à sa famille et à ses amis, puis comment gérer leurs comptes. Tout se fait dans la [console d'administration](/fr/docs/admin/console/), rubrique **Comptes**.
+
+**Ce qu'il vous faut**
+
+- Un compte administrateur et la console ouverte.
+- Un moyen d'envoyer un lien à la personne (un message, un e-mail).
+
+## Les rôles : administrateur et utilisateur
+
+| | Utilisateur | Administrateur |
+|---|---|---|
+| Écoute dans les applications (Musonic, Musonic Web, clients Subsonic) | Oui | Oui, exactement les mêmes fonctions |
+| Ouvre la console d'administration | Non | Oui |
+| Soumis aux droits et quotas | Oui | Non, jamais limité |
+
+Le serveur garde toujours **au moins un administrateur actif** : le dernier ne peut être ni repassé utilisateur, ni suspendu, ni supprimé.
+
+<Aside type="note">
+Le tout premier administrateur se crée en ligne de commande, à l'installation du serveur :
+
+```sh
+docker compose exec musonic-server musonic-server user add <nom> --admin
+```
+
+`<nom>` est le nom du compte. La commande demande le mot de passe (8 caractères au moins). Toutes les autres personnes arrivent par invitation.
+</Aside>
+
+## Inviter quelqu'un
+
+<Steps>
+
+1. **Dans la console, ouvrez « Comptes » et cliquez sur « Inviter quelqu'un ».**
+
+   <img class="shot-wide" src="/assets/img/docs/admin-accounts/01-invite-button.fr.webp" alt="L'écran Comptes avec le bouton Inviter quelqu'un mis en évidence en haut à droite" />
+
+2. **Écrivez une note, choisissez le rôle et la durée de validité du lien.**
+
+   La note n'est que pour vous, pour retrouver l'invitation dans la liste (par exemple « Ma cousine Léa »). Ce n'est pas le nom du compte.
+
+   <img class="shot-wide" src="/assets/img/docs/admin-accounts/02-invite-form.fr.webp" alt="La fenêtre Inviter quelqu'un remplie : la note Ma cousine Léa, le rôle Utilisateur choisi et la validité 7 j choisie" />
+
+3. **Cliquez sur « Créer l'invitation ».**
+
+4. **Cliquez sur « Copier » et envoyez le lien à la personne.**
+
+   Le lien n'est montré **que maintenant**. Si vous fermez la fenêtre sans le copier, annulez l'invitation et créez-en une autre.
+
+   <img class="shot-wide" src="/assets/img/docs/admin-accounts/03-invite-link.fr.webp" alt="La fenêtre Inviter quelqu'un qui affiche le lien à envoyer, avec le bouton Copier" />
+
+5. **La personne ouvre le lien, choisit un nom et un mot de passe, puis touche « Créer mon compte ».**
+
+   <img class="shot-phone" src="/assets/img/docs/admin-accounts/04-invite-page.fr.webp" alt="La page d'invitation sur un téléphone : Bienvenue sur Musonic, les champs Nom, Mot de passe et Confirmer le mot de passe, et le bouton Créer mon compte" />
+
+6. **La page affiche ensuite l'adresse du serveur à ajouter dans l'application.** La personne se connecte avec le nom et le mot de passe qu'elle vient de choisir.
+
+   <img class="shot-phone" src="/assets/img/docs/admin-accounts/05-invite-ready.fr.webp" alt="La page Votre compte est prêt sur un téléphone, avec l'adresse du serveur à ajouter dans l'application Musonic" />
+
+</Steps>
+
+### Le détail des invitations
+
+- **Validité** : 1 heure, 24 heures, 7 jours (par défaut) ou 30 jours, ou une durée libre de **1 minute à 1 an**. La fenêtre affiche la date de fin.
+- **Usage unique** : une fois un compte créé avec, le lien ne marche plus. Sa ligne dans **Invitations** indique alors « Utilisée par… ».
+- **Rôle** : une invitation peut créer directement un administrateur. Choisissez « Utilisateur », sauf si vous voulez vraiment partager la console.
+- **Annuler** : dans **Invitations**, une invitation en attente peut être annulée. Le lien affiche alors « Ce lien a été annulé par l'administrateur. »
+- **Nom déjà pris** : si la personne choisit un nom déjà utilisé, la page lui en demande un autre.
+- **Mot de passe** : 8 caractères au moins, tapé deux fois.
+- Ce que voit la personne sur un lien inutilisable : « Ce lien a déjà été utilisé. », « Ce lien a expiré. Demandez-en un nouveau à l'administrateur. », « Ce lien a été annulé par l'administrateur. » ou « Ce lien n'existe pas. Vérifiez qu'il est complet. »
+- Le serveur ne garde qu'une empreinte (hachage SHA-256) du lien, jamais le lien lui-même : c'est pour cela qu'il ne peut pas être réaffiché.
+
+## Changer le rôle ou suspendre un compte
+
+<Steps>
+
+1. **Dans « Comptes », cliquez sur le compte.**
+
+2. **Sous « Rôle », cliquez sur « Utilisateur » ou « Administrateur ».** C'est enregistré tout de suite.
+
+3. **Pour le suspendre, coupez « Compte actif ».**
+
+   <img class="shot-wide" src="/assets/img/docs/admin-accounts/06-account-page.fr.webp" alt="La fiche du compte lea : le choix Rôle sur Utilisateur, l'interrupteur Compte actif, le bouton Déconnecter partout, les Droits et les Quotas" />
+
+</Steps>
+
+Un compte suspendu ne peut plus se connecter (la console lui répond « Ce compte est suspendu : demandez à l'administrateur du serveur. ») et ses sessions se ferment. **Rien n'est supprimé** : rallumez « Compte actif » pour le rétablir.
+
+## Droits et quotas
+
+Les droits et quotas ne concernent que les **utilisateurs**. Sur la fiche d'un administrateur, la console indique « Les administrateurs ne sont jamais limités. »
+
+### Droits
+
+Quatre interrupteurs, tous **activés** par défaut :
+
+| Droit | Quand il est coupé |
+|---|---|
+| Import (premier interrupteur) | Les titres en ligne que la personne like ou met en playlist restent en ligne ; ils ne sont pas importés en fichiers. |
+| Voir le catalogue en ligne | Recherche, pages et écoute restent dans la bibliothèque. Les imports de playlists ne cherchent que dans la bibliothèque. |
+| Télécharger les fichiers | Le téléchargement direct des fichiers depuis les applications est refusé. L'écoute fonctionne toujours. |
+| Playlists publiques | Les playlists de la personne ne peuvent pas devenir publiques (visibles par les autres comptes). |
+
+### Quotas
+
+Tous les quotas sont **illimités** par défaut. Pour chacun, choisissez une valeur proposée, « Personnalisé… » pour votre propre nombre, ou « Illimité » (« Sans limite » pour le débit).
+
+| Quota | Valeurs proposées | Ce qui est compté |
+|---|---|---|
+| Imports par jour | 10, 50 | Les imports demandés par la personne depuis minuit (UTC). |
+| Imports par mois | 100, 500 | Les imports demandés depuis le 1er du mois (UTC). |
+| Place maximale de ses imports | 1 Go, 5 Go | La taille totale des fichiers déjà importés pour la personne. |
+| Débit maximal en lecture | 320, 192, 128 kbit/s | Au-delà, ses écoutes sont réduites (ffmpeg nécessaire). |
+
+- Quand un quota est atteint, les titres suivants que la personne like restent en ligne et ne partent pas à l'import. Rien n'est supprimé.
+- La fiche affiche « Ce mois-ci : N import(s). » sous les quotas, et la liste **Comptes** montre les imports du mois face au quota mensuel.
+- La limite de débit du compte et le **Débit maximal par défaut** du serveur (écran Lecture) s'appliquent tous les deux : **la plus basse l'emporte**.
+- Les changements s'enregistrent au fur et à mesure (« Enregistré » s'affiche).
+
+<img class="shot-wide" src="/assets/img/docs/admin-accounts/07-rights-quotas.fr.webp" alt="Les cartes Droits et Quotas d'un utilisateur : quatre interrupteurs, puis imports par jour à 10, imports par mois à 100, place maximale à 5 Go et débit maximal à 192 kbit/s" />
+
+## Réinitialiser un mot de passe
+
+Vous ne voyez et ne tapez jamais le mot de passe d'un utilisateur. Vous envoyez un lien, et la personne en choisit un nouveau.
+
+<Steps>
+
+1. **Ouvrez le compte et cliquez sur « Lien de réinitialisation ».**
+
+2. **Choisissez la durée de validité du lien, et s'il faut déconnecter les appareils de la personne.**
+
+   Par défaut : 24 heures. « Déconnecter ses appareils » révoque ses clés d'appareils une fois le nouveau mot de passe choisi.
+
+   <img class="shot-wide" src="/assets/img/docs/admin-accounts/08-reset-form.fr.webp" alt="La fenêtre Réinitialiser le mot de passe de lea : la validité 24 h choisie et l'interrupteur Déconnecter ses appareils" />
+
+3. **Cliquez sur « Créer le lien », puis sur « Copier », et envoyez-le à la personne.** Comme pour les invitations, il n'est montré qu'une fois.
+
+4. **La personne ouvre le lien, tape deux fois le nouveau mot de passe et valide.**
+
+   <img class="shot-phone" src="/assets/img/docs/admin-accounts/09-reset-page.fr.webp" alt="La page Nouveau mot de passe sur un téléphone, pour le compte lea, avec les champs Mot de passe et Confirmer le mot de passe" />
+
+</Steps>
+
+- Le lien est **à usage unique** et valable de 1 minute à 1 an.
+- Créer un nouveau lien pour un compte annule ses liens précédents non utilisés.
+- Les liens pas encore utilisés sont listés dans **Comptes → Réinitialisations de mot de passe en cours**, où on peut les annuler.
+- Un nouveau mot de passe ferme toujours les autres **sessions** du compte (Musonic Web, console). Avec « Déconnecter ses appareils », ses **clés d'appareils** sont aussi révoquées et les applications doivent se reconnecter.
+- Pour changer **votre propre** mot de passe, faites pareil sur votre propre fiche : créez le lien et ouvrez-le vous-même. Musonic Web et l'application n'ont pas de champ de mot de passe à elles.
+
+## Appareils et clés d'API
+
+Les applications Musonic se connectent une fois avec le mot de passe, puis reçoivent **une clé propre à chaque appareil** (elle commence par `msk_`). Le mot de passe lui-même n'est pas gardé sur le téléphone.
+
+- **Les appareils d'un compte** : sur sa fiche, sous **Appareils**, avec la date de création et de dernière utilisation de chaque clé.
+- **Tous les appareils** : **Appareils et sécurité** dans le menu.
+- **Révoquer** déconnecte cet appareil tout de suite. Pour revenir, il se reconnecte avec le mot de passe.
+- **Téléphone perdu** : révoquez sa clé. Par prudence, envoyez aussi un lien de réinitialisation.
+
+Les clients Subsonic qui envoient le mot de passe à chaque requête n'ont pas de clé : ils ne sont pas listés. Pour les couper, changez le mot de passe ou suspendez le compte.
+
+## Sessions et « Déconnecter partout »
+
+- Une connexion dans Musonic Web ou dans la console crée une **session** de **30 jours**, prolongée à chaque utilisation.
+- **Déconnecter partout**, sur la fiche d'un compte, ferme toutes ses sessions **et** révoque toutes ses clés d'appareils : chaque application devra se reconnecter.
+- Suspendre un compte ferme aussi ses sessions.
+
+## Supprimer un compte
+
+<Steps>
+
+1. **Ouvrez le compte et cliquez sur « Supprimer ».**
+
+2. **Tapez le nom du compte dans la case.**
+
+   <img class="shot-wide" src="/assets/img/docs/admin-accounts/10-delete.fr.webp" alt="La fenêtre Supprimer le compte de lea ? avec la case Tapez lea pour confirmer et le bouton Supprimer définitivement" />
+
+3. **Cliquez sur « Supprimer définitivement ».**
+
+</Steps>
+
+**Ce qui part** : ses likes et notes, playlists, écoutes, file de lecture, abonnements et positions d'écoute de podcasts, imports de playlists, droits et quotas, sessions et appareils. **Ce qui reste** : tous les titres de la bibliothèque, y compris les fichiers importés parce que cette personne les avait likés. Ses imports et invitations gardent leur ligne, sans le nom.
+
+<Aside type="danger">
+La suppression est définitive. Si vous voulez seulement empêcher quelqu'un de se connecter, suspendez plutôt le compte. En cas d'erreur, le seul retour possible est une [sauvegarde de la base](/fr/docs/admin/backups/) d'avant.
+</Aside>
+
+Vous ne pouvez supprimer depuis la console ni votre propre compte, ni le dernier administrateur.
+
+## Et ensuite
+
+<CardGrid>
+  <LinkCard title="La console" href="/fr/docs/admin/console/" description="Tous les écrans de la console." />
+  <LinkCard title="Configuration" href="/fr/docs/admin/configuration/" description="Les réglages du serveur, dont le débit par défaut." />
+  <LinkCard title="Dépannage" href="/fr/docs/admin/troubleshooting/" description="Problèmes de connexion, adresses bloquées, mot de passe oublié." />
+</CardGrid>

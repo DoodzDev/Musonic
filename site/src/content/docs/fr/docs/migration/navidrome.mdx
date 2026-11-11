@@ -1,0 +1,266 @@
+---
+title: Venir de Navidrome
+description: Comment passer de Navidrome à Musonic Server pas à pas, ce que l'import reprend (playlists, j'aime, notes, nombres d'écoutes), ce qu'il ne reprend pas, et comment revenir en arrière.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Cette page s'adresse à vous si vous utilisez déjà Navidrome et voulez essayer Musonic Server, ou y passer. Elle dit honnêtement ce que Musonic fait et ne fait pas par rapport à Navidrome, ce que l'import reprend, et comment changer sans rien perdre.
+
+<Aside type="caution" title="La première règle">
+**Gardez Navidrome en marche tant que Musonic n'est pas validé.** Vous installez Musonic à côté, sur le même dossier de musique, et vous ne basculez qu'après avoir tout vérifié sur cette page. L'import lit une **copie** de la base de Navidrome et n'y écrit jamais : jusqu'à la bascule, rien ne change pour votre Navidrome ni pour ceux qui l'utilisent.
+</Aside>
+
+**Ce qu'il vous faut**
+
+- Votre Navidrome en marche, et un accès à la machine où il tourne (un terminal).
+- Le programme `sqlite3` sur cette machine, pour copier la base de Navidrome sans risque (sous Debian ou Ubuntu : paquet `sqlite3`). Si vous ne pouvez pas l'installer, vous pouvez arrêter Navidrome une minute à la place (voir l'étape 2).
+- Environ 30 minutes, plus la durée d'un premier scan de votre bibliothèque.
+
+<img class="diagram" src="/assets/img/docs/diagrams/navidrome-migration.fr.svg" alt="Schéma : le même dossier de musique est lu par Navidrome et par Musonic Server ; une copie de navidrome.db part dans l'import de Musonic ; les applis ne passent de Navidrome à Musonic qu'à la fin, quand on bascule le reverse proxy." />
+
+## Ce qui est repris, et ce qui ne l'est pas
+
+La commande `musonic-server import-navidrome` lit une copie de `navidrome.db` (ouverte en lecture seule) et reprend les données des comptes qui existent dans Musonic **sous le même nom d'utilisateur** (majuscules et minuscules ne comptent pas).
+
+| Donnée de Navidrome | Reprise ? | Détails |
+|---|---|---|
+| Playlists | Oui | Nom, commentaire, publique ou non, dates de création et de modification, ordre des titres. Un titre dont le fichier n'est pas dans la bibliothèque de Musonic est laissé de côté (compté dans le rapport). |
+| J'aime (étoiles) | Oui | Sur les titres, albums et artistes, avec la date du j'aime. |
+| Notes | Oui | Sur les titres, albums et artistes. |
+| Nombres d'écoutes et date de dernière écoute | Oui | Sur les titres, albums et artistes. |
+| Historique d'écoute | Oui | Chaque écoute enregistrée par Navidrome devient une écoute dans Musonic. |
+| Identifiants des titres et des playlists | Gardés par défaut | Les titres et les playlists prennent l'identifiant qu'ils avaient dans Navidrome : ce que les applis ont enregistré (téléchargements, caches) continue de marcher. `--new-ids` leur en donne de nouveaux. |
+| Identifiants des albums et artistes | Non | Musonic les calcule à partir des tags. |
+| Comptes | Non | Vous les créez d'abord dans Musonic, avec les mêmes noms d'utilisateur (étape 6). |
+| Mots de passe | **Jamais** | L'import ne les lit pas. Chaque personne reçoit un nouveau mot de passe dans Musonic. |
+| Droits d'administrateur | Non | Vous les choisissez en créant chaque compte. |
+| File de lecture, signets, partages | Non | Non lus par l'import. |
+| Playlists intelligentes | En partie | Leurs règles ne sont pas reprises. La playlist arrive avec les titres qu'elle contenait dans la copie, comme une playlist ordinaire. |
+| Réglages (transcodage, lecteurs, liens de scrobbling) | Non | Musonic a ses propres réglages. |
+
+**Comment les titres sont retrouvés.** Navidrome et Musonic enregistrent tous deux chaque fichier par son chemin dans le dossier de musique. L'import cherche d'abord le même chemin, puis le même chemin sans tenir compte des majuscules, des minuscules et des accents. C'est pourquoi **Musonic doit utiliser exactement le même dossier de musique** que Navidrome (la même racine, ni un dossier parent ni un sous-dossier).
+
+**Les comptes qui n'existent pas dans Musonic.** Ils sont ignorés, et listés sous `users_skipped` dans le rapport. Rien de ce qui leur appartient n'est importé. Créez le compte, puis relancez l'import.
+
+**Relancer l'import** est sans risque : rien n'est ajouté deux fois.
+
+- Les playlists déjà importées restent telles quelles. `--replace-playlists` les importe de nouveau, en les remplaçant.
+- Un j'aime garde sa première date.
+- Une note que vous avez déjà mise dans Musonic est conservée.
+- Les nombres d'écoutes gardent la valeur la plus haute.
+- Une écoute déjà importée n'est pas ajoutée de nouveau.
+
+## Navidrome et Musonic comparés
+
+Ce sont deux serveurs de musique qui parlent l'API Subsonic : les applis Subsonic que vous utilisez aujourd'hui marchent avec les deux. Ils ne font pas les mêmes choix. La colonne Navidrome suit [la documentation de Navidrome](https://www.navidrome.org/docs/) ; consultez-la pour le détail, car Navidrome évolue aussi.
+
+| Fonction | Navidrome (d'après sa documentation) | Musonic Server 1.2.1 |
+|---|---|---|
+| API Subsonic / OpenSubsonic | Oui | Oui |
+| Transcodage avec ffmpeg | Oui | Oui (MP3 par défaut, `transcode_format` / `MUSONIC_TRANSCODE_FORMAT`) |
+| Playlists intelligentes (règles) | Oui | **Non** |
+| Plusieurs bibliothèques de musique | Oui | **Non** : un seul dossier de musique |
+| Scrobbling Last.fm / ListenBrainz | Oui | **Non** : les écoutes sont comptées sur le serveur seulement |
+| Liens de partage publics | Oui | **Non** |
+| ReplayGain | Oui | **Non** |
+| Mode jukebox (lecture sur le serveur) | Oui | **Non** |
+| Connexion par un en-tête du reverse proxy | Oui | **Non** |
+| Import de playlists `.m3u` | Oui | **Non** |
+| Plugins | Oui | **Non** : les sources audio sont intégrées au serveur |
+| Interface web | Oui, la sienne | Oui : Musonic Web, servi par le serveur |
+| Sa propre appli Android | Non décrit | Oui : Musonic pour Android |
+| Administration | Dans son interface web | Une console d'administration séparée, servie par le serveur |
+| Comptes avec rôles | Oui (administrateurs, utilisateurs) | Oui (administrateurs, utilisateurs), avec des quotas |
+| Une clé par appareil, révocable | Non décrit | Oui |
+| Synchronisation en temps réel entre appareils (j'aime, playlists, file) | Non décrit | Oui |
+| Catalogue en ligne (artistes et albums que vous n'avez pas) | Non décrit | Oui : métadonnées et extraits de 30 secondes |
+| Import d'une playlist depuis un lien | Non décrit | Oui |
+| Podcasts | Non décrit | Oui |
+| Import des données de Navidrome | Sans objet | Oui (cette page) |
+
+<Aside type="note">
+Si vous comptez sur une fonction que Musonic n'a pas (playlists intelligentes, scrobbling vers Last.fm ou ListenBrainz, liens de partage, ReplayGain, jukebox, plusieurs bibliothèques), gardez Navidrome : Musonic ne le remplacera pas pour vous aujourd'hui.
+</Aside>
+
+Pour la vitesse et la mémoire, la [page du benchmark](/fr/docs/about/benchmark/) donne les mesures des deux serveurs sur la même bibliothèque, y compris celles où Navidrome est devant.
+
+## Migrer pas à pas
+
+<Steps>
+
+1. **Notez comment votre Navidrome est installé.**
+
+   Il vous faut quatre choses :
+
+   - sa **version** (affichée dans l'interface web de Navidrome, dans la fenêtre « À propos ») ;
+   - le chemin de votre **dossier de musique** (réglage `MusicFolder` de Navidrome, ou le volume `/music` de son conteneur) ;
+   - le chemin de sa **base** `navidrome.db`, dans son dossier de données (`DataFolder`, ou le volume `/data` de son conteneur) ;
+   - les **applis** que chacun utilise (Musonic, Symfonium, Substreamer…), pour les reconnecter à la fin.
+
+2. **Faites une copie sûre de la base de Navidrome.**
+
+   Lancez ceci sur la machine de Navidrome, qui peut rester en marche :
+
+   ```sh
+   sqlite3 -readonly <chemin-vers>/navidrome.db ".backup navidrome-copy.db"
+   ```
+
+   `<chemin-vers>` est le dossier de données que vous avez noté. Cela écrit une copie cohérente, `navidrome-copy.db`, dans le dossier courant. Ne copiez pas le fichier avec `cp` pendant que Navidrome tourne : la copie pourrait être incomplète.
+
+   Sans `sqlite3` : arrêtez Navidrome, copiez `navidrome.db` avec `cp`, puis redémarrez Navidrome.
+
+3. **Installez Musonic Server à côté de Navidrome, sur le même dossier de musique.**
+
+   Suivez [Installer le serveur avec Docker](/fr/docs/install/docker/), avec deux changements :
+
+   - donnez-lui **le même dossier de musique** que Navidrome. Vous pouvez le monter en lecture seule (`:ro`) : le scan ne fait que le lire (seul l'import de titres en ligne y écrit) ;
+   - donnez-lui **un autre port** : Navidrome utilise déjà 4533 par défaut, les deux ne peuvent pas écouter dessus.
+
+   ```yaml
+   ports:
+     - "127.0.0.1:4534:4533"    # Musonic sur 4534 pendant que Navidrome garde 4533
+   volumes:
+     - ./data:/data
+     - /chemin/vers/musique:/music:ro  # le même dossier que Navidrome
+   ```
+
+   Sans Docker, réglez `MUSONIC_BIND=127.0.0.1:4534` et `MUSONIC_MUSIC_DIR` sur le même dossier.
+
+4. **Créez le compte administrateur avec votre nom d'utilisateur Navidrome.**
+
+   ```sh
+   docker compose exec musonic-server musonic-server user add <nom> --admin
+   ```
+
+   `<nom>` est votre nom d'utilisateur dans Navidrome : ainsi, vos playlists et vos j'aime arrivent sur ce compte. La commande demande le mot de passe.
+
+5. **Attendez la fin du premier scan.**
+
+   Le serveur scanne le dossier de musique au démarrage. Dans la console d'administration, **Bibliothèque** (sous Musique) affiche « Scan en cours… » pendant le scan, puis le nombre de titres et le dernier scan : fichiers, titres ajoutés, manquants, erreurs. L'import a besoin de ce scan : il retrouve les titres par leurs fichiers.
+
+6. **Créez les autres comptes, avec les mêmes noms d'utilisateur que dans Navidrome.**
+
+   Pour chaque personne qui a des playlists ou des j'aime dans Navidrome :
+
+   ```sh
+   docker compose exec musonic-server musonic-server user add <nom>
+   ```
+
+   Ou, dans la console d'administration, dans **Comptes**, cliquez sur **Inviter quelqu'un** et envoyez le lien : la personne choisit elle-même son nom d'utilisateur et son mot de passe. Demandez-lui de taper **exactement** son nom d'utilisateur Navidrome.
+
+7. **Placez la copie là où Musonic peut la lire.**
+
+   Avec Docker, déplacez `navidrome-copy.db` dans le dossier `data` de Musonic (à côté de `compose.yml`) : le conteneur la voit alors comme `/data/navidrome-copy.db`. Elle doit être lisible par l'utilisateur du conteneur (`user: "1000:1000"` dans `compose.yml`).
+
+8. **Arrêtez Musonic, lancez l'import, redémarrez Musonic.**
+
+   <Tabs>
+   <TabItem label="Docker">
+   ```sh
+   docker compose stop musonic-server
+   docker compose run --rm musonic-server scan
+   docker compose run --rm musonic-server import-navidrome /data/navidrome-copy.db
+   docker compose start musonic-server
+   ```
+   </TabItem>
+   <TabItem label="Programme (sans Docker)">
+   Arrêtez le serveur, puis lancez, avec les mêmes réglages que le serveur (même fichier `MUSONIC_CONFIG` ou mêmes variables `MUSONIC_*`, même dossier de travail) :
+   ```sh
+   musonic-server scan
+   musonic-server import-navidrome /chemin/vers/navidrome-copy.db
+   ```
+   Puis redémarrez le serveur.
+   </TabItem>
+   </Tabs>
+
+   `scan` garantit que la bibliothèque est complète. L'import affiche un rapport (voir [Lire le rapport](#lire-le-rapport)).
+
+   ![Terminal montrant le rapport de import-navidrome : comptes importés et ignorés, fichiers retrouvés, playlists, j'aime et écoutes](/assets/img/docs/migration-navidrome/01-import-report.en.webp)
+
+9. **Lisez le rapport, corrigez, et relancez si besoin.**
+
+   Un compte listé sous `users_skipped` : créez-le (étape 6) et relancez l'import. Beaucoup de `files_not_found` : les deux serveurs ne voient pas le même dossier de musique (voir [Dépannage](#dépannage)).
+
+10. **Donnez à chacun son nouveau mot de passe.**
+
+    Les mots de passe ne sont pas repris. Si vous avez créé le compte avec `user add`, donnez à la personne le mot de passe que vous avez choisi. Mieux : dans la console d'administration, ouvrez le compte, cliquez sur **Lien de réinitialisation**, puis sur **Créer le lien**, et envoyez le lien : la personne choisit elle-même son mot de passe avec, en une seule fois.
+
+    <img class="shot-wide" src="/assets/img/docs/migration-navidrome/02-console-reset-link.fr.webp" alt="Console d'administration, la fenêtre Réinitialiser le mot de passe d'un compte, avec son bouton Créer le lien" />
+
+11. **Connectez une appli à Musonic, et vérifiez tout.**
+
+    Dans une appli Subsonic (Symfonium, Substreamer…), ajoutez un serveur avec l'adresse de Musonic (pour l'instant, le port 4534) et le nom d'utilisateur et le mot de passe Musonic. Dans l'appli Musonic, ajoutez le serveur de la même façon. Puis suivez la [liste de vérification](#liste-de-vérification).
+
+12. **Basculez le reverse proxy vers Musonic.**
+
+    Une fois tout validé, modifiez votre reverse proxy (Caddy, nginx, Traefik…) pour que l'adresse utilisée par vos applis pointe vers Musonic (`127.0.0.1:4534`) au lieu de Navidrome. Puis arrêtez Navidrome. Ne le supprimez pas, ni ses données : c'est votre chemin de retour.
+
+13. **Reconnectez les applis.**
+
+    Si l'adresse reste la même, chaque appli n'a besoin que du **nouveau mot de passe** (avec le même nom d'utilisateur). Sinon, changez aussi l'adresse. Rien d'autre ne change pour une appli Subsonic.
+
+</Steps>
+
+## Liste de vérification
+
+Avant de basculer, comparez les deux serveurs côte à côte, dans la même appli ou dans les deux interfaces web :
+
+- **Bibliothèque** : à peu près le même nombre de titres, d'albums et d'artistes. Dans Musonic, la page **Bibliothèque** de la console donne le nombre de titres. Musonic regroupe les albums et les artistes à partir des tags à sa façon : de petits écarts sont normaux, de grands écarts non.
+- **Pochettes** : ouvrez quelques albums, dont certains avec une image de pochette dans le dossier et d'autres avec la pochette dans les tags.
+- **Playlists** : chacun retrouve ses playlists, avec les mêmes titres dans le même ordre (moins les entrées signalées manquantes).
+- **J'aime et notes** : les titres, albums et artistes aimés sont là.
+- **Nombres d'écoutes** : un titre souvent écouté affiche à peu près le même nombre.
+- **Lecture** : écoutez une playlist importée du début à la fin, dans chaque appli utilisée, en Wi-Fi et en données mobiles.
+- **Chaque compte** : chacun s'est connecté au moins une fois avec son nouveau mot de passe.
+
+## Lire le rapport
+
+L'import affiche un résumé en JSON :
+
+| Champ | Signification |
+|---|---|
+| `users` | Comptes importés (même nom d'utilisateur dans les deux serveurs). |
+| `users_skipped` | Comptes Navidrome sans compte de ce nom dans Musonic : rien n'est importé pour eux. |
+| `files_matched` / `files_not_found` | Fichiers de Navidrome retrouvés dans la bibliothèque de Musonic, et non retrouvés. |
+| `ids_kept` | Titres qui ont pris leur identifiant Navidrome. |
+| `playlists` / `playlists_already_there` | Playlists importées maintenant, et déjà importées avant (laissées telles quelles). |
+| `playlist_entries` / `playlist_entries_missing` | Titres mis dans les playlists, et titres laissés de côté car leur fichier n'est pas dans la bibliothèque. |
+| `track_annotations`, `album_annotations`, `artist_annotations` | Titres, albums et artistes avec un j'aime, une note ou un nombre d'écoutes. |
+| `plays` | Écoutes ajoutées à l'historique. |
+
+## Options
+
+| Option | Effet |
+|---|---|
+| (aucune) | Les titres et les playlists gardent leur identifiant Navidrome. Les playlists déjà importées restent telles quelles. |
+| `--new-ids` | Les titres et les playlists reçoivent de nouveaux identifiants Musonic. Les playlists déjà importées sont alors reconnues par leur propriétaire et leur nom. |
+| `--replace-playlists` | Les playlists déjà importées sont supprimées et importées de nouveau depuis la copie. |
+
+## Dépannage
+
+- **`not a Navidrome database (no media_file table)`** : le fichier donné n'est pas `navidrome.db`, ou la copie est vide. Refaites la copie (étape 2).
+- **`… not found`** : le chemin est faux. Avec Docker, c'est le chemin dans le conteneur (`/data/navidrome-copy.db`), pas celui de la machine.
+- **Presque tous les fichiers dans `files_not_found`** : le dossier de musique de Musonic n'est pas le même que celui de Navidrome (un dossier parent ou un sous-dossier), ou Navidrome a enregistré ses chemins autrement. Donnez à Musonic le même dossier que Navidrome, lancez `scan`, puis l'import de nouveau.
+- **Un compte n'a rien** : regardez `users_skipped`, et vérifiez que le nom d'utilisateur est le même dans les deux serveurs.
+
+Si l'import s'arrête sur une erreur, rien n'est écrit : il se fait en une seule transaction.
+
+## Revenir à Navidrome
+
+L'import ne fait que lire la copie de `navidrome.db`, ouverte en lecture seule. Navidrome lui-même n'est jamais touché. Pour revenir :
+
+<Steps>
+
+1. **Redémarrez Navidrome**, si vous l'aviez arrêté.
+2. **Faites de nouveau pointer le reverse proxy vers Navidrome** (port 4533).
+3. **Reconnectez les applis avec les mots de passe Navidrome.**
+
+</Steps>
+
+Ce qui s'est passé dans Musonic entre-temps (nouveaux j'aime, nouvelles playlists, écoutes) reste dans Musonic : cela ne repart pas vers Navidrome.
+
+## Et ensuite
+
+- [Installer le serveur avec Docker](/fr/docs/install/docker/)
+- [Benchmark face à Navidrome](/fr/docs/about/benchmark/)

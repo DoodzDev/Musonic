@@ -1,0 +1,230 @@
+---
+title: Référence de la configuration
+description: Chaque réglage de Musonic Server, sa variable d'environnement, sa clé de fichier, son type, sa valeur par défaut et son effet, plus ce que change la console, le port, le dossier de données et les journaux.
+---
+
+import { Aside, Tabs, TabItem, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Cette page liste tous les réglages de Musonic Server, pour la personne qui l'installe et le fait tourner. La plupart des gens n'ont besoin que du dossier de musique et de la console : tout le reste a une valeur par défaut raisonnable.
+
+## D'où viennent les réglages
+
+Un réglage peut être donné à quatre endroits. Au démarrage du serveur, chacun **remplace le précédent** :
+
+1. **La valeur par défaut** du serveur.
+2. **Le fichier de configuration**, si `MUSONIC_CONFIG` en indique un (format TOML).
+3. **Les variables d'environnement** (`MUSONIC_…`), par exemple dans `compose.yml`.
+4. **La valeur enregistrée depuis la console**, pour les [réglages que la console peut changer](#réglages-changés-depuis-la-console).
+
+<img class="diagram" src="/assets/img/docs/diagrams/settings-priority.fr.svg" alt="Schéma : quatre couches de bas en haut, valeur par défaut, fichier de configuration, variables d'environnement, valeur enregistrée dans la console ; celle du haut l'emporte au démarrage du serveur" />
+
+<Aside type="caution">
+Une valeur enregistrée dans la console l'emporte sur l'environnement. Si vous mettez `MUSONIC_ONLINE: "false"` dans `compose.yml` après avoir activé le catalogue en ligne dans la console, c'est la valeur de la console qui compte. Changez-la plutôt dans la console.
+</Aside>
+
+Les réglages sont lus **une seule fois, au démarrage**. Après avoir modifié `compose.yml` ou le fichier, redémarrez : `docker compose up -d` (il recrée le conteneur quand ses réglages ont changé).
+
+## Avec Docker ou avec le fichier
+
+<Tabs>
+  <TabItem label="Docker Compose">
+
+```yaml
+services:
+  musonic-server:
+    image: ghcr.io/doodzdev/musonic-server:1
+    environment:
+      RUST_LOG: info
+      MUSONIC_IMPORT_QUALITY: flac
+      MUSONIC_BACKUP_DAYS: "30"
+```
+
+Mettez `true` et `false` entre guillemets (`"false"`) : Compose les refuse sans.
+
+  </TabItem>
+  <TabItem label="Fichier de configuration">
+
+```ini
+# /etc/musonic/server.toml
+bind = "0.0.0.0:4533"
+data_dir = "/var/lib/musonic"
+music_dir = "/srv/music"
+import_quality = "flac"
+backup_days = 30
+```
+
+Lancez le serveur avec `MUSONIC_CONFIG=/etc/musonic/server.toml`. Les clés absentes gardent leur valeur par défaut. Les secrets ne vont jamais dans ce fichier : ce sont uniquement des variables d'environnement.
+
+  </TabItem>
+</Tabs>
+
+## Tous les réglages
+
+Valeurs oui/non : dans l'environnement, `1`, `true`, `yes` et `on` veulent dire **oui** (majuscules ou non) ; tout le reste veut dire **non**. Une variable vide est ignorée.
+
+### Adresses et dossiers
+
+| Variable | Clé du fichier | Type | Par défaut | Effet |
+|---|---|---|---|---|
+| `MUSONIC_CONFIG` | — | chemin | aucun | Fichier de configuration à lire (TOML). |
+| `MUSONIC_BIND` | `bind` | adresse:port | `127.0.0.1:4533` (image Docker : `0.0.0.0:4533`) | Adresse et port d'écoute du serveur. |
+| `MUSONIC_DATA_DIR` | `data_dir` | chemin | `data` (image Docker : `/data`) | Base de données, caches, sauvegardes. Voir [Le dossier de données](#le-dossier-de-données). |
+| `MUSONIC_MUSIC_DIR` | `music_dir` | chemin | aucun (image Docker : `/music`) | Racine de la bibliothèque musicale. Sans lui, la bibliothèque reste vide. |
+| `MUSONIC_ADMIN_DIR` | `admin_dir` | chemin | `admin` à côté du programme, sinon `/usr/share/musonic/admin` | Dossier de la console construite. Sans elle, l'adresse affiche une courte page à la place. |
+| `MUSONIC_HOST_NET_DEV` | `host_net_dev` | chemin | `/host/net/dev` | Le `/proc/net/dev` de la machine vu depuis un conteneur, pour compter le trafic de toute la machine dans l'écran Données. |
+| `MUSONIC_FFMPEG` | — | chemin | `ffmpeg` | Le programme ffmpeg utilisé pour transcoder. |
+
+### Bibliothèque
+
+| Variable | Clé du fichier | Type | Par défaut | Effet |
+|---|---|---|---|---|
+| `MUSONIC_SCAN_INTERVAL_MINUTES` | `scan_interval_minutes` | minutes | `60` | Temps entre deux scans programmés. `0` = aucun : les changements du dossier sont de toute façon vus au fil de l'eau. |
+
+### Catalogue en ligne, fournisseurs et imports
+
+| Variable | Clé du fichier | Type | Par défaut | Effet |
+|---|---|---|---|---|
+| `MUSONIC_ONLINE` | `online` | oui/non | oui | Catalogue en ligne dans la recherche et les pages (métadonnées de l'API publique de Deezer). |
+| `MUSONIC_ONLINE_PREVIEWS` | `online_previews` | oui/non | oui | Jouer l'extrait de 30 secondes d'un titre en ligne qu'aucun fournisseur n'a. |
+| `MUSONIC_DEEZER_API_URL` | `deezer_api_url` | URL | `https://api.deezer.com` | Adresse de cette API. Pour les tests seulement. |
+| `MUSONIC_SUBSONIC_PROVIDER_URL` | `subsonic_provider_url` | URL | aucune | Un autre serveur compatible Subsonic dont relayer l'audio. |
+| `MUSONIC_SUBSONIC_PROVIDER_USER` | `subsonic_provider_user` | texte | aucun | Son nom de compte. Obligatoire avec l'URL. |
+| `MUSONIC_SUBSONIC_PROVIDER_PASSWORD` | — | texte | aucun | Son mot de passe. Environnement uniquement. Obligatoire avec l'URL. |
+| `MUSONIC_IMPORT` | `import` | oui/non | oui | Importer en fichiers les titres en ligne likés ou ajoutés à une playlist (il faut un fournisseur qui importe). |
+| `MUSONIC_IMPORT_DIR` | `import_dir` | nom de dossier | `Musonic` | Dossier des imports, dans le dossier de musique. |
+| `MUSONIC_IMPORT_QUALITY` | `import_quality` | `mp3_128`, `mp3_320`, `flac` | `mp3_320` | Qualité maximale des fichiers importés (le meilleur qu'a le fournisseur, jusqu'à ce niveau). |
+
+Le fonctionnement des fournisseurs est décrit dans [PROVIDERS.md](https://github.com/DoodzDev/Musonic/blob/main/apps/server/docs/PROVIDERS.md) (en anglais).
+
+### Lecture
+
+| Variable | Clé du fichier | Type | Par défaut | Effet |
+|---|---|---|---|---|
+| `MUSONIC_MAX_BIT_RATE` | `max_bit_rate` | kbit/s | `0` (sans limite) | Débit maximal pour tous les comptes. La limite propre à un compte l'emporte si elle est plus basse. |
+| `MUSONIC_TRANSCODE_FORMAT` | `transcode_format` | `mp3`, `opus`, `aac` | `mp3` | Format des flux réduits quand l'application ne demande pas de format. |
+| `MUSONIC_TRANSCODE_CACHE_MB` | `transcode_cache_mb` | Mo | `500` | Titres transcodés gardés sur le disque (`0` = aucun), pour que réécouter ou avancer soit immédiat. |
+
+### Sécurité et comptes
+
+| Variable | Clé du fichier | Type | Par défaut | Effet |
+|---|---|---|---|---|
+| `MUSONIC_LEGACY_AUTH` | `legacy_auth` | oui/non | oui | Accepter la connexion Subsonic par jeton (`t` + `s`) qu'utilisent beaucoup d'applications. Elle oblige à garder le mot de passe chiffré à côté de son hachage. Non = seulement mot de passe, clé d'appareil et sessions. |
+| `MUSONIC_SECRET_KEY` | — | 64 caractères hexadécimaux | `secret.key` dans le dossier de données, créé au premier démarrage | Clé qui chiffre les mots de passe gardés pour la connexion par jeton. Environnement uniquement. |
+| `MUSONIC_PASSWORD` | — | texte | aucun | Mot de passe pour `musonic-server user add`, au lieu de le taper. |
+
+### Maintenance
+
+| Variable | Clé du fichier | Type | Par défaut | Effet |
+|---|---|---|---|---|
+| `MUSONIC_BACKUP_DAYS` | `backup_days` | jours | `14` | Sauvegardes quotidiennes de la base gardées dans `backups/` du dossier de données. `0` = pas de sauvegarde quotidienne. |
+| `MUSONIC_UPDATE_CHECK` | `update_check` | oui/non | oui | Chercher sur GitHub toutes les 6 heures une version plus récente du serveur et de Musonic Web. Rien n'est installé. |
+| `RUST_LOG` | — | filtre | `info,lofty=error` | Quantité de détails dans les journaux. Voir [Journaux](#journaux). |
+
+### Podcasts
+
+| Variable | Clé du fichier | Type | Par défaut | Effet |
+|---|---|---|---|---|
+| `MUSONIC_PODCASTINDEX_KEY` | — | texte | aucune | Clé d'API Podcast Index. La clé et le secret sont tous deux nécessaires. On peut aussi la saisir dans la console (écran Imports). |
+| `MUSONIC_PODCASTINDEX_SECRET` | — | texte | aucun | Secret d'API Podcast Index. |
+
+La clé YouTube Data API, utilisée pour importer les playlists YouTube Music, n'a pas de variable : elle se saisit dans la console (écran Imports) et est gardée dans la base.
+
+## Réglages changés depuis la console
+
+Ces réglages se changent depuis la console. La valeur est **enregistrée dans la base de données** (`musonic.db`) et appliquée **au prochain redémarrage**, que la console propose. Adresses, dossiers et secrets ne se changent jamais depuis une page web.
+
+| Réglage | Écran de la console | Libellé dans la console | Valeurs permises |
+|---|---|---|---|
+| `import` | Imports | Import automatique | oui / non |
+| `import_quality` | Imports | Qualité | MP3 128, MP3 320, FLAC |
+| `online` | Imports | Catalogue en ligne | oui / non |
+| `online_previews` | Imports | Extraits de 30 s | oui / non |
+| `scan_interval_minutes` | Bibliothèque | Scan automatique | 0 à 10 080 (la console propose 0, 60, 360, 1440) |
+| `max_bit_rate` | Lecture | Débit maximal par défaut | 0 à 320 (la console propose sans limite, 320, 256, 192, 128, 96) |
+| `transcode_format` | Lecture | Format des titres réduits | MP3, Opus, AAC |
+| `transcode_cache_mb` | Lecture | Titres transcodés | 0 à 100 000 (la console propose 0, 250, 500, 1000, 2000, 5000) |
+| `legacy_auth` | Appareils et sécurité | Ancienne connexion Subsonic | oui / non |
+| `backup_days` | Réglages et maintenance | Jours gardés | 0 à 365 (la console propose 0, 3, 7, 14, 30, 90) |
+| `update_check` | Réglages et maintenance | Vérifier les mises à jour | oui / non |
+
+Également gardés dans la base, et appliqués **tout de suite** (sans redémarrage) :
+
+- les identifiants des fournisseurs, la clé Podcast Index et la clé YouTube Data API (écran Imports) ;
+- la limite d'envoi par mois (écran Données) ;
+- la taille maximale du journal d'activité (Réglages et maintenance ; 50 Mo par défaut, 1 Mo au minimum) ;
+- les droits et quotas de chaque compte.
+
+<Aside type="note">
+Il n'existe pas de bouton « revenir à la valeur de l'environnement ». Pour qu'un réglage suive de nouveau l'environnement, mettez la même valeur dans la console.
+</Aside>
+
+## Port et adresses
+
+- Le serveur écoute sur le **port 4533**. Hors Docker, il n'écoute que sur `127.0.0.1` (la machine elle-même), sauf si vous changez `MUSONIC_BIND`.
+- Dans Docker, l'image écoute sur `0.0.0.0:4533` dans le conteneur, et le `compose.yml` d'exemple le publie sur `127.0.0.1:4533` de la machine : seule la machine elle-même peut le joindre, et un reverse proxy en HTTPS le sert vers l'extérieur.
+- Ce que sert l'adresse :
+
+| Chemin | Quoi |
+|---|---|
+| `/` | La console d'administration (et ses pages de lien `/invite/…`, `/reset/…`) |
+| `/app/` | Musonic Web, une fois installé depuis la console |
+| `/rest/…` | L'API Subsonic / OpenSubsonic |
+| `/v1/…` | L'API Musonic |
+| `/health` | `{"status":"ok"}` quand le serveur et sa base répondent (utilisé par le contrôle de santé Docker) |
+
+Pour un autre port avec Docker, changez la partie gauche de `ports`, par exemple `"127.0.0.1:8080:4533"`.
+
+## Le dossier de données
+
+Tout ce qu'écrit le serveur, hors musique importée, est dans le dossier de données (`/data` dans Docker, soit le dossier `./data` à côté de `compose.yml`) :
+
+| Chemin | Quoi | À sauvegarder ? |
+|---|---|---|
+| `musonic.db` | La base : comptes, likes, playlists, écoutes, réglages, identifiants des fournisseurs | **Oui** |
+| `musonic.db-wal`, `musonic.db-shm` | Fichiers de travail de la base pendant qu'elle tourne | Copiés avec elle, jamais seuls |
+| `secret.key` | La clé qui chiffre les mots de passe gardés pour la connexion Subsonic par jeton (quand `MUSONIC_SECRET_KEY` n'est pas donné) | **Oui** |
+| `events.db` | Le journal d'activité et d'administration | Facultatif |
+| `backups/musonic-AAAA-MM-JJ.db` | Les sauvegardes quotidiennes de la base | Oui, sur un autre disque |
+| `musonic.db.before-schema-N` | Une copie de la base faite juste avant qu'une mise à jour change sa structure | Facultatif |
+| `cache/covers/` | Pochettes redimensionnées | Non, recréées |
+| `cache/transcoded/` | Titres transcodés | Non, recréés |
+| `tmp/streams/` | Titres en ligne en cours d'écoute | Non |
+| `web/` | Musonic Web, quand il est installé depuis la console | Non, se réinstalle |
+
+<Aside type="danger">
+Le dossier de données contient la base et sa clé. Ne le laissez lisible que par l'utilisateur du serveur, et ne le publiez jamais.
+</Aside>
+
+## Journaux
+
+- Le serveur écrit ses journaux sur la sortie standard. Avec Docker : `docker compose logs -f musonic-server`. Le `compose.yml` d'exemple garde 3 fichiers de 10 Mo.
+- La console affiche les 2 000 dernières lignes depuis le dernier démarrage, dans **Réglages et maintenance → Journaux du serveur**.
+- `RUST_LOG` règle la quantité de détails. Valeurs courantes :
+
+| Valeur | Ce que vous obtenez |
+|---|---|
+| `info` | Normal : démarrage, scans, sauvegardes, avertissements et erreurs (la valeur par défaut est `info,lofty=error`, qui masque les remarques du lecteur de tags sur chaque fichier) |
+| `warn` | Avertissements et erreurs seulement |
+| `error` | Erreurs seulement |
+| `debug` | Beaucoup plus de détails, pour enquêter sur un problème |
+| `info,musonic_server=debug` | Les détails du serveur seulement |
+
+## Ligne de commande
+
+Le même programme lance aussi des commandes ponctuelles. Avec Docker, faites-les précéder de `docker compose exec musonic-server`.
+
+| Commande | Ce qu'elle fait |
+|---|---|
+| `musonic-server` | Démarre le serveur. |
+| `musonic-server user add <nom> [--admin]` | Crée un compte. Demande le mot de passe, ou lit `MUSONIC_PASSWORD`. |
+| `musonic-server scan [--full]` | Scanne la bibliothèque une fois et affiche un résumé. |
+| `musonic-server import-navidrome <navidrome.db> [--replace-playlists] [--new-ids]` | Importe playlists, likes et écoutes depuis une copie d'une base Navidrome. |
+
+`<nom>` est le nom du compte ; `<navidrome.db>` le chemin de la copie de la base Navidrome.
+
+## Et ensuite
+
+<CardGrid>
+  <LinkCard title="Sauvegardes" href="/fr/docs/admin/backups/" description="Sauvegarder et restaurer le dossier de données." />
+  <LinkCard title="Dépannage" href="/fr/docs/admin/troubleshooting/" description="Quand quelque chose ne marche pas." />
+</CardGrid>

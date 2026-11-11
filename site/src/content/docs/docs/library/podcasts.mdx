@@ -1,0 +1,106 @@
+---
+title: Podcasts on your server
+description: How Musonic Server finds and reads podcast feeds, how often it refreshes them, what it stores, and how to add the optional free key that widens podcast search.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+This page is for the person who runs the server: how podcasts work on the server side, what it contacts, what it keeps, and the one optional setting. Listening to podcasts in the apps needs nothing from you.
+
+**What you need**
+
+- Nothing, for podcasts to work: they are on as soon as the server runs.
+- Optionally, an administrator account and a free key from Podcast Index, for a wider search (see [Widen podcast search](#widen-podcast-search)).
+
+## How it works
+
+- **Search** goes, from your server, to the **iTunes podcast directory** (no key needed). Results are kept for a day. With a Podcast Index key, the server also searches Podcast Index at the same time: it finds shows the iTunes directory misses or lists without their feed, and **episodes where a person speaks** (as host or guest).
+- **Following a show** reads its RSS feed at once. The server understands RSS 2.0 with the iTunes and Podcasting 2.0 tags most hosts publish: duration, chapters, transcripts. Items without audio are skipped.
+- **Every hour**, the server reads again the feed of every show someone follows, one after the other. It sends the feed's last `ETag` / `Last-Modified`, so an unchanged feed costs one short answer. A show is also read again when someone opens it and it was last read over an hour ago. Clients that have a "refresh podcasts" action (Subsonic `refreshPodcasts`) start a refresh of every followed show in the background.
+- **Episodes play through your server**: it relays the audio from the show's host, with seeking. The host sees your server's address, never your listeners'. Episode pictures come from the host too, through the server.
+- **Transcripts** published by a show (`podcast:transcript`, WebVTT or SRT) appear in the apps like synced lyrics.
+
+<img class="diagram" src="/assets/img/docs/diagrams/podcasts-server.en.svg" alt="Diagram: the apps talk only to Musonic Server; the server searches the iTunes directory (and Podcast Index when a key is set), reads each followed show's RSS feed every hour, and relays episode audio and pictures from the show's host; the database keeps shows, episodes, who follows what and each account's position." />
+
+## What is stored, and for whom
+
+| Kept | Where | Shared or per account |
+|---|---|---|
+| Shows and their episodes (titles, descriptions, dates, durations, addresses) | The database (`musonic.db` in the data folder) | Shared: a show followed by two accounts is read once. |
+| Who follows which show | The database | Per account. |
+| Where each account stopped in each episode, and what it finished | The database | Per account. An episode counts as listened past 95 %. |
+| Episode audio | **Not kept**: relayed from the host at each listen | — |
+
+A show that someone only looked at (never followed, nobody's position in it) is removed after a week. When an account stops following a show, the show stays as long as someone else follows it.
+
+## Widen podcast search
+
+A Podcast Index key is free, and optional. It adds search by person and the shows the iTunes directory misses.
+
+<Steps>
+
+1. **Create a free account at [api.podcastindex.org/signup](https://api.podcastindex.org/signup).**
+
+   Podcast Index gives you an **API Key** and an **API Secret**.
+
+2. **In the console, click "Imports" in the "Music" section of the menu, and scroll down to "Podcasts".**
+
+   The block shows the number of shows followed and episodes, and says whether a key is set.
+
+   <img class="shot-wide" src="/assets/img/docs/library-podcasts/01-podcasts-block.en.webp" alt="The Podcasts block at the bottom of the console's Imports page: 'Podcast Index · N shows followed · N episodes', the line 'No key: only the iTunes directory is used (no search by person).' and the Add the key button on the right." />
+
+3. **Click "Add the key".**
+
+4. **Paste the API Key and the API Secret, then click "Check and save".**
+
+   The server tests the key with Podcast Index before keeping it. If it is refused, check you copied both values whole.
+
+   <img class="shot-wide" src="/assets/img/docs/library-podcasts/02-podcast-index-key.en.webp" alt="The console's Podcast Index key window: the help line about the free signup, the API Key and API Secret fields (the secret hidden), the note that it is kept in the server's database, and the Cancel and Check and save buttons." />
+
+5. **Check the block now says the search by person is on.**
+
+   It applies at once, no restart needed.
+
+</Steps>
+
+You can also set the key in the environment instead of the console. A key saved in the console wins over the environment.
+
+<Tabs>
+<TabItem label="Docker">
+
+```yaml
+    environment:
+      MUSONIC_PODCASTINDEX_KEY: "<api-key>"
+      MUSONIC_PODCASTINDEX_SECRET: "<api-secret>"
+```
+
+Then `docker compose up -d`. `<api-key>` and `<api-secret>` are the two values Podcast Index sent you.
+
+</TabItem>
+<TabItem label="Program">
+
+```sh
+export MUSONIC_PODCASTINDEX_KEY="<api-key>"
+export MUSONIC_PODCASTINDEX_SECRET="<api-secret>"
+```
+
+Then start `musonic-server` again.
+
+</TabItem>
+</Tabs>
+
+<Aside type="note">
+The key is kept in the server's database, so also in its daily backups: keep downloaded backups somewhere safe.
+</Aside>
+
+## Limits and safety
+
+- **Only public addresses.** Feeds, audio and pictures are fetched only from addresses on the public internet: a feed pointing at your local network, at `localhost` or at another container is refused. A podcast hosted only on your home network cannot be followed.
+- A feed larger than 20 MB, or a picture larger than 15 MB, is refused. Requests to hosts give up after 20 seconds.
+- There is no setting to turn podcasts off, and no per-account right for them: every account can search and follow shows.
+- What the server contacts: the iTunes directory for searches, Podcast Index when a key is set, and the hosts of the shows your accounts follow or open.
+
+## Next steps
+
+- [Online catalogue and imports](/docs/library/online-catalogue/): the music the server finds beyond your files.
+- [Scanning your library](/docs/library/scan/): your own music files.

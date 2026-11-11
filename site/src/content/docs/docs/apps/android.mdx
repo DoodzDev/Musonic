@@ -1,0 +1,190 @@
+---
+title: Install the Android app
+description: How to install Musonic on an Android phone from GitHub, step by step with pictures, then update it and uninstall it.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+This page shows how to install the Musonic app on an Android phone, from the first tap to the first launch. It is written for people who have never installed an app outside the Play Store: follow the bold sentences and the pictures.
+
+**What you need**
+
+- An Android phone with **Android 7.0 or newer**, and a 64-bit processor (almost every phone sold since 2017, see [Which phones](#which-phones)).
+- An internet connection.
+- The address of a music server and an account on it. If someone runs the server for you, ask them for both.
+
+<Aside type="note" title="Why Musonic is not on the Play Store">
+Musonic is published on GitHub, the site that hosts its source code, and not on the Play Store. Android is careful with apps that come from somewhere else: it shows a few warnings and asks you to allow the install once. This is normal, and it happens with every app installed this way. The steps below go through each of these screens.
+</Aside>
+
+## Install, step by step
+
+The pictures were taken on a Samsung Galaxy A52 with Android 14 and Chrome, and the labels quoted below are the ones it shows. The wording differs a little from one phone brand to another (a Pixel, for example, says "Allow from this source" instead of "Allow permission"), but the steps are the same.
+
+<Steps>
+
+1. **On your phone, open this link in Chrome: [Musonic.apk](https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.apk).**
+
+   It always downloads the latest version. You can also open the [release page on GitHub](https://github.com/DoodzDev/Musonic/releases/latest) and tap **Musonic.apk** under **Assets**.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/01-release-page.en.webp" alt="The Musonic release page on GitHub in Chrome on a phone, the Assets list open with Musonic.apk at the top." />
+
+2. **Chrome says "File might be harmful": tap "Download anyway".**
+
+   The window asks: "Do you want to download 'Musonic.apk' (31.24 MB) from release-assets.githubusercontent.com anyway?" Chrome says this for every app file downloaded from a website; `release-assets.githubusercontent.com` is where GitHub stores the files of its releases. Musonic.apk is the file published by the project, so you can go on.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/02-download-warning.en.webp" alt="Chrome's dialog 'File might be harmful' asking whether to download Musonic.apk (31.24 MB) from release-assets.githubusercontent.com anyway, with the buttons Cancel and Download anyway." />
+
+3. **When "File downloaded" shows at the bottom of the screen, tap "Open".**
+
+   If you missed it, tap Chrome's **⋮** menu at the top right, then **Downloads**, and tap **Musonic.apk**.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/03-download-complete.en.webp" alt="Chrome's bar at the bottom of the screen saying File downloaded, with an Open button." />
+
+4. **Android says it cannot install unknown apps from this source yet: tap "Settings".**
+
+   The message reads: "For your security, your phone currently isn't allowed to install unknown apps from this source. You can change this in Settings." Android asks this only the first time you install an app from Chrome.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/04-unknown-apps-blocked.en.webp" alt="Android's message: for your security, your phone currently isn't allowed to install unknown apps from this source, you can change this in Settings; with the buttons Cancel and Settings." />
+
+5. **On the "Install unknown apps" page, turn on "Allow permission" for Chrome.**
+
+   This allows Chrome to install apps. You can turn it off again once Musonic is installed (see [After installing](#after-installing)).
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/05-allow-from-source.en.webp" alt="The 'Install unknown apps' settings page for Chrome, with the 'Allow permission' switch turned on." />
+
+6. **Tap "Install".**
+
+   The window "Do you want to install this app?" shows right over the settings page as soon as the switch is on. If it does not, go back with the back gesture or the back button.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/06-install.en.webp" alt="The Android install window with the Musonic icon and name, asking 'Do you want to install this app?', with the buttons Cancel and Install." />
+
+7. **Wait a few seconds while Android shows "Installing…".**
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/06b-installing.en.webp" alt="The Android install window with the Musonic icon and the line Installing… with a progress bar." />
+
+8. **If a Google Play Protect window appears, tap "More details", then "Install anyway".**
+
+   Play Protect checks apps that do not come from the Play Store. It may also offer to send the app for a scan: you can accept or decline, it does not change the install. Most of the time no window shows: go to the next step.
+
+9. **When Android says "App installed.", tap "Open".**
+
+   Musonic is installed. Its icon is now with your other apps.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/08-installed-open.en.webp" alt="The Android install window saying 'App installed.', with the buttons Done and Open." />
+
+10. **Sign in to your server.**
+
+    Musonic opens on its sign-in screen. Enter the server address, your username and your password, then tap **Connect**. The next page explains each field: [Sign in to a server](/docs/apps/sign-in/).
+
+    <img class="shot-phone" src="/assets/img/docs/apps-android/09-first-launch.en.webp" alt="Musonic's sign-in screen on first launch: the Musonic logo, the fields Server URL, Username and Password, and the Connect button." />
+
+</Steps>
+
+<Aside type="caution" title="Samsung: Auto Blocker">
+On recent Samsung phones, the **Auto Blocker** option blocks every app that does not come from an official store, and the steps above do not show the "Settings" button. If the install is refused, turn it off in **Settings → Security and privacy → Auto Blocker**, install Musonic, then turn it back on if you want.
+</Aside>
+
+### After installing
+
+You can now take the permission back from Chrome: **Settings → Apps → Chrome → Install unknown apps** (the switch named **Allow permission**, or **Allow from this source** on other phones). Musonic keeps working. You will need to turn it on again for the next update, Android asks you the same way as in step 4.
+
+### Which phones
+
+| | |
+|---|---|
+| Android version | **7.0 or newer** (Android API level 24) |
+| Processor | **64-bit ARM only** (`arm64-v8a`) |
+| Play Store, Google account | Not needed |
+
+The app is built only for 64-bit ARM processors, which covers nearly every phone and tablet made in the last years. It does not run on old 32-bit phones, nor on Android devices with an Intel or AMD processor (some TV boxes, emulators on a computer). On such a device, or on Android older than 7.0, Android refuses the file at step 6 or 7 with a message such as "App not installed". There is nothing to fix on your side: Musonic cannot run there. You can use the [web player](/app/) in the phone's browser instead.
+
+## Updates
+
+Musonic does not update through the Play Store. The app tells you itself when a new version is out.
+
+<Steps>
+
+1. **When the "Update available" window shows, tap "View release".**
+
+   About three seconds after you open Musonic, the app checks GitHub for a newer version of the Android app. If there is one, it says "Version … is available on GitHub.", with the number of the new version. **Cancel** closes the window, it will show again at the next launch.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/10-update-available.en.webp" alt="Musonic's 'Update available' window saying a version is available on GitHub, with the buttons Cancel and View release." />
+
+2. **On the release page, tap "Musonic.apk" under "Assets".**
+
+   The page of that version opens in your browser. Its text lists what changed.
+
+3. **Download it and open it, as in steps 2 and 3 above.**
+
+4. **Tap "Update".**
+
+   Android sees that Musonic is already installed and offers to update it.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-android/11-update-confirm.en.webp" alt="The Android install window asking 'Do you want to update this app?' over the Musonic icon, with the buttons Cancel and Update." />
+
+5. **Tap "Open".**
+
+</Steps>
+
+<Aside type="danger" title="Never uninstall Musonic to update it">
+Install the new version **over** the old one, as above. Your account, your downloads, your settings and your queue are kept. If you uninstall first, all of this is erased from the phone: the downloads are lost and you must sign in again. Android does not back up Musonic's data, so nothing comes back.
+</Aside>
+
+**Check by hand.** Tap your round profile picture at the top right of the main screens, then **About**, then **Check for updates**. The app says either "Update available", or "You're up to date" with your version and the latest one online. If the phone has no connection, it says "Couldn’t check. Check your connection."
+
+**What the check sends.** One request to GitHub's public list of the project's releases, with nothing about you or your server. It only looks at Android app versions (tags `mobile-v…`): a new version of the web player or of the server never triggers the window. Drafts and test versions are skipped.
+
+**"App not installed" when updating.** Android refuses an update when the installed app was signed by someone else, for example a version you built yourself. In that case only, uninstall it first (and lose its data), then install the version from GitHub.
+
+## Uninstall
+
+<Steps>
+
+1. **Log out first.**
+
+   Tap your profile picture at the top right, then **Log out**, and confirm. On Musonic Server, this also deletes the key of this phone on the server, so it disappears from your devices in the console.
+
+2. **Touch and hold the Musonic icon, then tap "Uninstall".**
+
+   You can also go to **Settings → Apps → Musonic → Uninstall**.
+
+3. **Confirm.**
+
+</Steps>
+
+Uninstalling erases everything Musonic stored on the phone: downloaded songs, settings and the account. Nothing changes on the server: your playlists, likes and history are still there when you sign in again on any device.
+
+## From a computer with adb
+
+For advanced users who already use Android's debugging tools.
+
+<Tabs>
+<TabItem label="Install or update">
+
+Turn on **USB debugging** in the phone's developer options, connect the phone, then:
+
+```sh
+curl -LO https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.apk
+adb install -r Musonic.apk
+```
+
+`-r` replaces the installed app and keeps its data: use the same command for every update.
+
+</TabItem>
+<TabItem label="Uninstall">
+
+```sh
+adb uninstall com.musonic
+```
+
+`com.musonic` is the app's package name. This erases its data, as uninstalling from the phone does.
+
+</TabItem>
+</Tabs>
+
+## Next steps
+
+- [Sign in to a server](/docs/apps/sign-in/): the sign-in screen, invitation links and error messages.
+- [Listen offline](/docs/apps/offline/): downloads, streaming quality and data use.
+- [Musonic in the car](/docs/apps/android-auto/): set up Android Auto.

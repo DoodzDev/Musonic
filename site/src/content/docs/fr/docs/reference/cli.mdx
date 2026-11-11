@@ -1,0 +1,201 @@
+---
+title: Ligne de commande
+description: Toutes les commandes de musonic-server — lancer le serveur, scan, user add, import-navidrome — avec leurs options, leur sortie et des exemples pour Docker et pour le programme seul.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Cette page recense toutes les commandes du programme `musonic-server`, pour les administrateurs qui font tourner le serveur avec Docker ou en programme seul.
+
+**Ce qu'il vous faut**
+
+- Un Musonic Server installé avec [Docker](/fr/docs/install/docker/) ou en [programme seul](/fr/docs/install/binary/).
+- Un terminal sur la machine qui le fait tourner.
+
+## Résumé
+
+| Commande | Ce qu'elle fait |
+|---|---|
+| `musonic-server` | Lance le serveur (c'est ce que lancent Docker et votre gestionnaire de services). |
+| `musonic-server scan [--full]` | Scanne une fois le dossier de musique, affiche un bilan et s'arrête. |
+| `musonic-server user add <nom> [--admin]` | Crée un compte. |
+| `musonic-server import-navidrome <navidrome.db> [--replace-playlists] [--new-ids]` | Importe playlists, « j'aime », notes et écoutes depuis une copie de la base de Navidrome. |
+
+- `<nom>` : le nom d'utilisateur du nouveau compte (de 1 à 64 caractères).
+- `<navidrome.db>` : le chemin d'une **copie** du fichier de base de données de Navidrome.
+
+Il n'y a pas d'option `--help` : une commande inconnue affiche la liste des commandes et se termine en erreur.
+
+```text
+Error: unknown command "--help" (expected: scan [--full], user add <name> [--admin], import-navidrome <navidrome.db>)
+```
+
+## Lancer une commande
+
+Chaque commande lit la même configuration que le serveur : les variables d'environnement (`MUSONIC_DATA_DIR`, `MUSONIC_MUSIC_DIR`…) et le fichier TOML indiqué par `MUSONIC_CONFIG`. Une commande doit donc voir **le même dossier de données** que le serveur en marche, sinon elle travaille sur une autre base, vide.
+
+<Tabs syncKey="install">
+<TabItem label="Docker">
+
+Lancez la commande dans le conteneur en marche, depuis le dossier qui contient `compose.yml` :
+
+```sh
+docker compose exec musonic-server musonic-server <commande>
+```
+
+Le premier `musonic-server` est le nom du service dans `compose.yml`, le second est le programme. Dans le conteneur, le dossier de données est `/data` et le dossier de musique `/music`, déjà réglés par l'image.
+
+</TabItem>
+<TabItem label="Programme seul">
+
+Lancez le programme avec le même environnement que votre service, par exemple :
+
+```sh
+MUSONIC_DATA_DIR=/var/lib/musonic MUSONIC_MUSIC_DIR=/srv/music ./musonic-server <commande>
+```
+
+Sans `MUSONIC_DATA_DIR` (ni `data_dir` dans le fichier de configuration), le dossier de données est `data`, **relatif au dossier courant**.
+
+</TabItem>
+</Tabs>
+
+## `musonic-server` (lancer le serveur)
+
+Sans commande, le programme lance le serveur : il ouvre la base (en appliquant les migrations nécessaires), démarre la surveillance de la bibliothèque et les scans programmés, et écoute sur `bind` (`127.0.0.1:4533` par défaut ; `0.0.0.0:4533` dans l'image Docker). `Ctrl+C` l'arrête proprement.
+
+Tant qu'aucun compte n'existe, le journal le signale : créez l'administrateur dans le client web, avec `POST /v1/setup`, ou avec `user add … --admin`.
+
+## `scan`
+
+Scanne une fois le dossier de musique, affiche en JSON ce qu'il a fait, puis s'arrête.
+
+| Option | Effet |
+|---|---|
+| (aucune) | Scan rapide : seuls les dossiers et fichiers modifiés sont lus. |
+| `--full` | Relit tous les fichiers. |
+
+<Tabs syncKey="install">
+<TabItem label="Docker">
+
+```sh
+docker compose exec musonic-server musonic-server scan --full
+```
+
+</TabItem>
+<TabItem label="Programme seul">
+
+```sh
+MUSONIC_DATA_DIR=/var/lib/musonic MUSONIC_MUSIC_DIR=/srv/music ./musonic-server scan --full
+```
+
+</TabItem>
+</Tabs>
+
+Champs de la sortie : `full`, `folders`, `folders_changed`, `files`, `files_read`, `files_missing`, `tracks_added`, `errors` (liste de messages), `duration_ms`.
+
+La commande échoue avec `no music folder configured (MUSONIC_MUSIC_DIR)` si aucun dossier de musique n'est défini.
+
+<Aside type="tip">
+Quand le serveur tourne, cette commande sert rarement : le serveur scanne au démarrage, après chaque changement dans le dossier de musique, et à intervalle régulier (`scan_interval_minutes`, 60 par défaut). Pour forcer un scan, passez par **Bibliothèque** dans la console, ou par la route Subsonic `startScan`. Les deux s'exécutent dans le serveur, qui rafraîchit alors les réponses qu'il garde en mémoire.
+</Aside>
+
+## `user add`
+
+Crée un compte. Avec `--admin`, le compte est administrateur.
+
+<Steps>
+
+1. **Lancez la commande avec le nouveau nom d'utilisateur.**
+
+   ```sh
+   docker compose exec musonic-server musonic-server user add <nom> --admin
+   ```
+
+   Avec le programme seul : `./musonic-server user add <nom> --admin`, avec le même environnement que votre service.
+
+2. **Tapez le mot de passe, puis appuyez sur Entrée.**
+
+   L'invite est `Password for <nom>:`. Le mot de passe doit faire au moins 8 caractères.
+
+3. **Lisez la confirmation.**
+
+   `created <nom> (administrator)` ou `created <nom> (user)`.
+
+</Steps>
+
+<Aside type="caution">
+Le mot de passe s'affiche à l'écran pendant la saisie. Effacez le terminal ensuite si quelqu'un peut le voir. Vous pouvez aussi le passer dans la variable `MUSONIC_PASSWORD` (`docker compose exec -e MUSONIC_PASSWORD=<mot de passe> musonic-server musonic-server user add <nom>`), mais il reste alors dans l'historique de votre terminal.
+</Aside>
+
+Erreurs possibles : `usage: user add <name> [--admin]` (nom absent), `invalid username`, `the password needs at least 8 characters`, `this username is taken`.
+
+Pour votre famille et vos amis, préférez les **liens d'invitation** de la console : chacun choisit son nom et son mot de passe.
+
+## `import-navidrome`
+
+Importe depuis une copie de la base de Navidrome : playlists, « j'aime », notes, compteurs et historique d'écoute. Les mots de passe ne sont jamais repris.
+
+| Option | Effet |
+|---|---|
+| (aucune) | Les titres sont retrouvés par leur fichier et gardent leurs identifiants Navidrome, comme les playlists : ce que les clients ont enregistré continue de fonctionner. Relancer l'import n'ajoute rien en double. |
+| `--new-ids` | Donne de nouveaux identifiants aux titres et aux playlists au lieu de ceux de Navidrome. |
+| `--replace-playlists` | Réimporte les playlists importées auparavant, en les remplaçant. |
+
+<Steps>
+
+1. **Créez d'abord les comptes dans Musonic, avec les mêmes noms que dans Navidrome.**
+
+   Les comptes Navidrome sans compte du même nom sont ignorés (listés dans `users_skipped`).
+
+2. **Faites une copie cohérente de la base de Navidrome dans le dossier de données de Musonic.**
+
+   ```sh
+   sqlite3 -readonly /chemin/vers/navidrome.db ".backup ./data/navidrome-copy.db"
+   ```
+
+   `./data` est le dossier monté sur `/data` dans `compose.yml`. Le conteneur Docker est en lecture seule, sauf `/data` et `/music`.
+
+3. **Scannez la bibliothèque, pour que les titres soient retrouvés par leurs fichiers.**
+
+   ```sh
+   docker compose exec musonic-server musonic-server scan
+   ```
+
+4. **Lancez l'import.**
+
+   ```sh
+   docker compose exec musonic-server musonic-server import-navidrome /data/navidrome-copy.db
+   ```
+
+5. **Redémarrez le serveur.**
+
+   ```sh
+   docker compose restart musonic-server
+   ```
+
+   L'import écrit dans la base depuis un autre processus : le redémarrage garantit que le serveur ne sert plus les réponses qu'il avait gardées d'avant.
+
+</Steps>
+
+Champs de la sortie : `users`, `users_skipped`, `files_matched`, `files_not_found`, `ids_kept`, `playlists`, `playlists_already_there`, `playlist_entries`, `playlist_entries_missing`, `track_annotations`, `album_annotations`, `artist_annotations`, `plays`.
+
+Le guide complet de migration se trouve dans [Venir de Navidrome](/fr/docs/migration/navidrome/).
+
+## Variables d'environnement lues par les commandes
+
+Tous les [réglages de configuration](/fr/docs/admin/configuration/) s'appliquent. Ceux-ci comptent le plus en ligne de commande :
+
+| Variable | Utilisée par | Rôle |
+|---|---|---|
+| `MUSONIC_DATA_DIR` | toutes | Dossier de données (base `musonic.db`, caches, sauvegardes). `data` par défaut ; `/data` dans Docker. |
+| `MUSONIC_MUSIC_DIR` | serveur, `scan` | Dossier de musique. `/music` dans Docker. |
+| `MUSONIC_CONFIG` | toutes | Chemin d'un fichier de configuration TOML. |
+| `MUSONIC_PASSWORD` | `user add` | Le mot de passe, au lieu de le taper. |
+| `MUSONIC_SECRET_KEY` | serveur, `user add` | Clé (64 caractères hexadécimaux) qui chiffre les mots de passe gardés pour la connexion Subsonic par jeton. Par défaut : `secret.key` dans le dossier de données, créé au premier démarrage. |
+| `RUST_LOG` | toutes | Niveau de journalisation, par exemple `info` ou `debug` (`info` par défaut). |
+
+## Pour aller plus loin
+
+- [Référence de configuration](/fr/docs/admin/configuration/)
+- [Venir de Navidrome](/fr/docs/migration/navidrome/)
+- [API HTTP](/fr/docs/reference/api/)

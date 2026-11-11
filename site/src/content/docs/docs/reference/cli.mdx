@@ -1,0 +1,201 @@
+---
+title: Command line
+description: Every musonic-server command — serve, scan, user add, import-navidrome — with its options, output and examples for Docker and for the standalone program.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+This page lists every command of the `musonic-server` program, for administrators who run the server with Docker or as a standalone program.
+
+**What you need**
+
+- A Musonic Server installed with [Docker](/docs/install/docker/) or as a [standalone program](/docs/install/binary/).
+- A terminal on the machine that runs it.
+
+## Summary
+
+| Command | What it does |
+|---|---|
+| `musonic-server` | Starts the server (what Docker and your service manager run). |
+| `musonic-server scan [--full]` | Scans the music folder once, prints a summary, and exits. |
+| `musonic-server user add <name> [--admin]` | Creates an account. |
+| `musonic-server import-navidrome <navidrome.db> [--replace-playlists] [--new-ids]` | Imports playlists, likes, ratings and plays from a copy of a Navidrome database. |
+
+- `<name>`: the username of the new account (1 to 64 characters).
+- `<navidrome.db>`: the path of a **copy** of Navidrome's database file.
+
+There is no `--help` option: an unknown command prints the list of commands and exits with an error.
+
+```text
+Error: unknown command "--help" (expected: scan [--full], user add <name> [--admin], import-navidrome <navidrome.db>)
+```
+
+## How to run a command
+
+Every command reads the same configuration as the server: the environment variables (`MUSONIC_DATA_DIR`, `MUSONIC_MUSIC_DIR`…) and the TOML file named by `MUSONIC_CONFIG`. A command must therefore see the **same data folder** as the running server, otherwise it works on another, empty database.
+
+<Tabs syncKey="install">
+<TabItem label="Docker">
+
+Run the command inside the running container, from the folder that holds `compose.yml`:
+
+```sh
+docker compose exec musonic-server musonic-server <command>
+```
+
+The first `musonic-server` is the service name in `compose.yml`, the second one is the program. Inside the container the data folder is `/data` and the music folder `/music`, already set by the image.
+
+</TabItem>
+<TabItem label="Standalone program">
+
+Run the program with the same environment as your service, for example:
+
+```sh
+MUSONIC_DATA_DIR=/var/lib/musonic MUSONIC_MUSIC_DIR=/srv/music ./musonic-server <command>
+```
+
+Without `MUSONIC_DATA_DIR` (or `data_dir` in the configuration file), the data folder is `data`, **relative to the current folder**.
+
+</TabItem>
+</Tabs>
+
+## `musonic-server` (serve)
+
+Without a command, the program starts the server: it opens the database (applying the migrations it needs), starts the library watcher and the scheduled scans, and listens on `bind` (`127.0.0.1:4533` by default; `0.0.0.0:4533` in the Docker image). `Ctrl+C` stops it cleanly.
+
+When there is no account yet, the log says so: create the administrator in the web client, with `POST /v1/setup`, or with `user add … --admin`.
+
+## `scan`
+
+Scans the music folder once and prints what it did as JSON, then exits.
+
+| Option | Effect |
+|---|---|
+| (none) | Quick scan: only the folders and files that changed are read. |
+| `--full` | Reads every file again. |
+
+<Tabs syncKey="install">
+<TabItem label="Docker">
+
+```sh
+docker compose exec musonic-server musonic-server scan --full
+```
+
+</TabItem>
+<TabItem label="Standalone program">
+
+```sh
+MUSONIC_DATA_DIR=/var/lib/musonic MUSONIC_MUSIC_DIR=/srv/music ./musonic-server scan --full
+```
+
+</TabItem>
+</Tabs>
+
+Output fields: `full`, `folders`, `folders_changed`, `files`, `files_read`, `files_missing`, `tracks_added`, `errors` (list of messages), `duration_ms`.
+
+It fails with `no music folder configured (MUSONIC_MUSIC_DIR)` when no music folder is set.
+
+<Aside type="tip">
+While the server runs, you rarely need this command: the server scans at start-up, after every change in the music folder, and on a schedule (`scan_interval_minutes`, 60 by default). To force a scan, use **Library** in the console, or the Subsonic `startScan` route. Both run inside the server, which then refreshes the answers it keeps in memory.
+</Aside>
+
+## `user add`
+
+Creates an account. With `--admin`, the account is an administrator.
+
+<Steps>
+
+1. **Run the command with the new username.**
+
+   ```sh
+   docker compose exec musonic-server musonic-server user add <name> --admin
+   ```
+
+   With the standalone program: `./musonic-server user add <name> --admin`, with the same environment as your service.
+
+2. **Type the password, then press Enter.**
+
+   The prompt is `Password for <name>:`. The password needs at least 8 characters.
+
+3. **Read the confirmation.**
+
+   `created <name> (administrator)` or `created <name> (user)`.
+
+</Steps>
+
+<Aside type="caution">
+The password is shown on screen as you type it. Clear the terminal afterwards if someone can see it. You can also give it in the `MUSONIC_PASSWORD` environment variable (`docker compose exec -e MUSONIC_PASSWORD=<password> musonic-server musonic-server user add <name>`), but it then stays in your shell history.
+</Aside>
+
+Errors: `usage: user add <name> [--admin]` (no name), `invalid username`, `the password needs at least 8 characters`, `this username is taken`.
+
+For your family and friends, prefer **invitation links** from the console: each person chooses their own name and password.
+
+## `import-navidrome`
+
+Imports from a copy of a Navidrome database: playlists, likes, ratings, play counts and plays. Passwords never come over.
+
+| Option | Effect |
+|---|---|
+| (none) | Tracks are matched by their file and keep their Navidrome ids, as do playlists, so what clients saved keeps working. Running it again adds nothing twice. |
+| `--new-ids` | Gives tracks and playlists new ids instead of Navidrome's. |
+| `--replace-playlists` | Imports again the playlists imported before, replacing them. |
+
+<Steps>
+
+1. **Create the accounts in Musonic first, with the same usernames as in Navidrome.**
+
+   Navidrome accounts without an account of the same name are skipped (listed in `users_skipped`).
+
+2. **Make a consistent copy of Navidrome's database into Musonic's data folder.**
+
+   ```sh
+   sqlite3 -readonly /path/to/navidrome.db ".backup ./data/navidrome-copy.db"
+   ```
+
+   `./data` is the folder mounted as `/data` in `compose.yml`. The Docker container is read-only apart from `/data` and `/music`.
+
+3. **Scan the library, so the tracks can be matched by their files.**
+
+   ```sh
+   docker compose exec musonic-server musonic-server scan
+   ```
+
+4. **Run the import.**
+
+   ```sh
+   docker compose exec musonic-server musonic-server import-navidrome /data/navidrome-copy.db
+   ```
+
+5. **Restart the server.**
+
+   ```sh
+   docker compose restart musonic-server
+   ```
+
+   The import writes to the database from another process: a restart makes sure the server stops serving the answers it kept from before.
+
+</Steps>
+
+Output fields: `users`, `users_skipped`, `files_matched`, `files_not_found`, `ids_kept`, `playlists`, `playlists_already_there`, `playlist_entries`, `playlist_entries_missing`, `track_annotations`, `album_annotations`, `artist_annotations`, `plays`.
+
+The full migration guide is in [Coming from Navidrome](/docs/migration/navidrome/).
+
+## Environment variables read by the commands
+
+All the [configuration settings](/docs/admin/configuration/) apply. These ones matter most on the command line:
+
+| Variable | Used by | Meaning |
+|---|---|---|
+| `MUSONIC_DATA_DIR` | all | Data folder (database `musonic.db`, caches, backups). Default `data`; `/data` in Docker. |
+| `MUSONIC_MUSIC_DIR` | serve, `scan` | Music folder. `/music` in Docker. |
+| `MUSONIC_CONFIG` | all | Path of a TOML configuration file. |
+| `MUSONIC_PASSWORD` | `user add` | The password, instead of typing it. |
+| `MUSONIC_SECRET_KEY` | serve, `user add` | Key (64 hex characters) that encrypts the passwords kept for Subsonic token sign-in. Default: `secret.key` in the data folder, created on first start. |
+| `RUST_LOG` | all | Log level, for example `info` or `debug` (default `info`). |
+
+## Next steps
+
+- [Configuration reference](/docs/admin/configuration/)
+- [Coming from Navidrome](/docs/migration/navidrome/)
+- [HTTP API](/docs/reference/api/)

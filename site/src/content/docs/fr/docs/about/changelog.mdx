@@ -1,0 +1,55 @@
+---
+title: Versions et changements
+description: Les versions actuelles de l'appli Musonic, du lecteur web et du serveur, où lire ce qui a changé dans chacune, et comment fonctionnent les étiquettes de version.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Cette page vous dit quelles versions sont à jour, où lire ce qui a changé, et comment distinguer les différentes versions publiées sur GitHub.
+
+## Versions actuelles
+
+| Partie | Version | Ce qui a changé | Étiquette |
+|---|---|---|---|
+| Appli Android (Musonic Mobile) | **2.4.0** | [Journal des changements](https://github.com/DoodzDev/Musonic/blob/main/apps/mobile/CHANGELOG.md) | `mobile-v2.4.0` |
+| Lecteur web (Musonic Web) | **1.2.0** | [Journal des changements](https://github.com/DoodzDev/Musonic/blob/main/apps/web/CHANGELOG.md) | `web-v1.2.0` |
+| Musonic Server (avec sa console) | **1.2.1** | [Journal des changements](https://github.com/DoodzDev/Musonic/blob/main/apps/server/CHANGELOG.md) | `server-v1.2.1` |
+
+Les journaux des changements sont en anglais. Tous les téléchargements sont sur la [page des versions](https://github.com/DoodzDev/Musonic/releases).
+
+<img class="shot-wide" src="/assets/img/docs/about-changelog/01-github-releases.fr.webp" alt="La page des versions de Musonic sur GitHub, avec une version Musonic Mobile marquée Latest, une version Musonic Web et une version Musonic Server, chacune avec ses fichiers" />
+
+## Comment les versions sont organisées
+
+L'appli, le lecteur web et le serveur sont dans le même dépôt, mais sortent séparément, chacun avec son propre numéro de version et son propre préfixe d'étiquette.
+
+| Étiquette | Nom de la version | Fichiers |
+|---|---|---|
+| `mobile-vX.Y.Z` | Musonic Mobile X.Y.Z | `Musonic.apk`, l'appli Android |
+| `web-vX.Y.Z` | Musonic Web X.Y.Z | `Musonic-Web.zip` (à servir à la racine d'un site) et `Musonic-Web-app.zip` (installé par la console de Musonic Server, servi à `/app/`) |
+| `server-vX.Y.Z` | Musonic Server X.Y.Z | `compose.yml`, et le programme pour Linux x86 et ARM (`musonic-server-…-linux-x86_64.tar.gz`, `…-aarch64.tar.gz`) avec sa console à côté |
+
+- **La version marquée « Latest » sur GitHub est toujours l'appli Android.** Ainsi, le lien de téléchargement `releases/latest/download/Musonic.apk` donne toujours l'appli la plus récente, même quand une version du serveur ou du lecteur web est sortie après.
+- **Le serveur est aussi publié en image Docker**, `ghcr.io/doodzdev/musonic-server`, avec les étiquettes `X.Y.Z`, `X.Y`, `X` et `latest`. Par exemple, la version 1.2.1 porte les étiquettes `1.2.1`, `1.2`, `1` et `latest`.
+- **La console d'administration n'a pas de version publiée à part** : elle est livrée dans chaque version du serveur et dans l'image Docker.
+- Avant le 2026-10-12, les versions de l'appli étaient étiquetées `vX.Y.Z` ; elles ont été renommées `mobile-vX.Y.Z` ce jour-là.
+
+## Lire un numéro de version
+
+Chaque partie suit le [versionnage sémantique](https://semver.org/lang/fr/) : `MAJEUR.MINEUR.CORRECTIF`.
+
+- **CORRECTIF** (1.2.0 → 1.2.1) : uniquement des corrections.
+- **MINEUR** (1.1.0 → 1.2.0) : de nouvelles fonctions, toujours compatible avec la version précédente.
+- **MAJEUR** (1.x → 2.0) : un gros changement, qui peut ne plus marcher comme la version précédente : lisez son journal avant de mettre à jour.
+
+Les journaux suivent le format [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) : chaque version liste ce qui a été ajouté (**Added**), modifié (**Changed**), corrigé (**Fixed**) et, si besoin, les correctifs de sécurité (**Security**). Quand une fonction d'une appli demande un serveur récent, le journal indique quelle version du serveur.
+
+<Aside type="tip">
+Pas besoin de surveiller cette page. L'appli Android vérifie les nouvelles versions (profil, puis **À propos**, puis **Vérifier les mises à jour**), et la console de Musonic Server affiche sur son tableau de bord, dans la carte **Versions**, la version installée et la dernière parue sur GitHub.
+</Aside>
+
+## Et ensuite
+
+- [Mettre à jour le serveur](/fr/docs/install/update/)
+- [Installer l'appli Android](/fr/docs/apps/android/)
+- [FAQ](/fr/docs/about/faq/)
