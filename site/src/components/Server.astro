@@ -1,0 +1,99 @@
+---
+/**
+ * @file Server.astro
+ * @description Server page, in either language: what Musonic Server does, in six short facts,
+ *   a screenshot of its console, and the way to the installation guide in the documentation.
+ *   The commands and settings live in the documentation, not here.
+ * @author DoodzProg
+ * @version 0.1.0
+ * @license CC-BY-NC-4.0
+ */
+import Base from './Base.astro';
+import { localePath, type Lang } from '../i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const L = (p: string) => localePath(p, lang);
+
+const t = {
+  en: {
+    title: 'Musonic Server: a music server that runs at home',
+    description: 'One server for your whole music: your files, an online catalogue, playlists from elsewhere, podcasts, every device in sync and a console.',
+    h1: 'A music server that runs at home',
+    lead: 'One server for your whole music: your files, an online catalogue beside them, playlists from elsewhere, podcasts, every device in sync, and a console to run it all.',
+    install: 'Install the server',
+    releases: 'Download without Docker',
+    fine: 'Linux x86 or ARM · about 20 MB of memory at rest · works with Subsonic apps',
+    facts: [
+      ['Your library', 'Scans your music folder (tags, covers, lyrics, several artists per song) in seconds, and watches it: a new file shows up on its own.'],
+      ['Works with Subsonic apps', 'The Musonic apps, and any Subsonic app such as Substreamer or Symfonium. Lower bit rates on mobile data thanks to ffmpeg.'],
+      ['An online catalogue', 'Search beyond your library; a liked online song becomes a file in your library. Without an audio provider, online songs play as 30-second previews.'],
+      ['Your playlists from elsewhere', 'Spotify, Deezer and YouTube Music playlists imported from their address, by any account, from the web or the phone.'],
+      ['Podcasts', 'Search shows, follow them, and pick up an episode where you left it on any device; transcripts show as lyrics.'],
+      ['For your family and friends', 'Accounts by invitation link, rights and quotas, and devices that pass the music to each other (Musonic Connect, beta).'],
+    ],
+    consoleTitle: 'A console to run it all',
+    console: 'Accounts and invitations, the library and its imports, devices, backups and the journal, from a browser. The password of each account is set by its owner, through a link.',
+    consoleAlt: 'The administration console of Musonic Server: dashboard.',
+    privacyTitle: 'What leaves your server',
+    privacy: 'Your files never leave your disk. The server contacts Deezer for the online catalogue, Podcast Index for podcasts and, if you turn it on, YouTube for imports.',
+    navidrome: 'Coming from Navidrome? Musonic brings over your playlists, likes and plays, and keeps Navidrome\'s ids.',
+    navidromeLink: 'Migration guide',
+  },
+  fr: {
+    title: 'Musonic Server : un serveur de musique qui tourne chez vous',
+    description: 'Un seul serveur pour toute votre musique : vos fichiers, un catalogue en ligne, vos playlists d\'ailleurs, des podcasts, tous vos appareils synchronisés et une console.',
+    h1: 'Un serveur de musique qui tourne chez vous',
+    lead: 'Un seul serveur pour toute votre musique : vos fichiers, un catalogue en ligne à côté, vos playlists d\'ailleurs, des podcasts, tous vos appareils synchronisés, et une console pour tout gérer.',
+    install: 'Installer le serveur',
+    releases: 'Télécharger sans Docker',
+    fine: 'Linux x86 ou ARM · environ 20 Mo de mémoire au repos · compatible avec les applis Subsonic',
+    facts: [
+      ['Votre bibliothèque', 'Analyse votre dossier de musique (tags, pochettes, paroles, plusieurs artistes par titre) en quelques secondes, et le surveille : un nouveau fichier apparaît tout seul.'],
+      ['Compatible avec les applis Subsonic', 'Les applis Musonic, et toute appli Subsonic comme Substreamer ou Symfonium. Débits réduits en données mobiles grâce à ffmpeg.'],
+      ['Un catalogue en ligne', 'Cherchez au-delà de votre bibliothèque ; un titre en ligne liké devient un fichier de votre bibliothèque. Sans fournisseur audio, les titres en ligne se lisent en extraits de 30 secondes.'],
+      ['Vos playlists d\'ailleurs', 'Les playlists Spotify, Deezer et YouTube Music importées depuis leur adresse, par n\'importe quel compte, depuis le web ou le téléphone.'],
+      ['Podcasts', 'Cherchez des émissions, suivez-les, et reprenez un épisode là où vous l\'aviez laissé, sur n\'importe quel appareil ; les transcriptions s\'affichent comme des paroles.'],
+      ['Pour votre famille et vos amis', 'Des comptes par lien d\'invitation, des droits et des quotas, et des appareils qui se passent la musique (Musonic Connect, bêta).'],
+    ],
+    consoleTitle: 'Une console pour tout gérer',
+    console: 'Comptes et invitations, bibliothèque et imports, appareils, sauvegardes et journal, depuis un navigateur. Le mot de passe de chaque compte est choisi par son titulaire, grâce à un lien.',
+    consoleAlt: 'La console d\'administration de Musonic Server : le tableau de bord.',
+    privacyTitle: 'Ce qui sort de votre serveur',
+    privacy: 'Vos fichiers ne quittent jamais votre disque. Le serveur contacte Deezer pour le catalogue en ligne, Podcast Index pour les podcasts et, si vous l\'activez, YouTube pour les imports.',
+    navidrome: 'Vous venez de Navidrome ? Musonic reprend vos playlists, likes et écoutes, et garde les identifiants de Navidrome.',
+    navidromeLink: 'Guide de migration',
+  },
+}[lang];
+---
+<Base lang={lang} path="/server/" title={t.title} description={t.description} current="server">
+  <section class="wrap hero">
+    <h1>{t.h1}</h1>
+    <p class="lead">{t.lead}</p>
+    <div class="actions">
+      <a class="button" href={L('/docs/install/docker/')}>{t.install}</a>
+      <div class="textlinks"><a href="https://github.com/DoodzDev/Musonic/releases">{t.releases}</a></div>
+    </div>
+    <p class="small">{t.fine}</p>
+    <ul class="facts">
+      {t.facts.map(([h, p]) => (<li><h3>{h}</h3><p>{p}</p></li>))}
+    </ul>
+  </section>
+
+  <section class="wrap">
+    <div class="row">
+      <img class="row__img" src={`/assets/img/screenshots/console/dashboard-${lang}.jpg`} alt={t.consoleAlt} loading="lazy" />
+      <div><h3>{t.consoleTitle}</h3><p>{t.console}</p></div>
+    </div>
+  </section>
+
+  <section class="wrap block note">
+    <h2>{t.privacyTitle}</h2>
+    <p>{t.privacy}</p>
+  </section>
+
+  <section class="wrap block">
+    <p>{t.navidrome}</p>
+    <a href={L('/docs/') }>{t.navidromeLink} →</a>
+  </section>
+</Base>

@@ -1,0 +1,25 @@
+/**
+ * @file tokens.css
+ * @description Design tokens of the Musonic website, shared by the showcase pages and the
+ *   documentation. Dark like the app, with a slightly warm neutral instead of pure black; the
+ *   orange is kept for actions and links only.
+ * @author DoodzProg
+ * @version 0.1.0
+ * @license CC-BY-NC-4.0
+ */
+/* Layout: one reading column on a near-black ground; product screenshots carry the colour. */
+:root {
+  color-scheme: dark;
+  --bg: #111112;
+  --bg-raised: #19191b;
+  --line: #2a2a2d;
+  --text: #f1f0ee;
+  --text-2: #b1afab;
+  --text-3: #7d7b77;
+  --accent: #ff6b35;
+  --accent-hover: #ff8455;
+  --font: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --radius: 14px;
+  --measure: 66ch;
+}

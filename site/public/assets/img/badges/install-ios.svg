@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="250" height="88" viewBox="0 0 250 88" role="img" aria-label="Install Musonic on iOS (sideload)">
+  <rect x="0.75" y="0.75" width="248.5" height="86.5" rx="18" fill="#121212" stroke="#3E3E3E" stroke-width="1.5"/>
+  <g transform="translate(22 22)" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linejoin="round">
+    <rect x="6" y="0" width="32" height="44" rx="7"/>
+    <line x1="17" y1="38" x2="27" y2="38" stroke-linecap="round"/>
+  </g>
+  <text x="76" y="38" font-family="Inter, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" letter-spacing="1.2" fill="#B3B3B3">INSTALL ON</text>
+  <text x="76" y="68" font-family="Inter, Roboto, Helvetica, Arial, sans-serif" font-size="30" font-weight="700" fill="#FFFFFF">iOS</text>
+  <text x="134" y="66" font-family="Inter, Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="500" fill="#B3B3B3">sideload</text>
+</svg>

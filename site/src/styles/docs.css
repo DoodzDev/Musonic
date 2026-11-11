@@ -1,0 +1,45 @@
+/**
+ * @file docs.css
+ * @description The documentation (Starlight) in the website's colours and type: always dark,
+ *   the orange only on links and the current page.
+ * @author DoodzProg
+ * @version 0.1.0
+ * @license CC-BY-NC-4.0
+ */
+:root,
+:root[data-theme='light'],
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --sl-font: var(--font);
+  --sl-font-mono: var(--font-mono);
+  --sl-color-accent-low: #3a1f14;
+  --sl-color-accent: var(--accent);
+  --sl-color-accent-high: #ffc2a8;
+  --sl-color-white: var(--text);
+  --sl-color-gray-1: #e6e5e2;
+  --sl-color-gray-2: var(--text-2);
+  --sl-color-gray-3: var(--text-3);
+  --sl-color-gray-4: #4a4946;
+  --sl-color-gray-5: var(--line);
+  --sl-color-gray-6: var(--bg-raised);
+  --sl-color-black: var(--bg);
+  --sl-color-bg-nav: var(--bg);
+  --sl-color-bg-sidebar: var(--bg);
+  --sl-color-hairline: var(--line);
+  --sl-color-hairline-shade: var(--line);
+}
+/* One theme only, like the app. */
+starlight-theme-select { display: none; }
+.sl-markdown-content h1, .sl-markdown-content h2, .sl-markdown-content h3 { font-weight: 600; letter-spacing: -0.01em; }
+.sl-markdown-content code:not(pre code) { overflow-wrap: anywhere; }
+/* The site's name in plain text; the orange stays for links. */
+.site-title { color: var(--text); font-weight: 650; }
+/* Current page in the sidebar: a quiet highlight instead of a full orange block. */
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover {
+  background: var(--bg-raised);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.sl-anchor-link { color: var(--text-3); }

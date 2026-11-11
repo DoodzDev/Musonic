@@ -1,0 +1,90 @@
+---
+/**
+ * @file Base.astro
+ * @description Frame of every showcase page: head (title, description, the two language
+ *   versions for search engines), menu, language link to the same page in the other language,
+ *   footer. No script, no request to another site.
+ * @author DoodzProg
+ * @version 0.1.0
+ * @license CC-BY-NC-4.0
+ */
+import '@fontsource-variable/inter';
+import '../styles/tokens.css';
+import '../styles/site.css';
+import { ui, localePath, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  /** Path of this page without the language, e.g. `/server/`. */
+  path: string;
+  title: string;
+  description: string;
+  current?: 'mobile' | 'web' | 'server' | 'docs' | 'about';
+}
+const { lang, path, title, description, current } = Astro.props;
+const t = ui[lang];
+const site = 'https://musonic.doodz.dev';
+const here = localePath(path, lang);
+const other: Lang = lang === 'en' ? 'fr' : 'en';
+const nav = [
+  ['mobile', '/mobile/'],
+  ['web', '/web/'],
+  ['server', '/server/'],
+  ['docs', '/docs/'],
+  ['about', '/about/'],
+] as const;
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={site + here} />
+    <link rel="alternate" hreflang="en" href={site + localePath(path, 'en')} />
+    <link rel="alternate" hreflang="fr" href={site + localePath(path, 'fr')} />
+    <link rel="alternate" hreflang="x-default" href={site + localePath(path, 'en')} />
+    <link rel="icon" href="/assets/img/logo.svg" type="image/svg+xml" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={site + '/assets/img/social-card.jpg'} />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip" href="#main">{t.skip}</a>
+    <header class="top">
+      <div class="wrap top__inner">
+        <a class="brand" href={localePath('/', lang)}>
+          <img src="/assets/img/logo.svg" alt="" width="28" height="28" />
+          <span>Musonic</span>
+        </a>
+        <nav class="top__nav" aria-label="Pages">
+          {nav.map(([key, href]) => (
+            <a href={localePath(href, lang)} aria-current={current === key ? 'page' : undefined}>{t.nav[key]}</a>
+          ))}
+        </nav>
+        <a class="top__lang" href={localePath(path, other)} hreflang={other} lang={other} data-lang={other}>{t.otherLang}</a>
+      </div>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="foot">
+      <div class="wrap foot__inner">
+        <a href="https://github.com/DoodzDev/Musonic">GitHub</a>
+        <a href="https://github.com/DoodzDev/Musonic/releases">{t.footer.releases}</a>
+        <a href="https://github.com/DoodzDev/Musonic/issues">{t.footer.issue}</a>
+        <a href="https://github.com/DoodzDev/Musonic#license">{t.footer.license}</a>
+        <span class="foot__by">{t.footer.madeBy} <a href="https://doodz.dev/">Doodz</a></span>
+      </div>
+    </footer>
+    <script is:inline>
+      // The language picked by hand is remembered (shared with the web client), so the home page
+      // does not send this visitor back to the other one.
+      document.querySelectorAll('[data-lang]').forEach(function (a) {
+        a.addEventListener('click', function () { try { localStorage.setItem('musonic-lang', a.dataset.lang); } catch (e) {} });
+      });
+    </script>
+  </body>
+</html>

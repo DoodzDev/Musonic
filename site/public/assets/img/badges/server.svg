@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="270" height="88" viewBox="0 0 270 88" role="img" aria-label="Install Musonic Server on your own server">
+  <rect x="0.75" y="0.75" width="268.5" height="86.5" rx="18" fill="#121212" stroke="#3E3E3E" stroke-width="1.5"/>
+  <g transform="translate(20 21)" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linejoin="round">
+    <rect x="0" y="0" width="40" height="19" rx="5"/>
+    <rect x="0" y="26" width="40" height="19" rx="5"/>
+    <circle cx="9" cy="9.5" r="2" fill="#FF6B35" stroke="none"/>
+    <circle cx="9" cy="35.5" r="2" fill="#FF6B35" stroke="none"/>
+    <line x1="19" y1="9.5" x2="31" y2="9.5" stroke-linecap="round"/>
+    <line x1="19" y1="35.5" x2="31" y2="35.5" stroke-linecap="round"/>
+  </g>
+  <text x="76" y="38" font-family="Inter, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" letter-spacing="1.2" fill="#B3B3B3">INSTALL ON YOUR</text>
+  <text x="76" y="68" font-family="Inter, Roboto, Helvetica, Arial, sans-serif" font-size="30" font-weight="700" fill="#FFFFFF">Server</text>
+  <text x="182" y="66" font-family="Inter, Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="500" fill="#B3B3B3">self-hosted</text>
+</svg>
