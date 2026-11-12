@@ -44,21 +44,23 @@ docker compose exec musonic-server musonic-server user add <name> --admin
 
    The note is for you only, to find the invitation in the list (for example "My cousin Lea"). It is not the name of the account.
 
-   <img class="shot-wide" src="/assets/img/docs/admin-accounts/02-invite-form.en.webp" alt="The Invite someone window filled in: the note My cousin Lea, the role User selected, and the validity 7 d selected" />
+   <img class="shot-wide" src="/assets/img/docs/admin-accounts/02-invite-form.en.webp" alt="The Invite someone window filled in: the note Invitation for my cousin Lea, the role User selected, the validity 7 d selected and its end date, and the Create the invitation button" />
 
 3. **Click "Create the invitation".**
 
-4. **Click "Copy" and send the link to the person.**
+4. **Click "Copy" and send the link to the person, then click "Done".**
 
-   The link is shown **only now**. If you close the window without copying it, cancel the invitation and create another one.
+   The link looks like `https://music.example.com/invite/…`, with your server's address. It is shown **only now**. If you close the window without copying it, cancel the invitation and create another one.
 
    <img class="shot-wide" src="/assets/img/docs/admin-accounts/03-invite-link.en.webp" alt="The Invite someone window showing the link to send, with the Copy button" />
 
 5. **The person opens the link, chooses a name and a password, then taps "Create my account".**
 
+   The page says who sends the invitation and until when the link is valid.
+
    <img class="shot-phone" src="/assets/img/docs/admin-accounts/04-invite-page.en.webp" alt="The invitation page on a phone: Welcome to Musonic, the fields Name, Password and Confirm the password, and the Create my account button" />
 
-6. **The page then shows the server's address to add in the app.** The person signs in with the name and password just chosen.
+6. **The page then shows the server's address to add in the app.** It works in the Musonic app or in a Subsonic app (Substreamer, Symfonium…). The person signs in with the name and password just chosen.
 
    <img class="shot-phone" src="/assets/img/docs/admin-accounts/05-invite-ready.en.webp" alt="The page Your account is ready on a phone, with the server address to add in the Musonic app" />
 
@@ -122,7 +124,7 @@ All quotas are **unlimited** by default. For each one, pick a preset, "Custom…
 - The account's bit rate limit and the server's **Highest bit rate by default** (Playback screen) both apply: **the lower one wins**.
 - Changes are saved as you make them ("Saved" appears).
 
-<img class="shot-wide" src="/assets/img/docs/admin-accounts/07-rights-quotas.en.webp" alt="The Rights and Quotas cards of a user: four switches, then imports per day set to 10, imports per month to 100, largest size to 5 GB and highest bit rate to 192 kbit/s" />
+<img class="shot-wide" src="/assets/img/docs/admin-accounts/07-rights-quotas.en.webp" alt="The page of a user with the Role, Account, Rights and Quotas cards: the four rights switches on, every quota on Unlimited and the bit rate on No limit" />
 
 ## Reset a password
 
@@ -134,13 +136,13 @@ You never see or type a user's password. You send a link, and the person chooses
 
 2. **Choose how long the link is valid, and whether to sign the person's devices out.**
 
-   The default is 24 hours. "Sign their devices out" revokes the device keys once the new password is chosen.
+   The choices are 1 h, 24 h (the default), 7 d, 30 d or Custom; the window shows the end date. "Sign their devices out" revokes the device keys once the new password is chosen.
 
    <img class="shot-wide" src="/assets/img/docs/admin-accounts/08-reset-form.en.webp" alt="The window Reset lea's password: the validity 24 h selected and the switch Sign their devices out" />
 
 3. **Click "Create the link", then "Copy", and send it to the person.** Like invitations, it is shown only once.
 
-4. **The person opens the link, types the new password twice and confirms.**
+4. **The person opens the link, types the new password twice and taps "Save".**
 
    <img class="shot-phone" src="/assets/img/docs/admin-accounts/09-reset-page.en.webp" alt="The New password page on a phone, for the account lea, with the fields Password and Confirm the password" />
 

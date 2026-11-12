@@ -14,6 +14,8 @@ Cette page installe Musonic Server avec Docker Compose, d'une machine Linux vide
 - Votre musique dans un dossier de cette machine.
 - Environ 15 minutes, plus le temps du premier scan de votre bibliothèque.
 
+Le serveur tourne dans un conteneur nommé `musonic-server`. Il voit votre dossier `~/musonic-server/data` (base, caches, sauvegardes) comme `/data`, et votre dossier de musique comme `/music` (en lecture seule si vous ajoutez `:ro`). Il écoute sur le port 4533, joignable seulement depuis la machine elle-même en `127.0.0.1:4533`.
+
 <img class="diagram" src="/assets/img/docs/diagrams/docker-folders.fr.svg" alt="Schéma : sur la machine, le dossier musonic-server/data est monté en /data dans le conteneur, et votre dossier de musique en /music ; le conteneur écoute sur le port 4533, joignable seulement depuis la machine elle-même en 127.0.0.1:4533." />
 
 ## Installation rapide

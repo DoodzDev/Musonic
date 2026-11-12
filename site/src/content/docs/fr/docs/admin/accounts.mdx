@@ -44,21 +44,23 @@ docker compose exec musonic-server musonic-server user add <nom> --admin
 
    La note n'est que pour vous, pour retrouver l'invitation dans la liste (par exemple « Ma cousine Léa »). Ce n'est pas le nom du compte.
 
-   <img class="shot-wide" src="/assets/img/docs/admin-accounts/02-invite-form.fr.webp" alt="La fenêtre Inviter quelqu'un remplie : la note Ma cousine Léa, le rôle Utilisateur choisi et la validité 7 j choisie" />
+   <img class="shot-wide" src="/assets/img/docs/admin-accounts/02-invite-form.fr.webp" alt="La fenêtre Inviter quelqu'un remplie : la note Invitation pour ma cousine Léa, le rôle Utilisateur choisi, la validité 7 j choisie avec sa date de fin, et le bouton Créer l'invitation" />
 
 3. **Cliquez sur « Créer l'invitation ».**
 
-4. **Cliquez sur « Copier » et envoyez le lien à la personne.**
+4. **Cliquez sur « Copier » et envoyez le lien à la personne, puis cliquez sur « Terminé ».**
 
-   Le lien n'est montré **que maintenant**. Si vous fermez la fenêtre sans le copier, annulez l'invitation et créez-en une autre.
+   Le lien a la forme `https://music.example.com/invite/…`, avec l'adresse de votre serveur. Il n'est montré **que maintenant**. Si vous fermez la fenêtre sans le copier, annulez l'invitation et créez-en une autre.
 
    <img class="shot-wide" src="/assets/img/docs/admin-accounts/03-invite-link.fr.webp" alt="La fenêtre Inviter quelqu'un qui affiche le lien à envoyer, avec le bouton Copier" />
 
 5. **La personne ouvre le lien, choisit un nom et un mot de passe, puis touche « Créer mon compte ».**
 
+   La page indique qui envoie l'invitation et jusqu'à quand le lien est valable.
+
    <img class="shot-phone" src="/assets/img/docs/admin-accounts/04-invite-page.fr.webp" alt="La page d'invitation sur un téléphone : Bienvenue sur Musonic, les champs Nom, Mot de passe et Confirmer le mot de passe, et le bouton Créer mon compte" />
 
-6. **La page affiche ensuite l'adresse du serveur à ajouter dans l'application.** La personne se connecte avec le nom et le mot de passe qu'elle vient de choisir.
+6. **La page affiche ensuite l'adresse du serveur à ajouter dans l'application.** Elle sert dans l'application Musonic ou dans une application Subsonic (Substreamer, Symfonium…). La personne se connecte avec le nom et le mot de passe qu'elle vient de choisir.
 
    <img class="shot-phone" src="/assets/img/docs/admin-accounts/05-invite-ready.fr.webp" alt="La page Votre compte est prêt sur un téléphone, avec l'adresse du serveur à ajouter dans l'application Musonic" />
 
@@ -122,7 +124,7 @@ Tous les quotas sont **illimités** par défaut. Pour chacun, choisissez une val
 - La limite de débit du compte et le **Débit maximal par défaut** du serveur (écran Lecture) s'appliquent tous les deux : **la plus basse l'emporte**.
 - Les changements s'enregistrent au fur et à mesure (« Enregistré » s'affiche).
 
-<img class="shot-wide" src="/assets/img/docs/admin-accounts/07-rights-quotas.fr.webp" alt="Les cartes Droits et Quotas d'un utilisateur : quatre interrupteurs, puis imports par jour à 10, imports par mois à 100, place maximale à 5 Go et débit maximal à 192 kbit/s" />
+<img class="shot-wide" src="/assets/img/docs/admin-accounts/07-rights-quotas.fr.webp" alt="La fiche d'un utilisateur avec les cartes Rôle, Compte, Droits et Quotas : les quatre interrupteurs de droits activés, tous les quotas sur Illimité et le débit sur Sans limite" />
 
 ## Réinitialiser un mot de passe
 
@@ -134,13 +136,13 @@ Vous ne voyez et ne tapez jamais le mot de passe d'un utilisateur. Vous envoyez 
 
 2. **Choisissez la durée de validité du lien, et s'il faut déconnecter les appareils de la personne.**
 
-   Par défaut : 24 heures. « Déconnecter ses appareils » révoque ses clés d'appareils une fois le nouveau mot de passe choisi.
+   Les choix sont 1 h, 24 h (par défaut), 7 j, 30 j ou Personnalisé ; la fenêtre affiche la date de fin. « Déconnecter ses appareils » révoque ses clés d'appareils une fois le nouveau mot de passe choisi.
 
    <img class="shot-wide" src="/assets/img/docs/admin-accounts/08-reset-form.fr.webp" alt="La fenêtre Réinitialiser le mot de passe de lea : la validité 24 h choisie et l'interrupteur Déconnecter ses appareils" />
 
 3. **Cliquez sur « Créer le lien », puis sur « Copier », et envoyez-le à la personne.** Comme pour les invitations, il n'est montré qu'une fois.
 
-4. **La personne ouvre le lien, tape deux fois le nouveau mot de passe et valide.**
+4. **La personne ouvre le lien, tape deux fois le nouveau mot de passe et touche « Enregistrer ».**
 
    <img class="shot-phone" src="/assets/img/docs/admin-accounts/09-reset-page.fr.webp" alt="La page Nouveau mot de passe sur un téléphone, pour le compte lea, avec les champs Mot de passe et Confirmer le mot de passe" />
 

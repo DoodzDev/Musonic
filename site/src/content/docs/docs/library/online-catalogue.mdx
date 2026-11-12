@@ -63,9 +63,9 @@ Two imports run at the same time. A failed import is tried again after 5 minutes
 
 1. **In the console, click "Imports" in the "Music" section of the menu.**
 
-   The page lists every import with its state: Waiting, Running, Failed, Done.
+   At the top, four counters give the number of imports waiting, running, failed and done. Below, the queue lists every import with its song, who asked for it, its state (Waiting, Running, Failed, Done) and its number of attempts; the filters **All**, **Waiting**, **Running**, **Failed**, **Done** and a search field (title, artist, album, account) narrow it. "No import." means the queue is empty. The **Import settings** and **Providers** blocks come next, then **Podcasts** and **YouTube Music import**.
 
-   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/01-imports-page.en.webp" alt="The console's Imports page: the queue with the filters All, Waiting, Running, Failed, Done, a search field, and rows showing the song, who asked for it, its state and the number of attempts; below, the Import settings block and the Providers block." />
+   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/01-imports-page.en.webp" alt="The console's Imports page: four counters (waiting, running, failed, done), the filters All, Waiting, Running, Failed, Done, a search field, the empty queue with the columns Song, Asked by, State, Attempts and the line No import., then the Import settings and Providers blocks." />
 
 2. **Click "Retry" on a failed import to try it again now**, or **"Remove"** to take it out of the queue.
 
@@ -73,7 +73,7 @@ Two imports run at the same time. A failed import is tried again after 5 minutes
 
 3. **Check the "Providers" block.**
 
-   Each provider shows its name, what it does ("Full songs and imports" or "30-second previews, never imported") and whether it works. A provider whose credentials expired shows an alert, also on the dashboard.
+   Each provider shows its name, what it does ("Full songs and imports" or "30-second previews, never imported") and whether it works ("Working"). A provider whose credentials expired shows an alert, also on the dashboard.
 
 </Steps>
 
@@ -137,9 +137,9 @@ Providers are passed to the server by the program that starts it: a program of y
 
 2. **Use the switches.**
 
-   In "Import settings": **Automatic import** and its **Quality**. In "Providers": **Online catalog** and **30-second previews**.
+   In "Import settings": **Automatic import** ("When a song or an album is liked, when a song is added to a playlist.") and its **Quality**: **MP3 128**, **MP3 320** or **FLAC**, the best the provider allows up to that level. The **Filing** line reminds you where imports go (`Musonic/Album artist/Album/NN - Title`). In "Providers", under the list of providers: **Online catalog** and **30-second previews** ("When no provider gives the full song.").
 
-   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/02-import-settings.en.webp" alt="The Import settings and Providers blocks of the console's Imports page: switches Automatic import, the Quality choice MP3 128 / MP3 320 / FLAC, the Filing line, then the provider list and the switches Online catalog and 30-second previews." />
+   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/02-import-settings.en.webp" alt="The Import settings and Providers blocks of the console's Imports page: the Automatic import switch, the Quality choice MP3 128 / MP3 320 / FLAC, the Filing line, then the provider list and the switches Online catalog and 30-second previews; below, the Podcasts and YouTube Music import blocks with their Add the key buttons." />
 
 3. **Click "Restart now" in the banner that appears.**
 
@@ -196,13 +196,13 @@ By default every account may use the online catalogue and import, without limit.
 
 2. **In "Rights", turn off what this account may not do.**
 
-   The import right (its line reads "Their liked online songs and playlists are downloaded."): their likes and playlists keep online songs without importing them. **See the online catalog**: no online search, pages or playback for them; their playlist imports only look in your library.
+   The block is on the right of the account's page, beside **Role** and **Account**. It has four switches: the import right, **See the online catalog**, **Download files** (direct downloads from the apps) and **Public playlists** (seen by the other accounts). The import right (its line reads "Their liked online songs and playlists are downloaded."): their likes and playlists keep online songs without importing them. **See the online catalog**: no online search, pages or playback for them; their playlist imports only look in your library.
 
-   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/03-account-rights.en.webp" alt="The page of one non-administrator account in the console: the Rights block with four switches (import, See the online catalog, Download files, Public playlists) and the Quotas block with Imports per day, Imports per month and Largest size of their imports." />
+   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/03-account-rights.en.webp" alt="The page of one non-administrator account in the console: the Role and Account blocks, the Rights block with four switches (import, See the online catalog, Download files, Public playlists), and the Quotas block with four lists set to Unlimited or No limit: Imports per day, Imports per month, Largest size of their imports, Highest playback bit rate." />
 
 3. **In "Quotas", set the limits you want**, then wait for "Saved".
 
-   **Imports per day** and **Imports per month** count the imports this account asked for (days and months in UTC). **Largest size of their imports**, in GB, is the total size of the files imported for them. Empty = unlimited.
+   Each quota is a list: **Unlimited** (the default), two common values, or **Custom…** to type your own. **Imports per day** (10, 50) and **Imports per month** (100, 500) count the imports this account asked for (days and months in UTC); "This month: … imports" shows where they stand. **Largest size of their imports** (1 GB, 5 GB) is the total size of the files imported for them. The same block has **Highest playback bit rate** (No limit, 320, 192 or 128 kbit/s), which caps the quality this account streams and downloads.
 
 </Steps>
 

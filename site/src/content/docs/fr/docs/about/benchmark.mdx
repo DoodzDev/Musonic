@@ -26,6 +26,8 @@ Cette page donne tous les résultats du benchmark que j’ai mené entre Musonic
 
 Navidrome est devant sur **12 des 113 mesures** de la synthèse : le 1er octet transcodé, deux mesures de poids des pochettes, le débit d’un fichier original (de 6 %), le temps pour transcoder un titre entier (de 0,7 %) et le poids compressé de 7 réponses sur 14. Elles sont toutes listées dans [Où Navidrome est devant](#où-navidrome-est-devant).
 
+Le dispositif : le script de test (`serverbench.py`, en Python) tourne sur la même machine (Ubuntu 24.04) et parle à un seul serveur à la fois en HTTP sur `127.0.0.1`, par l’API Subsonic ; il lit la mémoire et le temps processeur du serveur dans `/proc`. Les deux serveurs lisent le même dossier de musique (en lecture seule) et utilisent le même binaire ffmpeg n8.1. L’ordre des passes : Musonic puis Navidrome, Navidrome puis Musonic, Musonic puis Navidrome.
+
 <img class="diagram" src="/assets/img/docs/diagrams/benchmark-setup.fr.svg" alt="Schéma : sur un serveur virtuel ARM à 2 cœurs, le script de test parle par 127.0.0.1 à un seul serveur testé à la fois, Musonic Server ou Navidrome ; les deux lisent le même dossier de musique et utilisent le même ffmpeg ; chaque passe part d’un dossier de données vide ; les passes alternent entre les deux serveurs, 3 chacun." />
 
 ## Comment lire les tableaux
@@ -327,7 +329,7 @@ Pour comparaison, le poids des mêmes réponses sans compression (les tests de l
 
 Les réponses `getArtist`, `getStarred2` et `getPlaylists` de Musonic ont le même poids avec et sans gzip : Musonic 1.0.1 envoyait ces petites réponses (moins de 1 Kio) sans les compresser.
 
-<img class="diagram" src="/assets/img/docs/diagrams/benchmark-gzip.fr.svg" alt="Graphique en barres du poids compressé des réponses des 14 requêtes pour les deux serveurs, en Kio ; Navidrome est plus léger pour tous les artistes (30,0 contre 47,7 Kio), les recherches love et mo, un artiste, 50 titres au hasard, les genres et les favoris." />
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-gzip.fr.svg" alt="Graphique en barres, échelle logarithmique, du poids compressé des réponses des 14 requêtes pour les deux serveurs, en Kio, avec Musonic 1.0.1 (avant les identifiants courts) ; Navidrome est plus léger pour tous les artistes (30,0 contre 47,7 Kio), les recherches love et mo, un artiste, 50 titres au hasard, les genres et les favoris." />
 
 ## Où Navidrome est devant
 

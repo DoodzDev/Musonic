@@ -9,7 +9,7 @@ Cette page s'adresse à la personne qui gère le serveur : quoi garder pour ne r
 
 ## Quoi sauvegarder
 
-<img class="diagram" src="/assets/img/docs/diagrams/what-to-back-up.fr.svg" alt="Schéma : trois choses à garder, le dossier de musique, le dossier de données avec musonic.db et secret.key, et compose.yml ; les caches sont laissés de côté" />
+<img class="diagram" src="/assets/img/docs/diagrams/what-to-back-up.fr.svg" alt="Schéma : à sauvegarder, le dossier de musique, le dossier de données (musonic.db et secret.key, une copie de backups/ sur un autre disque, events.db facultatif) et compose.yml ; cache/, tmp/ et web/ sont recréés" />
 
 | Quoi | Où (exemple Docker) | Pourquoi |
 |---|---|---|
@@ -48,6 +48,8 @@ Ces sauvegardes sont sur **le même disque** que la base. Elles protègent d'une
 2. **Sous « Sauvegardes », cliquez sur « Sauvegarder maintenant ».** La sauvegarde du jour est faite, ou remplacée.
 
 3. **Cliquez sur « Télécharger » à côté d'une sauvegarde pour la garder sur votre ordinateur.**
+
+   Chaque sauvegarde est listée avec son nom de fichier (`musonic-AAAA-MM-JJ.db`), sa date, son heure et sa taille.
 
    <img class="shot-wide" src="/assets/img/docs/admin-backups/01-backups-card.fr.webp" alt="La carte Sauvegardes de Réglages et maintenance : la dernière sauvegarde avec sa date et sa taille, le bouton Sauvegarder maintenant, le choix Jours gardés sur 14 jours, et la liste des sauvegardes avec un bouton Télécharger chacune" />
 

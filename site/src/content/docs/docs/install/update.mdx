@@ -11,10 +11,10 @@ This page updates Musonic Server to a newer version, and explains what happens t
 
 The server looks for new versions on GitHub every 6 hours (setting `update_check`, environment variable `MUSONIC_UPDATE_CHECK`, on by default). It **never installs anything on its own**: it tells you.
 
-- The console shows an alert **"Musonic Server X is out"** in the bar at the top, with **See the release**.
+- The console shows an alert **"Musonic Server X is out"** at the right end of the bar at the top. The **Dashboard** repeats it in a banner, "You have version …", with a **See the release** button, and a counter appears next to **Dashboard** in the menu.
 - The **Dashboard**'s **Versions** card shows the installed version, the latest one, and **Update available** or **Up to date**. The same card covers the web player installed on the server.
 
-<img class="shot-wide" src="/assets/img/docs/install-update/01-update-alert.en.webp" alt="The console's dashboard with the alert Musonic Server X is out in the top bar, and the Versions card showing the installed version, the latest one and Update available." />
+<img class="shot-wide" src="/assets/img/docs/install-update/01-update-alert.en.webp" alt="The console's dashboard with the alert Musonic Server X is out in the top bar and in a banner with the See the release button, and the Versions card showing the installed version, the latest one and Update available." />
 
 Read the changes before you update: the release notes on the [releases page](https://github.com/DoodzDev/Musonic/releases) (tags `server-v…`), or the [list of versions](/docs/about/changelog/).
 
@@ -204,7 +204,7 @@ The apps are updated separately from the server: each has its own version and it
 
 | App | How it learns about a new version | How to update |
 |---|---|---|
-| **Android** | A few seconds after it starts, the app checks GitHub for a newer Musonic release for Android. If there is one, a window says **"Update available"**, "Version X is available on GitHub", with **View release**. You can also check yourself: the round button with your initial, at the top right → **About** → **Check for updates**. | Download and install the new APK from the release, over the old one: your accounts and downloads stay. See [Install the Android app](/docs/apps/android/). |
+| **Android** | A few seconds after it starts, the app checks GitHub for a newer Musonic release for Android. If there is one, a window says **"Update available"**, "Version X is available on GitHub", with **View release** (opens the release page) and **Cancel**. You can also check yourself: the round button with your initial, at the top left of the main screens → **About** → **Check for updates**. | Download and install the new APK from the release, over the old one: your accounts and downloads stay. See [Install the Android app](/docs/apps/android/). |
 | **Web player on your server** (`/app/`) | The console's **Dashboard** (**Versions**) and **Settings and maintenance** (**Musonic Web on this server**) show the latest version. | **Settings and maintenance** → **Musonic Web on this server** → **Update**. Then reload the page in the browsers. |
 | **Web player of this site** | Nothing to do. | It is updated with each new version of the web player: reload the page. |
 | **iPhone, iPad** | They use the web player: see the two lines above. | Same. |

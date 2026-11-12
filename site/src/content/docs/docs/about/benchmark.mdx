@@ -26,6 +26,8 @@ This page gives every result of the benchmark I ran between Musonic Server and N
 
 Navidrome is ahead on **12 of the 113 measures** of the summary: the first transcoded byte, two size measures of covers, the throughput of an original file (by 6 %), the time to transcode a whole song (by 0.7 %), and the compressed size of 7 answers out of 14. They are all listed under [Where Navidrome is ahead](#where-navidrome-is-ahead).
 
+The setup: the test script (`serverbench.py`, in Python) runs on the same machine (Ubuntu 24.04) and talks to one server at a time over HTTP on `127.0.0.1`, through the Subsonic API; it reads the server's memory and CPU time in `/proc`. Both servers read the same music folder (read only) and use the same ffmpeg n8.1 binary. The order of the passes: Musonic then Navidrome, Navidrome then Musonic, Musonic then Navidrome.
+
 <img class="diagram" src="/assets/img/docs/diagrams/benchmark-setup.en.svg" alt="Diagram: on one ARM virtual server with 2 cores, the benchmark script talks over 127.0.0.1 to one server under test at a time, Musonic Server or Navidrome; both read the same music folder and use the same ffmpeg; each pass starts from an empty data folder; passes alternate between the two servers, 3 each." />
 
 ## How to read the tables
@@ -327,7 +329,7 @@ For reference, the size of the same answers without compression (the latency tes
 
 Musonic's `getArtist`, `getStarred2` and `getPlaylists` answers have the same size with and without gzip: Musonic 1.0.1 sent these small answers (under 1 KiB) uncompressed.
 
-<img class="diagram" src="/assets/img/docs/diagrams/benchmark-gzip.en.svg" alt="Bar chart of the compressed answer sizes of the 14 requests for both servers, in KiB; Navidrome is smaller for every artist (30.0 against 47.7 KiB), the searches for love and mo, one artist, 50 random songs, genres and likes." />
+<img class="diagram" src="/assets/img/docs/diagrams/benchmark-gzip.en.svg" alt="Bar chart, logarithmic scale, of the compressed answer sizes of the 14 requests for both servers, in KiB, with Musonic 1.0.1 (before short ids); Navidrome is smaller for every artist (30.0 against 47.7 KiB), the searches for love and mo, one artist, 50 random songs, genres and likes." />
 
 ## Where Navidrome is ahead
 

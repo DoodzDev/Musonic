@@ -7,6 +7,8 @@ import { Aside } from '@astrojs/starlight/components';
 
 This page explains how the Musonic project is put together, for developers who want to read the code, build it or contribute. Everything lives in one Git repository, [github.com/DoodzDev/Musonic](https://github.com/DoodzDev/Musonic).
 
+In short: the Android app, Musonic Web and the administration console share the TypeScript code of `packages/core`; they and the other Subsonic apps reach Musonic Server (Rust) over HTTPS. The server answers the Subsonic API on `/rest` and the Musonic API on `/v1` and `/v1/events`, and serves the console (`/`) and Musonic Web (`/app/`). It uses the music folder, SQLite (`musonic.db`), ffmpeg, the online catalogue (Deezer's public API: metadata and 30-second previews) and the audio providers.
+
 <img class="diagram" src="/assets/img/docs/diagrams/architecture-overview.en.svg" alt="On the left, the clients: the Android app (React Native, with a native Media3 player), Musonic Web and the admin console (React and Vite), which share packages/core, and other Subsonic apps. They reach Musonic Server (Rust) over HTTPS; the server answers the Subsonic API on /rest, the Musonic API on /v1 and /v1/events, and serves the console and Musonic Web. On the right, what the server uses: the music folder, SQLite, ffmpeg, the online catalogue and the audio providers." />
 
 ## The repository
@@ -56,7 +58,7 @@ How audio reaches tracks that are not files in your library is described in `app
 
 ## The path of a request
 
-<img class="diagram" src="/assets/img/docs/diagrams/request-flow.en.svg" alt="Diagram: a request enters through the reverse proxy, goes through the security headers, CORS and compression layers, then the router sends it to /rest (sign-in, answer cache, handler, SQLite), /v1 (Bearer token, handler), /v1/events (WebSocket), /app (Musonic Web files) or any other path (console files)." />
+<img class="diagram" src="/assets/img/docs/diagrams/request-flow.en.svg" alt="Diagram: a request enters through the reverse proxy, goes through the security headers, CORS and compression layers, then the router sends it to /health (liveness), /rest (sign-in, answer cache, handler, SQLite), /v1 (Bearer token, handler), /v1/events (WebSocket), /app (Musonic Web files) or any other path (console files)." />
 
 1. The client calls the server, usually through a reverse proxy that adds HTTPS.
 2. Every answer goes through three layers: security headers, open CORS, and gzip compression of text answers over 1 KB.
@@ -115,6 +117,7 @@ When something changes for an account (a like, a rating, a playlist, a play, the
 
 <img class="diagram" src="/assets/img/docs/diagrams/realtime-events.en.svg" alt="Diagram: the phone likes a song through the Subsonic API; the server writes it to SQLite and publishes a likes event; the web player and the tablet of the same account receive it on their WebSocket; the phone receives it too, marked by: phone, and ignores its own echo." />
 
+- Only the devices of the same account receive an event. Each event names the device that made the change (`"by"`, for example `{"type":"likes","by":"phone"}`), so that device ignores its own echo.
 - Events are not stored: up to 512 wait in memory, and a device too slow to keep up gets `resync` and reloads.
 - A `ping` every 30 seconds keeps connections open through proxies.
 - **Musonic Connect** (beta) uses the same WebSocket in both directions: devices register, send what they play and send remote commands. The server keeps their last state in memory and dates it with its own clock, so devices compute the position without comparing clocks. Which device pauses when another starts is decided by the devices themselves (`packages/core/src/connect`).

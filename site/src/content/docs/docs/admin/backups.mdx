@@ -9,7 +9,7 @@ This page is for the person who runs the server: what to save so that nothing is
 
 ## What to back up
 
-<img class="diagram" src="/assets/img/docs/diagrams/what-to-back-up.en.svg" alt="Diagram: three things to save, the music folder, the data folder with musonic.db and secret.key, and compose.yml; caches are left out" />
+<img class="diagram" src="/assets/img/docs/diagrams/what-to-back-up.en.svg" alt="Diagram: back up the music folder, the data folder (musonic.db and secret.key, a copy of backups/ on another disk, events.db optional) and compose.yml; cache/, tmp/ and web/ are made again" />
 
 | What | Where (Docker example) | Why |
 |---|---|---|
@@ -48,6 +48,8 @@ These backups are on **the same disk** as the database. They protect against a m
 2. **Under "Backups", click "Back up now".** Today's backup is made, or replaced.
 
 3. **Click "Download" next to a backup to save it on your computer.**
+
+   Each backup is listed with its file name (`musonic-YYYY-MM-DD.db`), date, time and size.
 
    <img class="shot-wide" src="/assets/img/docs/admin-backups/01-backups-card.en.webp" alt="The Backups card of Settings and maintenance: the latest backup with its date and size, the Back up now button, the Days kept choice on 14 days, and the list of backups with a Download button each" />
 

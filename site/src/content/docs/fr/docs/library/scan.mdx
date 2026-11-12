@@ -22,6 +22,8 @@ Le serveur scanne la bibliothèque **à son démarrage**, puis :
 
 Deux scans ne se chevauchent jamais : une demande faite pendant un scan en relance un autre juste après.
 
+Chaque scan parcourt ensuite les dossiers (en sautant ceux qui n'ont pas changé), ne lit que les fichiers changés (tous les fichiers pour un scan complet), puis met à jour les titres, albums, artistes, pochettes et paroles dans la base du serveur (`musonic.db`).
+
 <img class="diagram" src="/assets/img/docs/diagrams/library-scan-triggers.fr.svg" alt="Schéma : quatre déclencheurs (démarrage du serveur, un changement dans le dossier de musique après 5 secondes de calme, le scan automatique régulier, un bouton de la console) mènent à une seule file de scans ; le scan parcourt les dossiers, ne lit que les fichiers changés, puis met à jour titres, albums, artistes, pochettes et paroles dans la base." />
 
 ## Lancer un scan depuis la console
@@ -34,7 +36,7 @@ Deux scans ne se chevauchent jamais : une demande faite pendant un scan en relan
 
 2. **Cliquez sur « Bibliothèque » dans la partie « Musique » du menu.**
 
-   Le haut de la page indique le nombre de titres et l'heure du dernier scan.
+   Le haut de la page indique le nombre de titres et l'heure du dernier scan (par exemple « 35 titres · dernier scan il y a 9 minutes »), avec les boutons **Scan rapide** et **Scan complet** en haut à droite.
 
    <img class="shot-wide" src="/assets/img/docs/library-scan/01-library-page.fr.webp" alt="La page Bibliothèque de la console : le titre Bibliothèque, la ligne « titres · dernier scan », les boutons Scan rapide et Scan complet en haut à droite, le bilan du dernier scan et les onglets Titres, Fichiers manquants, Doublons, Sans pochette, En ligne." />
 
@@ -44,7 +46,7 @@ Deux scans ne se chevauchent jamais : une demande faite pendant un scan en relan
 
 4. **Lisez le bilan du scan.**
 
-   Il donne le nombre de fichiers, de titres ajoutés, de fichiers manquants, d'erreurs et la durée.
+   Il se trouve sous la ligne du titre, par exemple « 35 fichiers · 0 titre ajouté · 0 manquant · 0 erreur · 0 s » : le nombre de fichiers, de titres ajoutés, de fichiers manquants, d'erreurs et la durée.
 
 </Steps>
 
@@ -94,11 +96,13 @@ Les clients Subsonic qui ont un bouton « scanner la bibliothèque » utilisent 
 
 1. **Dans la console, ouvrez « Bibliothèque ».**
 
-2. **Choisissez la fréquence dans « Scan automatique »**, en bas de la page.
+2. **Choisissez la fréquence dans « Scan automatique »**, en bas de la page, sous la liste des titres.
+
+   C'est une liste déroulante à droite du bloc, sous la note « Les changements du dossier sont vus tout de suite ; un scan régulier rattrape le reste. »
 
    Les choix sont « Aux changements seulement », « Et toutes les heures » (par défaut), « Et toutes les 6 heures » et « Et une fois par jour ».
 
-   <img class="shot-wide" src="/assets/img/docs/library-scan/02-automatic-scan.fr.webp" alt="Le bas de la page Bibliothèque de la console : le réglage « Scan automatique » avec son explication et la liste ouverte : Aux changements seulement, Et toutes les heures, Et toutes les 6 heures, Et une fois par jour." />
+   <img class="shot-wide" src="/assets/img/docs/library-scan/02-automatic-scan.fr.webp" alt="Le bas de la page Bibliothèque de la console : la fin de la liste des titres, puis le bloc Scan automatique avec son explication et la liste déroulante sur Et toutes les heures." />
 
 3. **Cliquez sur « Redémarrer maintenant » dans le bandeau qui apparaît.**
 
@@ -141,7 +145,7 @@ Le serveur ne supprime jamais de lui-même les titres dont le fichier manque.
 
 ## Les listes de la console
 
-La page Bibliothèque a des onglets pour vérifier votre bibliothèque :
+La page Bibliothèque a des onglets pour vérifier votre bibliothèque, sous le bilan du dernier scan. Chaque onglet indique combien de titres il contient (par exemple « Fichiers manquants 0 ») :
 
 | Onglet | Ce qu'il liste |
 |---|---|
@@ -151,9 +155,9 @@ La page Bibliothèque a des onglets pour vérifier votre bibliothèque :
 | **Sans pochette** | Les titres sans aucune image : ni dans le fichier, ni dans leur dossier, ni en ligne. |
 | **En ligne** | Les titres en ligne likés ou ajoutés à une playlist qui n'ont pas encore de fichier (pas importés). |
 
-Cliquez sur un titre pour ouvrir sa fiche : tags, fichiers (avec **Écouter pour vérifier**, pour entendre le fichier dans le navigateur), catalogues en ligne qui le connaissent, ISRC, genres, écoutes et likes.
+Cliquez sur un titre pour ouvrir sa fiche : tags, fichiers (avec **Écouter pour vérifier**, pour entendre le fichier dans le navigateur), catalogues en ligne qui le connaissent, ISRC, genres, écoutes et likes. En haut : le titre, puis artiste · album · année · numéro de piste · durée, et **Écouter pour vérifier** à droite. Le bloc **Fichiers** donne pour chaque fichier son chemin dans le dossier de musique, son format, son débit, sa fréquence d'échantillonnage, ses canaux et sa taille, avec un bouton **Écouter**. **‹ Bibliothèque**, en haut à gauche, ramène à la liste.
 
-<img class="shot-wide" src="/assets/img/docs/library-scan/03-track-page.fr.webp" alt="La fiche d'un titre dans la console : titre et artistes en haut, le bouton Écouter pour vérifier, le bloc Fichiers avec chemin, format, débit et taille, puis ISRC, genres, écoutes et likes en nombre de comptes." />
+<img class="shot-wide" src="/assets/img/docs/library-scan/03-track-page.fr.webp" alt="La fiche du titre Isobar dans la console : artiste, album, année, piste et durée sous le titre, le bouton Écouter pour vérifier, le bloc Fichiers avec le chemin, MP3 · 192 kbit/s · 44,1 kHz · mono · 4,5 Mo et un bouton Écouter, puis Likes (en comptes), Écoutes, Genres, Ajouté et Id." />
 
 ## Performances
 

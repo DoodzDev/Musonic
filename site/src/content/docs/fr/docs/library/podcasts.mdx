@@ -20,6 +20,8 @@ Cette page s'adresse à la personne qui fait tourner le serveur : comment les po
 - **Les épisodes se lisent à travers votre serveur** : il relaie l'audio depuis l'hébergeur de l'émission, avec déplacement dans l'épisode. L'hébergeur voit l'adresse de votre serveur, jamais celle de vos auditeurs. Les images des épisodes viennent aussi de l'hébergeur, en passant par le serveur.
 - **Les transcriptions** publiées par une émission (`podcast:transcript`, WebVTT ou SRT) s'affichent dans les applis comme des paroles synchronisées.
 
+Les applis ne contactent jamais ces services elles-mêmes : tout passe par votre serveur, et sa base garde les émissions, les épisodes, qui suit quoi et la position de chaque compte.
+
 <img class="diagram" src="/assets/img/docs/diagrams/podcasts-server.fr.svg" alt="Schéma : les applis ne parlent qu'à Musonic Server ; le serveur cherche dans l'annuaire d'iTunes (et dans Podcast Index si une clé est réglée), lit chaque heure le flux RSS des émissions suivies, et relaie l'audio et les images des épisodes depuis l'hébergeur ; la base garde émissions, épisodes, qui suit quoi et la position de chaque compte." />
 
 ## Ce qui est gardé, et pour qui
@@ -45,15 +47,15 @@ Une clé Podcast Index est gratuite, et facultative. Elle ajoute la recherche pa
 
 2. **Dans la console, cliquez sur « Imports » dans la partie « Musique » du menu, et descendez jusqu'à « Podcasts ».**
 
-   Le bloc indique le nombre d'émissions suivies et d'épisodes, et si une clé est réglée.
+   Le bloc se trouve sous **Réglages des imports** et **Fournisseurs**, au-dessus de **Import YouTube Music**. Sa ligne « Podcast Index · … émission(s) suivie(s) · … épisode(s) » donne les nombres, et la ligne en dessous dit si une clé est réglée (sans clé : « Clé absente : seul l'annuaire iTunes est utilisé (pas de recherche par personne). »). **Ajouter la clé** est à droite.
 
-   <img class="shot-wide" src="/assets/img/docs/library-podcasts/01-podcasts-block.fr.webp" alt="Le bloc Podcasts en bas de la page Imports de la console : « Podcast Index · N émissions suivies · N épisodes », la ligne « Clé absente : seul l'annuaire iTunes est utilisé (pas de recherche par personne). » et le bouton Ajouter la clé à droite." />
+   <img class="shot-wide" src="/assets/img/docs/library-podcasts/01-podcasts-block.fr.webp" alt="Le bloc Podcasts de la page Imports de la console, sous Réglages des imports et Fournisseurs : « Podcast Index · N émissions suivies · N épisodes », la ligne « Clé absente : seul l'annuaire iTunes est utilisé (pas de recherche par personne). » et le bouton Ajouter la clé à droite." />
 
 3. **Cliquez sur « Ajouter la clé ».**
 
 4. **Collez l'API Key et l'API Secret, puis cliquez sur « Vérifier et enregistrer ».**
 
-   Le serveur teste la clé auprès de Podcast Index avant de la garder. Si elle est refusée, vérifiez que vous avez copié les deux valeurs en entier.
+   La fenêtre « Clé Podcast Index » a d'abord le champ **API Key**, puis **API Secret**. Le serveur teste la clé auprès de Podcast Index avant de la garder. Si elle est refusée, vérifiez que vous avez copié les deux valeurs en entier.
 
    <img class="shot-wide" src="/assets/img/docs/library-podcasts/02-podcast-index-key.fr.webp" alt="La fenêtre Clé Podcast Index de la console : la ligne d'aide sur l'inscription gratuite, les champs API Key et API Secret (le secret masqué), la note indiquant qu'elle est gardée dans la base du serveur, et les boutons Annuler et Vérifier et enregistrer." />
 

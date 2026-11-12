@@ -7,7 +7,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 This page makes your server reachable from anywhere (on mobile data, at work, at a friend's) with an `https://` address, such as `https://music.example.com`. It is for the person who runs the server. Choose one of the four ways below.
 
-<img class="diagram" src="/assets/img/docs/diagrams/https-proxy.en.svg" alt="Diagram: a phone and a browser on the internet connect with HTTPS to music.example.com; a reverse proxy on the server machine receives them and passes them in plain HTTP to Musonic Server at 127.0.0.1:4533, which is not reachable from outside." />
+<img class="diagram" src="/assets/img/docs/diagrams/https-proxy.en.svg" alt="Diagram: a phone and a browser on the internet connect with HTTPS to music.example.com; a reverse proxy or a tunnel on the server machine (Caddy, nginx, Cloudflare, Tailscale) holds the HTTPS certificate, receives them and passes them in plain HTTP to Musonic Server at 127.0.0.1:4533, which is not reachable from outside." />
 
 ## Why HTTPS
 
@@ -15,7 +15,7 @@ This page makes your server reachable from anywhere (on mobile data, at work, at
 - **The Android app refuses plain `http://`** for any address outside your home network.
 - **The web player on an `https://` page cannot talk to an `http://` server**: browsers block it.
 
-The server itself listens in plain HTTP, only on the machine (`127.0.0.1:4533`). Something in front of it handles HTTPS: a **reverse proxy** (Caddy, nginx), a **tunnel** (Cloudflare), or a **private network** (Tailscale).
+The server itself listens in plain HTTP, only on the machine (`127.0.0.1:4533`). Something in front of it handles HTTPS: a **reverse proxy** (Caddy, nginx), a **tunnel** (Cloudflare), or a **private network** (Tailscale). It runs on the server machine and passes the requests to `127.0.0.1:4533` in plain HTTP; port 4533 itself is never opened to the internet.
 
 ## Which way to choose
 

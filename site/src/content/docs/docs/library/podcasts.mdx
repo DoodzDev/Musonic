@@ -20,6 +20,8 @@ This page is for the person who runs the server: how podcasts work on the server
 - **Episodes play through your server**: it relays the audio from the show's host, with seeking. The host sees your server's address, never your listeners'. Episode pictures come from the host too, through the server.
 - **Transcripts** published by a show (`podcast:transcript`, WebVTT or SRT) appear in the apps like synced lyrics.
 
+The apps never contact these services themselves: everything goes through your server, and its database keeps the shows, the episodes, who follows what and each account's position.
+
 <img class="diagram" src="/assets/img/docs/diagrams/podcasts-server.en.svg" alt="Diagram: the apps talk only to Musonic Server; the server searches the iTunes directory (and Podcast Index when a key is set), reads each followed show's RSS feed every hour, and relays episode audio and pictures from the show's host; the database keeps shows, episodes, who follows what and each account's position." />
 
 ## What is stored, and for whom
@@ -45,15 +47,15 @@ A Podcast Index key is free, and optional. It adds search by person and the show
 
 2. **In the console, click "Imports" in the "Music" section of the menu, and scroll down to "Podcasts".**
 
-   The block shows the number of shows followed and episodes, and says whether a key is set.
+   The block sits under **Import settings** and **Providers**, above **YouTube Music import**. Its line "Podcast Index · … shows followed · … episodes" gives the counts, and the line below says whether a key is set (without one: "No key: only the iTunes directory is used (no search by person)."). **Add the key** is on the right.
 
-   <img class="shot-wide" src="/assets/img/docs/library-podcasts/01-podcasts-block.en.webp" alt="The Podcasts block at the bottom of the console's Imports page: 'Podcast Index · N shows followed · N episodes', the line 'No key: only the iTunes directory is used (no search by person).' and the Add the key button on the right." />
+   <img class="shot-wide" src="/assets/img/docs/library-podcasts/01-podcasts-block.en.webp" alt="The Podcasts block of the console's Imports page, under Import settings and Providers: 'Podcast Index · N shows followed · N episodes', the line 'No key: only the iTunes directory is used (no search by person).' and the Add the key button on the right." />
 
 3. **Click "Add the key".**
 
 4. **Paste the API Key and the API Secret, then click "Check and save".**
 
-   The server tests the key with Podcast Index before keeping it. If it is refused, check you copied both values whole.
+   The "Podcast Index key" window has the **API Key** field first, then **API Secret**. The server tests the key with Podcast Index before keeping it. If it is refused, check you copied both values whole.
 
    <img class="shot-wide" src="/assets/img/docs/library-podcasts/02-podcast-index-key.en.webp" alt="The console's Podcast Index key window: the help line about the free signup, the API Key and API Secret fields (the secret hidden), the note that it is kept in the server's database, and the Cancel and Check and save buttons." />
 

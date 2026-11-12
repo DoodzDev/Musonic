@@ -63,9 +63,9 @@ Deux imports tournent en même temps. Un import en échec est retenté après 5 
 
 1. **Dans la console, cliquez sur « Imports » dans la partie « Musique » du menu.**
 
-   La page liste chaque import avec son état : En attente, En cours, En échec, Fait.
+   En haut, quatre compteurs donnent le nombre d'imports en attente, en cours, en échec et faits. En dessous, la file liste chaque import avec son titre, qui l'a demandé, son état (En attente, En cours, En échec, Fait) et son nombre de tentatives ; les filtres **Tout**, **En attente**, **En cours**, **En échec**, **Faits** et un champ de recherche (titre, artiste, album, compte) la restreignent. « Aucun import. » veut dire que la file est vide. Viennent ensuite les blocs **Réglages des imports** et **Fournisseurs**, puis **Podcasts** et **Import YouTube Music**.
 
-   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/01-imports-page.fr.webp" alt="La page Imports de la console : la file avec les filtres Tout, En attente, En cours, En échec, Faits, un champ de recherche, et des lignes montrant le titre, qui l'a demandé, son état et le nombre de tentatives ; en dessous, les blocs Réglages des imports et Fournisseurs." />
+   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/01-imports-page.fr.webp" alt="La page Imports de la console : quatre compteurs (en attente, en cours, en échec, faits), les filtres Tout, En attente, En cours, En échec, Faits, un champ de recherche, la file vide avec les colonnes Titre, Demandé par, État, Tentatives et la ligne Aucun import., puis les blocs Réglages des imports et Fournisseurs." />
 
 2. **Cliquez sur « Relancer » sur un import en échec pour le retenter tout de suite**, ou sur **« Retirer »** pour le sortir de la file.
 
@@ -73,7 +73,7 @@ Deux imports tournent en même temps. Un import en échec est retenté après 5 
 
 3. **Regardez le bloc « Fournisseurs ».**
 
-   Chaque fournisseur affiche son nom, ce qu'il fait (« Titres complets et imports » ou « Extraits de 30 s, jamais importés ») et s'il fonctionne. Un fournisseur dont les identifiants ont expiré affiche une alerte, aussi sur le tableau de bord.
+   Chaque fournisseur affiche son nom, ce qu'il fait (« Titres complets et imports » ou « Extraits de 30 s, jamais importés ») et s'il fonctionne (« Fonctionne »). Un fournisseur dont les identifiants ont expiré affiche une alerte, aussi sur le tableau de bord.
 
 </Steps>
 
@@ -137,9 +137,9 @@ Les fournisseurs sont passés au serveur par le programme qui le lance : un prog
 
 2. **Utilisez les interrupteurs.**
 
-   Dans « Réglages des imports » : **Import automatique** et sa **Qualité**. Dans « Fournisseurs » : **Catalogue en ligne** et **Extraits de 30 s**.
+   Dans « Réglages des imports » : **Import automatique** (« Au like d'un titre ou d'un album, à l'ajout en playlist. ») et sa **Qualité** : **MP3 128**, **MP3 320** ou **FLAC**, le meilleur que permet le fournisseur jusqu'à ce niveau. La ligne **Rangement** rappelle où vont les imports (`Musonic/Artiste de l'album/Album/NN - Titre`). Dans « Fournisseurs », sous la liste des fournisseurs : **Catalogue en ligne** et **Extraits de 30 s** (« Quand aucun fournisseur ne donne le titre complet. »).
 
-   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/02-import-settings.fr.webp" alt="Les blocs Réglages des imports et Fournisseurs de la page Imports de la console : interrupteur Import automatique, choix de Qualité MP3 128 / MP3 320 / FLAC, ligne Rangement, puis la liste des fournisseurs et les interrupteurs Catalogue en ligne et Extraits de 30 s." />
+   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/02-import-settings.fr.webp" alt="Les blocs Réglages des imports et Fournisseurs de la page Imports de la console : interrupteur Import automatique, choix de Qualité MP3 128 / MP3 320 / FLAC, ligne Rangement, puis la liste des fournisseurs et les interrupteurs Catalogue en ligne et Extraits de 30 s ; en dessous, les blocs Podcasts et Import YouTube Music avec leurs boutons Ajouter la clé." />
 
 3. **Cliquez sur « Redémarrer maintenant » dans le bandeau qui apparaît.**
 
@@ -196,13 +196,13 @@ Par défaut, chaque compte peut utiliser le catalogue en ligne et importer, sans
 
 2. **Dans « Droits », coupez ce que ce compte ne peut pas faire.**
 
-   Le droit d'import (sa ligne indique « Ses likes et playlists de titres en ligne sont téléchargés. ») : ses likes et ses playlists gardent les titres en ligne sans les importer. **Voir le catalogue en ligne** : ni recherche, ni pages, ni écoute en ligne pour lui ; ses imports de playlists ne cherchent que dans votre bibliothèque.
+   Le bloc est à droite de la page du compte, à côté de **Rôle** et **Compte**. Il a quatre interrupteurs : le droit d'import, **Voir le catalogue en ligne**, **Télécharger les fichiers** (téléchargement direct depuis les applications) et **Playlists publiques** (visibles par les autres comptes). Le droit d'import (sa ligne indique « Ses likes et playlists de titres en ligne sont téléchargés. ») : ses likes et ses playlists gardent les titres en ligne sans les importer. **Voir le catalogue en ligne** : ni recherche, ni pages, ni écoute en ligne pour lui ; ses imports de playlists ne cherchent que dans votre bibliothèque.
 
-   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/03-account-rights.fr.webp" alt="La page d'un compte non administrateur dans la console : le bloc Droits avec quatre interrupteurs (import, Voir le catalogue en ligne, Télécharger les fichiers, Playlists publiques) et le bloc Quotas avec Imports par jour, Imports par mois et Place maximale de ses imports." />
+   <img class="shot-wide" src="/assets/img/docs/library-online-catalogue/03-account-rights.fr.webp" alt="La page d'un compte non administrateur dans la console : les blocs Rôle et Compte, le bloc Droits avec quatre interrupteurs (import, Voir le catalogue en ligne, Télécharger les fichiers, Playlists publiques), et le bloc Quotas avec quatre listes sur Illimité ou Sans limite : Imports par jour, Imports par mois, Place maximale de ses imports, Débit maximal en lecture." />
 
 3. **Dans « Quotas », fixez les limites voulues**, puis attendez « Enregistré ».
 
-   **Imports par jour** et **Imports par mois** comptent les imports demandés par ce compte (jours et mois en UTC). **Place maximale de ses imports**, en Go, est la taille totale des fichiers importés pour lui. Vide = illimité.
+   Chaque quota est une liste : **Illimité** (par défaut), deux valeurs courantes, ou **Personnalisé…** pour saisir la vôtre. **Imports par jour** (10, 50) et **Imports par mois** (100, 500) comptent les imports demandés par ce compte (jours et mois en UTC) ; « Ce mois-ci : … import(s). » indique où il en est. **Place maximale de ses imports** (1 Go, 5 Go) est la taille totale des fichiers importés pour lui. Le même bloc a **Débit maximal en lecture** (Sans limite, 320, 192 ou 128 kbit/s), qui plafonne la qualité que ce compte écoute et télécharge.
 
 </Steps>
 

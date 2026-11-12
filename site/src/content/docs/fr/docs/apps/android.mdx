@@ -25,7 +25,7 @@ Les images ont été prises sur un Samsung Galaxy A52 sous Android 14, avec Chro
 
 1. **Sur votre téléphone, ouvrez ce lien dans Chrome : [Musonic.apk](https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.apk).**
 
-   Il télécharge toujours la dernière version. Vous pouvez aussi ouvrir la [page de la version sur GitHub](https://github.com/DoodzDev/Musonic/releases/latest) et toucher **Musonic.apk** sous **Assets**.
+   Il télécharge toujours la dernière version. Vous pouvez aussi ouvrir la [page de la version sur GitHub](https://github.com/DoodzDev/Musonic/releases/latest) et toucher **Musonic.apk** sous **Assets** : c'est le premier fichier de la liste, environ 30 Mo. Les fichiers **Source code** ne vous servent pas.
 
    <img class="shot-phone" src="/assets/img/docs/apps-android/01-release-page.fr.webp" alt="La page de la version de Musonic sur GitHub dans Chrome sur un téléphone, la liste Assets ouverte avec Musonic.apk en haut." />
 
@@ -35,11 +35,11 @@ Les images ont été prises sur un Samsung Galaxy A52 sous Android 14, avec Chro
 
    <img class="shot-phone" src="/assets/img/docs/apps-android/02-download-warning.fr.webp" alt="La fenêtre de Chrome « Fichier potentiellement dangereux » qui demande s'il faut quand même télécharger Musonic.apk (31,24 Mo) depuis release-assets.githubusercontent.com, avec les boutons Annuler et Télécharger quand même." />
 
-3. **Quand « Fichier téléchargé » s'affiche en bas de l'écran, touchez « Ouvrir ».**
+3. **Quand « Fichier téléchargé » s'affiche sous la barre d'adresse, touchez « Ouvrir ».**
 
    Si vous l'avez manqué, touchez le menu **⋮** de Chrome en haut à droite, puis **Téléchargements**, et touchez **Musonic.apk**.
 
-   <img class="shot-phone" src="/assets/img/docs/apps-android/03-download-complete.fr.webp" alt="La barre de Chrome en bas de l'écran indiquant Fichier téléchargé, avec un bouton Ouvrir." />
+   <img class="shot-phone" src="/assets/img/docs/apps-android/03-download-complete.fr.webp" alt="Le message de Chrome sous la barre d'adresse indiquant Fichier téléchargé, avec la taille et release-assets.githubusercontent.com, et un bouton Ouvrir." />
 
 4. **Android indique qu'il ne peut pas encore installer d'applis inconnues depuis cette source : touchez « Paramètres ».**
 
@@ -49,7 +49,7 @@ Les images ont été prises sur un Samsung Galaxy A52 sous Android 14, avec Chro
 
 5. **Sur la page « Installation applis inconnues », activez « Octroi d'autorisation » pour Chrome.**
 
-   Chrome a ainsi le droit d'installer des applis. Vous pourrez le désactiver une fois Musonic installé (voir [Après l'installation](#après-linstallation)).
+   Sous l'interrupteur, Android prévient que l'installation d'applications depuis cette source peut représenter un risque pour votre téléphone et vos données : c'est son avertissement habituel. Chrome a ainsi le droit d'installer des applis. Vous pourrez le désactiver une fois Musonic installé (voir [Après l'installation](#après-linstallation)).
 
    <img class="shot-phone" src="/assets/img/docs/apps-android/05-allow-from-source.fr.webp" alt="La page de réglage « Installation applis inconnues » pour Chrome, avec l'interrupteur « Octroi d'autorisation » activé." />
 
@@ -75,7 +75,7 @@ Les images ont été prises sur un Samsung Galaxy A52 sous Android 14, avec Chro
 
 10. **Connectez-vous à votre serveur.**
 
-    Musonic s'ouvre sur son écran de connexion. Entrez l'adresse du serveur, votre identifiant et votre mot de passe, puis touchez **Se connecter**. La page suivante explique chaque champ : [Se connecter à un serveur](/fr/docs/apps/sign-in/).
+    Musonic s'ouvre sur son écran de connexion, « Connectez votre serveur Subsonic » : le champ **URL du serveur** commence déjà par `https://`. Entrez l'adresse du serveur, votre identifiant et votre mot de passe, puis touchez **Se connecter**. La page suivante explique chaque champ : [Se connecter à un serveur](/fr/docs/apps/sign-in/).
 
     <img class="shot-phone" src="/assets/img/docs/apps-android/09-first-launch.fr.webp" alt="L'écran de connexion de Musonic au premier lancement : le logo Musonic, les champs URL du serveur, Identifiant et Mot de passe, et le bouton Se connecter." />
 
@@ -131,7 +131,7 @@ Musonic ne se met pas à jour par le Play Store. L'appli vous prévient elle-mê
 Installez la nouvelle version **par-dessus** l'ancienne, comme ci-dessus. Votre compte, vos téléchargements, vos réglages et votre file d'attente sont conservés. Si vous désinstallez d'abord, tout cela est effacé du téléphone : les téléchargements sont perdus et il faut vous reconnecter. Android ne sauvegarde pas les données de Musonic : rien ne revient.
 </Aside>
 
-**Vérifier à la main.** Touchez votre photo de profil ronde en haut à droite des écrans principaux, puis **À propos**, puis **Vérifier les mises à jour**. L'appli répond soit « Mise à jour disponible », soit « Vous êtes à jour » avec votre version et la dernière en ligne. Sans connexion, elle indique « Vérification impossible. Vérifiez votre connexion. »
+**Vérifier à la main.** Touchez le bouton rond avec votre initiale, en haut à gauche des écrans Accueil, Rechercher et Bibliothèque (à côté de la roue des réglages), puis **À propos**, puis **Vérifier les mises à jour**. L'appli répond soit « Mise à jour disponible », soit « Vous êtes à jour » avec votre version et la dernière en ligne. Sans connexion, elle indique « Vérification impossible. Vérifiez votre connexion. »
 
 **Ce qu'envoie la vérification.** Une seule requête à la liste publique des versions du projet sur GitHub, sans rien sur vous ni sur votre serveur. Elle ne regarde que les versions de l'appli Android (étiquettes `mobile-v…`) : une nouvelle version du lecteur web ou du serveur ne déclenche jamais la fenêtre. Les brouillons et les versions de test sont ignorés.
 
@@ -143,7 +143,7 @@ Installez la nouvelle version **par-dessus** l'ancienne, comme ci-dessus. Votre 
 
 1. **Déconnectez-vous d'abord.**
 
-   Touchez votre photo de profil en haut à droite, puis **Se déconnecter**, et confirmez. Sur Musonic Server, cela supprime aussi la clé de ce téléphone sur le serveur : il disparaît de vos appareils dans la console.
+   Touchez le bouton rond avec votre initiale, en haut à gauche (à côté de la roue des réglages), puis **Se déconnecter**, et confirmez. Sur Musonic Server, cela supprime aussi la clé de ce téléphone sur le serveur : il disparaît de vos appareils dans la console.
 
 2. **Appuyez longuement sur l'icône de Musonic, puis touchez « Désinstaller ».**
 

@@ -22,6 +22,13 @@ Musonic Server exposes three things:
 
 It also serves two web apps: the administration console at the server's address (`/`, and any path that is not an API), and Musonic Web at `/app/` once it is installed from the console.
 
+Who uses which part:
+
+- **The Musonic apps** (Android, Musonic Web): `/rest`, `/v1` and the real-time WebSocket `/v1/events`.
+- **Other Subsonic apps** (Symfonium, Substreamer…): `/rest` only.
+- **The administration console**: the `/v1` routes (accounts, settings, imports, and the admin routes).
+- **Scripts and health checks**: `/rest` and `/v1` with an API key, and `/health` without sign-in.
+
 <img class="diagram" src="/assets/img/docs/diagrams/api-surfaces.en.svg" alt="Musonic Server answers on /rest (Subsonic and OpenSubsonic), /v1 (the Musonic API), /v1/events (real-time events over WebSocket) and /health (liveness check). The Musonic apps (Android, Musonic Web) use /rest, /v1 and /v1/events; other Subsonic apps use /rest; the admin console uses the /v1 routes; scripts and health checks can use /rest, /v1 and /health. The server also serves the console at / and Musonic Web at /app/." />
 
 ## Subsonic and OpenSubsonic API

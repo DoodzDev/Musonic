@@ -22,6 +22,8 @@ The server scans the library **when it starts**, then:
 
 Scans never overlap: a request made during a scan starts another one right after it.
 
+Each scan then walks the folders (skipping those that did not change), reads only the changed files (every file in a full scan), and updates the songs, albums, artists, covers and lyrics in the server's database (`musonic.db`).
+
 <img class="diagram" src="/assets/img/docs/diagrams/library-scan-triggers.en.svg" alt="Diagram: four triggers (server start, a change in the music folder after 5 seconds of quiet, the automatic scan schedule, a button in the console) lead to one scan queue; the scan walks the folders, reads only the changed files, then updates songs, albums, artists, covers and lyrics in the database." />
 
 ## Start a scan from the console
@@ -34,7 +36,7 @@ Scans never overlap: a request made during a scan starts another one right after
 
 2. **Click "Library" in the "Music" section of the menu.**
 
-   The top of the page shows the number of songs and when the last scan ran.
+   The top of the page shows the number of songs and when the last scan ran (for example "35 songs · last scan 8 minutes ago"), with the **Quick scan** and **Full scan** buttons at the top right.
 
    <img class="shot-wide" src="/assets/img/docs/library-scan/01-library-page.en.webp" alt="The console's Library page: title Library, the line 'songs · last scan', the Quick scan and Full scan buttons at the top right, the summary of the last scan, and the tabs Songs, Missing files, Duplicates, No cover, Online." />
 
@@ -44,7 +46,7 @@ Scans never overlap: a request made during a scan starts another one right after
 
 4. **Read the summary of the scan.**
 
-   It gives the number of files, songs added, files missing, errors and the time it took.
+   It sits under the title line, for example "35 files · 0 songs added · 0 missing · 0 errors · 0 s": the number of files, songs added, files missing, errors and the time it took.
 
 </Steps>
 
@@ -94,11 +96,13 @@ Subsonic clients with a "scan library" button use `startScan` (`fullScan=true` f
 
 1. **In the console, open "Library".**
 
-2. **Choose how often in "Automatic scan"**, at the bottom of the page.
+2. **Choose how often in "Automatic scan"**, at the bottom of the page, under the list of songs.
+
+   It is a drop-down list on the right of the block, under the note "Changes to the folder are seen at once; a regular scan catches the rest."
 
    The choices are "On changes only", "And every hour" (the default), "And every 6 hours" and "And once a day".
 
-   <img class="shot-wide" src="/assets/img/docs/library-scan/02-automatic-scan.en.webp" alt="The bottom of the console's Library page: the 'Automatic scan' setting with its explanation and the open list showing On changes only, And every hour, And every 6 hours, And once a day." />
+   <img class="shot-wide" src="/assets/img/docs/library-scan/02-automatic-scan.en.webp" alt="The bottom of the console's Library page: the end of the song list, then the Automatic scan block with its explanation and the drop-down list set to And every hour." />
 
 3. **Click "Restart now" in the banner that appears.**
 
@@ -141,7 +145,7 @@ Songs with a missing file are never deleted by the server on their own.
 
 ## The console's lists
 
-The Library page has tabs to check your library:
+The Library page has tabs to check your library, under the summary of the last scan. Each tab shows how many songs it holds (for example "Missing files 0"):
 
 | Tab | What it lists |
 |---|---|
@@ -151,9 +155,9 @@ The Library page has tabs to check your library:
 | **No cover** | Songs with no picture at all: none in the file, no image in their folder, none online. |
 | **Online** | Online songs liked or added to a playlist that have no file yet (not imported). |
 
-Click a song to open its page: tags, files (with **Listen to check**, to hear the file in the browser), online catalogues that know it, ISRC, genres, plays and likes.
+Click a song to open its page: tags, files (with **Listen to check**, to hear the file in the browser), online catalogues that know it, ISRC, genres, plays and likes. At the top: the title, then artist · album · year · track number · length, and **Listen to check** on the right. The **Files** block gives each file's path in the music folder, format, bit rate, sample rate, channels and size, with a **Listen** button. **‹ Library**, at the top left, goes back to the list.
 
-<img class="shot-wide" src="/assets/img/docs/library-scan/03-track-page.en.webp" alt="The console's page for one song: title and artists at the top, the Listen to check button, the Files block with path, format, bit rate and size, then ISRC, genres, plays and likes by number of accounts." />
+<img class="shot-wide" src="/assets/img/docs/library-scan/03-track-page.en.webp" alt="The console's page for one song, Isobar: artist, album, year, track and length under the title, the Listen to check button, the Files block with the path, MP3 · 192 kbit/s · 44.1 kHz · mono · 4.5 MB and a Listen button, then Likes (in accounts), Plays, Genres, Added and Id." />
 
 ## Performance
 

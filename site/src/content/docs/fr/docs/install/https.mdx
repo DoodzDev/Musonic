@@ -7,7 +7,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 Cette page rend votre serveur joignable de partout (en données mobiles, au travail, chez des amis) avec une adresse en `https://`, comme `https://music.example.com`. Elle s'adresse à la personne qui fait tourner le serveur. Choisissez une des quatre façons ci-dessous.
 
-<img class="diagram" src="/assets/img/docs/diagrams/https-proxy.fr.svg" alt="Schéma : un téléphone et un navigateur sur internet se connectent en HTTPS à music.example.com ; un reverse proxy sur la machine du serveur les reçoit et les passe en HTTP simple à Musonic Server en 127.0.0.1:4533, qui n'est pas joignable depuis l'extérieur." />
+<img class="diagram" src="/assets/img/docs/diagrams/https-proxy.fr.svg" alt="Schéma : un téléphone et un navigateur sur internet se connectent en HTTPS à music.example.com ; un reverse proxy ou un tunnel sur la machine du serveur (Caddy, nginx, Cloudflare, Tailscale) porte le certificat HTTPS, les reçoit et les passe en HTTP simple à Musonic Server en 127.0.0.1:4533, qui n'est pas joignable depuis l'extérieur." />
 
 ## Pourquoi HTTPS
 
@@ -15,7 +15,7 @@ Cette page rend votre serveur joignable de partout (en données mobiles, au trav
 - **L'appli Android refuse `http://`** pour toute adresse hors de votre réseau local.
 - **Le lecteur web ouvert sur une page `https://` ne peut pas parler à un serveur en `http://`** : les navigateurs le bloquent.
 
-Le serveur lui-même écoute en HTTP simple, seulement sur la machine (`127.0.0.1:4533`). Quelque chose devant lui s'occupe du HTTPS : un **reverse proxy** (Caddy, nginx), un **tunnel** (Cloudflare) ou un **réseau privé** (Tailscale).
+Le serveur lui-même écoute en HTTP simple, seulement sur la machine (`127.0.0.1:4533`). Quelque chose devant lui s'occupe du HTTPS : un **reverse proxy** (Caddy, nginx), un **tunnel** (Cloudflare) ou un **réseau privé** (Tailscale). Il tourne sur la machine du serveur et passe les requêtes à `127.0.0.1:4533` en HTTP simple ; le port 4533 lui-même n'est jamais ouvert sur internet.
 
 ## Quelle façon choisir
 

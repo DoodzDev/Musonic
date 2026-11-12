@@ -147,15 +147,16 @@ Tout cela est expliqué pas à pas dans [Comptes et rôles](/fr/docs/admin/accou
   - **Doublons** : le même titre deux fois (deux fichiers, ou mêmes titre et artistes).
   - **Sans pochette** : aucune image dans le fichier, dans son dossier ni en ligne.
   - **En ligne** : les titres en ligne likés ou mis en playlist, qui n'ont pas encore de fichier.
+- **Le tableau** : titre et artiste, album, format et débit, et source (Fichier, Fichier manquant ou En ligne). Chaque onglet indique combien de titres il contient.
 - **Écouter** joue un titre dans la console, pour vérifier. Cliquez sur un titre pour voir ses fichiers, son format, son ISRC, ses genres, ses écoutes et ses likes.
 
 ## Imports
 
-<img class="shot-wide" src="/assets/img/docs/admin-console/08-imports.fr.webp" alt="L'écran Imports : les compteurs en attente, en cours, en échec et faits, le tableau des imports avec les boutons Réessayer et Retirer, les réglages des imports et la liste des fournisseurs" />
+<img class="shot-wide" src="/assets/img/docs/admin-console/08-imports.fr.webp" alt="L'écran Imports : les compteurs en attente, en cours, en échec et faits, les filtres et le champ de recherche, le tableau des imports (vide ici), les réglages des imports et la liste des fournisseurs" />
 
 Quand quelqu'un like un titre en ligne, like son album ou l'ajoute à une playlist, le serveur peut l'importer en fichier dans votre dossier de musique, grâce à un fournisseur audio que vous avez branché.
 
-- **Compteurs et tableau** : chaque import avec le titre, qui l'a demandé, son état (En attente, En cours, Fait, Abandonné) et le nombre d'essais. Un import raté est retenté après 5 minutes, 30 minutes, 2 heures et 12 heures, puis abandonné.
+- **Compteurs et tableau** : quatre compteurs (en attente, en cours, en échec, faits), les filtres Tout, En attente, En cours, En échec et Faits, et une recherche sur le titre, l'artiste, l'album ou le compte. Le tableau liste chaque import avec le titre, qui l'a demandé, son état (En attente, En cours, Fait, Abandonné) et le nombre d'essais. Un import raté est retenté après 5 minutes, 30 minutes, 2 heures et 12 heures, puis abandonné.
   - **Relancer** en relance un ; **Relancer les N échecs** les relance tous.
   - **Retirer** sort un titre de la file. Il reste liké ou dans ses playlists, en ligne.
 - **Réglages des imports** :
@@ -183,15 +184,17 @@ Ce que reçoivent les applications. Ces réglages valent pour tous les comptes ;
   - **Titres en ligne** : gardés quelques minutes après l'écoute, partagés entre les auditeurs.
   - **Pochettes** : redimensionnées pour les applications, recréées au besoin.
   - **Titres transcodés** : gardés sur le disque pour que réécouter un titre réduit, ou avancer dedans, soit immédiat. Choisissez la taille (aucun, de 250 Mo à 5 Go, 500 Mo par défaut) ; les plus anciens partent en premier.
+- **Normalisation du volume** porte la mention **Plus tard** : elle n'est pas encore disponible.
 
 ## Données
 
-<img class="shot-wide" src="/assets/img/docs/admin-console/10-data.fr.webp" alt="L'écran Données : ce qui a été envoyé ce mois-ci face à la limite mensuelle, le graphique du trafic par heure, les graphiques du processeur, de la mémoire et du disque" />
+<img class="shot-wide" src="/assets/img/docs/admin-console/10-data.fr.webp" alt="L'écran Données : le détail du disque, ce qui a été envoyé ce mois-ci face à la limite mensuelle, le choix de période réglé sur un mois par jour, et les graphiques Envoi et Réception" />
 
 Le trafic réseau, le processeur, la mémoire et le disque, mesurés heure par heure depuis le premier démarrage du serveur.
 
 - **Envoyé ce mois-ci**, face à la **limite d'envoi par mois** de votre hébergeur si vous en indiquez une (**Limite**), avec une projection à la fin du mois. Le compteur repart le 1er.
-- **Périodes** : jour, semaine, mois ou année, avec des flèches pour reculer et **Maintenant** pour revenir. Chaque graphique peut s'afficher en **Tableau**.
+- **Détail du disque** : le disque utilisé, réparti en musique (bibliothèque), imports Musonic, système et autres services, et espace libre, puis la taille de la base de données, des sauvegardes (avec la dernière) et des caches.
+- **Périodes** : jour, semaine, mois ou année, avec des flèches pour reculer et **Maintenant** pour revenir, regroupées par heure, jour, semaine ou mois. Chaque graphique peut s'afficher en **Tableau**.
 - **Trafic** : entrant et sortant, le total de la machine et la part de Musonic.
 - **Processeur (Musonic)** et **Mémoire (Musonic, maximum)**.
 - **Disque** : utilisé, musique, imports Musonic, système et autres services, libre, et une estimation de la date où le disque sera plein.
@@ -202,13 +205,13 @@ Dans Docker, le conteneur ne voit que son propre trafic. Pour compter celui de t
 
 ## Réglages et maintenance
 
-<img class="shot-wide" src="/assets/img/docs/admin-console/11-settings.fr.webp" alt="L'écran Réglages et maintenance : Musonic Web sur ce serveur, sauvegardes, maintenance, taille du journal d'activité, journaux du serveur et langue de la console" />
+<img class="shot-wide" src="/assets/img/docs/admin-console/11-settings.fr.webp" alt="L'écran Réglages et maintenance : Musonic Web sur ce serveur (pas installé, avec son bouton Installer), sauvegardes, maintenance, langue de la console et le haut du journal d'activité" />
 
 - **Musonic Web sur ce serveur** : installe ou met à jour le lecteur web depuis la dernière version sur GitHub. Il est alors servi à `/app/` sur votre serveur, déjà réglé pour s'y connecter. **Ouvrir** l'ouvre.
-- **Sauvegardes** : une copie de la base de données chaque jour. **Jours gardés** (aucune, 3, 7, 14, 30 ou 90 ; 14 par défaut), **Sauvegarder maintenant**, et la liste des sauvegardes avec un bouton **Télécharger**. Voir [Sauvegardes](/fr/docs/admin/backups/).
+- **Sauvegardes** : une copie de la base de données chaque jour (comptes, likes, playlists, écoutes, réglages) ; les fichiers de musique ne sont pas dedans. **Jours gardés** (aucune, 3, 7, 14, 30 ou 90 ; 14 par défaut), **Sauvegarder maintenant**, et la liste des sauvegardes avec un bouton **Télécharger**. Voir [Sauvegardes](/fr/docs/admin/backups/). La base contient aussi les identifiants des fournisseurs : gardez les sauvegardes téléchargées en lieu sûr.
 - **Maintenance** :
   - **Redémarrer le serveur** : applique les réglages changés. La musique se coupe quelques secondes, puis les applications se reconnectent seules.
-  - **Vérifier les mises à jour** : cherche sur GitHub des versions plus récentes de Musonic Server et de Musonic Web. Rien ne s'installe tout seul.
+  - **Vérifier les mises à jour** (un interrupteur, activé par défaut) : toutes les 6 heures, cherche sur GitHub des versions plus récentes de Musonic Server et de Musonic Web. Rien ne s'installe tout seul.
 - **Journal d'activité** : sa taille, son nombre de lignes et sa plus vieille ligne, et sa **Taille maximale** (de 10 Mo à 5 Go, 50 Mo par défaut). Au-delà, les plus vieilles lignes partent.
 - **Journaux du serveur** : les 2 000 dernières lignes gardées en mémoire depuis le dernier démarrage, filtrées sur Tout, Avertissements ou Erreurs.
 - **Langue de la console** : français ou anglais, pour ce navigateur.
@@ -225,11 +228,12 @@ Tout ce qui se passe sur le serveur, une ligne courte par événement : connexio
 
 - **Filtres** : Tout, Connexions, Comptes, Imports, Serveur, Problèmes ; et Toujours, Aujourd'hui, 7 jours ou 30 jours.
 - **Recherche** sur un nom, un titre, une adresse IP ou une application.
-- **En direct** : les nouvelles lignes arrivent toutes seules.
+- **En direct** : un encadré en haut montre qui écoute en ce moment, et les nouvelles lignes arrivent toutes seules.
+- En haut, la taille du journal (lignes, taille face au maximum, date de la plus vieille ligne). Chaque ligne donne son heure et, à droite, l'application et l'adresse IP quand il y en a une.
 
 ## Journal d'administration
 
-La même liste, limitée à ce qu'ont fait les administrateurs, depuis la console ou une application : comptes créés ou supprimés, rôles, droits, réglages, sauvegardes téléchargées, caches vidés, redémarrages.
+La même liste, limitée à ce qu'ont fait les administrateurs, depuis la console ou une application : comptes créés ou supprimés, rôles, droits, réglages, sauvegardes téléchargées, caches vidés, redémarrages. Il a les mêmes filtres de période (Toujours, Aujourd'hui, 7 jours, 30 jours) et la même recherche.
 
 <img class="shot-wide" src="/assets/img/docs/admin-console/13-admin-log.fr.webp" alt="L'écran Journal d'administration, qui liste les actions des administrateurs, chacune avec le nom de l'administrateur" />
 

@@ -7,7 +7,9 @@ import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 This page explains the parts of Musonic and how they fit together, so you know what you have to install. Read it first if you are new to Musonic, whether you will use someone else's server or run your own.
 
-<img class="diagram" src="/assets/img/docs/diagrams/how-it-works.en.svg" alt="Diagram: a music folder on a disk is read by Musonic Server, which runs on an always-on machine at home; the server sends music to a phone with the Musonic app, to a browser with the web player, and to a car screen through the phone." />
+In short: Musonic Server reads and watches your music folder, on a machine that stays on. It sends the music to the Android app and to the web player (computer, iPhone, iPad), and the car gets it through the phone with Android Auto. Your likes and playlists stay in sync between all of them. The console, for administrators, is part of the server.
+
+<img class="diagram" src="/assets/img/docs/diagrams/how-it-works.en.svg" alt="Diagram: a music folder on a disk is read and watched by Musonic Server, which runs on an always-on machine (home server, NAS, Raspberry Pi, VPS) and includes the console for administrators; the server sends music, likes and playlists, in sync, to the web player (computer, iPhone, iPad), to the Android app, and to the car through the phone with Android Auto; it also goes online for the catalogue and updates, which can be turned off." />
 
 ## The three parts
 

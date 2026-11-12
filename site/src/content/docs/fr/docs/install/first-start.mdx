@@ -85,11 +85,13 @@ ssh -L 4533:127.0.0.1:4533 <account>@<server-address>
 
 1. **Tapez votre nom et votre mot de passe, puis cliquez sur « Se connecter ».**
 
+   La page s'intitule **Console Musonic**, « Réservée aux administrateurs de ce serveur ». La ligne sous le bouton rappelle qu'on écoute avec Musonic Web ou l'application, pas avec la console.
+
    <img class="shot-wide" src="/assets/img/docs/install-first-start/01-console-sign-in.fr.webp" alt="La page de connexion de la console : le titre Console Musonic, le texte Réservée aux administrateurs de ce serveur, les champs Nom et Mot de passe et le bouton Se connecter." />
 
 2. **Le tableau de bord s'ouvre.**
 
-   Le menu de gauche donne toutes les pages de la console ; la barre du haut montre l'état du serveur en direct.
+   Le menu de gauche donne toutes les pages de la console, en trois groupes : **Personnes** (Comptes, Appareils et sécurité), **Musique** (Bibliothèque, Imports, Lecture) et **Serveur** (Données, Réglages et maintenance, Activité, Journal d'administration). La barre du haut montre l'état du serveur en direct : durée de service, réception et envoi, personnes à l'écoute, imports, CPU et RAM. La page elle-même montre le nombre de titres, d'albums et de comptes, l'espace disque, l'activité récente, qui écoute en ce moment et les versions installées.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/02-dashboard.fr.webp" alt="Le tableau de bord de la console juste après le premier démarrage : le menu de gauche (Tableau de bord, Comptes, Appareils et sécurité, Bibliothèque, Imports, Lecture, Données, Réglages et maintenance, Activité, Journal d'administration) et les cartes avec le nombre de titres, d'albums et de comptes." />
 
@@ -107,11 +109,11 @@ Le serveur commence **tout seul** à scanner votre dossier de musique dès son p
 
 1. **Cliquez sur « Bibliothèque » dans le menu.**
 
-   Le haut de la page indique le nombre de titres et l'heure du dernier scan.
+   Le haut de la page indique le nombre de titres et l'heure du dernier scan. En dessous, les onglets **Titres**, **Fichiers manquants**, **Doublons**, **Sans pochette** et **En ligne** trient la bibliothèque, chacun avec son nombre.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/03-library.fr.webp" alt="La page Bibliothèque de la console après le premier scan : le nombre de titres et l'heure du dernier scan en haut, les boutons Scan rapide et Scan complet, et la liste des titres avec titre, artiste, album, format et source." />
 
-2. **S'il manque des titres, cliquez sur « Scan rapide ».**
+2. **S'il manque des titres, cliquez sur « Scan rapide », en haut à droite.**
 
    Un scan rapide ne lit que les dossiers modifiés. **Scan complet** relit tous les fichiers (après avoir modifié beaucoup de tags, par exemple).
 
@@ -129,7 +131,7 @@ Votre serveur peut aussi servir le lecteur web, à l'adresse du serveur suivie d
 
 2. **Dans « Musonic Web sur ce serveur », cliquez sur « Installer ».**
 
-   Le serveur télécharge le lecteur web le plus récent depuis les versions GitHub de Musonic.
+   Cette section est en haut de la page. Avant l'installation, elle indique « Pas installé » et montre la dernière version sur GitHub. Le serveur télécharge le lecteur web le plus récent depuis les versions GitHub de Musonic.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/04-webapp-install.fr.webp" alt="La page Réglages et maintenance de la console, la section Musonic Web sur ce serveur avec Pas installé, la dernière version sur GitHub et le bouton Installer." />
 
@@ -149,19 +151,19 @@ Le lien d'invitation commence par l'adresse affichée dans votre navigateur. Cr�
 
 <Steps>
 
-1. **Cliquez sur « Comptes » dans le menu, puis sur « Inviter quelqu'un ».**
+1. **Cliquez sur « Comptes » dans le menu, puis sur « Inviter quelqu'un », en haut à droite.**
 
-   <img class="shot-wide" src="/assets/img/docs/install-first-start/05-accounts.fr.webp" alt="La page Comptes de la console : la liste avec le compte administrateur, le bouton Inviter quelqu'un en haut à droite, et la section Invitations en dessous avec Aucune invitation pour l'instant." />
+   <img class="shot-wide" src="/assets/img/docs/install-first-start/05-accounts.fr.webp" alt="La page Comptes de la console : la liste avec le compte administrateur, le bouton Inviter quelqu'un en haut à droite, et la section Invitations en dessous, encore vide." />
 
 2. **Remplissez l'invitation, puis cliquez sur « Créer l'invitation ».**
 
-   **Note** : pour vous seulement, pour retrouver l'invitation dans la liste (« Invitation pour ma cousine Léa »). **Rôle** : Utilisateur, ou Administrateur. **Valable** : 1 h, 24 h, 7 jours (par défaut), 30 jours, ou une durée personnalisée.
+   **Note** : pour vous seulement, pour retrouver l'invitation dans la liste (« Invitation pour ma cousine Léa ») ; ce n'est pas le nom du compte. **Rôle** : Utilisateur, ou Administrateur. **Valable** : 1 h, 24 h, 7 j (par défaut), 30 j, ou Personnalisé (entre une minute et un an). La date de fin s'affiche sous le choix.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/06-invite-form.fr.webp" alt="La fenêtre Inviter quelqu'un : le champ Note rempli avec Invitation pour ma cousine Léa, le choix Rôle sur Utilisateur, le choix Valable sur 7 j, et le bouton Créer l'invitation." />
 
-3. **Cliquez sur « Copier », et envoyez le lien à la personne.**
+3. **Cliquez sur « Copier » à côté du lien, et envoyez-le à la personne.**
 
-   Par message, par e-mail, comme vous voulez. **Le lien n'est montré que maintenant** : si vous le perdez, annulez l'invitation et créez-en une nouvelle.
+   La fenêtre affiche maintenant « Lien à envoyer (montré une seule fois) ». Envoyez le lien par message, par e-mail, comme vous voulez, puis cliquez sur **Terminé**. **Le lien n'est montré que maintenant** : si vous le perdez, annulez l'invitation et créez-en une nouvelle.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/07-invite-link.fr.webp" alt="La fenêtre Inviter quelqu'un après création : Lien à envoyer (montré une seule fois), avec le lien https://music.example.com/invite/… et le bouton Copier, et le bouton Terminé." />
 
@@ -173,13 +175,13 @@ Le lien d'invitation commence par l'adresse affichée dans votre navigateur. Cr�
 
 1. **Elle choisit un nom et un mot de passe, puis clique sur « Créer mon compte ».**
 
-   Le mot de passe doit faire au moins 8 caractères. Un lien ne sert qu'une fois, jusqu'à la date écrite sous le bouton.
+   La page dit « Bienvenue sur Musonic » et qui l'invite. Elle remplit **Nom**, **Mot de passe** et **Confirmer le mot de passe**. Le mot de passe doit faire au moins 8 caractères. Un lien ne sert qu'une fois, jusqu'à la date écrite sous le bouton.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/08-invite-page.fr.webp" alt="La page d'invitation : le titre Bienvenue sur Musonic, le texte alice vous invite. Choisissez votre nom et votre mot de passe, les champs Nom, Mot de passe et Confirmer le mot de passe, et le bouton Créer mon compte." />
 
 2. **La page indique « Votre compte est prêt » et montre l'adresse du serveur.**
 
-   Elle se connecte à l'appli avec cette adresse, son nom et son mot de passe.
+   Elle se connecte à l'appli (l'application Musonic, ou une autre appli Subsonic comme Substreamer ou Symfonium) avec cette adresse, son nom et son mot de passe.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/09-invite-done.fr.webp" alt="La page Votre compte est prêt, avec l'adresse du serveur https://music.example.com dans un cadre et le texte et connectez-vous avec le nom et le mot de passe que vous venez de choisir." />
 

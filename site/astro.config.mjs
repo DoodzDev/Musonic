@@ -110,7 +110,13 @@ export default defineConfig({
       ],
       // Dark code blocks only, like the rest of the site.
       expressiveCode: { themes: ['github-dark'], styleOverrides: { borderRadius: '10px' } },
-      head: [],
+      head: [
+        {
+          tag: 'script',
+          // Puts every diagram in its own frame (scrolls sideways on a phone) and makes it open full size.
+          content: "document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('img.diagram').forEach(function(i){if(i.closest('.diagram-wrap'))return;var w=document.createElement('div');w.className='diagram-wrap';var a=document.createElement('a');a.href=i.getAttribute('src');a.target='_blank';a.rel='noopener';i.parentNode.insertBefore(w,i);a.appendChild(i);w.appendChild(a);});});",
+        },
+      ],
     }),
   ],
 });

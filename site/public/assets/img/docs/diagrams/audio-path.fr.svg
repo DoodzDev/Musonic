@@ -24,7 +24,7 @@
 <text x="475" y="54" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="middle" font-weight="600">Lecteur</text>
 <text x="475" y="74" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="middle">décode</text>
 <rect x="412" y="100" width="126" height="70" rx="12" fill="none" stroke="#3A3A3D" stroke-width="1.5"/>
-<text x="475" y="129.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#F1F0EE" text-anchor="middle"><tspan x="475" dy="0">Appli Android</tspan><tspan x="475" dy="18">: Media3</tspan></text>
+<text x="475" y="129.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#F1F0EE" text-anchor="middle"><tspan x="475" dy="0">Appli Android</tspan><tspan x="475" dy="18">(Media3)</tspan></text>
 <rect x="412" y="190" width="126" height="70" rx="12" fill="none" stroke="#3A3A3D" stroke-width="1.5"/>
 <text x="475" y="219.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#F1F0EE" text-anchor="middle"><tspan x="475" dy="0">Lecteur web :</tspan><tspan x="475" dy="18">le navigateur</tspan></text>
 <path d="M550 180 L564 180" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>

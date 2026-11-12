@@ -7,6 +7,8 @@ import { Aside } from '@astrojs/starlight/components';
 
 Cette page explique comment le projet Musonic est organisé, pour les développeurs qui veulent lire le code, le compiler ou contribuer. Tout se trouve dans un seul dépôt Git, [github.com/DoodzDev/Musonic](https://github.com/DoodzDev/Musonic).
 
+En bref : l'application Android, Musonic Web et la console d'administration partagent le code TypeScript de `packages/core` ; elles et les autres applications Subsonic joignent Musonic Server (Rust) en HTTPS. Le serveur répond à l'API Subsonic sur `/rest` et à l'API Musonic sur `/v1` et `/v1/events`, et sert la console (`/`) et Musonic Web (`/app/`). Il utilise le dossier de musique, SQLite (`musonic.db`), ffmpeg, le catalogue en ligne (API publique de Deezer : métadonnées et extraits de 30 secondes) et les fournisseurs audio.
+
 <img class="diagram" src="/assets/img/docs/diagrams/architecture-overview.fr.svg" alt="À gauche, les clients : l'appli Android (React Native, avec un lecteur natif Media3), Musonic Web et la console d'administration (React et Vite), qui partagent packages/core, et les autres applis Subsonic. Ils joignent Musonic Server (Rust) en HTTPS ; le serveur répond à l'API Subsonic sur /rest, à l'API Musonic sur /v1 et /v1/events, et sert la console et Musonic Web. À droite, ce qu'utilise le serveur : le dossier de musique, SQLite, ffmpeg, le catalogue en ligne et les fournisseurs audio." />
 
 ## Le dépôt
@@ -56,7 +58,7 @@ La façon dont l'audio arrive pour les titres qui ne sont pas des fichiers de vo
 
 ## Le parcours d'une requête
 
-<img class="diagram" src="/assets/img/docs/diagrams/request-flow.fr.svg" alt="Schéma : une requête entre par le proxy inverse, traverse les couches en-têtes de sécurité, CORS et compression, puis le routeur l'envoie vers /rest (connexion, cache de réponses, traitement, SQLite), /v1 (jeton Bearer, traitement), /v1/events (WebSocket), /app (fichiers de Musonic Web) ou tout autre chemin (fichiers de la console)." />
+<img class="diagram" src="/assets/img/docs/diagrams/request-flow.fr.svg" alt="Schéma : une requête entre par le proxy inverse, traverse les couches en-têtes de sécurité, CORS et compression, puis le routeur l'envoie vers /health (test de vie), /rest (connexion, cache de réponses, traitement, SQLite), /v1 (jeton Bearer, traitement), /v1/events (WebSocket), /app (fichiers de Musonic Web) ou tout autre chemin (fichiers de la console)." />
 
 1. Le client appelle le serveur, en général à travers un proxy inverse qui ajoute le HTTPS.
 2. Chaque réponse traverse trois couches : les en-têtes de sécurité, le CORS ouvert, et la compression gzip des réponses texte de plus de 1 Ko.
@@ -115,6 +117,7 @@ Quand quelque chose change pour un compte (un « j'aime », une note, une playli
 
 <img class="diagram" src="/assets/img/docs/diagrams/realtime-events.fr.svg" alt="Schéma : le téléphone aime un titre par l'API Subsonic ; le serveur l'écrit dans SQLite et publie un événement likes ; le lecteur web et la tablette du même compte le reçoivent sur leur WebSocket ; le téléphone le reçoit aussi, marqué by: phone, et ignore son propre écho." />
 
+- Seuls les appareils du même compte reçoivent un événement. Chaque événement nomme l'appareil à l'origine du changement (`"by"`, par exemple `{"type":"likes","by":"phone"}`) : cet appareil ignore ainsi son propre écho.
 - Les événements ne sont pas conservés : 512 au plus attendent en mémoire, et un appareil trop lent reçoit `resync` et recharge son affichage.
 - Un `ping` toutes les 30 secondes garde les connexions ouvertes à travers les proxys.
 - **Musonic Connect** (bêta) utilise le même WebSocket dans les deux sens : les appareils s'enregistrent, envoient ce qu'ils lisent et des commandes à distance. Le serveur garde leur dernier état en mémoire et le date avec sa propre horloge : les appareils calculent la position sans comparer leurs horloges. Quel appareil se met en pause quand un autre démarre est décidé par les appareils eux-mêmes (`packages/core/src/connect`).

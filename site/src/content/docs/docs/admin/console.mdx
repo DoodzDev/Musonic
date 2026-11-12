@@ -147,15 +147,16 @@ Everything on this page is explained step by step in [Accounts and roles](/docs/
   - **Duplicates**: the same song twice (two files, or the same title and artists).
   - **No cover**: no picture in the file, in its folder or online.
   - **Online**: online songs liked or put in a playlist that have no file yet.
+- **The table**: song and artist, album, format and bit rate, and source (File, Missing file or Online). Each tab shows how many songs it holds.
 - **Listen** plays a song in the console, to check it. Click a song to see its files, format, ISRC, genres, plays and likes.
 
 ## Imports
 
-<img class="shot-wide" src="/assets/img/docs/admin-console/08-imports.en.webp" alt="The Imports screen: the counters waiting, running, failed and done, the table of imports with the Retry and Remove buttons, the import settings and the list of providers" />
+<img class="shot-wide" src="/assets/img/docs/admin-console/08-imports.en.webp" alt="The Imports screen: the counters waiting, running, failed and done, the filters and search field, the table of imports (empty here), the import settings and the list of providers" />
 
 When someone likes an online song, likes its album or adds it to a playlist, the server can import it as a file into your music folder, through an audio provider you have plugged in.
 
-- **Counters and table**: every import with the song, who asked for it, its state (Waiting, Running, Done, Given up) and the number of attempts. A failed import is tried again after 5 minutes, 30 minutes, 2 hours and 12 hours, then given up.
+- **Counters and table**: four counters (waiting, running, failed, done), filters All, Waiting, Running, Failed and Done, and a search on title, artist, album or account. The table lists every import with the song, who asked for it, its state (Waiting, Running, Done, Given up) and the number of attempts. A failed import is tried again after 5 minutes, 30 minutes, 2 hours and 12 hours, then given up.
   - **Retry** tries one again; **Retry the N failed** tries them all.
   - **Remove** takes a song out of the queue. It stays liked or in its playlists, online.
 - **Import settings**:
@@ -183,15 +184,17 @@ What the apps receive. These settings are for every account; an account's own bi
   - **Online songs**: kept a few minutes after listening, shared between listeners.
   - **Pictures**: covers resized for the apps, made again when needed.
   - **Transcoded songs**: kept on disk so that playing a smaller song again, or seeking in it, is immediate. Choose the size (none, 250 MB to 5 GB, 500 MB by default); the oldest go first.
+- **Volume levelling** is marked **Later**: it is not available yet.
 
 ## Data
 
-<img class="shot-wide" src="/assets/img/docs/admin-console/10-data.en.webp" alt="The Data screen: the amount sent this month against the monthly limit, the traffic chart by hour, the processor, memory and disk charts" />
+<img class="shot-wide" src="/assets/img/docs/admin-console/10-data.en.webp" alt="The Data screen: the disk in detail, the amount sent this month against the monthly limit, the period selector set to a month by day, and the Outbound and Inbound charts" />
 
 Network traffic, processor, memory and disk, measured hour by hour since the server first started.
 
 - **Sent this month**, against the **monthly outbound limit** of your host when you set one (**Limit**), with a projection to the end of the month. It starts again on the 1st.
-- **Periods**: day, week, month or year, with arrows to go back and **Now** to come back. Each chart can be shown as a **Table**.
+- **Disk in detail**: the disk used, split into music (library), Musonic imports, system and other services, and free space, then the size of the database, of the backups (with the last one) and of the caches.
+- **Periods**: day, week, month or year, with arrows to go back and **Now** to come back, grouped by hour, day, week or month. Each chart can be shown as a **Table**.
 - **Traffic**: inbound and outbound, the machine's total and the share of Musonic.
 - **Processor (Musonic)** and **Memory (Musonic, peak)**.
 - **Disk**: used, music, Musonic imports, system and other services, free, and an estimate of when the disk will be full.
@@ -202,13 +205,13 @@ In Docker, the container only sees its own traffic. To count the whole machine's
 
 ## Settings and maintenance
 
-<img class="shot-wide" src="/assets/img/docs/admin-console/11-settings.en.webp" alt="The Settings and maintenance screen: Musonic Web on this server, backups, maintenance, activity log size, server logs and console language" />
+<img class="shot-wide" src="/assets/img/docs/admin-console/11-settings.en.webp" alt="The Settings and maintenance screen: Musonic Web on this server (not installed, with its Install button), backups, maintenance, console language and the top of the activity log" />
 
 - **Musonic Web on this server**: installs or updates the web player from the latest release on GitHub. It is then served at `/app/` on your server, already set to connect to it. **Open** opens it.
-- **Backups**: a copy of the database every day. **Days kept** (none, 3, 7, 14, 30 or 90; 14 by default), **Back up now**, and the list of backups with a **Download** button. See [Backups](/docs/admin/backups/).
+- **Backups**: a copy of the database every day (accounts, likes, playlists, plays, settings); music files are not in it. **Days kept** (none, 3, 7, 14, 30 or 90; 14 by default), **Back up now**, and the list of backups with a **Download** button. See [Backups](/docs/admin/backups/). The database also holds the providers' credentials: keep downloaded backups somewhere safe.
 - **Maintenance**:
   - **Restart the server**: applies changed settings. Music stops for a few seconds, then the apps reconnect on their own.
-  - **Check for updates**: looks on GitHub for newer versions of Musonic Server and Musonic Web. Nothing is installed on its own.
+  - **Check for updates** (a switch, on by default): every 6 hours, looks on GitHub for newer versions of Musonic Server and Musonic Web. Nothing is installed on its own.
 - **Activity log**: its size, number of lines and oldest line, and its **Maximum size** (10 MB to 5 GB, 50 MB by default). Past it, the oldest lines go.
 - **Server logs**: the last 2,000 lines kept in memory since the last start, filtered on All, Warnings or Errors.
 - **Console language**: English or French, for this browser.
@@ -225,11 +228,12 @@ Everything that happens on the server, one short line per event: sign-ins (and r
 
 - **Filters**: All, Sign-ins, Accounts, Imports, Server, Problems; and Always, Today, 7 days or 30 days.
 - **Search** on a name, a title, an IP address or an app.
-- **Live**: new lines appear on their own.
+- **Live**: a card at the top shows who is listening now, and new lines appear on their own.
+- At the top, the size of the log (lines, size against its maximum, date of the oldest line). Each line gives its time and, on the right, the app and IP address when there is one.
 
 ## Administration log
 
-The same list, limited to what administrators did, from the console or from an app: accounts created or deleted, roles, rights, settings, backups downloaded, caches emptied, restarts.
+The same list, limited to what administrators did, from the console or from an app: accounts created or deleted, roles, rights, settings, backups downloaded, caches emptied, restarts. It has the same period filters (Always, Today, 7 days, 30 days) and the same search.
 
 <img class="shot-wide" src="/assets/img/docs/admin-console/13-admin-log.en.webp" alt="The Administration log screen listing actions done by administrators, each with the name of the administrator" />
 

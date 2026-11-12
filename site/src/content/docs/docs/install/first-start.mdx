@@ -85,11 +85,13 @@ ssh -L 4533:127.0.0.1:4533 <account>@<server-address>
 
 1. **Type your name and password, then click "Sign in".**
 
+   The page is titled **Musonic Console**, "For this server's administrators". The line under the button reminds you that people listen with Musonic Web or the app, not with the console.
+
    <img class="shot-wide" src="/assets/img/docs/install-first-start/01-console-sign-in.en.webp" alt="The sign-in page of the console: the title Musonic Console, the text For this server's administrators, the Name and Password fields and the Sign in button." />
 
 2. **The dashboard opens.**
 
-   The menu on the left has every page of the console; the bar at the top shows the live state of the server.
+   The menu on the left has every page of the console, in three groups: **People** (Accounts, Devices and security), **Music** (Library, Imports, Playback) and **Server** (Data, Settings and maintenance, Activity, Administration log). The bar at the top shows the live state of the server: time running, traffic in and out, people listening, imports, CPU and RAM. The page itself shows the number of songs, albums and accounts, the disk space, the recent activity, who is listening right now and the versions installed.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/02-dashboard.en.webp" alt="The console's dashboard right after the first start: the left menu (Dashboard, Accounts, Devices and security, Library, Imports, Playback, Data, Settings and maintenance, Activity, Administration log) and the cards with the number of songs, albums and accounts." />
 
@@ -107,11 +109,11 @@ The server starts scanning your music folder **on its own** at its first start, 
 
 1. **Click "Library" in the menu.**
 
-   The top of the page shows the number of songs and the time of the last scan.
+   The top of the page shows the number of songs and the time of the last scan. Below, the tabs **Songs**, **Missing files**, **Duplicates**, **No cover** and **Online** sort the library, each with its count.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/03-library.en.webp" alt="The Library page of the console after the first scan: the number of songs and the time of the last scan at the top, the Quick scan and Full scan buttons, and the list of songs with their title, artist, album, format and source." />
 
-2. **If songs are missing, click "Quick scan".**
+2. **If songs are missing, click "Quick scan", at the top right.**
 
    A quick scan reads only the folders that changed. **Full scan** reads every file again (after editing many tags, for example).
 
@@ -129,7 +131,7 @@ Your server can also serve the web player, at the address of the server followed
 
 2. **In "Musonic Web on this server", click "Install".**
 
-   The server downloads the newest web player from the GitHub releases of Musonic.
+   This section is at the top of the page. Before the install, it says "Not installed" and shows the latest version on GitHub. The server downloads the newest web player from the GitHub releases of Musonic.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/04-webapp-install.en.webp" alt="The Settings and maintenance page of the console, the Musonic Web on this server section with Not installed, the latest version on GitHub and the Install button." />
 
@@ -149,19 +151,19 @@ The invitation link starts with the address shown in your browser. Created from 
 
 <Steps>
 
-1. **Click "Accounts" in the menu, then "Invite someone".**
+1. **Click "Accounts" in the menu, then "Invite someone", at the top right.**
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/05-accounts.en.webp" alt="The Accounts page of the console: the list with the administrator account, the Invite someone button at the top right, and the Invitations section below with No invitation yet." />
 
 2. **Fill in the invitation, then click "Create the invitation".**
 
-   **Note**: for you only, to find the invitation in the list ("Invitation for my cousin Lea"). **Role**: User, or Administrator. **Valid**: 1 h, 24 h, 7 days (the default), 30 days, or a custom length.
+   **Note**: for you only, to find the invitation in the list ("Invitation for my cousin Lea"); it is not the name of the account. **Role**: User, or Administrator. **Valid**: 1 h, 24 h, 7 d (the default), 30 d, or Custom (from a minute to a year). The end date shows under the choice.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/06-invite-form.en.webp" alt="The Invite someone window: the Note field filled with Invitation for my cousin Lea, the Role choice set to User, the Valid choice set to 7 d, and the Create the invitation button." />
 
-3. **Click "Copy", and send the link to the person.**
+3. **Click "Copy" next to the link, and send it to the person.**
 
-   By message, by e-mail, as you like. **The link is shown only now**: if you lose it, cancel the invitation and create a new one.
+   The window now shows "Link to send (shown once)". Send the link by message, by e-mail, as you like, then click **Done**. **The link is shown only now**: if you lose it, cancel the invitation and create a new one.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/07-invite-link.en.webp" alt="The Invite someone window after creation: Link to send (shown once), with the link https://music.example.com/invite/… and the Copy button, and the Done button." />
 
@@ -173,13 +175,13 @@ The invitation link starts with the address shown in your browser. Created from 
 
 1. **They choose a name and a password, then click "Create my account".**
 
-   The password needs at least 8 characters. A link works once, until the date written under the button.
+   The page says "Welcome to Musonic" and who invites them. They fill in **Name**, **Password** and **Confirm the password**. The password needs at least 8 characters. A link works once, until the date written under the button.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/08-invite-page.en.webp" alt="The invitation page: the title Welcome to Musonic, the text alice invites you. Choose your name and your password, the Name, Password and Confirm the password fields, and the Create my account button." />
 
 2. **The page says "Your account is ready" and shows the server's address.**
 
-   They sign in to the app with this address, their name and their password.
+   They sign in to the app (the Musonic app, or another Subsonic app such as Substreamer or Symfonium) with this address, their name and their password.
 
    <img class="shot-wide" src="/assets/img/docs/install-first-start/09-invite-done.en.webp" alt="The page Your account is ready, with the server's address https://music.example.com in a box and the text and sign in with the name and password you just chose." />
 
