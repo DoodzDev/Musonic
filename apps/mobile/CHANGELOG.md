@@ -1,6 +1,6 @@
 # Changelog — Musonic Mobile
 
-All notable changes to the mobile app (Android, iOS) are documented in this file.
+All notable changes to the mobile app (Android) are documented in this file.
 Releases are tagged `mobile-vX.Y.Z` (older releases were tagged `vX.Y.Z` and renamed on 2026-10-12).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [Unreleased]
+
+### Removed
+- **The iOS app is no longer built or published.** Musonic now focuses on Android, where installing it is simple (one APK) and where the app can use everything the phone offers (Android Auto, the native player, downloads). An IPA had to be sideloaded with AltStore or Sideloadly, which few people know how or are able to do. On iPhone, use Musonic Web from the Home Screen; it is being adapted to phone screens. Releases up to 2.4.0 keep their IPA.
 
 ## [2.4.0] - 2026-11-10
 

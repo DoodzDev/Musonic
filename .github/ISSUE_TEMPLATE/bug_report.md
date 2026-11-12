@@ -34,9 +34,9 @@ If applicable, add screenshots or a recording to help explain the problem.
 | Field        | Value       |
 |--------------|-------------|
 | Musonic version | e.g. 0.8.0 |
-| Platform     | Android / iOS |
-| OS version   | e.g. Android 14 / iOS 17.4 |
-| Device       | e.g. Pixel 8, Samsung S24, iPhone 15 |
+| Platform     | Android app / Musonic Web (browser) |
+| OS version   | e.g. Android 14, or the browser and its version |
+| Device       | e.g. Pixel 8, Samsung S24, a computer |
 | Server       | e.g. Navidrome 0.53.3 |
 
 ## Additional Context

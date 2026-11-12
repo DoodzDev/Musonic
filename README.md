@@ -1,23 +1,22 @@
 <div align="center">
 
-<img src="docs/assets/img/logo.svg" alt="Musonic logo" width="96" />
+<img src="site/public/assets/img/logo.svg" alt="Musonic logo" width="96" />
 
 # Musonic
 
 **Your music, your server, beautifully played.**
 
-Apps for Android, iOS and the browser, and **Musonic Server** to host your library yourself.
+An app for Android, a player for the browser (on iPhone too), and **Musonic Server** to host your library yourself.
 Also works with Navidrome and any Subsonic-compatible server.
 
-<a href="https://musonic.doodz.dev/"><img src="docs/assets/img/badges/website.png" alt="Learn more about Musonic on its website" height="64" /></a>
+<a href="https://musonic.doodz.dev/"><img src="site/public/assets/img/badges/website.png" alt="Learn more about Musonic on its website" height="64" /></a>
 
-<a href="https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.apk"><img src="docs/assets/img/badges/download-android.png" alt="Download Musonic for Android" height="64" /></a>
+<a href="https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.apk"><img src="site/public/assets/img/badges/download-android.png" alt="Download Musonic for Android" height="64" /></a>
 &nbsp;
-<a href="https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.ipa"><img src="docs/assets/img/badges/install-ios.png" alt="Install Musonic on iOS (sideload)" height="64" /></a>
 
-<a href="https://musonic.doodz.dev/app/"><img src="docs/assets/img/badges/web.png" alt="Try Musonic on the web" height="64" /></a>
+<a href="https://musonic.doodz.dev/app/"><img src="site/public/assets/img/badges/web.png" alt="Try Musonic on the web" height="64" /></a>
 &nbsp;
-<a href="apps/server/README.md#build-and-run"><img src="docs/assets/img/badges/server.png" alt="Install Musonic Server on your own server" height="64" /></a>
+<a href="https://musonic.doodz.dev/docs/install/docker/"><img src="site/public/assets/img/badges/server.png" alt="Install Musonic Server on your own server" height="64" /></a>
 
 [![Mobile release](https://img.shields.io/github/v/release/DoodzDev/Musonic?filter=mobile-v*&label=mobile&color=FF6B35)](https://github.com/DoodzDev/Musonic/releases/latest)
 [![Web release](https://img.shields.io/github/v/release/DoodzDev/Musonic?filter=web-v*&label=web&color=FF6B35)](https://github.com/DoodzDev/Musonic/releases?q=web-v&expanded=true)
@@ -25,9 +24,9 @@ Also works with Navidrome and any Subsonic-compatible server.
 [![Web CI](https://github.com/DoodzDev/Musonic/actions/workflows/ci-web.yml/badge.svg)](https://github.com/DoodzDev/Musonic/actions/workflows/ci-web.yml)
 [![Server CI](https://github.com/DoodzDev/Musonic/actions/workflows/server-ci.yml/badge.svg)](https://github.com/DoodzDev/Musonic/actions/workflows/server-ci.yml)
 
-<img src="docs/assets/img/screenshots/home.jpg" alt="Home" width="200" />
-<img src="docs/assets/img/screenshots/player.jpg" alt="Player" width="200" />
-<img src="docs/assets/img/screenshots/album_detail.jpg" alt="Album" width="200" />
+<img src="site/public/assets/img/screenshots/home.jpg" alt="Home" width="200" />
+<img src="site/public/assets/img/screenshots/player.jpg" alt="Player" width="200" />
+<img src="site/public/assets/img/screenshots/album_detail.jpg" alt="Album" width="200" />
 
 </div>
 
@@ -50,7 +49,7 @@ Also works with Navidrome and any Subsonic-compatible server.
 
 ## What's inside
 
-### Musonic for Android and iOS
+### Musonic for Android
 A calm, fast music app: full-screen player with synced lyrics, a queue you can reorder, Shuffle Magic, Magic Mixes by genre, a home built from what you play, offline downloads (Wi-Fi first), separate streaming quality on Wi-Fi and mobile data, Android Auto (beta), English and French.
 → [`apps/mobile`](apps/mobile) · [changelog](apps/mobile/CHANGELOG.md)
 
@@ -73,7 +72,7 @@ Served by Musonic Server at its own address: accounts by invitation link (the ad
 | What | How |
 |---|---|
 | **Android** 7.0+ | Download [`Musonic.apk`](https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.apk) and open it. The app tells you when a new version is out. |
-| **iOS** 15.1+ | Unsigned [`Musonic.ipa`](https://github.com/DoodzDev/Musonic/releases/latest/download/Musonic.ipa), to install with AltStore or Sideloadly. No App Store release is planned. |
+| **iPhone and iPad** | Use the web player and add it to the Home Screen: see [Use Musonic on iPhone](https://musonic.doodz.dev/docs/apps/iphone/). There is no iOS app any more (last IPA: mobile 2.4.0). |
 | **Web** | **Online** at [musonic.doodz.dev/app](https://musonic.doodz.dev/app/), or **self-hosted**: `Musonic-Web.zip` from the latest [`web-v` release](https://github.com/DoodzDev/Musonic/releases?q=web-v&expanded=true), see [`SELF-HOSTING.md`](apps/web/SELF-HOSTING.md). Musonic Server can also install it for you at `/app`. |
 | **Server** | Docker or a single binary: see [Musonic Server, build and run](apps/server/README.md#build-and-run). Coming from Navidrome? Your playlists, likes and plays [come along](apps/server/README.md#coming-from-navidrome). |
 
@@ -104,11 +103,11 @@ On first launch, enter your server's address, username and password. Musonic tel
 
 | Home | Player | Synced lyrics |
 |---|---|---|
-| ![Home](docs/assets/img/screenshots/home.jpg) | ![Player](docs/assets/img/screenshots/player.jpg) | ![Lyrics](docs/assets/img/screenshots/lyrics.jpg) |
+| ![Home](site/public/assets/img/screenshots/home.jpg) | ![Player](site/public/assets/img/screenshots/player.jpg) | ![Lyrics](site/public/assets/img/screenshots/lyrics.jpg) |
 
 | Search | Library | Magic Mix |
 |---|---|---|
-| ![Search results](docs/assets/img/screenshots/search_results.jpg) | ![Library](docs/assets/img/screenshots/library.jpg) | ![Magic Mix](docs/assets/img/screenshots/magic_mix.jpg) |
+| ![Search results](site/public/assets/img/screenshots/search_results.jpg) | ![Library](site/public/assets/img/screenshots/library.jpg) | ![Magic Mix](site/public/assets/img/screenshots/magic_mix.jpg) |
 
 More on the [website](https://musonic.doodz.dev/).
 
@@ -120,7 +119,7 @@ One repository for every part of Musonic:
 
 ```
 apps/
-├── mobile/      React Native app (Android, iOS)
+├── mobile/      React Native app (Android)
 ├── web/         Web client (Vite + React)
 ├── server/      Musonic Server (Rust)
 └── admin/       Administration console, served by the server (Vite + React)
@@ -136,11 +135,10 @@ docs/            The website (GitHub Pages), not the web client
 
 | Part | Requirements | Start | Checks |
 |---|---|---|---|
-| **Mobile** (`apps/mobile`) | Node 22.13+, JDK 17 and 21, Android SDK 36 / NDK 27.1, Xcode 16+ for iOS | `npm ci`, `npm start`, `adb reverse tcp:8081 tcp:8081`, `npm run android` | `npx tsc --noEmit`, `npx eslint . --max-warnings 0`, `npm test` |
+| **Mobile** (`apps/mobile`) | Node 22.13+, JDK 17 and 21, Android SDK 36 / NDK 27.1 | `npm ci`, `npm start`, `adb reverse tcp:8081 tcp:8081`, `npm run android` | `npx tsc --noEmit`, `npx eslint . --max-warnings 0`, `npm test` |
 | **Web, console, core** (repository root) | Node 24 (`.nvmrc`) | `npm ci`, `npm run web` (http://localhost:5173) | `npm run test:core`, `npm run lint` and `npm run build` in each app |
 | **Server** (`apps/server`) | Rust (stable) | `cargo run` (see its [README](apps/server/README.md)) | `cargo test`, `cargo clippy --all-targets -- -D warnings`, `cargo fmt --check` |
 
-iOS: `bundle install && cd ios && bundle exec pod install && cd .. && npm run ios`.
 
 ---
 
@@ -150,7 +148,7 @@ Each app is released on its own, from `main`:
 
 | Tag | Release |
 |---|---|
-| `mobile-vX.Y.Z` | *Musonic Mobile*: signed APK and unsigned IPA (`android-release.yml`, `ios-release.yml`) |
+| `mobile-vX.Y.Z` | *Musonic Mobile*: signed APK (`android-release.yml`; releases up to 2.4.0 also have an unsigned IPA) |
 | `web-vX.Y.Z` | *Musonic Web*: `Musonic-Web.zip` to self-host, `Musonic-Web-app.zip` for Musonic Server (`web-release.yml`); the online version is published by `pages.yml` on every push |
 
 The in-app update prompt only looks at its own app's tags. Every push and pull request runs the checks of the parts it touches: `ci.yml` (mobile and core), `ci-web.yml` (web, console and core), `server-ci.yml` (server).
@@ -161,7 +159,7 @@ The in-app update prompt only looks at its own app's tags. Every push and pull r
 
 | Topic | Status |
 |---|---|
-| iOS | Unsigned IPA only (AltStore, Sideloadly); tested far less than Android. |
+| iPhone | No app: the web player, which is not yet laid out for phone screens (coming). |
 | Android Auto | Beta: playlists, playback, Shuffle / Repeat / Like. Not on the Play Store, so turn on *Unknown sources* in Android Auto's developer settings. |
 | Web client | Chromium browsers recommended (the floating mini player needs them). The online version reaches servers that allow CORS over HTTPS. |
 | Playlist imports | Spotify playlists are read up to their first 100 songs; the rest is added with a second playlist. About 9 classical pieces in 10 are found ([details](apps/server/README.md#importing-playlists)). |

@@ -1,9 +1,10 @@
 name: iOS Release IPA
 
+# Turned off on 2026-11-12: the iOS app is no longer built or published. Musonic is optimised
+# for Android (a plain APK anyone can install), and iPhone users get the web player, which is
+# being adapted to phones. Sideloading an IPA (AltStore, Sideloadly) is too much of a hurdle for
+# most people. Kept for a manual run only; older releases keep their IPA.
 on:
-  push:
-    tags:
-      - 'mobile-v*'
   workflow_dispatch:
 
 # Builds an unsigned IPA suitable for sideloading (AltStore / SideStore / Sideloadly).
