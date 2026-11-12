@@ -21,7 +21,7 @@ Search in the Musonic apps shows your library and the online catalogue together.
 - **Using a song adds it to your library, under one id.** The first time someone likes an online song, adds it to a playlist, plays it or queues it, it is stored as a library song **without a file**. Every account then sees the same song, with the same id.
 - When that song later gets a file (imported, or added by you to the music folder with the same ISRC, or the same title, artists and length), **the file joins the same song**: likes, playlists and plays stay where they are.
 
-<img class="diagram" src="/assets/img/docs/diagrams/online-song-lifecycle.en.svg" alt="Diagram of an online song's life: 1. found in search (online, nothing stored); 2. liked or added to a playlist (stored as a library song without a file, one id); 3. imported by an audio provider into Musonic/Album artist/Album/; 4. scanned: the file joins the same song, likes and playlists unchanged. A side branch shows that without a provider the song plays as a 30-second preview." />
+<img class="diagram" src="/assets/img/docs/diagrams/online-song-lifecycle.en.svg" alt="1. Found online in search: browsing writes nothing. 2. Liked or added to a playlist: it joins your library without a file, under one id. 3. Then, with a provider that allows imports, it is imported as a file into Musonic/Album artist/Album/ of your music folder, and likes and playlists stay; without a provider, it stays an online song and plays as 30-second previews." />
 
 ## What plays when you press play
 

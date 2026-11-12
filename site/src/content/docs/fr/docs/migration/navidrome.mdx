@@ -17,7 +17,7 @@ Cette page s'adresse à vous si vous utilisez déjà Navidrome et voulez essayer
 - Le programme `sqlite3` sur cette machine, pour copier la base de Navidrome sans risque (sous Debian ou Ubuntu : paquet `sqlite3`). Si vous ne pouvez pas l'installer, vous pouvez arrêter Navidrome une minute à la place (voir l'étape 2).
 - Environ 30 minutes, plus la durée d'un premier scan de votre bibliothèque.
 
-<img class="diagram" src="/assets/img/docs/diagrams/navidrome-migration.fr.svg" alt="Schéma : le même dossier de musique est lu par Navidrome et par Musonic Server ; une copie de navidrome.db part dans l'import de Musonic ; les applis ne passent de Navidrome à Musonic qu'à la fin, quand on bascule le reverse proxy." />
+<img class="diagram" src="/assets/img/docs/diagrams/navidrome-migration.fr.svg" alt="Navidrome, qui continue de tourner jusqu'à la bascule, et Musonic Server, installé à côté, lisent le même dossier de musique : rien n'est déplacé. Pour reprendre vos données : une copie de navidrome.db est lue par la commande import-navidrome, qui apporte playlists, likes, notes et écoutes dans Musonic ; les mots de passe ne sont pas importés." />
 
 ## Ce qui est repris, et ce qui ne l'est pas
 
@@ -176,7 +176,7 @@ Pour la vitesse et la mémoire, la [page du benchmark](/fr/docs/about/benchmark/
 
    `scan` garantit que la bibliothèque est complète. L'import affiche un rapport (voir [Lire le rapport](#lire-le-rapport)).
 
-   ![Terminal montrant le rapport de import-navidrome : comptes importés et ignorés, fichiers retrouvés, playlists, j'aime et écoutes](/assets/img/docs/migration-navidrome/01-import-report.en.webp)
+   ![Terminal montrant le rapport de import-navidrome : comptes importés et ignorés, fichiers retrouvés, playlists, j'aime et écoutes](/assets/img/docs/migration-navidrome/01-import-report.fr.webp)
 
 9. **Lisez le rapport, corrigez, et relancez si besoin.**
 

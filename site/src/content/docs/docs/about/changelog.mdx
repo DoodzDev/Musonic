@@ -4,6 +4,7 @@ description: The current versions of the Musonic app, web player and server, whe
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import Version from '../../../../components/Version.astro';
 
 This page tells you which versions are current, where to read what changed, and how to tell the releases apart on GitHub.
 
@@ -11,9 +12,9 @@ This page tells you which versions are current, where to read what changed, and 
 
 | Part | Version | What changed | Release tag |
 |---|---|---|---|
-| Android app (Musonic Mobile) | **2.4.0** | [Changelog](https://github.com/DoodzDev/Musonic/blob/main/apps/mobile/CHANGELOG.md) | `mobile-v2.4.0` |
-| Web player (Musonic Web) | **1.2.0** | [Changelog](https://github.com/DoodzDev/Musonic/blob/main/apps/web/CHANGELOG.md) | `web-v1.2.0` |
-| Musonic Server (with its console) | **1.2.1** | [Changelog](https://github.com/DoodzDev/Musonic/blob/main/apps/server/CHANGELOG.md) | `server-v1.2.1` |
+| Android app (Musonic Mobile) | **<Version app="mobile" />** | [Changelog](https://github.com/DoodzDev/Musonic/blob/main/apps/mobile/CHANGELOG.md) | <code class="nowrap"><Version app="mobile" tag /></code> |
+| Web player (Musonic Web) | **<Version app="web" />** | [Changelog](https://github.com/DoodzDev/Musonic/blob/main/apps/web/CHANGELOG.md) | <code class="nowrap"><Version app="web" tag /></code> |
+| Musonic Server (with its console) | **<Version app="server" />** | [Changelog](https://github.com/DoodzDev/Musonic/blob/main/apps/server/CHANGELOG.md) | <code class="nowrap"><Version app="server" tag /></code> |
 
 All the downloads are on the [releases page](https://github.com/DoodzDev/Musonic/releases).
 

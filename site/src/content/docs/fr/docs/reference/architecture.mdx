@@ -7,7 +7,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 Cette page explique comment le projet Musonic est organisé, pour les développeurs qui veulent lire le code, le compiler ou contribuer. Tout se trouve dans un seul dépôt Git, [github.com/DoodzDev/Musonic](https://github.com/DoodzDev/Musonic).
 
-<img class="diagram" src="/assets/img/docs/diagrams/architecture-overview.fr.svg" alt="Schéma : l'appli Android, Musonic Web, la console d'administration et les autres clients Subsonic parlent à Musonic Server en HTTPS ; le serveur lit le dossier de musique, garde ses données dans SQLite, transcode avec ffmpeg, et interroge le catalogue en ligne et les fournisseurs audio." />
+<img class="diagram" src="/assets/img/docs/diagrams/architecture-overview.fr.svg" alt="À gauche, les clients : l'appli Android (React Native, avec un lecteur natif Media3), Musonic Web et la console d'administration (React et Vite), qui partagent packages/core, et les autres applis Subsonic. Ils joignent Musonic Server (Rust) en HTTPS ; le serveur répond à l'API Subsonic sur /rest, à l'API Musonic sur /v1 et /v1/events, et sert la console et Musonic Web. À droite, ce qu'utilise le serveur : le dossier de musique, SQLite, ffmpeg, le catalogue en ligne et les fournisseurs audio." />
 
 ## Le dépôt
 

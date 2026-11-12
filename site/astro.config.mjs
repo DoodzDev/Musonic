@@ -32,6 +32,7 @@ export default defineConfig({
           items: [
             { slug: 'docs', label: 'Overview', translations: { fr: 'Vue d’ensemble' } },
             { slug: 'docs/start/how-it-works', label: 'How Musonic works', translations: { fr: 'Comment marche Musonic' } },
+            { slug: 'docs/start/compatibility', label: 'What works with which server', translations: { fr: 'Ce qui marche avec quel serveur' } },
             { slug: 'docs/install/docker', label: 'Install with Docker', translations: { fr: 'Installer avec Docker' } },
             { slug: 'docs/install/binary', label: 'Install without Docker', translations: { fr: 'Installer sans Docker' } },
             { slug: 'docs/install/first-start', label: 'First start', translations: { fr: 'Premier démarrage' } },
@@ -53,6 +54,7 @@ export default defineConfig({
             { slug: 'docs/apps/offline', label: 'Offline and data usage', translations: { fr: 'Hors ligne et données mobiles' } },
             { slug: 'docs/apps/android-auto', label: 'Android Auto', translations: { fr: 'Android Auto' } },
             { slug: 'docs/apps/other-clients', label: 'Other Subsonic apps', translations: { fr: 'Autres applis Subsonic' } },
+            { slug: 'docs/apps/troubleshooting', label: 'Problems in the app', translations: { fr: 'Problèmes dans l’appli' } },
           ],
         },
         {

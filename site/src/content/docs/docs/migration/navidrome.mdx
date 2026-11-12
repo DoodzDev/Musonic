@@ -17,7 +17,7 @@ This page is for you if you already run Navidrome and want to try Musonic Server
 - The `sqlite3` program on that machine, to copy Navidrome's database safely (on Debian or Ubuntu: package `sqlite3`). If you cannot install it, you can stop Navidrome for a minute instead (see step 2).
 - About 30 minutes, plus the time of a first scan of your library.
 
-<img class="diagram" src="/assets/img/docs/diagrams/navidrome-migration.en.svg" alt="Diagram: the same music folder is read by Navidrome and by Musonic Server; a copy of navidrome.db goes into the Musonic import; the apps move from Navidrome to Musonic only at the end, when the reverse proxy is switched." />
+<img class="diagram" src="/assets/img/docs/diagrams/navidrome-migration.en.svg" alt="Navidrome, which keeps running until you switch, and Musonic Server, installed next to it, both read the same music folder: nothing is moved. To bring your data over: a copy of navidrome.db is read by the import-navidrome command, which brings playlists, likes, ratings and plays into Musonic; passwords are not imported." />
 
 ## What carries over, and what does not
 

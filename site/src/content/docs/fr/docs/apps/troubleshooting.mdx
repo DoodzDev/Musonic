@@ -1,0 +1,184 @@
+---
+title: Problèmes dans l'appli
+description: Que faire quand Musonic s'arrête écran éteint, que les commandes de lecture manquent, qu'une mise à jour refuse de s'installer, que les paroles ou les téléchargements ne marchent pas, que l'appli ne joint pas le serveur ou que le lecteur web vous déconnecte.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Cette page s'adresse aux personnes qui écoutent avec Musonic sur un serveur géré par quelqu'un d'autre (un proche, un ami). Trouvez votre problème ci-dessous : chacun a quelques étapes à essayer, et un lien vers la page qui en dit plus. Rien ici ne demande d'accès au serveur.
+
+## Appli Android
+
+### La musique s'arrête quand l'écran s'éteint, ou au bout d'un moment en arrière-plan
+
+Android, ou la marque du téléphone, ferme les applis qu'il juge trop gourmandes en batterie. Autorisez Musonic à tourner en arrière-plan.
+
+<Steps>
+
+1. **Ouvrez les Paramètres du téléphone, puis « Applications », puis « Musonic ».**
+
+2. **Touchez « Batterie » (ou « Utilisation de la batterie par l'appli »), puis choisissez l'option sans restriction.**
+
+   Elle s'appelle « Non restreinte » sur un Samsung, « Sans restriction » sur d'autres téléphones. Sur les versions d'Android plus anciennes : **Paramètres → Applications → Accès spéciaux → Optimisation de la batterie**, affichez **Toutes les applications**, choisissez Musonic puis **Ne pas optimiser**.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-troubleshooting/01-battery-unrestricted.fr.webp" alt="La page batterie d'Android pour l'appli Musonic, avec les choix sans restriction, optimisée et restreinte, et l'option sans restriction sélectionnée." />
+
+3. **Sur un téléphone Samsung, sortez aussi Musonic des « applications en veille ».**
+
+   Ouvrez **Paramètres → Batterie → Limites utilisation arrière-plan**. Si Musonic figure dans **Applications en veille** ou **Applications en veille profonde**, retirez-la. Si vous avez choisi **Non restreinte** à l'étape 2, c'est tout : une appli non restreinte n'est jamais mise en veille, Samsung ne la propose donc même pas dans **Apps jamais mises en veille auto.** Sinon, ouvrez **Apps jamais mises en veille auto.**, touchez **+** et ajoutez Musonic.
+
+   <img class="shot-phone" src="/assets/img/docs/apps-troubleshooting/02-samsung-never-sleeping.fr.webp" alt="La page Limites utilisation arrière-plan d'un Samsung, avec Mise en veille applis inutilisées, Apps jamais mises en veille auto., Applications en veille et Applications en veille profonde.\" />
+
+4. **Ne balayez pas Musonic hors des applis récentes pendant l'écoute.**
+
+   Fermer Musonic de cette façon arrête la musique et retire sa notification : c'est voulu. Laissez-la en arrière-plan, ou mettez-la en pause.
+
+</Steps>
+
+Le nom de ces réglages change d'une marque et d'une version d'Android à l'autre (Xiaomi, OnePlus, Huawei et d'autres ont leur propre gestionnaire de batterie). Cherchez « batterie », « arrière-plan » ou « démarrage automatique » dans la recherche des Paramètres.
+
+Si la musique s'arrête encore, ouvrez **Profil → Réglages → Options avancées** et désactivez **Lecteur audio Android**, puis fermez Musonic (balayez-la hors des applis récentes) et rouvrez-la. Musonic utilise alors son autre moteur de lecture. Réactivez l'option si cela n'aide pas : c'est le plus économe.
+
+### Les commandes manquent dans la notification ou sur l'écran de verrouillage
+
+<Steps>
+
+1. **Lancez un titre.** Les commandes n'apparaissent que quand Musonic a quelque chose à lire.
+
+2. **Vérifiez que Musonic peut afficher des notifications.** Ouvrez **Paramètres → Applications → Musonic → Notifications** et autorisez-les.
+
+3. **Si vous avez balayé Musonic hors des applis récentes, rouvrez-la.** Cela arrête la lecture et retire la notification.
+
+</Steps>
+
+### Une mise à jour refuse de s'installer (« Application non installée »)
+
+<Steps>
+
+1. **Ne désinstallez pas Musonic.** Désinstaller efface vos téléchargements, vos réglages et votre connexion, et Android ne les sauvegarde pas.
+
+2. **Téléchargez le nouveau `Musonic.apk` au même endroit que la première fois** : les releases du projet sur GitHub, par le bouton **Voir la release** de la fenêtre « Mise à jour disponible ».
+
+3. **Ouvrez le fichier et touchez « Mettre à jour ».** La nouvelle version s'installe par-dessus l'ancienne et garde tout.
+
+</Steps>
+
+Android refuse aussi un fichier plus ancien que la version installée, un fichier mal téléchargé (téléchargez-le à nouveau), et les téléphones 32 bits ou antérieurs à Android 7.0. Si la version de votre téléphone n'a **pas** été installée depuis les releases GitHub du projet (par exemple une version compilée par quelqu'un), Android refuse la mise à jour parce que les deux n'ont pas été signées par la même personne : dans ce cas seulement, il faut désinstaller d'abord, et vous perdez les téléchargements. Voir [Installer l'appli Android → Mises à jour](/fr/docs/apps/android/#mises-à-jour).
+
+### Les paroles ne s'affichent pas
+
+<Steps>
+
+1. **Regardez le bouton Paroles du lecteur plein écran.** Quand il est grisé, Musonic n'a pas trouvé de paroles pour ce titre : le lecteur affiche « Paroles non disponibles ».
+
+2. **Vérifiez votre connexion.** Les paroles sont cherchées quand vous lancez le titre : d'abord sur le serveur, sinon sur LRCLIB (`lrclib.net`), sur internet. Il faut une connexion, même pour les titres téléchargés.
+
+3. **Demandez à la personne qui gère le serveur** d'ajouter les paroles au fichier, ou un fichier `.lrc` à côté, si LRCLIB ne connaît pas le titre.
+
+</Steps>
+
+Les épisodes de podcast affichent leur transcription, quand l'émission en fournit une, jamais des paroles de chanson. Voir [Écouter de la musique → Les paroles](/fr/docs/apps/listening/#les-paroles).
+
+### Un téléchargement ne démarre pas, ou reste bloqué
+
+<Steps>
+
+1. **En données mobiles, vérifiez « Wi-Fi uniquement ».** Quand **Réglages → Qualité et téléchargements → Wi-Fi uniquement** est activé, Musonic demande avant chaque téléchargement que vous lancez (« Vous êtes en données mobiles… »), et le **Téléchargement automatique** saute les titres tant que vous êtes en données mobiles. Passez en Wi-Fi, ou répondez **Télécharger**.
+
+2. **Vérifiez la limite de stockage.** Si vous avez vu « Limite de stockage atteinte : téléchargement refusé. », augmentez **Réglages → Qualité et téléchargements → Limite de stockage**, ou retirez des téléchargements.
+
+3. **Attendez les roues de chargement.** Trois titres se téléchargent à la fois ; les autres attendent avec une roue.
+
+4. **Touchez à nouveau le bouton de téléchargement.** Un titre dont le téléchargement a échoué (réseau perdu, appli fermée) revient à la flèche grise ; les téléchargements interrompus par la fermeture de l'appli ne reprennent pas tout seuls.
+
+</Steps>
+
+Les titres marqués **En ligne** et les épisodes de podcast ne se téléchargent pas. Voir [Écouter hors ligne](/fr/docs/apps/offline/).
+
+### L'appli ne joint pas le serveur
+
+L'appli affiche un bandeau, **Pas de connexion internet** ou **Serveur injoignable**, avec un bouton **Mode hors ligne**. Après quelques vérifications ratées d'affilée, elle passe d'elle-même en mode hors ligne, et revient en ligne dès que le serveur répond.
+
+<Steps>
+
+1. **Vérifiez la connexion du téléphone.** Ouvrez n'importe quel site dans le navigateur du téléphone.
+
+2. **Ouvrez l'adresse du serveur dans le navigateur du téléphone.** Si la page ne s'ouvre pas non plus, l'adresse est fausse ou le serveur est éteint.
+
+3. **À la maison ou dehors ?** Une adresse comme `http://192.168.1.20:4533` ne marche que sur votre réseau local. Dehors, il faut l'adresse en `https://` du serveur : demandez-la à la personne qui le gère.
+
+4. **Sinon, prévenez la personne qui gère le serveur.** Il est peut-être arrêté ou en cours de mise à jour.
+
+</Steps>
+
+À la connexion, le message au-dessus de **Se connecter** dit ce qui ne va pas :
+
+| Message | Que faire |
+|---|---|
+| Serveur introuvable — vérifiez l'URL | Vérifiez l'adresse. Un certificat auto-signé donne aussi ce message. |
+| Connexion trop lente — délai dépassé | Vérifiez la connexion ; le serveur n'a pas répondu en 8 secondes. |
+| Aucun serveur Subsonic à cette adresse — vérifiez l'URL | Vérifiez l'adresse et le port. |
+| Adresse en HTTP refusée : utilisez HTTPS, ou une adresse de votre réseau local (ex. http://192.168.1.20:4533). | Utilisez l'adresse en `https://`. |
+| Erreur serveur (404) — vérifiez l'URL | Retirez tout ce qui suit le nom du serveur. |
+| Erreur serveur (502) — le serveur est en panne | Prévenez la personne qui gère le serveur. |
+| Identifiant ou mot de passe incorrect | Vérifiez les deux, majuscules comprises. |
+
+Si l'appli vous renvoie à la connexion avec « Cet appareil a été déconnecté de votre compte », « Votre compte a été suspendu » ou « Votre mot de passe a changé ? », voir [Se connecter → Quand l'appli vous renvoie à la connexion](/fr/docs/apps/sign-in/#quand-lappli-vous-renvoie-à-la-connexion). Tous les messages sont dans [Quand la connexion échoue](/fr/docs/apps/sign-in/#quand-la-connexion-échoue).
+
+### Musonic n'apparaît pas dans Android Auto
+
+<Steps>
+
+1. **Vérifiez que vous êtes connecté dans Musonic sur le téléphone.**
+
+2. **Vérifiez que « Sources inconnues » est coché dans les paramètres pour les développeurs d'Android Auto.** Sans cela, Android Auto masque les applis qui ne viennent pas du Play Store, et une mise à jour d'Android Auto peut le décocher.
+
+3. **Débranchez le téléphone et reconnectez-le à la voiture.** Faites de même après avoir installé une nouvelle version de Musonic.
+
+</Steps>
+
+Le réglage complet, étape par étape : [Musonic en voiture](/fr/docs/apps/android-auto/#faire-apparaître-musonic-dans-android-auto).
+
+## Lecteur web
+
+### Le lecteur web vous déconnecte, ou perd la connexion
+
+<Steps>
+
+1. **Cochez « Se souvenir de moi » à la connexion, sur votre propre ordinateur.** Sans cela, fermer l'onglet vous déconnecte, et chaque nouvel onglet vous redemande de vous connecter.
+
+2. **Lisez le message de l'écran de connexion.** « Ce navigateur a été déconnecté de votre compte » veut dire que la clé de ce navigateur a été révoquée ; « Votre mot de passe a changé ? » veut dire qu'il a changé : reconnectez-vous avec le nouveau.
+
+3. **Si les pages affichent « Impossible de charger cette page. » ou « Lecture impossible pour ce titre. », vérifiez votre connexion**, puis rechargez la page.
+
+4. **Si vous utilisez `musonic.doodz.dev/app/` avec une adresse de serveur en `http://`, cela ne peut pas marcher.** Le navigateur le bloque. Utilisez la copie du serveur (`http://<serveur>/app/`) à la maison, ou son adresse en `https://`.
+
+</Steps>
+
+Voir [Le lecteur web → Erreurs de connexion](/fr/docs/apps/web/#erreurs-de-connexion).
+
+### Sur iPhone, la musique s'arrête en arrière-plan
+
+iOS met en pause les pages web en arrière-plan plus volontiers que les applis. Il n'y a pas d'appli Musonic pour iPhone : le lecteur web est le moyen d'écouter.
+
+<Steps>
+
+1. **Ouvrez Musonic depuis son icône sur l'écran d'accueil**, pas depuis un onglet de Safari.
+
+2. **Réglez « Fondu entre les titres » sur « Désactivé »** (menu du profil → **Réglages**). Avec le fondu, iOS coupe le son plus souvent.
+
+3. **Si le titre suivant ne démarre pas, déverrouillez l'iPhone, ouvrez Musonic et relancez la lecture.**
+
+</Steps>
+
+Voir [Utiliser Musonic sur iPhone ou iPad](/fr/docs/apps/iphone/#ce-qui-marche-moins-bien-sur-iphone).
+
+## Toujours bloqué ?
+
+Demandez à la personne qui gère votre serveur : elle voit votre compte, vos appareils et l'état du serveur dans sa console. Si vous pensez avoir trouvé un bug dans Musonic, [ouvrez un ticket sur GitHub](https://github.com/DoodzDev/Musonic/issues/new/choose) en indiquant votre appli, sa version, votre téléphone ou navigateur, et ce que vous avez fait.
+
+## Et ensuite
+
+- [Se connecter à un serveur](/fr/docs/apps/sign-in/)
+- [Écouter hors ligne](/fr/docs/apps/offline/)
+- [Ce qui marche avec quel serveur](/fr/docs/start/compatibility/)

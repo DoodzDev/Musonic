@@ -16,7 +16,7 @@ Un réglage peut être donné à quatre endroits. Au démarrage du serveur, chac
 3. **Les variables d'environnement** (`MUSONIC_…`), par exemple dans `compose.yml`.
 4. **La valeur enregistrée depuis la console**, pour les [réglages que la console peut changer](#réglages-changés-depuis-la-console).
 
-<img class="diagram" src="/assets/img/docs/diagrams/settings-priority.fr.svg" alt="Schéma : quatre couches de bas en haut, valeur par défaut, fichier de configuration, variables d'environnement, valeur enregistrée dans la console ; celle du haut l'emporte au démarrage du serveur" />
+<img class="diagram" src="/assets/img/docs/diagrams/settings-priority.fr.svg" alt="Au démarrage du serveur, la valeur par défaut est remplacée par le fichier de configuration, lui-même remplacé par les variables d'environnement, elles-mêmes remplacées par la valeur enregistrée dans la console. Une valeur enregistrée dans la console l'emporte, même sur compose.yml." />
 
 <Aside type="caution">
 Une valeur enregistrée dans la console l'emporte sur l'environnement. Si vous mettez `MUSONIC_ONLINE: "false"` dans `compose.yml` après avoir activé le catalogue en ligne dans la console, c'est la valeur de la console qui compte. Changez-la plutôt dans la console.

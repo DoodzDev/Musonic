@@ -60,3 +60,8 @@ starlight-theme-select { display: none; }
 /* Two phone shots side by side when a step shows a before/after. */
 .sl-markdown-content .shots { display: flex; flex-wrap: wrap; gap: 16px; }
 .sl-markdown-content .shots img.shot-phone { margin: 0.75rem 0 1.25rem; max-width: 240px; }
+
+/* Tables: a measured range goes under its value, small and grey, never split; version names
+   and short code never break in the middle. */
+.sl-markdown-content td small { display: block; font-size: 0.8em; font-weight: 400; color: var(--text-3); white-space: nowrap; }
+.sl-markdown-content td code.nowrap { white-space: nowrap; }

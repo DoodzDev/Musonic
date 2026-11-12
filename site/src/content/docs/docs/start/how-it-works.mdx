@@ -53,7 +53,7 @@ Musonic Server is only published for Linux. On another system, run it in a Linux
 
 ## What talks to what
 
-- **Your sign-in goes only to your server.** The apps send the account name and password (or a per-device key) to it, never to anyone else. They also ask two public services for extras, with no account and no personal data: Deezer's public catalogue (artist pictures, suggestions) and LRCLIB (lyrics a song lacks). [Every request is listed here](/docs/reference/privacy/).
+- **Your sign-in goes only to your server.** The apps send the account name and password (or a per-device key) to it, never to anyone else. They also ask two public services for extras, with no Musonic account, name or password (like any website, they do see the IP address that contacts them): Deezer's public catalogue (artist pictures, suggestions) and LRCLIB (lyrics a song lacks). [Every request is listed here](/docs/reference/privacy/).
 - **The server reads your music folder** and watches it: a file you add shows up on its own.
 - **The server goes on the internet for a few things**, that you can turn off: the online catalogue (Deezer's official public API, for song information, covers and 30-second previews; setting `MUSONIC_ONLINE`), the check for new versions on GitHub (`MUSONIC_UPDATE_CHECK`), and podcasts when someone uses them. Details in [Privacy and network](/docs/reference/privacy/).
 - **Full songs that are not in your folder** only come from an audio provider an administrator plugs into the server. Without one, online songs play as 30-second previews. See [Online catalogue and imports](/docs/library/online-catalogue/).

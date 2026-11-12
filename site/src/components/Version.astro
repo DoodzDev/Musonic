@@ -1,0 +1,15 @@
+---
+/**
+ * @file Version.astro
+ * @description Newest version of one app, e.g. <Version app="server" /> → 1.2.1, or with
+ *   tag → server-v1.2.1. Read from GitHub at build time (see lib/versions.ts).
+ * @author DoodzProg
+ * @version 0.1.0
+ * @license CC-BY-NC-4.0
+ */
+import { versions, type App } from '../lib/versions';
+interface Props { app: App; tag?: boolean }
+const { app, tag } = Astro.props;
+const v = (await versions())[app];
+---
+{tag ? `${app}-v${v}` : v}

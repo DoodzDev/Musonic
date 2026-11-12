@@ -16,7 +16,7 @@ A setting can be given in four places. When the server starts, each one **overri
 3. **The environment variables** (`MUSONIC_…`), for example in `compose.yml`.
 4. **The value saved from the console**, for the [settings the console can change](#settings-changed-from-the-console).
 
-<img class="diagram" src="/assets/img/docs/diagrams/settings-priority.en.svg" alt="Diagram: four layers from bottom to top, default, configuration file, environment variables, value saved in the console; the top one wins when the server starts" />
+<img class="diagram" src="/assets/img/docs/diagrams/settings-priority.en.svg" alt="When the server starts, the default is replaced by the configuration file, which is replaced by the environment variables, which are replaced by the value saved in the console. A value saved in the console wins, even over compose.yml." />
 
 <Aside type="caution">
 A value saved in the console wins over the environment. If you set `MUSONIC_ONLINE: "false"` in `compose.yml` after turning the online catalog on in the console, the console's value is the one used. Change it in the console instead.

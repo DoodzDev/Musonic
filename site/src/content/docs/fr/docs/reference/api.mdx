@@ -22,7 +22,7 @@ Musonic Server expose trois choses :
 
 Il sert aussi deux applications web : la console d'administration à l'adresse du serveur (`/`, et tout chemin qui n'est pas une API), et Musonic Web sous `/app/` une fois installé depuis la console.
 
-<img class="diagram" src="/assets/img/docs/diagrams/api-surfaces.fr.svg" alt="Schéma : à gauche les clients (applis Musonic, autres clients Subsonic, la console, des scripts) appellent Musonic Server sur /rest, /v1, /v1/events et /health ; le serveur lit SQLite, le dossier de musique et les fournisseurs audio." />
+<img class="diagram" src="/assets/img/docs/diagrams/api-surfaces.fr.svg" alt="Musonic Server répond sur /rest (Subsonic et OpenSubsonic), /v1 (l'API Musonic), /v1/events (événements en temps réel par WebSocket) et /health (test de vie). Les applis Musonic (Android, Musonic Web) utilisent /rest, /v1 et /v1/events ; les autres applis Subsonic utilisent /rest ; la console d'administration utilise les routes /v1 ; les scripts et tests de santé peuvent utiliser /rest, /v1 et /health. Le serveur sert aussi la console sur / et Musonic Web sur /app/." />
 
 ## API Subsonic et OpenSubsonic
 

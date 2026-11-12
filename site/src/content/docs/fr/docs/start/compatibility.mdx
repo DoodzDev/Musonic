@@ -1,0 +1,99 @@
+---
+title: Ce qui marche avec quel serveur
+description: Quelles fonctions de l'appli Android et du lecteur web Musonic marchent avec Navidrome ou un autre serveur Subsonic, lesquelles demandent Musonic Server, et où les deux applis diffèrent.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Les applis Musonic (l'appli Android et le lecteur web) marchent avec Musonic Server, mais aussi avec Navidrome ou tout autre serveur qui parle l'API Subsonic. Cette page répond à une question : si vous les utilisez avec un autre serveur, qu'obtenez-vous, et que gagnez-vous avec Musonic Server ?
+
+**En bref.** Votre bibliothèque, la recherche, les playlists, les likes, les paroles, l'accueil, les Mix Magiques, les téléchargements, le fondu entre les titres et Android Auto marchent avec n'importe quel serveur Subsonic. Le catalogue en ligne, l'import de playlists par lien, les podcasts, Musonic Connect, les clés d'appareil et la console d'administration demandent Musonic Server.
+
+## Comment les applis reconnaissent un Musonic Server
+
+Il n'y a rien à régler : vous tapez l'adresse du serveur comme d'habitude, et l'appli s'en rend compte toute seule.
+
+- **L'appli Android** vérifie le serveur à la connexion, puis toutes les quelques secondes. Un Musonic Server marque chacune de ses réponses comme venant de Musonic (`"type": "musonic"`) ; l'appli lit cette marque.
+- **Le lecteur web** demande au serveur la page `/v1/info`, que seul Musonic Server possède. S'il répond en tant que Musonic, les fonctions en plus apparaissent.
+
+Un Musonic Server annonce aussi une extension `musonicServer` dans sa liste d'extensions OpenSubsonic. L'appli Android ne la lit que pour savoir quelle forme d'identifiants de titres le serveur utilise, pas pour activer des fonctions.
+
+## Fonction par fonction
+
+| Fonction | Musonic Server | Navidrome / autres serveurs Subsonic |
+|---|---|---|
+| **Parcourir votre bibliothèque** (albums, artistes, titres, genres) | Oui | Oui |
+| **Rechercher** dans votre bibliothèque | Oui, avec les résultats du catalogue en ligne après les vôtres (voir plus bas) | Oui, votre bibliothèque seulement |
+| **Playlists** : créer, modifier, réordonner, supprimer | Oui | Oui |
+| **Likes** (titres, albums, artistes) | Oui | Oui |
+| **Notes** (étoiles) | Pas dans les applis Musonic. Les applis tierces peuvent les poser sur Musonic Server. | Pas dans les applis Musonic |
+| **Paroles**, synchronisées quand elles existent | Oui. D'abord celles que connaît le serveur : intégrées à vos fichiers, ou un fichier `.lrc` ou `.txt` du même nom à côté du titre (le `.lrc`, synchronisé, l'emporte). Sinon, l'appli interroge elle-même LRCLIB (`lrclib.net`). | Oui. D'abord ce que le serveur envoie (par les requêtes de paroles standard), sinon LRCLIB, interrogé par l'appli. |
+| **Sections de l'accueil** (Écoutés récemment, Vos artistes préférés, « Plus dans le style de… », « Parce que vous avez aimé… », À redécouvrir, Nouveautés dans votre bibliothèque, Au hasard) | Oui, chargées en deux requêtes | Oui, chargées avec les requêtes standard (un peu plus nombreuses). Les sections fondées sur les artistes et titres similaires dépendent de ce que votre serveur répond à ces requêtes. |
+| **Mix Magiques** | Oui | Oui : l'appli les compose à partir des genres que vous écoutez et aimez le plus, il faut donc des genres dans vos tags. |
+| **Téléchargements hors ligne** (appli Android) | Oui | Oui |
+| **Fondu entre les titres** | Oui | Oui |
+| **Android Auto** | Oui | Oui |
+| **Catalogue en ligne** (artistes, albums et titres que vous n'avez pas) | Oui, si l'administrateur le laisse actif pour votre compte | Non |
+| **Importer une playlist par lien** (Spotify, Deezer, YouTube Music) | Oui | Non : l'option d'import n'apparaît pas dans les applis |
+| **Podcasts** | Oui : chercher, suivre, reprendre là où vous vous êtes arrêté | Non (voir [Appli Android et lecteur web](#appli-android-et-lecteur-web)) |
+| **Musonic Connect** (passer la lecture d'un appareil à l'autre) | Oui, en bêta | Non |
+| **Connexion** | Une clé d'appareil par appli, révocable depuis la console (voir [Ce que les applis gardent](#ce-que-les-applis-gardent-pour-vous-connecter)) | Un jeton calculé à partir de votre mot de passe (voir plus bas) |
+| **Avis de mise à jour** | Appli Android : oui (elle consulte GitHub). Console : oui, pour le serveur et sa copie du lecteur web. | Appli Android : oui (elle consulte GitHub, quel que soit le serveur) |
+| **Console d'administration** | Oui, à l'adresse du serveur | Non : utilisez l'administration propre à votre serveur |
+
+Vos playlists, vos likes et vos compteurs d'écoute sont enregistrés **sur le serveur** : quel que soit le serveur, ils sont les mêmes dans toutes les applis connectées au même compte.
+
+## Ce que les applis gardent pour vous connecter
+
+Vous tapez votre mot de passe une fois. Ce que l'appli garde ensuite dépend du serveur, et cela compte si quelqu'un d'autre prend votre téléphone ou votre ordinateur.
+
+| | Musonic Server | Navidrome / autres serveurs Subsonic |
+|---|---|---|
+| **Appli Android** | Une **clé d'appareil** pour ce téléphone, à son nom (par exemple « Musonic Android · SM-A525F »). Le mot de passe est effacé. Si la clé n'a pas pu être créée à la connexion (le serveur n'a pas répondu à temps, par exemple), le **mot de passe reste sur le téléphone** et l'appli réessaie au lancement suivant. | Un **jeton** : une empreinte de votre mot de passe mélangée à une valeur aléatoire (`t` et `s` dans Subsonic). Le mot de passe est effacé. Si le serveur refuse les jetons (certains serveurs qui vérifient les mots de passe dans un annuaire le font), **le mot de passe lui-même est gardé** sur le téléphone. |
+| **Lecteur web** | Une **clé d'appareil** pour ce navigateur (par exemple « Musonic Web · Firefox (Linux) »). Le mot de passe n'est jamais enregistré. | Un **jeton**, comme ci-dessus. Le mot de passe n'est jamais enregistré. Si le serveur refuse les jetons, le lecteur web ne peut pas s'y connecter. |
+
+**Ce que cela veut dire.**
+
+- Une **clé d'appareil** ne marche que sur ce serveur, apparaît dans la console sous **Appareils et sécurité**, et se révoque à elle seule. **Se déconnecter** la révoque aussi.
+- Un **jeton** n'est pas votre mot de passe, mais il ouvre votre compte sur ce serveur tout aussi bien, jusqu'à ce que vous **changiez de mot de passe**. Il n'y a pas de liste de jetons à révoquer un par un.
+- Dans le lecteur web, la clé ou le jeton n'est gardé que pour l'onglet, sauf si vous cochez **Se souvenir de moi** : il reste alors dans le navigateur jusqu'à ce que vous vous déconnectiez.
+
+Le détail de chaque écran de connexion est dans [Se connecter à un serveur](/fr/docs/apps/sign-in/) et [Le lecteur web](/fr/docs/apps/web/#se-connecter).
+
+## Appli Android et lecteur web
+
+Les deux applis partagent la plupart de leurs fonctions. Voici où elles diffèrent.
+
+| | Appli Android | Lecteur web |
+|---|---|---|
+| **Écoute hors ligne** | Télécharger titres, albums, playlists, Titres likés ; téléchargement automatique | Aucune : tout est lu en streaming |
+| **Qualité de streaming** | Un réglage pour le Wi-Fi, un pour les données mobiles | Aucune : le fichier d'origine, sauf limite plus basse posée par l'administrateur |
+| **Android Auto** | Oui | Non |
+| **Fondu entre les titres** | Oui | Oui (0 à 12 s), si le serveur accepte les requêtes venant d'autres sites (CORS) ; jamais sur les épisodes de podcast |
+| **Catalogue en ligne dans la recherche** | Un filtre **En ligne** à part | Les résultats en ligne après ceux de votre bibliothèque, dans les mêmes listes |
+| **Podcasts sur un autre serveur** | Le filtre **Podcasts** et l'onglet de la Bibliothèque restent affichés, mais vides, ou indiquent un échec de chargement | Masqués |
+| **Avis de mise à jour** | Oui, environ 3 secondes après le lancement, et **Profil → À propos → Vérifier les mises à jour** | Inutile : la copie hébergée est toujours la dernière ; la copie d'un serveur est mise à jour par son administrateur |
+| **Où elle tourne** | Téléphones Android (64 bits, Android 7.0 ou plus récent) | Un navigateur sur ordinateur ; sur iPhone et iPad, ajouté à l'écran d'accueil |
+| **Adresse du serveur** | `https://`, ou `http://` sur votre réseau local seulement | Copie hébergée (`musonic.doodz.dev/app/`) : un serveur en `https://` seulement. La copie d'un Musonic Server (`<serveur>/app/`) marche aussi en `http://` à la maison. |
+
+Avec Navidrome ou un autre serveur Subsonic, le lecteur web ne s'ouvre que depuis la copie hébergée : ce serveur doit donc avoir une adresse en `https://` et accepter les requêtes venant d'autres sites (CORS).
+
+## Conditions
+
+Certaines fonctions de Musonic Server dépendent des choix de la personne qui gère le serveur.
+
+- **Catalogue en ligne.** Il montre les informations, les pochettes et un **extrait de 30 secondes** des titres que vous n'avez pas. Un titre sans fichier se lit en entier, ou s'ajoute à la bibliothèque, **seulement si l'administrateur a branché un fournisseur audio** (un dossier d'import, une adresse directe, ou un autre serveur Subsonic utilisé comme relais). Sans fournisseur, les titres en ligne restent des extraits. L'administrateur peut aussi couper le catalogue, pour tout le monde ou pour certains comptes. Voir [Catalogue en ligne et imports](/fr/docs/library/online-catalogue/).
+- **Import de playlist par lien.** Les titres trouvés dans votre bibliothèque sont ajoutés tels quels ; les autres viennent du catalogue en ligne, avec les mêmes limites. Les liens **YouTube Music** demandent une clé YouTube que l'administrateur ajoute dans la console ; sans elle, l'import le dit. Voir [Importer vos playlists](/fr/docs/apps/import-playlists/).
+- **Musonic Connect** est en bêta. La personne qui gère le serveur voit, comme pour chaque compte, le titre en cours et l'appareil utilisé.
+
+<Aside type="tip" title="Vous venez de Navidrome ?">
+Musonic Server peut reprendre vos playlists, likes, notes et compteurs d'écoute de Navidrome. Voir [Venir de Navidrome](/fr/docs/migration/navidrome/). Si vous gardez une autre appli Subsonic à côté, [Autres applis Subsonic](/fr/docs/apps/other-clients/) liste ce que ces applis voient d'un Musonic Server.
+</Aside>
+
+## Et ensuite
+
+- [Comment marche Musonic](/fr/docs/start/how-it-works/)
+- [Venir de Navidrome](/fr/docs/migration/navidrome/)
+- [Autres applis Subsonic](/fr/docs/apps/other-clients/)
+- [Installer l'appli Android](/fr/docs/apps/android/)
+- [Le lecteur web](/fr/docs/apps/web/)

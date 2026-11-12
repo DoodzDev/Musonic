@@ -1,0 +1,99 @@
+---
+title: What works with which server
+description: Which features of the Musonic Android app and web player work with Navidrome or another Subsonic server, which ones need Musonic Server, and where the two apps differ.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The Musonic apps (the Android app and the web player) work with Musonic Server, and also with Navidrome or any other server that speaks the Subsonic API. This page answers one question: if you use them with another server, what do you get, and what do you gain with Musonic Server?
+
+**In short.** Your library, search, playlists, likes, lyrics, the Home, the Magic Mixes, downloads, crossfade and Android Auto work with any Subsonic server. The online catalogue, playlist imports from a link, podcasts, Musonic Connect, device keys and the admin console need Musonic Server.
+
+## How the apps recognise a Musonic Server
+
+There is nothing to set: you type the server's address, as usual, and the app finds out by itself.
+
+- **The Android app** checks the server when you sign in and then every few seconds. A Musonic Server marks each of its answers as coming from Musonic (`"type": "musonic"`); the app reads that mark.
+- **The web player** asks the server for `/v1/info`, a page only Musonic Server has. If it answers as Musonic, the extra features appear.
+
+A Musonic Server also announces a `musonicServer` extension in its list of OpenSubsonic extensions. The Android app reads it only to know which form of song ids the server uses, not to switch features on.
+
+## Feature by feature
+
+| Feature | Musonic Server | Navidrome / other Subsonic servers |
+|---|---|---|
+| **Browse your library** (albums, artists, songs, genres) | Yes | Yes |
+| **Search** your library | Yes, with online catalogue results after yours (see below) | Yes, your library only |
+| **Playlists**: create, edit, reorder, delete | Yes | Yes |
+| **Likes** (songs, albums, artists) | Yes | Yes |
+| **Ratings** (stars) | Not in the Musonic apps. Third-party apps can set them on Musonic Server. | Not in the Musonic apps |
+| **Lyrics**, synced when available | Yes. First the lyrics the server knows: embedded in your files, or a `.lrc` or `.txt` file with the same name next to the song (`.lrc`, synced, wins). Otherwise the app asks LRCLIB (`lrclib.net`) itself. | Yes. First what the server sends (through the standard lyrics requests), otherwise LRCLIB, asked by the app. |
+| **Home** sections (Recently played, Your favourite artists, "More like…", "Because you liked…", Rediscover, New in your library, Random) | Yes, loaded in two requests | Yes, loaded with the standard requests (a few more of them). Sections built on similar artists and songs depend on what your server answers to those requests. |
+| **Magic Mixes** | Yes | Yes: the app builds them from the genres you play and like most, so they need genres in your tags. |
+| **Offline downloads** (Android app) | Yes | Yes |
+| **Crossfade** | Yes | Yes |
+| **Android Auto** | Yes | Yes |
+| **Online catalogue** (artists, albums and songs you do not have) | Yes, when the administrator leaves it on for your account | No |
+| **Import a playlist from a link** (Spotify, Deezer, YouTube Music) | Yes | No: the import option does not show in the apps |
+| **Podcasts** | Yes: search, follow, resume where you stopped | No (see [Android app and web player](#android-app-and-web-player)) |
+| **Musonic Connect** (move playback between your devices) | Yes, in beta | No |
+| **Sign-in** | A device key per app, revocable from the console (see [What the apps keep](#what-the-apps-keep-to-sign-you-in)) | A token made from your password (see below) |
+| **Update notices** | Android app: yes (it checks GitHub). Console: yes, for the server and its copy of the web player. | Android app: yes (it checks GitHub, whatever the server) |
+| **Admin console** | Yes, at the server's address | No: use your server's own administration |
+
+Your playlists, likes and play counts are stored **on the server**: with any server, they are the same in every app signed in to the same account.
+
+## What the apps keep to sign you in
+
+Your password is typed once. What the app keeps afterwards depends on the server, and it matters if someone else picks up your phone or your computer.
+
+| | Musonic Server | Navidrome / other Subsonic servers |
+|---|---|---|
+| **Android app** | A **device key** for this phone, named after it (for example "Musonic Android · SM-A525F"). The password is erased. If the key could not be made at sign-in (the server did not answer in time, for example), the **password stays on the phone** and the app tries again at the next launch. | A **token**: a fingerprint of your password mixed with a random value (`t` and `s` in Subsonic). The password is erased. If the server refuses tokens (some servers that check passwords against a directory do), the **password itself is kept** on the phone. |
+| **Web player** | A **device key** for this browser (for example "Musonic Web · Firefox (Linux)"). The password is never stored. | A **token**, as above. The password is never stored. If the server refuses tokens, the web player cannot sign in to it. |
+
+**What this means.**
+
+- A **device key** works only on that server, is listed in the console under **Devices and security**, and can be revoked alone. **Log out** revokes it too.
+- A **token** is not your password, but it opens your account on that server just as well, until you **change your password**. There is no list of tokens to revoke one by one.
+- In the web player, the key or token is kept for the tab only, unless you tick **Remember me**: then it stays in the browser until you log out.
+
+The details of each sign-in screen are in [Sign in to a server](/docs/apps/sign-in/) and [The web player](/docs/apps/web/#sign-in).
+
+## Android app and web player
+
+The two apps share most of their features. Here is where they differ.
+
+| | Android app | Web player |
+|---|---|---|
+| **Offline listening** | Download songs, albums, playlists, Liked Songs; automatic download | None: everything streams |
+| **Streaming quality** | One setting for Wi-Fi, one for mobile data | None: the original file, unless the administrator set a lower limit |
+| **Android Auto** | Yes | No |
+| **Crossfade** | Yes | Yes (0 to 12 s), if the server allows requests from other sites (CORS); never on podcast episodes |
+| **Online catalogue in search** | A separate **Online** filter | Online results after your library's, in the same lists |
+| **Podcasts on another server** | The **Podcasts** filter and Library tab still show, but stay empty or say they could not load | Hidden |
+| **Update notice** | Yes, about 3 seconds after launch, and **Profile → About → Check for updates** | None needed: the hosted copy is always the latest; a server's copy is updated by its administrator |
+| **Where it runs** | Android phones (64-bit, Android 7.0 or later) | A browser on a computer; on iPhone and iPad, added to the Home Screen |
+| **Address of the server** | `https://`, or `http://` on your home network only | Hosted copy (`musonic.doodz.dev/app/`): an `https://` server only. A Musonic Server's own copy (`<server>/app/`) also works over `http://` at home. |
+
+With Navidrome or another Subsonic server, the web player opens only from the hosted copy, so that server needs an `https://` address and must allow requests from other sites (CORS).
+
+## Conditions
+
+Some Musonic Server features depend on choices of the person who runs the server.
+
+- **Online catalogue.** It shows information, covers and a **30-second preview** of songs you do not have. A song without a file plays in full, or gets added to the library, **only if the administrator has plugged in an audio provider** (an import folder, a direct address, or another Subsonic server used as a relay). Without one, online songs stay previews. The administrator can also turn the catalogue off, or turn it off for some accounts. See [Online catalogue and imports](/docs/library/online-catalogue/).
+- **Playlist import from a link.** Songs found in your library are added as they are; the others come from the online catalogue, with the same limits as above. **YouTube Music** links need a YouTube key that the administrator adds in the console; without it, the import says so. See [Import your playlists](/docs/apps/import-playlists/).
+- **Musonic Connect** is in beta. The person who runs the server sees, as for every account, the song playing and the device used.
+
+<Aside type="tip" title="Moving from Navidrome?">
+Musonic Server can take over your playlists, likes, ratings and play counts from Navidrome. See [Coming from Navidrome](/docs/migration/navidrome/). If you keep another Subsonic app alongside, [Use other Subsonic apps](/docs/apps/other-clients/) lists what those apps see of a Musonic Server.
+</Aside>
+
+## Next steps
+
+- [How Musonic works](/docs/start/how-it-works/)
+- [Coming from Navidrome](/docs/migration/navidrome/)
+- [Use other Subsonic apps](/docs/apps/other-clients/)
+- [Install the Android app](/docs/apps/android/)
+- [The web player](/docs/apps/web/)

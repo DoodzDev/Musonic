@@ -15,6 +15,7 @@ This page lists every connection Musonic makes besides the one between your apps
 - **The Android app** also contacts, directly from the phone: **LRCLIB** for lyrics the server does not have, **Deezer's public API** for artist photos, popular songs and similar artists, and **GitHub** when you tap **Check for updates**. There is no setting to turn off the first two today.
 - **The web player** contacts your server and **LRCLIB** only. It loads no font, script or picture from anyone else.
 - **This website** sets no cookie, has no analytics and serves its own font.
+- **Every service contacted sees the public IP address** of the device that contacts it, like any website you visit: LRCLIB and Deezer see your phone's address when the app asks them directly, the server's address when the server asks; GitHub sees the address of what checks for updates; podcast hosts see your server's address. No Musonic account, name or password is ever sent to them, but this usual network information is visible to them.
 
 <img class="diagram" src="/assets/img/docs/diagrams/privacy-network.en.svg" alt="Diagram: in the middle, your Musonic Server, linked to the Android app and to the web player. Arrows from the server to Deezer public API, GitHub, Apple podcast directory and podcast hosts, Podcast Index (with a key), YouTube Data API (with a key). Arrows from the Android app to LRCLIB, Deezer public API and GitHub (on demand). Arrow from the web player to LRCLIB. No arrow carries your music files." />
 

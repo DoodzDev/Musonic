@@ -26,6 +26,10 @@ const t = {
     ios: 'On iPhone? Use the web player',
     tryWeb: 'Try it in the browser',
     installServer: 'Install the server',
+    pathHave: 'Someone gave you access to a server?',
+    pathOwn: 'You want your own music library?',
+    pathOwnText: 'The apps need a server. Install Musonic Server on a machine at home, then invite your family and friends.',
+    compat: 'Already on Navidrome? See what works with which server',
     fine: 'Free · public code · non-commercial licence',
     shotAlt: 'The Musonic web player: home page with recently played albums and favourite artists.',
     noteTitle: 'Someone installed Musonic for you?',
@@ -39,14 +43,18 @@ const t = {
     proofLink: 'See the benchmark',
   },
   fr: {
-    title: 'Musonic : votre serveur, vos données, ta musique',
+    title: 'Musonic : votre serveur, vos données, votre musique',
     description: 'Une appli de musique Android, un lecteur web pour votre ordinateur et votre iPhone, et un serveur qui tourne chez vous. Pas de pub, pas d\'abonnement.',
-    h1: 'Votre serveur, vos données. Et ta musique.',
+    h1: 'Votre serveur, vos données. Et votre musique.',
     lead: 'Une appli Android, un lecteur web (sur iPhone aussi) et un serveur qui tourne chez vous. Pas de pub, pas d\'abonnement, et vous pouvez ajouter vos propres fichiers, même les chansons qu\'aucune plateforme n\'a.',
     download: 'Télécharger pour Android',
     ios: 'Sur iPhone ? Utilisez le lecteur web',
     tryWeb: 'Essayer dans le navigateur',
     installServer: 'Installer le serveur',
+    pathHave: 'Un proche vous a donné accès à un serveur ?',
+    pathOwn: 'Vous voulez votre propre bibliothèque ?',
+    pathOwnText: 'Les applis ont besoin d\'un serveur. Installez Musonic Server sur une machine chez vous, puis invitez votre famille et vos amis.',
+    compat: 'Déjà sur Navidrome ? Voyez ce qui marche avec quel serveur',
     fine: 'Gratuit · code public · licence non commerciale',
     shotAlt: 'Le lecteur web de Musonic : l\'accueil avec les albums écoutés récemment et les artistes préférés.',
     noteTitle: 'Un proche vous a installé Musonic ?',
@@ -76,12 +84,22 @@ const homeShot = `/assets/img/screenshots/web/home-${lang}.jpg`;
   <section class="wrap hero">
     <h1>{t.h1}</h1>
     <p class="lead">{t.lead}</p>
-    <div class="actions">
-      <a class="button" href={apk}>{t.download}</a>
-      <a class="button button--second" href="/app/">{t.tryWeb}</a>
-      <div class="textlinks">
-        <a href={L('/mobile/') + '#ios'}>{t.ios}</a>
-        <a href={L('/docs/install/docker/')}>{t.installServer}</a>
+    <div class="paths">
+      <div class="path">
+        <h2 class="path__title">{t.pathHave}</h2>
+        <div class="actions">
+          <a class="button" href={apk}>{t.download}</a>
+          <a class="button button--second" href="/app/">{t.tryWeb}</a>
+        </div>
+        <div class="textlinks"><a href={L('/mobile/') + '#ios'}>{t.ios}</a></div>
+      </div>
+      <div class="path">
+        <h2 class="path__title">{t.pathOwn}</h2>
+        <p class="path__text">{t.pathOwnText}</p>
+        <div class="actions">
+          <a class="button button--second" href={L('/docs/install/docker/')}>{t.installServer}</a>
+        </div>
+        <div class="textlinks"><a href={L('/docs/start/compatibility/')}>{t.compat}</a></div>
       </div>
     </div>
     <p class="small">{t.fine}</p>

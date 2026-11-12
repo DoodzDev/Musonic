@@ -4,6 +4,7 @@ description: Les versions actuelles de l'appli Musonic, du lecteur web et du ser
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import Version from '../../../../../components/Version.astro';
 
 Cette page vous dit quelles versions sont à jour, où lire ce qui a changé, et comment distinguer les différentes versions publiées sur GitHub.
 
@@ -11,9 +12,9 @@ Cette page vous dit quelles versions sont à jour, où lire ce qui a changé, et
 
 | Partie | Version | Ce qui a changé | Étiquette |
 |---|---|---|---|
-| Appli Android (Musonic Mobile) | **2.4.0** | [Journal des changements](https://github.com/DoodzDev/Musonic/blob/main/apps/mobile/CHANGELOG.md) | `mobile-v2.4.0` |
-| Lecteur web (Musonic Web) | **1.2.0** | [Journal des changements](https://github.com/DoodzDev/Musonic/blob/main/apps/web/CHANGELOG.md) | `web-v1.2.0` |
-| Musonic Server (avec sa console) | **1.2.1** | [Journal des changements](https://github.com/DoodzDev/Musonic/blob/main/apps/server/CHANGELOG.md) | `server-v1.2.1` |
+| Appli Android (Musonic Mobile) | **<Version app="mobile" />** | [Journal des changements](https://github.com/DoodzDev/Musonic/blob/main/apps/mobile/CHANGELOG.md) | <code class="nowrap"><Version app="mobile" tag /></code> |
+| Lecteur web (Musonic Web) | **<Version app="web" />** | [Journal des changements](https://github.com/DoodzDev/Musonic/blob/main/apps/web/CHANGELOG.md) | <code class="nowrap"><Version app="web" tag /></code> |
+| Musonic Server (avec sa console) | **<Version app="server" />** | [Journal des changements](https://github.com/DoodzDev/Musonic/blob/main/apps/server/CHANGELOG.md) | <code class="nowrap"><Version app="server" tag /></code> |
 
 Les journaux des changements sont en anglais. Tous les téléchargements sont sur la [page des versions](https://github.com/DoodzDev/Musonic/releases).
 

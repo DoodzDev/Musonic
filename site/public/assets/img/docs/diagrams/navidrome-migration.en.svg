@@ -1,36 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 390" role="img" aria-labelledby="t d">
 <title id="t">Moving from Navidrome</title>
-<desc id="d">Navidrome and Musonic Server read the same music folder; a copy of navidrome.db is imported into Musonic; the reverse proxy is switched to Musonic only after validation.</desc>
+<desc id="d">Navidrome, which keeps running until you switch, and Musonic Server, installed next to it, both read the same music folder: nothing is moved. To bring your data over: a copy of navidrome.db is read by the import-navidrome command, which brings playlists, likes, ratings and plays into Musonic; passwords are not imported.</desc>
 <defs><marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0.8 L10 5 L0 9.2 Z" fill="#7D7B77"/></marker><marker id="aho" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0.8 L10 5 L0 9.2 Z" fill="#FF6B35"/></marker><marker id="asg" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M10 0.8 L0 5 L10 9.2 Z" fill="#7D7B77"/></marker><marker id="aso" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M10 0.8 L0 5 L10 9.2 Z" fill="#FF6B35"/></marker></defs>
-<rect x="20" y="150" width="170" height="130" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
-<g transform="translate(87 166) scale(1.41667)" fill="none" stroke="#B1AFAB" stroke-width="1.05882" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5a1.5 1.5 0 0 1 1.5-1.5h4.2l2 2.2h8.8A1.5 1.5 0 0 1 21 8.7v9.8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/></g>
-<text x="105" y="245.48" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="16" fill="#F1F0EE" text-anchor="middle" font-weight="600">Music folder</text>
-<rect x="300" y="30" width="260" height="96" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
-<text x="430" y="63.79" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="middle" font-weight="600">Navidrome</text>
-<text x="430" y="84.67" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#B1AFAB" text-anchor="middle">port 4533</text>
-<text x="430" y="103.5" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="middle">navidrome.db never written</text>
-<rect x="300" y="314" width="260" height="96" rx="12" fill="#1C1C1E" stroke="#FF6B35" stroke-width="1.5"/>
-<text x="430" y="357.04" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="middle" font-weight="600">Musonic Server</text>
-<text x="430" y="377.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#B1AFAB" text-anchor="middle">port 4534</text>
-<path d="M190 195 L294 90" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
-<text x="250" y="118" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="end">read</text>
-<path d="M190 235 L294 350" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
-<text x="252" y="294" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="start">read · :ro</text>
-<rect x="340" y="196" width="180" height="48" rx="12" fill="none" stroke="#3A3A3D" stroke-width="1.5" stroke-dasharray="6 5"/>
-<text x="430" y="223.64" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#F1F0EE" text-anchor="middle" font-weight="600">navidrome-copy.db</text>
-<path d="M430 126 L430 190" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
-<text x="442" y="164" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5" fill="#B1AFAB" text-anchor="start">1. sqlite3 .backup</text>
-<path d="M430 244 L430 308" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#aho)"/>
-<text x="442" y="282" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5" fill="#B1AFAB" text-anchor="start">2. import-navidrome</text>
-<rect x="780" y="165" width="160" height="100" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
-<text x="860" y="201.04" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="middle" font-weight="600">Apps</text>
-<text x="860" y="221.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#B1AFAB" text-anchor="middle"><tspan x="860" dy="0">Musonic, Subsonic</tspan><tspan x="860" dy="18">apps</tspan></text>
-<rect x="620" y="175" width="130" height="80" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
-<text x="685" y="199.2" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="15" fill="#F1F0EE" text-anchor="middle" font-weight="600"><tspan x="685" dy="0">Reverse</tspan><tspan x="685" dy="20">proxy</tspan></text>
-<text x="685" y="239.42" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#B1AFAB" text-anchor="middle">HTTPS</text>
-<path d="M780 215 L756 215" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
-<path d="M660 175 L660 78 L566 78" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
-<text x="672" y="128" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="start">today</text>
-<path d="M660 255 L660 362 L566 362" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5" marker-end="url(#aho)"/>
-<text x="672" y="312" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#B1AFAB" text-anchor="start"><tspan x="672" dy="0">3. after</tspan><tspan x="672" dy="16">validation</tspan></text>
+<rect x="20" y="20" width="250" height="110" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="145" y="61.04" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="middle" font-weight="600">Navidrome</text>
+<text x="145" y="81.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#B1AFAB" text-anchor="middle"><tspan x="145" dy="0">keeps running until you</tspan><tspan x="145" dy="18">switch</tspan></text>
+<rect x="690" y="20" width="250" height="110" rx="12" fill="#1C1C1E" stroke="#FF6B35" stroke-width="1.5"/>
+<text x="815" y="70.04" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="18" fill="#F1F0EE" text-anchor="middle" font-weight="600">Musonic Server</text>
+<text x="815" y="90.92" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#B1AFAB" text-anchor="middle">installed next to it</text>
+<rect x="355" y="20" width="250" height="110" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<g transform="translate(466 42) scale(1.16667)" fill="none" stroke="#B1AFAB" stroke-width="1.28571" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5a1.5 1.5 0 0 1 1.5-1.5h4.2l2 2.2h8.8A1.5 1.5 0 0 1 21 8.7v9.8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/></g>
+<text x="480" y="102" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="17" fill="#F1F0EE" text-anchor="middle" font-weight="600">Music folder</text>
+<path d="M355 75 L276 75" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<path d="M605 75 L684 75" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<text x="480" y="158" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13.5" fill="#B1AFAB" text-anchor="middle">Both read the same folder, nothing is moved</text>
+<text x="20" y="214" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="14" fill="#F1F0EE" text-anchor="start" font-weight="600">Bringing your data over</text>
+<rect x="20" y="232" width="270" height="136" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="38" y="268" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#F1F0EE" text-anchor="start" font-weight="600">navidrome-copy.db</text>
+<text x="38" y="292" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="start"><tspan x="38" dy="0">a safe copy of navidrome.db; the</tspan><tspan x="38" dy="17">original is never changed</tspan></text>
+<path d="M298 300 L337 300" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="345" y="232" width="270" height="136" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="363" y="268" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#F1F0EE" text-anchor="start" font-weight="600">import-navidrome</text>
+<text x="363" y="292" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="start"><tspan x="363" dy="0">Musonic's command reads the</tspan><tspan x="363" dy="17">copy, for accounts with the same</tspan><tspan x="363" dy="17">user name</tspan></text>
+<path d="M623 300 L662 300" fill="none" stroke="#7D7B77" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ahg)"/>
+<rect x="670" y="232" width="270" height="136" rx="12" fill="#1C1C1E" stroke="#3A3A3D" stroke-width="1.5"/>
+<text x="688" y="268" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="17" fill="#F1F0EE" text-anchor="start" font-weight="600">In Musonic</text>
+<text x="688" y="292" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="13" fill="#B1AFAB" text-anchor="start"><tspan x="688" dy="0">playlists, likes, ratings and</tspan><tspan x="688" dy="17">plays</tspan></text>
+<text x="688" y="331" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="12.5" fill="#7D7B77" text-anchor="start">Passwords are not imported.</text>
 </svg>
