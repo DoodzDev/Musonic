@@ -111,6 +111,8 @@ export default defineConfig({
       // Dark code blocks only, like the rest of the site.
       expressiveCode: { themes: ['github-dark'], styleOverrides: { borderRadius: '10px' } },
       head: [
+        { tag: 'meta', attrs: { property: 'og:image', content: 'https://musonic.doodz.dev/assets/img/social-card.jpg' } },
+        { tag: 'meta', attrs: { name: 'twitter:card', content: 'summary_large_image' } },
         {
           tag: 'script',
           // Puts every diagram in its own frame (scrolls sideways on a phone) and makes it open full size.
