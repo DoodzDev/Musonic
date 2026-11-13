@@ -9,13 +9,13 @@
  *   one. Publishes the
  *   playback position (lyrics), obeys seek requests, handles the keyboard
  *   shortcuts and the system media controls (media keys, desktop media
- *   widget), reports plays to the server (useScrobbler). Podcast episodes
+ *   widget, phone lock screen with its progress bar), reports plays to the server (useScrobbler). Podcast episodes
  *   resume where the account stopped, save their position, may play faster
  *   and never crossfade. Musonic Connect may ask the next track to start at a
  *   position, or paused. Components read the controls with `useTransport`
  *   (transport.ts).
  * @author DoodzProg
- * @version 0.5.0
+ * @version 0.6.0
  * @license CC-BY-NC-4.0
  */
 
@@ -384,6 +384,24 @@ export function AudioEngine({ children }: { children: ReactNode }) {
       : null;
   }, [client, song]);
 
+  // Lock screen and notification on a phone: play / pause state and the progress bar. The
+  // system moves the bar on its own from the position given here, so it is only set again
+  // when it jumps (play, pause, seek, new track).
+  const syncPositionState = (el: HTMLAudioElement | null) => {
+    if (!('mediaSession' in navigator) || typeof navigator.mediaSession.setPositionState !== 'function') return;
+    const length = el && Number.isFinite(el.duration) ? el.duration : duration;
+    if (!el || !(length > 0)) return;
+    try {
+      navigator.mediaSession.setPositionState({ duration: length, playbackRate: el.playbackRate || 1, position: Math.min(el.currentTime, length) });
+    } catch {
+      // A position the browser refuses (e.g. while loading): the next event sets it.
+    }
+  };
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.playbackState = !song ? 'none' : player.playing ? 'playing' : 'paused';
+  }, [song, player.playing]);
+
   // The element fading out only reports its end; the rest follows the active one.
   const isActive = (e: SyntheticEvent<HTMLAudioElement>) => e.currentTarget === audio();
   const handlers = {
@@ -401,6 +419,9 @@ export function AudioEngine({ children }: { children: ReactNode }) {
       pendingSeek.current = 0;
     },
     onSeeking: (e: SyntheticEvent<HTMLAudioElement>) => isActive(e) && scrobbler.interrupt(),
+    onSeeked: (e: SyntheticEvent<HTMLAudioElement>) => isActive(e) && syncPositionState(e.currentTarget),
+    onPlaying: (e: SyntheticEvent<HTMLAudioElement>) => isActive(e) && syncPositionState(e.currentTarget),
+    onRateChange: (e: SyntheticEvent<HTMLAudioElement>) => isActive(e) && syncPositionState(e.currentTarget),
     onTimeUpdate: (e: SyntheticEvent<HTMLAudioElement>) => {
       if (!isActive(e)) return;
       const el = e.currentTarget;
