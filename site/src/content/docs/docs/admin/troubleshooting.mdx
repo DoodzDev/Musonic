@@ -169,7 +169,7 @@ Put it in the `server` block of your HTTPS site.
   </TabItem>
 </Tabs>
 
-The server reads the visitor's address from `X-Forwarded-For` (or `CF-Connecting-IP` behind a Cloudflare tunnel). Without it, every sign-in seems to come from the proxy, and one person's wrong passwords could block everybody at that address.
+The server reads the visitor's address from `X-Forwarded-For` (or `CF-Connecting-IP` behind a Cloudflare tunnel). Without it, every sign-in seems to come from the proxy, and one person's wrong passwords could block everybody at that address. The headers only count when the proxy runs on the same machine or on a private network; a proxy elsewhere must be listed in `MUSONIC_TRUSTED_PROXIES`.
 
 ## The scan finds nothing
 

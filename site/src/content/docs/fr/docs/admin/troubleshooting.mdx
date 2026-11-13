@@ -169,7 +169,7 @@ Placez-le dans le bloc `server` de votre site HTTPS.
   </TabItem>
 </Tabs>
 
-Le serveur lit l'adresse du visiteur dans `X-Forwarded-For` (ou `CF-Connecting-IP` derrière un tunnel Cloudflare). Sans cela, toutes les connexions semblent venir du proxy, et les mauvais mots de passe d'une personne pourraient bloquer tout le monde à cette adresse.
+Le serveur lit l'adresse du visiteur dans `X-Forwarded-For` (ou `CF-Connecting-IP` derrière un tunnel Cloudflare). Sans cela, toutes les connexions semblent venir du proxy, et les mauvais mots de passe d'une personne pourraient bloquer tout le monde à cette adresse. Ces en-têtes ne comptent que si le proxy tourne sur la même machine ou sur un réseau privé ; un proxy ailleurs doit être listé dans `MUSONIC_TRUSTED_PROXIES`.
 
 ## Le scan ne trouve rien
 

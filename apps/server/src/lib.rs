@@ -61,6 +61,7 @@ pub struct Extensions {
 pub async fn cli(extensions: impl FnOnce(&Config) -> Result<Extensions>) -> Result<()> {
     init_tracing();
     let config = Config::load()?;
+    server::set_trusted_proxies(config.trusted_proxies.as_deref())?;
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
         Some("scan") => {

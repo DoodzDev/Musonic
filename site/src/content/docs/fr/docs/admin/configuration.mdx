@@ -109,6 +109,7 @@ Le fonctionnement des fournisseurs est décrit dans [PROVIDERS.md](https://githu
 | Variable | Clé du fichier | Type | Par défaut | Effet |
 |---|---|---|---|---|
 | `MUSONIC_LEGACY_AUTH` | `legacy_auth` | oui/non | oui | Accepter la connexion Subsonic par jeton (`t` + `s`) qu'utilisent beaucoup d'applications. Elle oblige à garder le mot de passe chiffré à côté de son hachage. Non = seulement mot de passe, clé d'appareil et sessions. |
+| `MUSONIC_TRUSTED_PROXIES` | `trusted_proxies` | liste | cette machine et réseaux privés | Les proxies dont le serveur croit `CF-Connecting-IP` et `X-Forwarded-For`, pour connaître l'adresse d'un visiteur (limite des mauvais mots de passe, journal) : adresses ou réseaux séparés par des virgules (`127.0.0.1, 172.16.0.0/12`), ou `none`. Une requête venue d'ailleurs est comptée sous sa propre adresse, quoi qu'elle envoie. Mettez `none` si le port du serveur est ouvert sur internet sans proxy devant, et ajoutez les réseaux de Cloudflare si Cloudflare joint le serveur directement (DNS proxifié, sans tunnel). |
 | `MUSONIC_SECRET_KEY` | — | 64 caractères hexadécimaux | `secret.key` dans le dossier de données, créé au premier démarrage | Clé qui chiffre les mots de passe gardés pour la connexion par jeton. Environnement uniquement. |
 | `MUSONIC_PASSWORD` | — | texte | aucun | Mot de passe pour `musonic-server user add`, au lieu de le taper. |
 

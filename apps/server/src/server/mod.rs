@@ -4,7 +4,11 @@
 //! CORS is open (any origin, no cookies): browsers clients such as Musonic Web call the server
 //! from another address, with credentials in parameters or an `Authorization` header.
 
-use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+use std::{
+    net::{IpAddr, SocketAddr},
+    path::PathBuf,
+    sync::Arc,
+};
 
 use axum::{
     Json, Router,
@@ -238,17 +242,97 @@ async fn api_not_found() -> (axum::http::StatusCode, Json<Value>) {
     )
 }
 
-/// Client address, for the sign-in limiter: the address forwarded by the proxy in front
-/// (Cloudflare, Nginx…) when there is one, else the connection's.
+/// Networks whose forwarded-address headers are believed (`MUSONIC_TRUSTED_PROXIES`); unset =
+/// this machine and private networks.
+static TRUSTED_PROXIES: std::sync::OnceLock<Vec<(IpAddr, u8)>> = std::sync::OnceLock::new();
+
+/// Reads `MUSONIC_TRUSTED_PROXIES` once, at startup: addresses or networks, or `none`.
+pub fn set_trusted_proxies(list: Option<&[String]>) -> anyhow::Result<()> {
+    let Some(list) = list else { return Ok(()) };
+    let mut nets = Vec::new();
+    for item in list {
+        if item.eq_ignore_ascii_case("none") {
+            continue;
+        }
+        let (addr, bits) = item.split_once('/').unwrap_or((item, ""));
+        let ip: IpAddr = addr
+            .parse()
+            .map_err(|_| anyhow::anyhow!("MUSONIC_TRUSTED_PROXIES: {item} is not an address"))?;
+        let max = if ip.is_ipv4() { 32 } else { 128 };
+        let bits = if bits.is_empty() {
+            max
+        } else {
+            bits.parse::<u8>()
+                .ok()
+                .filter(|b| *b <= max)
+                .ok_or_else(|| anyhow::anyhow!("MUSONIC_TRUSTED_PROXIES: {item}: bad prefix"))?
+        };
+        nets.push((ip, bits));
+    }
+    let _ = TRUSTED_PROXIES.set(nets);
+    Ok(())
+}
+
+fn in_network(ip: IpAddr, (net, bits): (IpAddr, u8)) -> bool {
+    match (ip, net) {
+        (IpAddr::V4(a), IpAddr::V4(n)) => {
+            let mask = u32::MAX.checked_shl(32 - u32::from(bits)).unwrap_or(0);
+            u32::from(a) & mask == u32::from(n) & mask
+        }
+        (IpAddr::V6(a), IpAddr::V6(n)) => {
+            let mask = u128::MAX.checked_shl(128 - u32::from(bits)).unwrap_or(0);
+            u128::from(a) & mask == u128::from(n) & mask
+        }
+        _ => false,
+    }
+}
+
+fn is_trusted_proxy(ip: IpAddr, list: Option<&[(IpAddr, u8)]>) -> bool {
+    let ip = ip.to_canonical();
+    match list {
+        Some(nets) => nets.iter().any(|n| in_network(ip, *n)),
+        None => match ip {
+            IpAddr::V4(v4) => v4.is_loopback() || v4.is_private() || v4.is_link_local(),
+            // Loopback, unique local (fc00::/7), link-local (fe80::/10).
+            IpAddr::V6(v6) => {
+                v6.is_loopback()
+                    || (v6.segments()[0] & 0xfe00) == 0xfc00
+                    || (v6.segments()[0] & 0xffc0) == 0xfe80
+            }
+        },
+    }
+}
+
+/// Client address, for the sign-in limiter and the journal: the address forwarded by the
+/// proxy in front (Cloudflare, Caddy, nginx…), else the connection's. The headers are only
+/// believed from a trusted proxy: a request coming straight from the internet could otherwise
+/// pick a new "address" at each try and never be limited (AUD-015 F02).
 pub fn client_addr(headers: &HeaderMap, peer: Option<SocketAddr>) -> String {
-    headers
-        .get("cf-connecting-ip")
-        .or_else(|| headers.get("x-forwarded-for"))
-        .and_then(|v| v.to_str().ok())
-        .and_then(|v| v.split(',').next())
-        .map(|v| v.trim().to_owned())
-        .or_else(|| peer.map(|p| p.ip().to_string()))
-        .unwrap_or_default()
+    client_addr_with(headers, peer, TRUSTED_PROXIES.get().map(Vec::as_slice))
+}
+
+fn client_addr_with(
+    headers: &HeaderMap,
+    peer: Option<SocketAddr>,
+    trusted: Option<&[(IpAddr, u8)]>,
+) -> String {
+    let forwarded = || {
+        headers
+            .get("cf-connecting-ip")
+            .or_else(|| headers.get("x-forwarded-for"))
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.split(',').next())
+            .map(|v| v.trim().to_owned())
+            .filter(|v| !v.is_empty())
+    };
+    match peer {
+        Some(p) if is_trusted_proxy(p.ip(), trusted) => {
+            forwarded().unwrap_or_else(|| p.ip().to_canonical().to_string())
+        }
+        Some(p) => p.ip().to_canonical().to_string(),
+        // No connection address (in-process requests): only the headers can tell.
+        None => forwarded().unwrap_or_default(),
+    }
 }
 
 /// Until the web client is served here: a page saying the server runs and how to use it.
@@ -311,6 +395,77 @@ pub mod tests {
 
     use super::*;
     use crate::users::secret::SecretBox;
+
+    fn forwarded(cf: Option<&str>, xff: Option<&str>) -> HeaderMap {
+        let mut h = HeaderMap::new();
+        if let Some(v) = cf {
+            h.insert("cf-connecting-ip", v.parse().unwrap());
+        }
+        if let Some(v) = xff {
+            h.insert("x-forwarded-for", v.parse().unwrap());
+        }
+        h
+    }
+
+    #[test]
+    fn forwarded_addresses_are_only_believed_from_a_trusted_proxy() {
+        let peer = |s: &str| Some(s.parse::<SocketAddr>().unwrap());
+        let h = forwarded(None, Some("203.0.113.7, 10.0.0.2"));
+        // A proxy on this machine, in Docker or on the local network: its header counts.
+        for p in [
+            "127.0.0.1:50000",
+            "172.17.0.1:50000",
+            "192.168.1.10:50000",
+            "[::1]:50000",
+        ] {
+            assert_eq!(client_addr_with(&h, peer(p), None), "203.0.113.7", "{p}");
+        }
+        assert_eq!(
+            client_addr_with(
+                &forwarded(Some("198.51.100.4"), Some("203.0.113.7")),
+                peer("127.0.0.1:1"),
+                None
+            ),
+            "198.51.100.4",
+            "Cloudflare's header first"
+        );
+        // Straight from the internet: a forged header changes nothing (AUD-015 F02).
+        assert_eq!(
+            client_addr_with(&h, peer("198.51.100.9:443"), None),
+            "198.51.100.9"
+        );
+        assert_eq!(
+            client_addr_with(&h, peer("[::ffff:198.51.100.9]:443"), None),
+            "198.51.100.9",
+            "IPv4 seen through IPv6"
+        );
+        // A trusted proxy that sends nothing: its own address.
+        assert_eq!(
+            client_addr_with(&HeaderMap::new(), peer("127.0.0.1:1"), None),
+            "127.0.0.1"
+        );
+    }
+
+    #[test]
+    fn trusted_proxies_can_be_set() {
+        let peer = |s: &str| Some(s.parse::<SocketAddr>().unwrap());
+        let h = forwarded(None, Some("203.0.113.7"));
+        let cf: &[(IpAddr, u8)] = &[("173.245.48.0".parse().unwrap(), 20)];
+        assert_eq!(
+            client_addr_with(&h, peer("173.245.50.1:443"), Some(cf)),
+            "203.0.113.7"
+        );
+        assert_eq!(
+            client_addr_with(&h, peer("127.0.0.1:1"), Some(cf)),
+            "127.0.0.1",
+            "only the listed networks"
+        );
+        // `none`: never believed.
+        assert_eq!(
+            client_addr_with(&h, peer("127.0.0.1:1"), Some(&[])),
+            "127.0.0.1"
+        );
+    }
 
     pub fn state() -> AppState {
         let db = Db::memory().unwrap();

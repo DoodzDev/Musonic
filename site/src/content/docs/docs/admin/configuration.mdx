@@ -109,6 +109,7 @@ How providers work is described in [PROVIDERS.md](https://github.com/DoodzDev/Mu
 | Variable | File key | Type | Default | Effect |
 |---|---|---|---|---|
 | `MUSONIC_LEGACY_AUTH` | `legacy_auth` | yes/no | yes | Accept the Subsonic token sign-in (`t` + `s`) used by many apps. It needs the password kept encrypted next to its hash. Off = only password, device key and session sign-ins. |
+| `MUSONIC_TRUSTED_PROXIES` | `trusted_proxies` | list | this machine and private networks | Proxies whose `CF-Connecting-IP` and `X-Forwarded-For` the server believes, to know a visitor's address (wrong-password limit, journal): addresses or networks separated by commas (`127.0.0.1, 172.16.0.0/12`), or `none`. A request from anywhere else is counted under its own address, whatever it sends. Set `none` if the server's port is open to the internet without a proxy in front, and add Cloudflare's networks if Cloudflare reaches the server directly (proxied DNS, no tunnel). |
 | `MUSONIC_SECRET_KEY` | — | 64 hexadecimal characters | `secret.key` in the data folder, created on first start | Key that encrypts the passwords kept for the token sign-in. Environment only. |
 | `MUSONIC_PASSWORD` | — | text | none | Password for `musonic-server user add`, instead of typing it. |
 
