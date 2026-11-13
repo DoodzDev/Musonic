@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-11-13
+
+### Fixed
+- **A refused ListenBrainz account shows ListenBrainz's own sentence** (the reason, such as an
+  e-mail address to verify) instead of its raw answer.
+
 ## [1.3.0] - 2026-11-13
 
 ### Added

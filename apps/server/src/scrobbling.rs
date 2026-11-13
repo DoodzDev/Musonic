@@ -691,10 +691,12 @@ impl Scrobbling {
         if status.is_success() {
             return Ok(());
         }
-        let msg = res
-            .text()
-            .await
-            .unwrap_or_default()
+        // ListenBrainz explains in `{"code": …, "error": "…"}`: keep its sentence.
+        let text = res.text().await.unwrap_or_default();
+        let msg = serde_json::from_str::<Value>(&text)
+            .ok()
+            .and_then(|v| v["error"].as_str().map(str::to_owned))
+            .unwrap_or(text)
             .chars()
             .take(300)
             .collect::<String>();

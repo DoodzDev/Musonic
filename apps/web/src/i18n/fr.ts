@@ -3,7 +3,7 @@
  * @description French strings of the web client (source of truth: en.ts
  *   must have the same shape). Pick the active language through i18n/index.ts.
  * @author DoodzProg
- * @version 0.8.3
+ * @version 0.8.4
  * @license CC-BY-NC-4.0
  */
 
@@ -216,6 +216,10 @@ export const fr = {
     crossfadeOff: 'Désactivé',
     crossfadeSeconds: (seconds: number) => `${seconds} s`,
     crossfadeHint: 'Le titre suivant démarre en fondu sur la fin du titre en cours. Jamais quand vous passez un titre vous-même.',
+    timeShown: 'Temps en bout de barre',
+    timeTotal: (time: string) => `Durée · ${time}`,
+    timeLeft: (time: string) => `Temps restant · ${time}`,
+    about: (setting: string) => `À propos : ${setting}`,
     scrobbling: {
       section: 'Scrobbling',
       hint: 'Envoyez ce que vous écoutez (la moitié d’un titre, ou 4 minutes) à votre compte ListenBrainz ou Last.fm. Les écoutes partent du serveur, même quand cette page est fermée.',
@@ -232,6 +236,9 @@ export const fr = {
       lastfmConnect: 'Connecter Last.fm',
       lastfmWaiting: 'Autorisez Musonic sur la page Last.fm qui s’est ouverte, puis revenez ici.',
       lastfmUnavailable: 'Last.fm n’est pas configuré sur ce serveur : son administrateur ajoute une clé Last.fm dans la console.',
+      save: 'Enregistrer',
+      serviceSaid: (message: string) => `Réponse du service : « ${message} »`,
+      lastfmUnavailableShort: 'Non configuré sur ce serveur : demandez à son administrateur',
       failed: 'Cela n’a pas marché. Réessayez.',
     },
   },

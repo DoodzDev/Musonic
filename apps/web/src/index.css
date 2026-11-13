@@ -2,7 +2,7 @@
  * @file index.css
  * @description Design v2 tokens and styles of the web client (dark theme only).
  * @author DoodzProg
- * @version 0.8.1
+ * @version 0.8.2
  * @license CC-BY-NC-4.0
  */
 
@@ -445,10 +445,32 @@ h1, h2, p { margin: 0; }
 .setting-label { font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.4px; }
 .setting-hint { font-size: 13px; line-height: 18px; color: var(--text-2); }
 .setting-hint.is-warning { color: var(--destructive); }
-/* Scrobbling: one block per service, the button under its state. */
-.scrobble-service { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding-top: 10px; border-top: 0.5px solid var(--separator); }
-.scrobble-service .field-label { align-self: stretch; }
+/* Settings: two columns on a computer, one on a phone. */
+.settings-dialog { max-width: 820px; }
+.settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; align-items: start; }
+.settings-col { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+@media (max-width: 760px) { .settings-grid { grid-template-columns: minmax(0, 1fr); gap: 22px; } }
+/* A circled "i" opens a setting's explanation in a small bubble. */
+.label-with-info { display: inline-flex; align-items: center; gap: 6px; }
+.info-tip { position: relative; display: inline-flex; }
+/* Its time ticks while a song plays: digits of one width, so the button does not twitch. */
+.time-chip { font-variant-numeric: tabular-nums; }
+.info-btn { width: 24px; height: 24px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-2); }
+.info-btn:hover, .info-btn.is-on { color: var(--text); background: var(--hover); }
+.info-bubble {
+  position: absolute; top: calc(100% + 6px); left: -8px; z-index: 5; width: max-content; max-width: min(300px, 70vw);
+  padding: 10px 12px; border-radius: var(--radius-md); background: var(--surface-2); box-shadow: var(--shadow-md), var(--rim);
+  font-size: 13px; line-height: 18px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text);
+}
+/* Scrobbling: one line per service, its action on the right. */
+.scrobble-row { display: flex; align-items: center; gap: 12px; }
+.scrobble-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .scrobble-name { font-size: 15px; font-weight: 600; }
+.scrobble-state { font-size: 13px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; }
+.scrobble-state.is-warning { color: var(--destructive); }
+.scrobble-token { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.scrobble-token .setting-hint { grid-column: 1 / -1; }
+.btn-small { height: 34px; padding: 0 14px; font-size: 14px; flex: none; }
 .setting-slider { display: flex; align-items: center; gap: 12px; }
 .setting-value { flex: none; min-width: 72px; font-size: 14px; font-weight: 500; color: var(--text-3); font-variant-numeric: tabular-nums; text-align: right; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }

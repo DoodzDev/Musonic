@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-11-13
+
+### Changed
+- **Lighter settings**: each explanation now hides behind a circled « i »; « Show the time left » became a choice between two examples taken from the song playing (the time left ticks as it plays; 3:45 and -1:21 when nothing plays).
+- When ListenBrainz or Last.fm refuses your account, a circled « i » shows the service's reason.
+- **Settings in two columns on a computer** (playback and language on the left, Musonic Connect and scrobbling on the right), and a shorter scrobbling block: one line per service, the ListenBrainz token field opens on « Connect ».
+
 ## [1.4.0] - 2026-11-13
 
 ### Added
