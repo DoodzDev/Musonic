@@ -500,9 +500,9 @@ async fn file(
         return Err(ApiError(StatusCode::NOT_FOUND, "no such file".into()));
     };
     let full: PathBuf = root.join(rel);
-    Ok(tower_http::services::ServeFile::new(full)
+    // ServeFile never fails (its error is Infallible).
+    let Ok(res) = tower_http::services::ServeFile::new(full)
         .oneshot(req)
-        .await
-        .map_err(|e| anyhow::anyhow!(e))?
-        .into_response())
+        .await;
+    Ok(res.into_response())
 }
