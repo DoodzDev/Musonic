@@ -246,7 +246,7 @@ impl Db {
             })
             .collect();
         all.sort();
-        let keep = days.max(1) as usize;
+        let keep = usize::try_from(days.max(1)).unwrap_or(usize::MAX);
         if all.len() > keep {
             for old in &all[..all.len() - keep] {
                 let _ = std::fs::remove_file(old);

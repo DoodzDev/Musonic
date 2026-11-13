@@ -176,6 +176,7 @@ pub async fn run(mut config: Config, mut ext: Extensions) -> Result<()> {
     state.admin_dir = admin_dir(&config);
     state.music_dir = config.music_dir.clone();
     state.import_dir = config.import_dir.clone();
+    webapp::set_update_check(config.update_check);
     state.metrics = Some(metrics::Metrics::start(metrics::Options {
         db: Some(state.db.clone()),
         data_dir: config.data_dir.clone(),
@@ -294,11 +295,33 @@ pub async fn run(mut config: Config, mut ext: Extensions) -> Result<()> {
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
     )
-    .with_graceful_shutdown(async {
-        let _ = tokio::signal::ctrl_c().await;
-    })
+    .with_graceful_shutdown(shutdown_signal())
     .await?;
     Ok(())
+}
+
+/// Ctrl+C, or SIGTERM from `docker stop` / `systemctl stop` (AUD-015 F03): the server stops
+/// taking new requests and finishes the ones in progress, instead of being killed 10 s later.
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        let _ = tokio::signal::ctrl_c().await;
+    };
+    #[cfg(unix)]
+    let term = async {
+        match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
+            Ok(mut s) => {
+                s.recv().await;
+            }
+            Err(_) => std::future::pending::<()>().await,
+        }
+    };
+    #[cfg(not(unix))]
+    let term = std::future::pending::<()>();
+    tokio::select! {
+        () = ctrl_c => {}
+        () = term => {}
+    }
+    tracing::info!("stopping");
 }
 
 /// Where the built administration console is: the setting, else next to the binary, else the

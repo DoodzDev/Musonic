@@ -279,7 +279,12 @@ pub async fn delete_channel(ctx: &Ctx) -> Reply {
     Ok(Map::new())
 }
 
+/// Reads every feed again: admins only, as on other Subsonic servers (AUD-015 F20). Feeds are
+/// read on a schedule anyway.
 pub async fn refresh(ctx: &Ctx) -> Reply {
+    if !ctx.user.is_admin {
+        return Err(ApiError::forbidden());
+    }
     let podcasts = ctx.state.podcasts.clone();
     tokio::spawn(async move {
         podcasts.refresh_all().await;

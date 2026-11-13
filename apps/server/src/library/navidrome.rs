@@ -161,16 +161,27 @@ fn import_in(tx: &Transaction, opts: NavidromeOptions) -> Result<NavidromeReport
     }
     playlists(tx, opts, &mut report)?;
     annotations(tx, &mut report)?;
-    report.plays = tx.execute(
-        "INSERT INTO scrobble(user_id, track_id, played_at, client)
+    // Older Navidrome versions have no scrobbles table (AUD-015 F18): their plays are only the
+    // counts, already in the annotations.
+    let has_scrobbles: bool = tx.query_row(
+        "SELECT EXISTS (SELECT 1 FROM nd.sqlite_master WHERE type = 'table' AND name = 'scrobbles')",
+        [],
+        |r| r.get(0),
+    )?;
+    report.plays = if !has_scrobbles {
+        0
+    } else {
+        tx.execute(
+            "INSERT INTO scrobble(user_id, track_id, played_at, client)
          SELECT u.user_id, t.track_id, s.submission_time, 'navidrome'
            FROM nd.scrobbles s
            JOIN nd_user u ON u.nd_id = s.user_id
            JOIN nd_track t ON t.nd_id = s.media_file_id
           WHERE NOT EXISTS (SELECT 1 FROM scrobble x WHERE x.user_id = u.user_id
                                AND x.track_id = t.track_id AND x.played_at = s.submission_time)",
-        [],
-    )?;
+            [],
+        )?
+    };
     tx.execute_batch("DROP TABLE nd_user; DROP TABLE nd_track;")?;
     Ok(report)
 }

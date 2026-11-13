@@ -190,6 +190,17 @@ async fn users_only_see_themselves() {
         50
     );
 
+    // Reading every feed again: admins only (AUD-015 F20).
+    assert_eq!(
+        get(&app, &format!("/rest/refreshPodcasts?{guest}")).await["error"]["code"],
+        50
+    );
+    assert_eq!(
+        get(&app, &format!("/rest/getUser?{guest}")).await["user"]["podcastRole"],
+        true,
+        "everyone can follow podcasts"
+    );
+
     let admin = "u=Doodz&p=correct%20horse&f=json";
     assert_eq!(
         get(&app, &format!("/rest/getUsers?{admin}")).await["users"]["user"]
@@ -367,6 +378,13 @@ async fn ids_kept_from_before_short_ids_still_work() {
         .clone();
     assert!(musonic["versions"].as_array().unwrap().contains(&3.into()));
     assert!(musonic["versions"].as_array().unwrap().contains(&4.into()));
+    let names: Vec<&str> = r["openSubsonicExtensions"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|e| e["name"].as_str())
+        .collect();
+    assert!(names.contains(&"songLyrics") && names.contains(&"transcodeOffset"));
 }
 
 #[tokio::test]

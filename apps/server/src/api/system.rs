@@ -166,11 +166,12 @@ async fn backups(State(state): State<AppState>, auth: Auth) -> Reply {
 
 async fn backup_now(State(state): State<AppState>, auth: Auth) -> Reply {
     admin(&auth)?;
+    // Daily backups off (0): a copy made by hand removes none of the others (AUD-015 F16).
     let days = state
         .settings_now
         .get("backup_days")
         .and_then(Value::as_u64)
-        .filter(|d| *d > 0)
+        .map(|d| if d == 0 { u64::MAX } else { d })
         .unwrap_or(14);
     let path = state.db.daily_backup(&backup_dir(&state), days).await?;
     let size = std::fs::metadata(&path)

@@ -83,11 +83,22 @@ async fn latest() -> Result<Option<(String, String, String)>> {
         .max_by_key(|(v, ..)| crate::metrics::version_key(v)))
 }
 
+/// The "Check for updates" setting: off, the console's Musonic Web card asks GitHub nothing
+/// either (AUD-015 F11). Installing still asks, as the admin pressed the button.
+static UPDATE_CHECK: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+
+pub fn set_update_check(on: bool) {
+    UPDATE_CHECK.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
 pub async fn status(data_dir: &Path) -> WebApp {
     let mut out = WebApp {
         installed: installed(data_dir),
         ..Default::default()
     };
+    if !UPDATE_CHECK.load(std::sync::atomic::Ordering::Relaxed) {
+        return out;
+    }
     match latest().await {
         Ok(Some((v, url, _))) => {
             out.latest = Some(v);
