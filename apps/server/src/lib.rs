@@ -22,6 +22,7 @@ pub mod playlist_import;
 pub mod podcasts;
 pub mod providers;
 pub mod remote;
+pub mod scrobbling;
 pub mod server;
 pub mod settings;
 pub mod stream;
@@ -201,6 +202,8 @@ pub async fn run(mut config: Config, mut ext: Extensions) -> Result<()> {
     youtube.load_key(&state.db).await;
     sources.push(youtube.clone());
     state.youtube = Some(youtube);
+    state.scrobbling.load_lastfm_app().await;
+    state.scrobbling.clone().start();
     tracing::info!(
         sources = ?sources.iter().map(|s| s.id()).collect::<Vec<_>>(),
         "playlist import sources"

@@ -378,6 +378,7 @@ async fn ids_kept_from_before_short_ids_still_work() {
         .clone();
     assert!(musonic["versions"].as_array().unwrap().contains(&3.into()));
     assert!(musonic["versions"].as_array().unwrap().contains(&4.into()));
+    assert!(musonic["versions"].as_array().unwrap().contains(&5.into()));
     let names: Vec<&str> = r["openSubsonicExtensions"]
         .as_array()
         .unwrap()

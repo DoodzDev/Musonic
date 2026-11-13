@@ -52,6 +52,7 @@ mod library_admin;
 mod measures;
 mod playlist_imports;
 mod podcasts;
+mod scrobbling;
 mod security;
 mod status;
 mod system;
@@ -154,6 +155,7 @@ pub fn router() -> Router<AppState> {
         .merge(system::router())
         .merge(playlist_imports::router())
         .merge(podcasts::router())
+        .merge(scrobbling::router())
 }
 
 /// Version of the native API; raised when it changes in a way clients must know.

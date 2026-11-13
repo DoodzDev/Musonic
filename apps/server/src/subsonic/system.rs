@@ -17,8 +17,9 @@ pub fn open_subsonic_extensions() -> Reply {
             // Musonic Server itself: its clients switch to what it adds (see ADR-018);
             // version 2: the one-request routes of ADR-021 (`getMusonicLibrary`, `getMusonicHome`…);
             // version 3: short ids (ADR-026), clients convert the UUIDs they kept;
-            // version 4: podcasts (ADR-023: `searchPodcasts`, `savePodcastPosition`, positions).
-            { "name": "musonicServer", "versions": [1, 2, 3, 4] },
+            // version 4: podcasts (ADR-023: `searchPodcasts`, `savePodcastPosition`, positions);
+            // version 5: scrobbling to ListenBrainz and Last.fm (`/v1/me/scrobbling`).
+            { "name": "musonicServer", "versions": [1, 2, 3, 4, 5] },
         ]),
     ))
 }

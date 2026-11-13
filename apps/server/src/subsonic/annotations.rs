@@ -272,6 +272,7 @@ pub async fn scrobble(ctx: &Ctx) -> Reply {
             })
             .await?
             .ok_or_else(|| ApiError::not_found("Song"))?;
+        ctx.state.scrobbling.now_playing(&user, &ids[0]);
         ctx.state.now_playing.set(Playing {
             user_id: user,
             username: ctx.user.username.clone(),
@@ -305,6 +306,8 @@ pub async fn scrobble(ctx: &Ctx) -> Reply {
                     at,
                     Some(&client).filter(|c| !c.is_empty()).map(|c| c.as_str()),
                 )?;
+                // Also to the account's ListenBrainz / Last.fm, sent in the background.
+                crate::scrobbling::enqueue(&tx, &user, id, at)?;
             }
             tx.commit()?;
             Ok(None)
@@ -316,6 +319,7 @@ pub async fn scrobble(ctx: &Ctx) -> Reply {
             format!("Song not found: {id}"),
         ));
     }
+    ctx.state.scrobbling.wake();
     ctx.emit(Event::Play { ids: played });
     Ok(Default::default())
 }

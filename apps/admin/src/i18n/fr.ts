@@ -2,7 +2,7 @@
  * @file fr.ts
  * @description French texts of the console (the reference: every language has the same keys).
  * @author DoodzProg
- * @version 0.3.1
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
@@ -481,6 +481,19 @@ export const fr = {
     key: 'Clé API',
     refused: 'YouTube a refusé cette clé.',
     saved: 'Clé YouTube enregistrée.',
+  },
+  lastfm: {
+    title: 'Scrobbling Last.fm',
+    on: 'Clé enregistrée : chaque compte peut connecter son compte Last.fm (ListenBrainz n’a besoin de rien ici).',
+    off: 'Clé absente : les comptes ne peuvent envoyer leurs écoutes qu’à ListenBrainz.',
+    add: 'Ajouter la clé',
+    change: 'Changer la clé',
+    keyTitle: 'Compte d’API Last.fm',
+    keyHelp: 'Gratuit : last.fm/api/account/create → donnez-lui un nom (ex. Musonic sur votre serveur), laissez l’URL de rappel vide → copiez la clé d’API et le secret partagé. Le serveur les teste avant de les garder ; ils restent sur le serveur.',
+    key: 'Clé d’API',
+    secret: 'Secret partagé',
+    refused: 'Last.fm a refusé cette clé et ce secret.',
+    saved: 'Clé Last.fm enregistrée.',
   },
   podcasts: {
     title: 'Podcasts',

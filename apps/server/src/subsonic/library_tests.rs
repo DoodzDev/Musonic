@@ -2368,3 +2368,261 @@ async fn musonic_routes_answer_in_one_request() {
     assert!(more["similarArtistAlbums"].as_array().unwrap().is_empty());
     assert_eq!(lib.error("getMusonicHomeMore?").await, 10);
 }
+
+// Scrobbling ---------------------------------------------------------------------------------
+
+/// What the stand-in ListenBrainz and Last.fm got, and how they should answer.
+#[derive(Default)]
+struct FakeScrobbleServices {
+    listens: std::sync::Mutex<Vec<Value>>,
+    lastfm: std::sync::Mutex<Vec<std::collections::HashMap<String, String>>>,
+    /// ListenBrainz answers this status to submissions (200 when 0).
+    lb_status: std::sync::atomic::AtomicU16,
+}
+
+async fn fake_scrobble_services() -> (String, Arc<FakeScrobbleServices>) {
+    use axum::{
+        Form, Json,
+        extract::State,
+        http::HeaderMap,
+        routing::{get, post},
+    };
+    use serde_json::json;
+    let fake = Arc::new(FakeScrobbleServices::default());
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let app = axum::Router::new()
+        .route(
+            "/1/validate-token",
+            get(|h: HeaderMap| async move {
+                let good =
+                    h.get("authorization").and_then(|v| v.to_str().ok()) == Some("Token good");
+                Json(if good {
+                    json!({ "valid": true, "user_name": "doodz-lb" })
+                } else {
+                    json!({ "valid": false })
+                })
+            }),
+        )
+        .route(
+            "/1/submit-listens",
+            post(
+                |State(f): State<Arc<FakeScrobbleServices>>, Json(body): Json<Value>| async move {
+                    let status = f.lb_status.load(Ordering::SeqCst);
+                    if status != 0 {
+                        return StatusCode::from_u16(status).unwrap();
+                    }
+                    f.listens.lock().unwrap().push(body);
+                    StatusCode::OK
+                },
+            ),
+        )
+        .route(
+            "/lastfm",
+            post(
+                |State(f): State<Arc<FakeScrobbleServices>>,
+                 Form(p): Form<std::collections::HashMap<String, String>>| async move {
+                    let method = p.get("method").cloned().unwrap_or_default();
+                    f.lastfm.lock().unwrap().push(p);
+                    Json(match method.as_str() {
+                        "auth.getToken" => json!({ "token": "t" }),
+                        "auth.getSession" => {
+                            json!({ "session": { "key": "SK", "name": "doodz-lfm" } })
+                        }
+                        _ => json!({}),
+                    })
+                },
+            ),
+        )
+        .with_state(fake.clone());
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    (base, fake)
+}
+
+#[tokio::test]
+async fn plays_go_to_listenbrainz_and_lastfm() {
+    use crate::scrobbling::Scrobbling;
+    let mut lib = library("scrobbling").await;
+    let (base, fake) = fake_scrobble_services().await;
+    let scrobbling = Arc::new(
+        Scrobbling::with_urls(
+            lib.st.db.clone(),
+            lib.st.users.clone(),
+            &base,
+            &format!("{base}/lastfm"),
+            "https://www.last.fm/api/auth/",
+        )
+        .unwrap(),
+    );
+    lib.st.scrobbling = scrobbling.clone();
+    lib.app = router(lib.st.clone());
+    let user: String = lib
+        .st
+        .db
+        .call(|c| {
+            Ok(
+                c.query_row("SELECT id FROM user WHERE username = 'Doodz'", [], |r| {
+                    r.get(0)
+                })?,
+            )
+        })
+        .await
+        .unwrap();
+    let song = lib.song_id("hoppipolla").await;
+
+    // A play before any account is connected stays local only.
+    lib.get(&format!(
+        "scrobble?id={song}&submission=true&time=1760000000000"
+    ))
+    .await;
+    let waiting = |lib: &Lib| {
+        let db = lib.st.db.clone();
+        async move {
+            db.call(|c| {
+                Ok(
+                    c.query_row("SELECT count(*) FROM scrobble_outbox", [], |r| {
+                        r.get::<_, i64>(0)
+                    })?,
+                )
+            })
+            .await
+            .unwrap()
+        }
+    };
+    assert_eq!(waiting(&lib).await, 0);
+
+    // ListenBrainz: a refused token is not kept; a good one is.
+    assert!(scrobbling.connect_listenbrainz(&user, "bad").await.is_err());
+    assert_eq!(
+        scrobbling
+            .connect_listenbrainz(&user, "good")
+            .await
+            .unwrap(),
+        "doodz-lb"
+    );
+    lib.get(&format!(
+        "scrobble?id={song}&submission=true&time=1760000100000"
+    ))
+    .await;
+    assert_eq!(waiting(&lib).await, 1);
+    scrobbling.send_due().await.unwrap();
+    assert_eq!(waiting(&lib).await, 0, "sent, gone from the outbox");
+    let listen = fake.listens.lock().unwrap()[0].clone();
+    assert_eq!(listen["listen_type"], "single");
+    assert_eq!(listen["payload"][0]["listened_at"], 1760000100);
+    assert_eq!(
+        listen["payload"][0]["track_metadata"]["track_name"],
+        "Hoppípolla"
+    );
+    assert_eq!(
+        listen["payload"][0]["track_metadata"]["artist_name"],
+        "Sigur Rós"
+    );
+
+    // Down: kept and planned again. Refused: kept, and the account shows the problem.
+    fake.lb_status.store(503, Ordering::SeqCst);
+    lib.get(&format!(
+        "scrobble?id={song}&submission=true&time=1760000200000"
+    ))
+    .await;
+    scrobbling.send_due().await.unwrap();
+    assert_eq!(waiting(&lib).await, 1);
+    let (attempts, next_at): (i64, i64) = lib
+        .st
+        .db
+        .call(|c| {
+            Ok(
+                c.query_row("SELECT attempts, next_at FROM scrobble_outbox", [], |r| {
+                    Ok((r.get(0)?, r.get(1)?))
+                })?,
+            )
+        })
+        .await
+        .unwrap();
+    assert_eq!(attempts, 1);
+    assert!(next_at > 1_700_000_000, "not before a minute");
+    lib.st
+        .db
+        .call(|c| {
+            Ok(c.execute("UPDATE scrobble_outbox SET next_at = 0", [])
+                .map(|_| ())?)
+        })
+        .await
+        .unwrap();
+    fake.lb_status.store(401, Ordering::SeqCst);
+    scrobbling.send_due().await.unwrap();
+    let status = scrobbling.status(&user).await.unwrap();
+    assert!(status["listenbrainz"]["problem"].is_string());
+    assert_eq!(status["listenbrainz"]["pending"], 1);
+    fake.lb_status.store(0, Ordering::SeqCst);
+    assert!(
+        scrobbling.connect_listenbrainz(&user, "good").await.is_ok(),
+        "reconnecting clears it"
+    );
+    scrobbling.send_due().await.unwrap();
+    assert_eq!(waiting(&lib).await, 0);
+
+    // Last.fm: the application, then the sign-in page and its way back, then a play.
+    assert_eq!(
+        scrobbling.status(&user).await.unwrap()["lastfm"]["available"],
+        false
+    );
+    scrobbling.set_lastfm_app("KEY", "SECRET").await.unwrap();
+    let url = scrobbling
+        .lastfm_start(
+            &user,
+            "http://music.example.com/v1/scrobbling/lastfm/callback",
+        )
+        .unwrap();
+    let url = reqwest::Url::parse(&url).unwrap();
+    let cb = url
+        .query_pairs()
+        .find(|(k, _)| k == "cb")
+        .unwrap()
+        .1
+        .into_owned();
+    let state = reqwest::Url::parse(&cb)
+        .unwrap()
+        .query_pairs()
+        .find(|(k, _)| k == "state")
+        .unwrap()
+        .1
+        .into_owned();
+    assert!(scrobbling.lastfm_finish("wrong", "TOKEN").await.is_err());
+    assert_eq!(
+        scrobbling.lastfm_finish(&state, "TOKEN").await.unwrap(),
+        "doodz-lfm"
+    );
+    assert!(
+        scrobbling.lastfm_finish(&state, "TOKEN").await.is_err(),
+        "a state works once"
+    );
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    lib.get(&format!(
+        "scrobble?id={song}&submission=true&time={}",
+        now * 1000
+    ))
+    .await;
+    assert_eq!(waiting(&lib).await, 2, "one per service");
+    scrobbling.send_due().await.unwrap();
+    assert_eq!(waiting(&lib).await, 0);
+    let calls = fake.lastfm.lock().unwrap().clone();
+    let scrobble = calls
+        .iter()
+        .find(|p| p.get("method").map(String::as_str) == Some("track.scrobble"))
+        .unwrap();
+    assert_eq!(scrobble["sk"], "SK");
+    assert_eq!(scrobble["artist[0]"], "Sigur Rós");
+    assert_eq!(scrobble["timestamp[0]"], now.to_string());
+    assert!(scrobble.contains_key("api_sig"));
+
+    // Disconnecting forgets the account.
+    scrobbling.disconnect(&user, "lastfm").await.unwrap();
+    assert_eq!(
+        scrobbling.status(&user).await.unwrap()["lastfm"]["connected"],
+        false
+    );
+}
