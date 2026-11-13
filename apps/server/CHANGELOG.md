@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-13
+
 ### Added
 - **Scrobbling to ListenBrainz and Last.fm**: each account connects its own accounts (a
   ListenBrainz token; Last.fm through its sign-in page, once an administrator has set a Last.fm
