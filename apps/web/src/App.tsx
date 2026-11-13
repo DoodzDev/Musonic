@@ -1,10 +1,11 @@
 /**
  * @file App.tsx
  * @description Web client shell: login gate, routes, sidebar, right panel (queue or lyrics),
- *   player bar, full-screen player and floating mini player. Logging out revokes the
+ *   player bar, full-screen player and floating mini player; on a phone, the Dock
+ *   (tabs and mini player) replaces the sidebar, the side panel and the player bar. Logging out revokes the
  *   device key; an account the server refuses goes back to the login form, which says why.
  * @author DoodzProg
- * @version 0.6.0
+ * @version 0.7.0
  * @license CC-BY-NC-4.0
  */
 
@@ -16,6 +17,7 @@ import { FullPlayer } from './components/FullPlayer.tsx';
 import { LoginScreen } from './components/LoginScreen.tsx';
 import { MiniPlayer } from './components/MiniPlayer.tsx';
 import { PageMenu } from './components/PageMenu.tsx';
+import { PhoneDock } from './components/PhoneDock.tsx';
 import { PlayerBar } from './components/PlayerBar.tsx';
 import { ProfileMenu } from './components/ProfileMenu.tsx';
 import { ResizeHandle } from './components/ResizeHandle.tsx';
@@ -24,6 +26,7 @@ import { QueuePanel } from './components/QueuePanel.tsx';
 import { ToastHost } from './components/Toast.tsx';
 import { Sidebar } from './components/Sidebar.tsx';
 import { AppContext, type AppContextValue } from './context/AppContext.tsx';
+import { useIsPhone } from './hooks/useIsPhone.ts';
 import { usePanelWidth } from './hooks/usePanelWidth.ts';
 import { useScrollMemory } from './hooks/useScrollMemory.ts';
 import { tr } from './i18n/index.ts';
@@ -51,6 +54,7 @@ function Shell() {
   const mainRef = useRef<HTMLElement>(null);
   const { panel, current } = usePlayer();
   const [full, setFull] = useState(false);
+  const phone = useIsPhone();
   const mini = useMiniPlayerWindow();
   const sideWidth = usePanelWidth('musonic.sideWidth', { initial: 248, min: 200, max: 440 });
   const queueWidth = usePanelWidth('musonic.queueWidth', { initial: 320, min: 260, max: 600 });
@@ -59,12 +63,16 @@ function Shell() {
   return (
     <AudioEngine>
       <ConnectProvider>
-      <div className="app">
+      <div className={'app' + (phone ? ' is-phone' : '') + (phone && current ? ' has-mini' : '')}>
         <div className="app-body">
-          <aside className="side-panel" style={{ width: sideWidth.width }}>
-            <Sidebar />
-          </aside>
-          <ResizeHandle panel={sideWidth} side="left" label={tr.layout.resize} />
+          {!phone && (
+            <>
+              <aside className="side-panel" style={{ width: sideWidth.width }}>
+                <Sidebar />
+              </aside>
+              <ResizeHandle panel={sideWidth} side="left" label={tr.layout.resize} />
+            </>
+          )}
           <div className="main-wrap">
             <div className="top-actions">
               <ProfileMenu />
@@ -87,8 +95,8 @@ function Shell() {
               </Routes>
             </main>
           </div>
-          {panel && <ResizeHandle panel={queueWidth} side="right" label={tr.layout.resize} />}
-          {panel && (
+          {panel && !phone && <ResizeHandle panel={queueWidth} side="right" label={tr.layout.resize} />}
+          {panel && !phone && (
             <aside className="queue-panel" style={{ width: queueWidth.width }}>
               {panel === 'queue' ? <QueuePanel /> : <LyricsPanel />}
             </aside>
@@ -97,7 +105,11 @@ function Shell() {
         <ToastHost />
         <PageMenu />
         <RemoteControl>
-          <PlayerBar onExpand={() => setFull(true)} onToggleMini={toggleMini} miniOpen={!!mini.win} />
+          {phone ? (
+            <PhoneDock onExpand={() => setFull(true)} />
+          ) : (
+            <PlayerBar onExpand={() => setFull(true)} onToggleMini={toggleMini} miniOpen={!!mini.win} />
+          )}
           {full && current && <FullPlayer onClose={() => setFull(false)} onToggleMini={toggleMini} miniOpen={!!mini.win} />}
         </RemoteControl>
       </div>

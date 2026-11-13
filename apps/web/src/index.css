@@ -2,7 +2,7 @@
  * @file index.css
  * @description Design v2 tokens and styles of the web client (dark theme only).
  * @author DoodzProg
- * @version 0.7.0
+ * @version 0.8.0
  * @license CC-BY-NC-4.0
  */
 
@@ -165,6 +165,9 @@ h1, h2, p { margin: 0; }
 .collection-description { font-size: 15px; color: var(--text-3); white-space: pre-line; }
 .collection-stats { font-size: 13px; color: var(--text-2); }
 .strong { color: var(--text); font-weight: 600; }
+.link { text-decoration: none; }
+/* A title that is a link keeps the text color, never the browser's visited purple. */
+.item-title.link { color: var(--text); }
 .link:hover { text-decoration: underline; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 
@@ -364,7 +367,7 @@ h1, h2, p { margin: 0; }
 .queue-row:hover { background: var(--hover); }
 .queue-row.is-current { background: var(--selected); box-shadow: var(--rim); }
 .queue-play { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 8px; color: var(--text); text-align: left; }
-.queue-play:disabled { cursor: default; }
+.queue-play:disabled { cursor: default; opacity: 1; }
 .queue-play .item-title { font-size: 14px; font-weight: 600; }
 .queue-play .item-sub { font-size: 12px; }
 .queue-remove { opacity: 0; margin-right: 4px; }
@@ -722,3 +725,138 @@ p.lyrics-line { font-size: 17px; line-height: 26px; font-weight: 600; padding: 0
 .field-input { flex: 1; min-width: 0; height: 100%; background: none; border: 0; }
 .remote-device { display: inline-flex; vertical-align: -2px; margin-left: 8px; color: var(--accent); cursor: default; }
 .menu-value { margin-left: auto; color: var(--text-2); font-size: 14px; }
+
+/* Phone (≤ 760 px): the Dock (mini player above the tabs, as in the Android app)
+   replaces the sidebar, the side panel and the player bar. Content runs edge to edge
+   and scrolls behind the Dock; notch and home bar are kept clear. */
+.app.is-phone { height: 100dvh; --dock-space: calc(100px + env(safe-area-inset-bottom)); }
+.app.is-phone.has-mini { --dock-space: calc(176px + env(safe-area-inset-bottom)); }
+.is-phone .app-body { padding: 0; }
+.is-phone .main-panel { border-radius: 0; box-shadow: none; background: var(--bg); }
+/* Touch screens show their own overlay scrollbar while scrolling: no orange bar at the edge. */
+.is-phone .main-panel { scrollbar-width: none; }
+.is-phone .main-panel::-webkit-scrollbar { display: none; }
+.is-phone .top-actions { top: calc(14px + env(safe-area-inset-top)); right: 16px; }
+.is-phone .page { padding: calc(20px + env(safe-area-inset-top)) 16px var(--dock-space); gap: 20px; }
+.is-phone .page > :first-child { padding-right: 52px; }
+.phone-dock {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; pointer-events: none;
+  display: flex; flex-direction: column; gap: 10px; padding: 0 12px calc(10px + env(safe-area-inset-bottom));
+}
+/* Content fades out under the Dock instead of meeting a hard edge. */
+.phone-dock::before {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; top: -48px; z-index: -1;
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85) 48px);
+}
+.phone-dock > * { pointer-events: auto; }
+.dock-mini, .dock-tabs, .dock-search {
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-lg), var(--rim);
+}
+/* touch-action: none so a swipe reaches us instead of scrolling the page. */
+.dock-mini { position: relative; height: 64px; border-radius: 32px; padding: 0 4px 0 10px; display: flex; align-items: center; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+.dock-mini-info { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 12px; text-align: left; }
+.dock-mini-info .cover { width: 44px; height: 44px; }
+.dock-mini .item-title { font-weight: 600; }
+.dock-device { display: flex; align-items: center; gap: 4px; color: var(--accent); }
+.dock-ctrl { flex: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--text); }
+.dock-progress { position: absolute; left: 28px; right: 28px; bottom: 0; height: 2px; border-radius: 1px; background: var(--fill); pointer-events: none; }
+.dock-progress-fill { display: block; height: 2px; border-radius: 1px; background: var(--accent); transform-origin: left; }
+.dock-row { display: flex; gap: 10px; height: 62px; }
+.dock-tabs { flex: 1; display: flex; gap: 4px; padding: 4px; border-radius: 31px; }
+.dock-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border-radius: 27px; color: var(--text-2); text-decoration: none; font-size: 12px; font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
+}
+.dock-tab.is-active { background: rgba(255, 255, 255, 0.12); color: var(--accent); }
+.dock-search {
+  position: relative; flex: none; width: 62px; height: 62px; border-radius: 31px;
+  display: flex; align-items: center; justify-content: center; color: var(--text); -webkit-tap-highlight-color: transparent;
+}
+.dock-search.is-active { color: var(--accent); }
+.dock-search.is-active::before { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: rgba(255, 255, 255, 0.12); }
+.dock-search svg { position: relative; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .dock-mini, .dock-tabs, .dock-search { background: rgba(28, 28, 30, 0.97); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .dock-mini, .dock-tabs, .dock-search { background: rgba(28, 28, 30, 0.97); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+/* Phone full player: cover as wide as the screen allows, the lyrics or the queue in its
+   place, big transport buttons, then lyrics / devices / sleep timer / queue. */
+.full.is-phone .full-top { padding: calc(8px + env(safe-area-inset-top)) 12px 0; touch-action: none; }
+.full.is-phone .full-body { padding: 16px 24px; gap: 0; }
+.full.is-phone .full-art { width: 100%; height: 100%; container-type: size; touch-action: none; }
+.full.is-phone .full-cover { width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); max-width: none; border-radius: 12px; }
+.full.is-phone .full-lyrics { display: block; width: 100%; max-width: none; }
+.full.is-phone .lyrics-full { padding: 30vh 0; }
+.full.is-phone .lyrics-full .lyrics-line { font-size: 24px; line-height: 32px; padding: 4px 0; }
+.full.is-phone .lyrics-full p.lyrics-line { font-size: 19px; line-height: 27px; }
+.full.is-phone .full-panel { width: 100%; height: 100%; overflow-y: auto; margin: 0 -8px; }
+.full.is-phone .full-panel .queue { padding: 0 0 16px; }
+/* Touch: no hover, so the remove buttons stay visible. */
+.full.is-phone .queue-remove { opacity: 1; }
+.full.is-phone .full-bottom { padding: 0 24px calc(12px + env(safe-area-inset-bottom)); gap: 12px; }
+.full.is-phone .full-title { font-size: 22px; line-height: 28px; }
+.full.is-phone .full-artist { font-size: 16px; }
+.full.is-phone .player-controls { justify-content: center; }
+.full-secondary { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+/* The header already names the panel and the button below closes it. */
+.full.is-phone .full-panel .queue-head { display: none; }
+.full.is-phone .full-lyrics, .full.is-phone .full-panel {
+  -webkit-mask-image: linear-gradient(transparent, #000 32px, #000 calc(100% - 32px), transparent);
+  mask-image: linear-gradient(transparent, #000 32px, #000 calc(100% - 32px), transparent);
+}
+
+/* Phone pages: shelves scroll sideways, grids keep two columns, track rows are
+   cover + titles + heart + "⋯", menus and dialogs rise from the bottom. */
+@media (max-width: 760px) {
+  .shelf-head { padding: 0; }
+  .shelf-row {
+    display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; margin: 0 -16px; padding: 0 16px;
+    scroll-snap-type: x mandatory; scroll-padding: 0 16px; scrollbar-width: none; overscroll-behavior-x: contain;
+  }
+  .shelf-row::-webkit-scrollbar { display: none; }
+  /* Two and a bit cards: the cut one shows the row goes on. */
+  .shelf-row > * { flex: 0 0 42%; scroll-snap-align: start; }
+  .shelf-row .card-link, .shelf-grid .card-link { padding: 0; }
+  .shelf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 12px; row-gap: 16px; }
+  .genre-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; }
+  .card-play, .tile-play { display: none; }
+  /* No hover on touch: links read as plain text, like in the Android app. */
+  .link { text-decoration: none !important; }
+
+  .collection-header { gap: 18px; }
+  .collection-header .cover-hero { width: min(220px, 60vw); height: min(220px, 60vw); margin: 0 auto; }
+  .collection-meta h1 { font-size: 30px; line-height: 36px; letter-spacing: -0.6px; }
+
+  .table-scroll { overflow: visible; margin: 0 -8px; }
+  .track-table { min-width: 0; }
+  .track-head { display: none; }
+  .track-row, .track-table.cols-3 .track-row { grid-template-columns: minmax(0, 1fr) 32px 40px; gap: 6px; height: 60px; padding: 0 0 0 8px; cursor: pointer; }
+  .track-table.no-cover .track-row { grid-template-columns: 28px minmax(0, 1fr) 32px 40px; }
+  .track-row .c-index, .track-row .c-album, .track-row .c-add, .track-row .c-duration { display: none; }
+  .track-table.no-cover .track-row .c-index { display: flex; }
+  .row-play { display: none !important; }
+  .track-row .num { display: inline-flex !important; }
+  .row-more { opacity: 1; width: 40px; height: 40px; }
+  .track-row:not(.track-head):hover { background: none; }
+  .track-row.is-current { background: var(--selected); }
+
+  /* Menus: a sheet along the bottom, the page dimmed behind it. */
+  .track-menu {
+    left: 8px !important; right: 8px; top: auto !important; bottom: calc(8px + env(safe-area-inset-bottom));
+    width: auto; max-height: 70dvh; padding: 8px; border-radius: var(--radius-xl);
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.55), var(--rim);
+  }
+  .track-menu .menu-row { height: 48px; font-size: 16px; }
+  .dialog-backdrop { align-items: flex-end; padding: 0; }
+  .dialog {
+    max-width: none; max-height: 92dvh; overflow-y: auto; border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding-bottom: calc(22px + env(safe-area-inset-bottom));
+  }
+  .toast-host { position: fixed; bottom: calc(var(--dock-space) - 24px); }
+}

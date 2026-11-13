@@ -1,9 +1,12 @@
 {
+  "id": "./",
   "name": "Musonic",
   "short_name": "Musonic",
+  "description": "Musonic web player",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#000000",
   "theme_color": "#000000",
   "icons": [

@@ -3,9 +3,10 @@
  * @description Track list used by playlist, album, artist, liked, genre and
  *   search pages. Like the mobile app, a heart shows the liked tracks and a
  *   "+" / "✓" whether the track is in one of the user's playlists. Long lists
- *   (My Music…) build only the rows on screen (`useWindowedRows`).
+ *   (My Music…) build only the rows on screen (`useWindowedRows`). On a phone a row
+ *   is cover, titles, heart and "⋯", and a tap plays it (no double click on touch).
  * @author DoodzProg
- * @version 0.4.0
+ * @version 0.5.0
  * @license CC-BY-NC-4.0
  */
 
@@ -26,6 +27,7 @@ import { usePlaylistMembership } from '../player/usePlaylistMembership.ts';
 import { PlayIcon } from './icons/PlayIcon.tsx';
 import { DotsHorizontalIcon } from './icons/DotsHorizontalIcon.tsx';
 import { TrackMenu, type TrackMenuTarget } from './TrackMenu.tsx';
+import { useIsPhone } from '../hooks/useIsPhone.ts';
 import { useWindowedRows } from '../hooks/useWindowedRows.ts';
 
 interface Props {
@@ -53,7 +55,8 @@ export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover
     setMenu({ song, x, y, playlistId, playlistIndex: playlistId ? index : undefined });
   const { playSongs, current, sourceId: playingSource, playing } = usePlayer();
   const playingId = playingSource === sourceId ? current?.id : undefined;
-  const columns = showAlbum ? 'cols-4' : 'cols-3';
+  const columns = (showAlbum ? 'cols-4' : 'cols-3') + (showCover ? '' : ' no-cover');
+  const phone = useIsPhone();
   const body = useRef<HTMLDivElement>(null);
   const [start, end] = useWindowedRows(songs.length, ROW_HEIGHT, body);
 
@@ -81,6 +84,10 @@ export function TrackTable({ songs, sourceId, label, showAlbum = true, showCover
               role="row"
               className={'track-row' + (isCurrent ? ' is-current' : '') + (menu?.song === song ? ' is-menu' : '')}
               onDoubleClick={play}
+              onClick={(e) => {
+                // A tap on the artist or album link, or on a button, does its own thing.
+                if (phone && !(e.target as Element).closest('a, button')) play();
+              }}
               onContextMenu={(e) => {
                 if (claimContextMenu(e)) openMenu(song, i, e.clientX, e.clientY);
               }}>

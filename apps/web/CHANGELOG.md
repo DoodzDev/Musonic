@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-13
+
+### Added
+- **A phone layout** (screens up to 760 px wide), the way to use Musonic on an iPhone: like the Android app, a floating mini player sits above the Home and Library tabs and the search button. Tap it or swipe it up for the full player, swipe it left or right to change track.
+- **The full player on a phone**: a large cover, big buttons, then lyrics, devices, sleep timer and queue; the lyrics and the queue take the cover's place. Swipe down or tap the chevron to close it.
+- **Lock screen and notification controls show the progress bar** (and play / pause), on phones and on computers that display it.
+- **Add to the home screen** on an iPhone opens Musonic full screen, under its own name.
+
+### Changed
+- **On a phone, pages fit the screen**: shelves scroll sideways, track lists show the cover, title, heart and « ⋯ », a tap plays a track, menus and dialogs rise from the bottom, and the search field no longer opens the keyboard by itself.
+- **Links are no longer underlined** (only on hover with a mouse), and the track title in the player bar keeps its color.
+
+### Fixed
+- The track playing, at the top of the queue, was greyed out.
+
 ## [1.2.0] - 2026-11-10
 
 ### Added
