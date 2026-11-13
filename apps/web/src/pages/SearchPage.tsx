@@ -7,7 +7,7 @@
  *   ("michael") goes as far as the server has results. A track found plays
  *   alone, then autoplay follows (same rule as the mobile app, A8).
  * @author DoodzProg
- * @version 0.4.0
+ * @version 0.5.0
  * @license CC-BY-NC-4.0
  */
 
@@ -24,6 +24,7 @@ import { lang, tr as i18n } from '../i18n/index.ts';
 import { useMusonicServer } from '../lib/musonicApi.ts';
 import { TTL_SHORT, useCachedQuery } from '../hooks/useCachedQuery.ts';
 import { useHomeFeed } from '../hooks/useHomeFeed.ts';
+import { useIsPhone } from '../hooks/useIsPhone.ts';
 
 const tr = i18n;
 const t = tr.search;
@@ -76,6 +77,8 @@ export function SearchPage() {
   const { client, session } = useApp();
   const musonic = useMusonicServer(session);
   const [params, setParams] = useSearchParams();
+  // On a phone the keyboard would hide the proposals: the field waits for a tap.
+  const phone = useIsPhone();
   const [text, setText] = useState(params.get('q') ?? '');
   const [filter, setFilter] = useState<Filter>('all');
   const query = (params.get('q') ?? '').trim();
@@ -136,7 +139,7 @@ export function SearchPage() {
       </div>
       <label className="search-field">
         <SearchIcon size={20} />
-        <input type="search" value={text} onChange={(e) => setText(e.target.value)} placeholder={t.placeholder} aria-label={t.placeholder} autoFocus />
+        <input type="search" value={text} onChange={(e) => setText(e.target.value)} placeholder={t.placeholder} aria-label={t.placeholder} autoFocus={!phone} />
       </label>
 
       {query && (
