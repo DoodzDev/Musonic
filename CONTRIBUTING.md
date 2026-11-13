@@ -6,19 +6,16 @@ Thank you for taking the time to contribute! This document outlines the workflow
 
 ## Branching Strategy
 
-We follow a two-branch model:
-
-| Branch    | Purpose                                                  |
-|-----------|----------------------------------------------------------|
-| `main`    | Stable, release-ready code. Only merged from `develop` via a reviewed PR. |
-| `develop` | Active development. All feature branches target this branch. |
+`main` is the only long-lived branch: stable, release-ready code. Every change goes through a
+short branch merged into `main`, then deleted. Releases are tags per app: `mobile-vX.Y.Z`,
+`web-vX.Y.Z`, `server-vX.Y.Z`.
 
 ### Feature / fix branches
 
-Branch off from `develop`, use a short descriptive name:
+Branch off from `main`, use a short descriptive name:
 
 ```
-git checkout develop
+git checkout main
 git checkout -b feat/queue-drag-drop
 git checkout -b fix/mini-player-swipe
 ```
@@ -85,7 +82,7 @@ The first build compiles native code and can take 10 to 15 minutes. Later builds
 
 ## Opening a Pull Request
 
-1. **Target `develop`**, never push directly to `main`.
+1. **Target `main`** from your branch; never push directly to `main`.
 2. Fill in the pull request template — description, test plan, and checklist.
 3. Keep PRs focused. One logical change per PR makes review faster.
 4. Ensure `npm run lint` passes before opening the PR.
@@ -107,7 +104,7 @@ docs: update installation steps in README
 ## Code Style
 
 - **TypeScript** everywhere — no `any` unless unavoidable and justified.
-- All **user-facing strings** must go through `apps/mobile/src/i18n/fr.ts`. No hardcoded French (or any language) outside that file.
+- All **user-facing strings** go through the i18n files, in English and French: `apps/mobile/src/i18n/en.ts` and `fr.ts`, and the same pair in `apps/web/src/i18n/` and `apps/admin/src/i18n/`. No hardcoded text outside them.
 - **No comments** unless the *why* is genuinely non-obvious. The code should be self-documenting.
 - Run `npm run lint` before committing.
 
@@ -124,4 +121,4 @@ Use the GitHub issue templates:
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the same [CC BY-NC 4.0](LICENSE) license as the rest of the project.
+By contributing, you agree that your contributions are licensed like the part of the project they touch: [CC BY-NC 4.0](LICENSE) for the apps and shared packages, [PolyForm Noncommercial 1.0.0](apps/server/LICENSE) for Musonic Server (`apps/server`).

@@ -78,7 +78,7 @@ Dans le **lecteur web**, la session est gardée dans le stockage de session de l
 
 | Quoi | Comment |
 |---|---|
-| Mots de passe | Hachés avec **argon2id**. Avec l’**Ancienne connexion Subsonic** activée (`legacy_auth`, activée par défaut, nécessaire à la connexion actuelle des applis Musonic et de la plupart des applis Subsonic), une copie est aussi gardée **chiffrée en AES-256-GCM**, avec une clé hors de la base (`MUSONIC_SECRET_KEY`, sinon `secret.key` dans le dossier de données, lisible par son seul propriétaire). |
+| Mots de passe | Hachés avec **argon2id**. Avec l’**Ancienne connexion Subsonic** activée (`legacy_auth`, activée par défaut, nécessaire aux applis Subsonic qui se connectent par jeton ; ni Musonic Web ni l’appli Musonic, qui utilisent des clés d’appareil), une copie est aussi gardée **chiffrée en AES-256-GCM**, avec une clé hors de la base (`MUSONIC_SECRET_KEY`, sinon `secret.key` dans le dossier de données, lisible par son seul propriétaire). |
 | Clés d’appareil et jetons de session | Aléatoires, gardés uniquement sous forme d’**empreintes SHA-256**. |
 | Likes, playlists, écoutes, files d’attente, positions dans les podcasts | Dans la base `musonic.db`, pour chaque compte. |
 | Le journal (connexions, connexions refusées, actions des administrateurs) | Dans `events.db`, avec l’heure, le compte, l’**adresse IP** et l’appli. Taille limitée (50 Mo par défaut, réglable dans la console) : les lignes les plus anciennes partent en premier. |

@@ -78,7 +78,7 @@ In the **web player**, the session is kept in the tab's session storage (gone wh
 
 | What | How |
 |---|---|
-| Passwords | Hashed with **argon2id**. With **Legacy Subsonic sign-in** on (`legacy_auth`, on by default, needed by the Musonic apps' current sign-in and most Subsonic apps), a copy is also kept **encrypted with AES-256-GCM**, with a key outside the database (`MUSONIC_SECRET_KEY`, else `secret.key` in the data folder, readable by its owner only). |
+| Passwords | Hashed with **argon2id**. With **Legacy Subsonic sign-in** on (`legacy_auth`, on by default, needed by Subsonic apps that sign in with a token; not by Musonic Web nor the Musonic app, which use device keys), a copy is also kept **encrypted with AES-256-GCM**, with a key outside the database (`MUSONIC_SECRET_KEY`, else `secret.key` in the data folder, readable by its owner only). |
 | Device keys and session tokens | Random, stored only as **SHA-256 hashes**. |
 | Likes, playlists, plays, play queues, podcast positions | In the database `musonic.db`, for each account. |
 | The journal (sign-ins, refused sign-ins, administrator actions) | In `events.db`, with the time, the account, the **IP address** and the app. Limited in size (50 MB by default, set in the console): the oldest lines go first. |

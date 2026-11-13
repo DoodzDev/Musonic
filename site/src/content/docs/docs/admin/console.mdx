@@ -132,7 +132,7 @@ Everything on this page is explained step by step in [Accounts and roles](/docs/
 - **Devices**: every device key of every account (device name, account, date added, last used). **Revoke** signs the device out at once; to come back, it must sign in again with the password. Apps that sign in with the password only (most Subsonic clients) have no key and are not listed here.
 - **Recent sign-ins**: the last successful sign-in of each account, app and address. **Whole sign-in log** opens Activity filtered on sign-ins.
 - **Blocked addresses**: after 10 different wrong passwords for an account, an address is blocked for 15 minutes for that account. **Unblock** lifts it early.
-- **Legacy Subsonic sign-in**: the password, or the `t` + `s` token, sent with each request. Musonic Web, the current Musonic app and most Subsonic clients use it. Turning it off leaves only device keys: those apps will no longer sign in. It takes effect after a restart.
+- **Legacy Subsonic sign-in**: lets apps sign in with a token made from the password (`t` + `s`), as many Subsonic clients do (Substreamer, Symfonium…). The password is then kept encrypted next to its hash, and only passwords set while it is on work this way. Musonic Web and the Musonic app use device keys and do not need it. Turned off, apps that use the token no longer sign in; apps that send the password itself still do. It takes effect after a restart.
 
 ## Library
 
