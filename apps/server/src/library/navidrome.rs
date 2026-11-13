@@ -175,7 +175,9 @@ fn import_in(tx: &Transaction, opts: NavidromeOptions) -> Result<NavidromeReport
     Ok(report)
 }
 
-/// Gives each matched track one of its Navidrome ids (a track with two files had two).
+/// Gives each matched track one of its Navidrome ids (a track with two files had two), in its
+/// short form: requests shorten a 22-character id before looking it up (ADR-026), so a client
+/// that kept the Navidrome id finds the track.
 fn keep_track_ids(tx: &Transaction) -> Result<usize> {
     let pairs: Vec<(String, String)> = tx
         .prepare(
@@ -186,7 +188,8 @@ fn keep_track_ids(tx: &Transaction) -> Result<usize> {
         .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?
         .collect::<rusqlite::Result<_>>()?;
     let mut kept = 0;
-    for (old, new) in pairs {
+    for (old, nd) in pairs {
+        let new = ids::shorten(&nd).into_owned();
         let taken: bool = tx.query_row(
             "SELECT EXISTS (SELECT 1 FROM track WHERE id = ?1)",
             [&new],
@@ -244,7 +247,7 @@ fn playlists(tx: &Transaction, opts: NavidromeOptions, report: &mut NavidromeRep
         .collect::<rusqlite::Result<_>>()?;
     for (nd, owner, name, comment, public, created, updated) in lists {
         let id = if opts.keep_ids {
-            nd.clone()
+            ids::shorten(&nd).into_owned()
         } else {
             ids::new_playlist_id()
         };

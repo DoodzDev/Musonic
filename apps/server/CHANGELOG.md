@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-11-13
+
+### Security
+- **The wrong-password limit can no longer be dodged with a forged header.** The visitor's
+  address is read from `CF-Connecting-IP` / `X-Forwarded-For` only when the request comes from
+  a trusted proxy: this machine and private networks by default, or the addresses and networks
+  in the new `MUSONIC_TRUSTED_PROXIES` (`trusted_proxies`; `none` = never). Before, a server
+  reached without a proxy in front let anyone pick a new address at each try.
+
+### Fixed
+- **Import from Navidrome with its ids kept**: the tracks and playlists it imported answered
+  « not found » (`getSong`, `getPlaylist`, playback) to the apps that kept the Navidrome ids,
+  as ids of 22 characters are shortened before they are looked up. The import now stores the
+  short form, and a migration repairs libraries imported with server 1.0.3 to 1.2.1.
+
 ## [1.2.1] - 2026-11-10
 
 ### Security

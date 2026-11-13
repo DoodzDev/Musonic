@@ -55,6 +55,12 @@ pub struct Config {
     /// The machine's `/proc/net/dev` when the server runs in a container (mount it read-only
     /// there), to count the traffic of the whole machine and not only the server's.
     pub host_net_dev: Option<PathBuf>,
+    /// Proxies whose `CF-Connecting-IP` / `X-Forwarded-For` are believed, as addresses or
+    /// networks (`127.0.0.1`, `172.16.0.0/12`); `none` = never, the connection's address only.
+    /// Unset: this machine and private networks (a proxy on the same machine, in Docker or on
+    /// the local network). A request from anywhere else cannot pick the address it is limited
+    /// by.
+    pub trusted_proxies: Option<Vec<String>>,
 }
 
 impl Default for Config {
@@ -80,6 +86,7 @@ impl Default for Config {
             max_bit_rate: 0,
             transcode_format: "mp3".to_owned(),
             host_net_dev: Some("/host/net/dev".into()),
+            trusted_proxies: None,
         }
     }
 }
@@ -160,6 +167,14 @@ impl Config {
         }
         if let Some(v) = env("MUSONIC_TRANSCODE_FORMAT") {
             cfg.transcode_format = v.to_ascii_lowercase();
+        }
+        if let Some(v) = env("MUSONIC_TRUSTED_PROXIES") {
+            cfg.trusted_proxies = Some(
+                v.split(',')
+                    .map(|s| s.trim().to_owned())
+                    .filter(|s| !s.is_empty())
+                    .collect(),
+            );
         }
         if let Some(v) = env("MUSONIC_SCAN_INTERVAL_MINUTES") {
             cfg.scan_interval_minutes = v.parse().context("MUSONIC_SCAN_INTERVAL_MINUTES")?;

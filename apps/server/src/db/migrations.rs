@@ -47,6 +47,10 @@ pub const MIGRATIONS: &[(&str, &str)] = &[
         "0010_connect",
         include_str!("../../migrations/0010_connect.sql"),
     ),
+    (
+        "0011_navidrome_short_ids",
+        include_str!("../../migrations/0011_navidrome_short_ids.sql"),
+    ),
 ];
 
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
@@ -370,5 +374,86 @@ mod tests {
             "other files are left alone"
         );
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn navidrome_ids_kept_by_a_recent_import_become_short() {
+        const U: &str = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d";
+        // Written as they were by an import from Navidrome with server 1.0.3 to 1.2.1.
+        const ND: &str = "4xDzN7lF2pq1Hc0Ab9Zk3s";
+        const NDP: &str = "R0adTr1p4cY8nLs3fJ6dHe";
+        let dir = crate::testing::temp_dir("navidrome-short-ids");
+        let path = dir.join("musonic.db");
+        {
+            let mut c = Connection::open(&path).unwrap();
+            // 0008 calls it; the server registers it when it opens a base.
+            c.create_scalar_function(
+                "musonic_short_id",
+                1,
+                rusqlite::functions::FunctionFlags::SQLITE_UTF8,
+                |ctx| {
+                    Ok(ctx
+                        .get::<Option<String>>(0)?
+                        .map(|id| shorten(&id).into_owned()))
+                },
+            )
+            .unwrap();
+            for (_, sql) in &MIGRATIONS[..10] {
+                c.execute_batch(sql).unwrap();
+            }
+            c.pragma_update(None, "user_version", 10).unwrap();
+            let tx = c.transaction().unwrap();
+            tx.execute_batch(&format!(
+                "INSERT INTO library(id, name, path) VALUES (1, 'Music', '/music');
+                 INSERT INTO user(id, username, password_hash) VALUES ('{U}', 'Doodz', 'x');
+                 INSERT INTO album(id, title, norm_title, artist_display) VALUES ('alShort0001', 'Takk...', 'takk', 'Sigur Rós');
+                 INSERT INTO track(id, title, norm_title, artist_display, album_id, duration_ms) VALUES
+                     ('{ND}', 'Glósóli', 'glosoli', 'Sigur Rós', 'alShort0001', 368000),
+                     ('tkShort0001', 'Takk', 'takk', 'Sigur Rós', 'alShort0001', 110000);
+                 INSERT INTO annotation(user_id, item_type, item_id, starred_at) VALUES
+                     ('{U}', 'track', '{ND}', 1), ('{U}', 'album', 'alShort0001', 1);
+                 INSERT INTO scrobble(user_id, track_id, played_at) VALUES ('{U}', '{ND}', 1);
+                 INSERT INTO playlist(id, owner_id, name) VALUES ('{NDP}', '{U}', 'Road trip');
+                 INSERT INTO playlist_track(playlist_id, position, track_id) VALUES
+                     ('{NDP}', 0, '{ND}'), ('{NDP}', 1, 'tkShort0001');
+                 INSERT INTO play_queue(user_id) VALUES ('{U}');
+                 INSERT INTO play_queue_item(user_id, position, track_id) VALUES ('{U}', 0, '{ND}');"
+            ))
+            .unwrap();
+            tx.commit().unwrap();
+        }
+        let db = Db::open(&path).unwrap();
+        let c = conn(&db);
+        let one = |sql: &str| -> String { c.query_row(sql, [], |r| r.get(0)).unwrap() };
+        let (t, p) = (shorten(ND), shorten(NDP));
+        assert_eq!(one("SELECT id FROM track WHERE title = 'Glósóli'"), t);
+        assert_eq!(
+            one("SELECT id FROM track WHERE title = 'Takk'"),
+            "tkShort0001",
+            "short ids stay"
+        );
+        assert_eq!(one("SELECT id FROM playlist"), p);
+        assert_eq!(
+            one("SELECT track_id FROM playlist_track WHERE position = 0"),
+            t
+        );
+        assert_eq!(
+            one("SELECT playlist_id FROM playlist_track WHERE position = 1"),
+            p
+        );
+        assert_eq!(one("SELECT track_id FROM play_queue_item"), t);
+        assert_eq!(one("SELECT track_id FROM scrobble"), t);
+        assert_eq!(
+            one("SELECT item_id FROM annotation WHERE item_type = 'track'"),
+            t
+        );
+        assert_eq!(
+            one("SELECT item_id FROM annotation WHERE item_type = 'album'"),
+            "alShort0001"
+        );
+        assert_eq!(
+            count(&c, "SELECT count(*) FROM pragma_foreign_key_check"),
+            0
+        );
     }
 }
