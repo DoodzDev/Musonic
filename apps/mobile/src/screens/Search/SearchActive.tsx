@@ -9,7 +9,7 @@
  *   counter to prevent race conditions. Tapped results play alone, then
  *   autoplay (playback engine, ADR-009 A8).
  * @author DoodzProg
- * @version 2.2.2
+ * @version 2.3.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -21,7 +21,7 @@ import Text from '../../components/ui/Text';
 import PressableScale from '../../components/ui/PressableScale';
 import SearchField from '../../components/ui/SearchField';
 import SegmentedControl from '../../components/ui/SegmentedControl';
-import TrackRow from '../../components/ui/TrackRow';
+import TrackRow, {downloadStateOf} from '../../components/ui/TrackRow';
 import CollectionRow from '../../components/ui/CollectionRow';
 import ArtistAvatar from '../../components/ui/ArtistAvatar';
 import Cover from '../../components/ui/Cover';
@@ -48,6 +48,7 @@ import {useLandscapeSidebarPadding} from '../../hooks/useLandscapeSidebarPadding
 import {useDockInset} from '../../navigation/dockLayout';
 import {colors, radii, spacing} from '../../theme';
 import {useT} from '../../i18n';
+import {useIsMusonicServer} from '../../hooks/useIsMusonicServer';
 import type {SubsonicSong} from '../../api/types';
 import {bestResult, filterScope, isOnline, withoutBest, type BestResult, type SearchResults, type SearchScope} from './searchModel';
 
@@ -98,7 +99,10 @@ export default function SearchActive() {
   const {state} = usePlaybackState();
 
   const [query, setQuery] = useState('');
-  const [scope, setScope] = useState<SearchScope>('all');
+  const [chosenScope, setScope] = useState<SearchScope>('all');
+  // Podcasts are Musonic Server's: other servers get no Podcasts filter and no podcast search.
+  const musonic = useIsMusonicServer();
+  const scope: SearchScope = !musonic && chosenScope === 'podcasts' ? 'all' : chosenScope;
   const [pods, setPods] = useState<{shows: PodcastFound[]; episodes: PodcastFoundEpisode[]}>(NO_PODS);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResults>(EMPTY);
@@ -135,9 +139,11 @@ export default function SearchActive() {
     const debounce = setTimeout(async () => {
       try {
         // Podcasts beside the music (the « All » results); their failure hides only them.
-        searchPodcasts(query.trim())
-          .then(found => genRef.current === myGen && setPods(found))
-          .catch(() => genRef.current === myGen && setPods(NO_PODS));
+        if (musonic) {
+          searchPodcasts(query.trim())
+            .then(found => genRef.current === myGen && setPods(found))
+            .catch(() => genRef.current === myGen && setPods(NO_PODS));
+        } else setPods(NO_PODS);
         const data = await search(query);
         if (genRef.current !== myGen) return;
         setResults({artists: data.artists, albums: data.albums, songs: data.songs});
@@ -157,7 +163,7 @@ export default function SearchActive() {
       }
     }, 400);
     return () => clearTimeout(debounce);
-  }, [query, attempt]);
+  }, [query, attempt, musonic]);
 
   const scoped = useMemo(() => filterScope(results, scope), [results, scope]);
   const best = useMemo(() => bestResult(scoped, query), [scoped, query]);
@@ -221,7 +227,6 @@ export default function SearchActive() {
   const renderSong = useCallback(({item, index}: {item: SubsonicSong; index: number}) => {
     const id = String(item.id);
     const isCurrent = active?.id != null && String(active.id) === id;
-    const dl = activeDownloads[id];
     return (
       <TrackRow
         title={item.title}
@@ -230,7 +235,7 @@ export default function SearchActive() {
         badges={isOnline(id) ? ['online'] : undefined}
         playback={isCurrent ? (state === State.Playing ? 'playing' : 'current') : 'idle'}
         liked={overrides[id] ?? likedSongIds.has(id)}
-        download={id in downloads ? 'done' : dl && (dl.status === 'queued' || dl.status === 'downloading') ? 'downloading' : 'none'}
+        download={downloadStateOf(id, downloads, activeDownloads)}
         onPress={() => {
           rememberSong(item);
           // A8: a search result plays alone, autoplay follows.
@@ -369,7 +374,7 @@ export default function SearchActive() {
             options={[
               {value: 'all', label: t.search.scope.all},
               {value: 'online', label: t.search.scope.online},
-              {value: 'podcasts', label: t.search.scope.podcasts},
+              ...(musonic ? [{value: 'podcasts' as const, label: t.search.scope.podcasts}] : []),
             ]}
             value={scope}
             onChange={setScope}

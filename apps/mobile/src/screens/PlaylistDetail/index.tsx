@@ -8,7 +8,7 @@
  *   Edit mode: drag handles to reorder, red circles to remove, then Save.
  *   Play and track taps go through the playback engine (`playContext`).
  * @author DoodzProg
- * @version 2.0.2
+ * @version 2.0.3
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -26,7 +26,7 @@ import ReorderableList, {
 } from 'react-native-reorderable-list';
 import DetailScaffold from '../../components/detail/DetailScaffold';
 import {GlassButton, PlayShuffleRow, SquareButton} from '../../components/detail/DetailParts';
-import TrackRow from '../../components/ui/TrackRow';
+import TrackRow, {downloadStateOf} from '../../components/ui/TrackRow';
 import Text from '../../components/ui/Text';
 import Raised from '../../components/ui/Raised';
 import Badge from '../../components/ui/Badge';
@@ -322,7 +322,6 @@ export default function PlaylistDetailScreen() {
   const renderItem = useCallback(({item}: {item: Row}) => {
     const id = String(item.s.id);
     const isCurrent = isThisPlaylist && (shuffleMode !== 'off' ? activeId === id : queueIndex === item.origIdx);
-    const dl = activeDownloads[id];
     return (
       <TrackRow
         title={item.s.title}
@@ -330,7 +329,7 @@ export default function PlaylistDetailScreen() {
         coverId={item.s.coverArt}
         playback={isCurrent ? (isPlaying ? 'playing' : 'current') : 'idle'}
         liked={overrides[id] ?? likedSongIds.has(id)}
-        download={id in downloads ? 'done' : dl && (dl.status === 'queued' || dl.status === 'downloading') ? 'downloading' : 'none'}
+        download={downloadStateOf(id, downloads, activeDownloads)}
         onPress={() => playTrack(item.origIdx)}
         onLongPress={() => setMenuSong({song: item.s, index: item.origIdx})}
         onToggleLike={() => toggleLike(id, item.s.title, item.s.artist)}

@@ -6,7 +6,7 @@
  *   versions are upgraded at launch, quietly when the server cannot be reached,
  *   and the storage file is then wiped of their passwords.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.1.1
  * @license CC-BY-NC-4.0
  */
 let mockScrubbed = true;
@@ -18,7 +18,7 @@ jest.mock('../../src/store/storage', () => ({
 jest.mock('../../src/store/scrubStorage', () => ({scrubStorage: () => mockScrub()}));
 jest.mock('../../src/store/localCovers', () => ({getLocalCoverUri: () => undefined}));
 jest.mock('../../src/store/networkStore', () => ({useNetworkStore: {getState: () => ({setOffline: () => {}, setServerReachable: () => {}})}}));
-jest.mock('../../src/services/network', () => ({isOnMobileData: () => false}));
+jest.mock('../../src/services/network', () => ({isOnMobileData: () => false, phoneHasNetwork: () => true}));
 
 import {md5} from 'js-md5';
 import {authParams, configureClient, getStreamUrl, subsonicGet} from '../../src/api/client';

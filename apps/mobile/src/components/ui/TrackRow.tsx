@@ -8,7 +8,7 @@
  *   `onAddToQueue`, swiping the row right adds the track to the queue.
  *   Memoised: pass stable callbacks so long lists stay at 60 fps.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.2.0
  * @license CC-BY-NC-4.0
  */
 import React from 'react';
@@ -32,7 +32,8 @@ import {colors, radii, sizes, spacing} from '../../theme';
 import {haptic} from '../../services/haptics';
 import {useT} from '../../i18n';
 
-export type DownloadState = 'none' | 'downloading' | 'done';
+import type {DownloadState} from './downloadState';
+export {downloadStateOf, type DownloadState} from './downloadState';
 
 /** `current` = loaded in the player; `playing` = loaded and playing. */
 export type RowPlayback = 'idle' | 'current' | 'playing';
@@ -86,8 +87,12 @@ function TrackRow({
   const t = useT();
   const current = playback !== 'idle';
   const likeLabel = liked ? t.ui.unlike : t.ui.like;
+  const canDownload = download === 'none' || download === 'failed';
   const downloadLabel =
-    download === 'done' ? t.ui.badgeDownloaded : download === 'downloading' ? t.ui.downloading : t.ui.download;
+    download === 'done' ? t.ui.badgeDownloaded
+      : download === 'downloading' ? t.ui.downloading
+      : download === 'failed' ? t.ui.downloadFailed
+      : t.ui.download;
 
   const spoken = [
     title,
@@ -104,7 +109,7 @@ function TrackRow({
     : [
         {name: 'like', label: likeLabel},
         {name: 'add', label: t.ui.addToPlaylist},
-        ...(download === 'none' ? [{name: 'download', label: t.ui.download}] : []),
+        ...(canDownload ? [{name: 'download', label: downloadLabel}] : []),
       ];
 
   const onAction = (e: AccessibilityActionEvent) => {
@@ -183,15 +188,18 @@ function TrackRow({
             <PlusCircleIcon size={20} color={colors.textSecondary} />
           </Pressable>
           <Pressable
-            onPress={download === 'none' ? onDownload : undefined}
-            disabled={download !== 'none'}
+            onPress={canDownload ? onDownload : undefined}
+            disabled={!canDownload}
             hitSlop={4}
             accessibilityLabel={downloadLabel}
             style={styles.action}>
             {download === 'downloading' ? (
               <ActivityIndicator size="small" color={colors.success} />
             ) : (
-              <DownloadIcon size={20} color={download === 'done' ? colors.success : colors.textSecondary} />
+              <DownloadIcon
+                size={20}
+                color={download === 'done' ? colors.success : download === 'failed' ? colors.destructive : colors.textSecondary}
+              />
             )}
           </Pressable>
         </View>

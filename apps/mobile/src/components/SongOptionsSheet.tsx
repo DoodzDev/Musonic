@@ -3,15 +3,17 @@
  * @description Bottom sheet for per-track actions: like/unlike, manage playlist
  *   membership, remove from current playlist, add to queue, go to album, go to
  *   artist. Preserves last non-null track during the close animation. "Add to
- *   queue" goes through the playback engine when it drives the player.
+ *   queue" goes through the playback engine when it drives the player. A downloaded
+ *   track offers "Remove download" (asked first) instead of "Download".
  * @author DoodzProg
- * @version 1.2.2
+ * @version 1.3.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {isOnlineId} from '../services/onlineIds';
 import {
   useWindowDimensions,
+  Alert,
   Modal,
   StyleSheet,
   Text,
@@ -27,6 +29,7 @@ import QueueAddIcon from './icons/QueueAddIcon';
 import CoverArt from './CoverArt';
 import HeartIcon from './icons/HeartIcon';
 import DownloadIcon from './icons/DownloadIcon';
+import TrashIcon from './icons/TrashIcon';
 import AddToPlaylistSheet from './AddToPlaylistSheet';
 import {darkTheme} from '../theme';
 import {updatePlaylist} from '../api/endpoints/playlists';
@@ -125,6 +128,7 @@ export default function SongOptionsSheet({
     ? (localLikeOverrides[trackId] !== undefined ? localLikeOverrides[trackId] : likedSongIds.has(trackId))
     : false;
   const isInPlaylist = trackId ? savedSet.has(trackId) : false;
+  const isDownloaded = useDownloadStore(s => (trackId ? s.downloads[trackId] != null : false));
 
   const sheetStyle = useAnimatedStyle(() => ({transform: [{translateY: translateY.value}]}));
   const overlayStyle = useAnimatedStyle(() => ({opacity: overlayOpacity.value}));
@@ -213,6 +217,23 @@ export default function SongOptionsSheet({
     onToast(getT().songOptions.downloadQueued);
   }, [tr, onClose, onToast]);
 
+  const handleRemoveDownload = useCallback(() => {
+    if (!tr) return;
+    const d = getT().downloads;
+    Alert.alert(d.deleteSongTitle, d.deleteSongMessage(tr.title), [
+      {text: d.cancelButton, style: 'cancel'},
+      {
+        text: d.deleteConfirm,
+        style: 'destructive',
+        onPress: async () => {
+          onClose();
+          await useDownloadStore.getState().deleteDownload(String(tr.id));
+          onToast(getT().songOptions.downloadRemoved);
+        },
+      },
+    ]);
+  }, [tr, onClose, onToast]);
+
   return (
     <>
       <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={onClose}>
@@ -270,7 +291,14 @@ export default function SongOptionsSheet({
                 label={t.songOptions.addToQueue}
                 onPress={handleAddToQueue}
               />
-              {tr && !isOnlineId(tr.id) && (
+              {tr && isDownloaded && (
+                <ActionRow
+                  icon={<TrashIcon size={22} color={ICON_COLOR} />}
+                  label={t.downloads.deleteSongTitle}
+                  onPress={handleRemoveDownload}
+                />
+              )}
+              {tr && !isDownloaded && !isOnlineId(tr.id) && (
                 <ActionRow
                   icon={<DownloadIcon size={22} color={ICON_COLOR} />}
                   label={t.songOptions.download}

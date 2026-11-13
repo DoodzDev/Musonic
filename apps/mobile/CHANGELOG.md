@@ -11,7 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Removed
-- **The iOS app is no longer built or published.** Musonic now focuses on Android, where installing it is simple (one APK) and where the app can use everything the phone offers (Android Auto, the native player, downloads). An IPA had to be sideloaded with AltStore or Sideloadly, which few people know how or are able to do. On iPhone, use Musonic Web from the Home Screen; it is being adapted to phone screens. Releases up to 2.4.0 keep their IPA.
+- **The iOS app is no longer built or published.** Musonic now focuses on Android, where installing it is simple (one APK) and where the app can use everything the phone offers (Android Auto, the native player, downloads). An IPA had to be sideloaded with AltStore or Sideloadly, which few people know how or are able to do. On iPhone, use Musonic Web from the Home Screen (made for phone screens since web 1.3.0). Releases up to 2.4.0 keep their IPA.
+
+### Fixed
+- **Android Auto: a song, Play or Shuffle tapped on the car screen plays even when Musonic was closed.** The car showed the lists, but the tap was lost until the app was opened on the phone.
+- In French, a request the server refuses (4xx) no longer says « Erreur serveur ».
+- A download that failed now shows a red icon; a tap tries again (it went back to the grey arrow, as if never asked).
+- You can remove one downloaded song: « Remove download » in its options (long press).
+- When only the server is down, the banner says « Server unreachable », no longer « No internet connection ».
+- On a server other than Musonic Server, the Podcasts filter (search) and the Podcasts tab (library) are hidden: only Musonic Server has podcasts.
 
 ## [2.4.0] - 2026-11-10
 
