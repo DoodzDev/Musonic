@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-13
+
 ### Added
 - **A phone layout** (screens up to 760 px wide), the way to use Musonic on an iPhone: like the Android app, a floating mini player sits above the Home and Library tabs and the search button. Tap it or swipe it up for the full player, swipe it left or right to change track.
 - **The full player on a phone**: a large cover, big buttons, then lyrics, devices, sleep timer and queue; the lyrics and the queue take the cover's place. Swipe down or tap the chevron to close it.
