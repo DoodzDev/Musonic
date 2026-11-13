@@ -7,11 +7,11 @@
  *   Requests carry the account's device key on Musonic Server, else its fixed
  *   token (ADR-021); an account the server refuses is sent back to sign in.
  * @author DoodzProg
- * @version 1.6.0
+ * @version 1.7.0
  * @license CC-BY-NC-4.0
  */
 import {useSettingsStore, type AuthProblem, type Server} from '../store/settingsStore';
-import {isOnMobileData} from '../services/network';
+import {isOnMobileData, phoneHasNetwork} from '../services/network';
 import {useNetworkStore} from '../store/networkStore';
 import {getLocalCoverUri} from '../store/localCovers';
 
@@ -158,8 +158,11 @@ async function subsonicFetch(urlStr: string, timeoutMs: number, headers?: Record
     store.setServerReachable(true);
     return res;
   } catch (err) {
+    // A network failure is « no internet » only when the phone has no network; otherwise the
+    // server alone is unreachable (AUD-015 F30).
     if (err instanceof TypeError) {
-      useNetworkStore.getState().setOffline(true);
+      if (phoneHasNetwork()) useNetworkStore.getState().setServerReachable(false);
+      else useNetworkStore.getState().setOffline(true);
     }
     throw err;
   }

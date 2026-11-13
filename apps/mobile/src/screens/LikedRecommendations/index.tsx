@@ -8,7 +8,7 @@
  *   similar songs of liked tracks, without what is already liked. Each refresh
  *   draws new seeds. Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.1.3
+ * @version 2.1.4
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -19,7 +19,7 @@ import {State, useActiveTrack, usePlaybackState} from '../../services/player';
 import DetailScaffold from '../../components/detail/DetailScaffold';
 import {PlayShuffleRow, SquareButton} from '../../components/detail/DetailParts';
 import {usePlayButton} from '../../hooks/usePlayButton';
-import TrackRow from '../../components/ui/TrackRow';
+import TrackRow, {downloadStateOf} from '../../components/ui/TrackRow';
 import Text from '../../components/ui/Text';
 import EmptyState from '../../components/ui/EmptyState';
 import AddToPlaylistSheet from '../../components/AddToPlaylistSheet';
@@ -115,7 +115,6 @@ export default function LikedRecommendationsScreen() {
   const renderItem = useCallback(({item, index}: {item: SubsonicSong; index: number}) => {
     const id = String(item.id);
     const isCurrent = active?.id != null && String(active.id) === id;
-    const dl = activeDownloads[id];
     return (
       <TrackRow
         title={item.title}
@@ -124,7 +123,7 @@ export default function LikedRecommendationsScreen() {
         badges={id.startsWith('ext-') ? ['online'] : undefined}
         playback={isCurrent ? (state === State.Playing ? 'playing' : 'current') : 'idle'}
         liked={overrides[id] ?? likedSongIds.has(id)}
-        download={id in downloads ? 'done' : dl && (dl.status === 'queued' || dl.status === 'downloading') ? 'downloading' : 'none'}
+        download={downloadStateOf(id, downloads, activeDownloads)}
         onPress={() => playFromList({type: 'recommendations'}, tracks, index)}
         onLongPress={() => setMenuSong(item)}
         onToggleLike={() => toggleLike(id, item.title, item.artist)}

@@ -3,14 +3,14 @@
  * @description Stream URLs follow the quality chosen for the current network
  *   (Wi-Fi or mobile data); downloads always ask for the original file.
  * @author DoodzProg
- * @version 1.0.0
+ * @version 1.0.1
  * @license CC-BY-NC-4.0
  */
 jest.mock('../../src/store/storage', () => ({storage: {getString: () => undefined, set: () => {}, delete: () => {}}, mmkvStorage: {getItem: () => null, setItem: () => {}, removeItem: () => {}}}));
 jest.mock('../../src/store/localCovers', () => ({getLocalCoverUri: () => undefined}));
 jest.mock('../../src/store/networkStore', () => ({useNetworkStore: {getState: () => ({setOffline: () => {}, setServerReachable: () => {}})}}));
 let mockMobileData = false;
-jest.mock('../../src/services/network', () => ({isOnMobileData: () => mockMobileData}));
+jest.mock('../../src/services/network', () => ({isOnMobileData: () => mockMobileData, phoneHasNetwork: () => true}));
 
 import {configureClient, getStreamUrl} from '../../src/api/client';
 import {useSettingsStore} from '../../src/store/settingsStore';

@@ -2,7 +2,7 @@
  * @file en.ts
  * @description English texts of the console (same keys as fr.ts, checked by the compiler).
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.3.1
  * @license CC-BY-NC-4.0
  */
 
@@ -161,7 +161,7 @@ export const en: Dict = {
     listensTo: (who, title) => `${who} is playing “${title}”`,
     since: (when) => `for ${when}`,
     nobody: 'Nobody is listening right now.',
-    connectSoon: "Controlling everyone's playback (pause, song, device) comes with Musonic Connect.",
+    connectSoon: 'Musonic Connect (beta) moves playback between your own devices, from the apps; the console only shows what plays.',
     versions: 'Versions',
     installed: (v) => `Installed: ${v}`,
     latest: (v) => ` · latest: ${v}`,
@@ -418,7 +418,7 @@ export const en: Dict = {
     reinstall: 'Reinstall',
     installing: 'Installing…',
     open: 'Open',
-    updates: ['Check for updates', 'Once a day on GitHub, for Musonic Server and Musonic Web. Nothing is installed on its own.'],
+    updates: ['Check for updates', 'Every 6 hours on GitHub, for Musonic Server and Musonic Web. Nothing is installed on its own.'],
     backups: 'Backups',
     backupsHelp: 'A copy of the database every day (accounts, likes, playlists, plays, settings). Music files are not in it.',
     backupsSecret: 'The database also holds the providers’ credentials: keep downloaded backups somewhere safe.',
@@ -620,9 +620,9 @@ export const en: Dict = {
     freeIn: (when: string) => `unblocked ${when}`,
     unblock: 'Unblock',
     noBlocked: 'No blocked address.',
-    legacy: ['Legacy Subsonic sign-in', 'Password or t + s token sent with each request. Used by Musonic Web, the current Musonic app and most Subsonic clients.'],
+    legacy: ['Legacy Subsonic sign-in', 'Lets apps sign in with a token made from the password (t + s), as many Subsonic clients do (Substreamer, Symfonium…). It keeps the password encrypted next to its hash, and works only for passwords set while it is on. Musonic Web and the Musonic app use device keys and do not need it.'],
     legacyOffTitle: 'Turn the legacy Subsonic sign-in off?',
-    legacyOffSub: 'After the restart, only device keys will work: Musonic Web, the current Musonic app and most Subsonic clients (Substreamer, Symfonium…) will no longer sign in.',
+    legacyOffSub: 'After the restart, apps that sign in with a token (t + s) will no longer get in. Musonic Web and the Musonic app (device keys), and apps that send the password itself, are not affected.',
     legacyOff: 'Turn off anyway',
   },
 };

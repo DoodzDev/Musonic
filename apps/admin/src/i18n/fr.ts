@@ -2,7 +2,7 @@
  * @file fr.ts
  * @description French texts of the console (the reference: every language has the same keys).
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.3.1
  * @license CC-BY-NC-4.0
  */
 
@@ -159,7 +159,7 @@ export const fr = {
     listensTo: (who: string, title: string) => `${who} écoute « ${title} »`,
     since: (when: string) => `depuis ${when}`,
     nobody: "Personne n'écoute en ce moment.",
-    connectSoon: 'Piloter la lecture de chacun (pause, titre, appareil) arrive avec Musonic Connect.',
+    connectSoon: 'Musonic Connect (bêta) fait passer la lecture d’un appareil à l’autre, depuis les applis ; la console montre seulement ce qui joue.',
     versions: 'Versions',
     installed: (v: string) => `Installée : ${v}`,
     latest: (v: string) => ` · dernière : ${v}`,
@@ -416,7 +416,7 @@ export const fr = {
     reinstall: 'Réinstaller',
     installing: 'Installation…',
     open: 'Ouvrir',
-    updates: ['Vérifier les mises à jour', 'Une fois par jour sur GitHub, pour Musonic Server et Musonic Web. Rien n’est installé tout seul.'],
+    updates: ['Vérifier les mises à jour', 'Toutes les 6 heures sur GitHub, pour Musonic Server et Musonic Web. Rien n’est installé tout seul.'],
     backups: 'Sauvegardes',
     backupsHelp: 'Une copie de la base chaque jour (comptes, likes, playlists, écoutes, réglages). Les fichiers de musique ne sont pas dedans.',
     backupsSecret: 'La base contient aussi les identifiants des fournisseurs : gardez les sauvegardes téléchargées en lieu sûr.',
@@ -618,9 +618,9 @@ export const fr = {
     freeIn: (when: string) => `débloquée ${when}`,
     unblock: 'Débloquer',
     noBlocked: 'Aucune adresse bloquée.',
-    legacy: ['Ancienne connexion Subsonic', 'Mot de passe ou jeton t + s envoyé à chaque requête. Utilisée par Musonic Web, l’application Musonic actuelle et la plupart des clients Subsonic.'],
+    legacy: ['Ancienne connexion Subsonic', 'Permet aux applis de se connecter avec un jeton tiré du mot de passe (t + s), comme beaucoup de clients Subsonic (Substreamer, Symfonium…). Le mot de passe est alors gardé chiffré à côté de son hachage, et seuls les mots de passe définis pendant que le réglage est actif marchent. Musonic Web et l’application Musonic utilisent des clés d’appareil et n’en ont pas besoin.'],
     legacyOffTitle: "Couper l'ancienne connexion Subsonic ?",
-    legacyOffSub: "Après le redémarrage, seules les clés d'appareils marcheront : Musonic Web, l'application Musonic actuelle et la plupart des clients Subsonic (Substreamer, Symfonium…) ne pourront plus se connecter.",
+    legacyOffSub: "Après le redémarrage, les applis qui se connectent par jeton (t + s) ne pourront plus entrer. Musonic Web et l'application Musonic (clés d'appareil), et les applis qui envoient le mot de passe lui-même, ne sont pas concernées.",
     legacyOff: 'Couper quand même',
   },
 };

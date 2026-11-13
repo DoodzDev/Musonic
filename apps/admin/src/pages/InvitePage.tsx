@@ -3,7 +3,7 @@
  * @description Public page of an invitation link: the person creates their account (name,
  *   password, confirmation). The administrator never sees the password.
  * @author DoodzProg
- * @version 0.1.0
+ * @version 0.1.1
  * @license CC-BY-NC-4.0
  */
 
@@ -42,7 +42,7 @@ export function InvitePage() {
       <PublicBox>
         <h1>{t.invite.ready}</h1>
         <p className="sub muted">{t.invite.addServer}</p>
-        <div className="linkbox" style={{ justifyContent: 'center' }}>https://{location.host}</div>
+        <div className="linkbox" style={{ justifyContent: 'center' }}>{location.origin}</div>
         <p className="muted small mt" style={{ textAlign: 'center' }}>{t.invite.thenSignIn}</p>
       </PublicBox>
     );

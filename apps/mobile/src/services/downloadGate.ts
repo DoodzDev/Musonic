@@ -5,7 +5,7 @@
  *   downloads are simply skipped. Storage limit (Advanced setting): once the
  *   downloads use the space allowed, new ones are refused with a message.
  * @author DoodzProg
- * @version 1.1.0
+ * @version 1.1.1
  * @license CC-BY-NC-4.0
  */
 import {Alert} from 'react-native';
@@ -35,7 +35,7 @@ export function confirmDownload(count: number): Promise<boolean> {
   });
 }
 
-/** Automatic downloads (while listening) never ask: they wait for Wi-Fi. */
+/** Automatic downloads (while listening) never ask: on mobile data with Wi-Fi only, they are skipped (not kept for later). */
 export function canDownloadAutomatically(): boolean {
   return !blocked();
 }

@@ -61,10 +61,11 @@ class MusonicAutoService : MediaBrowserServiceCompat() {
       BROWSE_SHUFFLE -> "shuffle"
       else -> null
     }
-    if (kind == null || mediaId == null || !MusonicAutoBridge.browseAction(kind, mediaId)) {
+    if (kind == null || mediaId == null) {
       result.sendError(null)
       return
     }
+    MusonicAutoBridge.browseAction(this, kind, mediaId)
     // The car then shows the playback screen.
     result.sendResult(Bundle().apply {
       putBoolean(MediaConstants.EXTRAS_KEY_CUSTOM_BROWSER_ACTION_RESULT_SHOW_PLAYING_ITEM, true)

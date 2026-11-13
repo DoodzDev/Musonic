@@ -3,7 +3,7 @@
  * @description English UI strings. Mirrors the structure of fr.ts exactly.
  *   Swap the active locale in i18n/index.ts to enable English.
  * @author DoodzProg
- * @version 1.5.0
+ * @version 1.6.0
  * @license CC-BY-NC-4.0
  */
 export const en = {
@@ -33,6 +33,7 @@ export const en = {
     addedToQueue: (title: string) => `"${title}" added to the queue`,
     download: 'Download',
     downloading: 'Downloading',
+    downloadFailed: 'Download failed, tap to try again',
     nowPlaying: 'Now playing',
     unavailableOffline: 'Unavailable offline',
     open: 'Open',
@@ -423,6 +424,7 @@ export const en = {
     removeError: 'Error removing track',
     download: 'Download',
     downloadQueued: 'Download queued',
+    downloadRemoved: 'Download removed',
   },
 
   // ─── Playlist Options Sheet ────────────────────────────────────────────────

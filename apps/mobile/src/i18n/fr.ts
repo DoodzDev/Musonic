@@ -4,7 +4,7 @@
  *   Add keys here first, then mirror them in en.ts. The i18n/index.ts hook
  *   selects the active locale based on settingsStore.language.
  * @author DoodzProg
- * @version 1.5.0
+ * @version 1.6.0
  * @license CC-BY-NC-4.0
  */
 // French UI strings — single source of truth for all user-visible text.
@@ -36,6 +36,7 @@ export const t = {
     addedToQueue: (title: string) => `« ${title} » ajouté à la file d'attente`,
     download: 'Télécharger',
     downloading: 'Téléchargement en cours',
+    downloadFailed: 'Échec du téléchargement, touchez pour réessayer',
     nowPlaying: 'En cours de lecture',
     unavailableOffline: 'Indisponible hors ligne',
     open: 'Ouvrir',
@@ -76,7 +77,7 @@ export const t = {
     missingFieldsBody: 'URL, identifiant et mot de passe requis.',
     errors: {
       wrongCredentials: 'Identifiant ou mot de passe incorrect',
-      clientError: (code: number) => `Erreur serveur (${code}) — vérifiez l'URL`,
+      clientError: (code: number) => `Requête refusée (${code}) — vérifiez l'adresse du serveur`,
       serverError: (code: number) => `Erreur serveur (${code}) — le serveur est en panne`,
       timeout: "Connexion trop lente — délai dépassé",
       unreachable: "Serveur introuvable — vérifiez l'URL",
@@ -417,6 +418,7 @@ export const t = {
   songOptions: {
     download: 'Télécharger',
     downloadQueued: 'Téléchargement ajouté',
+    downloadRemoved: 'Téléchargement supprimé',
     addToPlaylist: 'Ajouter à la playlist',
     removeFromPlaylist: 'Supprimer de cette playlist',
     addToQueue: "Ajouter à la file d'attente",

@@ -162,7 +162,7 @@ private fun Screen.open(entry: AutoEntry) {
   if (entry.browsable) {
     screenManager.push(ListScreen(carContext, entry))
   } else {
-    MusonicAutoBridge.play(entry.id)
+    MusonicAutoBridge.play(carContext, entry.id)
     screenManager.push(PlaybackScreen(carContext))
   }
 }
@@ -278,7 +278,7 @@ private class TabsScreen(context: CarContext) : Screen(context) {
     val playing = nowPlaying.metadata
     val title = playing?.getString(MediaMetadataCompat.METADATA_KEY_TITLE) ?: saved?.title ?: return null
     val row = Row.Builder().setTitle(title).setOnClickListener {
-      MusonicAutoBridge.play(Nodes.RESUME)
+      MusonicAutoBridge.play(carContext, Nodes.RESUME)
       screenManager.push(PlaybackScreen(carContext))
     }
     (playing?.getString(MediaMetadataCompat.METADATA_KEY_ARTIST) ?: saved?.subtitle)
@@ -370,7 +370,7 @@ private class ListScreen(context: CarContext, private val list: AutoEntry) : Scr
       Action.Builder()
           .setIcon(carContext.icon(icon))
           .setOnClickListener {
-            MusonicAutoBridge.browseAction(action, list.id)
+            MusonicAutoBridge.browseAction(carContext, action, list.id)
             screenManager.push(PlaybackScreen(carContext))
           }
           .build()

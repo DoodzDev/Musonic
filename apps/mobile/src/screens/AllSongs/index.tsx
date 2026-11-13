@@ -14,7 +14,7 @@
  *   engine (playFromList). Offline (or when the server cannot be reached),
  *   lists the downloaded tracks: the only ones that can play.
  * @author DoodzProg
- * @version 2.2.2
+ * @version 2.2.3
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -25,7 +25,7 @@ import {State, useActiveTrack, usePlaybackState} from '../../services/player';
 import DetailScaffold from '../../components/detail/DetailScaffold';
 import {DETAIL_BAR_HEIGHT, PlayShuffleRow} from '../../components/detail/DetailParts';
 import {usePlayButton} from '../../hooks/usePlayButton';
-import TrackRow from '../../components/ui/TrackRow';
+import TrackRow, {downloadStateOf, type DownloadState} from '../../components/ui/TrackRow';
 import Text from '../../components/ui/Text';
 import Raised from '../../components/ui/Raised';
 import SearchField from '../../components/ui/SearchField';
@@ -147,7 +147,7 @@ type SongRowProps = {
   index: number;
   playback: 'idle' | 'current' | 'playing';
   liked: boolean;
-  download: 'none' | 'downloading' | 'done';
+  download: DownloadState;
   actions: RowActions;
 };
 
@@ -287,14 +287,13 @@ export default function AllSongsScreen() {
     const song = item.song;
     const id = String(song.id);
     const isCurrent = active?.id != null && String(active.id) === id;
-    const dl = activeDownloads[id];
     return (
       <SongRow
         song={song}
         index={item.index}
         playback={isCurrent ? (state === State.Playing ? 'playing' : 'current') : 'idle'}
         liked={overrides[id] ?? likedSongIds.has(id)}
-        download={id in downloads ? 'done' : dl && (dl.status === 'queued' || dl.status === 'downloading') ? 'downloading' : 'none'}
+        download={downloadStateOf(id, downloads, activeDownloads)}
         actions={rowActions}
       />
     );

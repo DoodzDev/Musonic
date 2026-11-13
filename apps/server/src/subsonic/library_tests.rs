@@ -1607,6 +1607,28 @@ async fn navidrome_playlists_likes_and_plays_are_imported_with_their_ids() {
 }
 
 #[tokio::test]
+async fn an_older_navidrome_without_scrobbles_is_imported_too() {
+    use crate::library::navidrome::{NavidromeOptions, import};
+    let lib = library("navidrome-old").await;
+    let nd = fake_navidrome(&lib.st.data_dir);
+    rusqlite::Connection::open(&nd)
+        .unwrap()
+        .execute_batch("DROP TABLE scrobbles")
+        .unwrap();
+    let r = lib
+        .st
+        .db
+        .call(move |c| import(c, &nd, NavidromeOptions::default()))
+        .await
+        .unwrap();
+    assert_eq!((r.playlists, r.plays), (1, 0));
+    assert_eq!(
+        r.track_annotations, 1,
+        "play counts still come with the likes"
+    );
+}
+
+#[tokio::test]
 async fn a_moved_music_folder_keeps_its_tracks() {
     let mut lib = library("moved").await;
     let id = lib.song_id("hoppipolla").await;

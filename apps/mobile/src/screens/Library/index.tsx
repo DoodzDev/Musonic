@@ -7,7 +7,7 @@
  *   a grid. Pinned items stay on top of their tab. Long press opens the
  *   options of an item. Offline, only what was downloaded is listed.
  * @author DoodzProg
- * @version 2.2.0
+ * @version 2.3.0
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -61,6 +61,7 @@ import {colors, radii, spacing} from '../../theme';
 import {useT, getT} from '../../i18n';
 import {filterEntries, sortEntries, type LibraryEntry, type LibraryTab} from './libraryModel';
 import {getFollowedPodcasts, type PodcastShow} from '../../api/endpoints/podcasts';
+import {useIsMusonicServer} from '../../hooks/useIsMusonicServer';
 import {canImportPlaylists, startPlaylistImport, useImportStore} from '../../services/playlistImport';
 
 const TABS: LibraryTab[] = ['playlists', 'albums', 'artists', 'podcasts', 'downloads'];
@@ -82,7 +83,11 @@ export default function LibraryScreen() {
   const top = useLargeTitleInset();
   const lib = useLibraryCollections();
 
-  const [tab, setTab] = useState<LibraryTab>('playlists');
+  const [chosenTab, setTab] = useState<LibraryTab>('playlists');
+  // Podcasts are Musonic Server's: no Podcasts tab on other servers.
+  const musonic = useIsMusonicServer();
+  const tabs = musonic ? TABS : TABS.filter(k => k !== 'podcasts');
+  const tab = tabs.includes(chosenTab) ? chosenTab : 'playlists';
   const viewMode = useSettingsStore(s => s.libraryViewMode);
   const setViewMode = useSettingsStore(s => s.setLibraryViewMode);
   const sortMode = useSettingsStore(s => s.librarySortMode);
@@ -415,7 +420,7 @@ export default function LibraryScreen() {
       ) : null}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chips}>
-        {TABS.map(k => <Chip key={k} label={t.library.tabs[k]} selected={tab === k} onPress={() => setTab(k)} />)}
+        {tabs.map(k => <Chip key={k} label={t.library.tabs[k]} selected={tab === k} onPress={() => setTab(k)} />)}
       </ScrollView>
 
       {tab === 'playlists' && !query.trim() ? (

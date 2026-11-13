@@ -8,7 +8,7 @@
  *   photo and actions in a fixed column, the rest scrolls on the right.
  *   Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.1.3
+ * @version 2.1.4
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -23,7 +23,7 @@ import DetailScaffold from '../../components/detail/DetailScaffold';
 import {PlayShuffleRow} from '../../components/detail/DetailParts';
 import {usePlayButton} from '../../hooks/usePlayButton';
 import {AlbumCard, ArtistBubble, HomeShelf} from '../../components/home/HomeCards';
-import TrackRow from '../../components/ui/TrackRow';
+import TrackRow, {downloadStateOf} from '../../components/ui/TrackRow';
 import Text from '../../components/ui/Text';
 import Raised from '../../components/ui/Raised';
 import SectionHeader from '../../components/ui/SectionHeader';
@@ -194,7 +194,6 @@ export default function ArtistDetailScreen() {
   const renderItem = useCallback(({item, index}: {item: Popular; index: number}) => {
     const id = String(item.song.id);
     const isCurrent = active?.id != null && String(active.id) === id;
-    const dl = activeDownloads[id];
     return (
       <TrackRow
         title={item.song.title}
@@ -203,7 +202,7 @@ export default function ArtistDetailScreen() {
         badges={item.online ? ['online'] : undefined}
         playback={isCurrent ? (state === State.Playing ? 'playing' : 'current') : 'idle'}
         liked={overrides[id] ?? likedSongIds.has(id)}
-        download={id in downloads ? 'done' : dl && (dl.status === 'queued' || dl.status === 'downloading') ? 'downloading' : 'none'}
+        download={downloadStateOf(id, downloads, activeDownloads)}
         onPress={() => playFromList(source, tracks, index)}
         onLongPress={() => setMenuSong(item.song)}
         onToggleLike={() => toggleLike(id, item.song.title, item.song.artist)}

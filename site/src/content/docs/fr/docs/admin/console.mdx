@@ -132,7 +132,7 @@ Tout cela est expliqué pas à pas dans [Comptes et rôles](/fr/docs/admin/accou
 - **Appareils** : toutes les clés d'appareils de tous les comptes (nom de l'appareil, compte, date d'ajout, dernière utilisation). **Révoquer** déconnecte l'appareil tout de suite ; pour revenir, il devra se reconnecter avec le mot de passe. Les applications qui se connectent seulement par mot de passe (la plupart des clients Subsonic) n'ont pas de clé et n'apparaissent pas ici.
 - **Connexions récentes** : la dernière connexion réussie de chaque compte, application et adresse. **Tout le journal des connexions** ouvre Activité, filtrée sur les connexions.
 - **Adresses bloquées** : après 10 mots de passe faux différents pour un compte, une adresse est bloquée 15 minutes pour ce compte. **Débloquer** lève le blocage plus tôt.
-- **Ancienne connexion Subsonic** : le mot de passe, ou le jeton `t` + `s`, envoyé à chaque requête. Musonic Web, l'application Musonic actuelle et la plupart des clients Subsonic l'utilisent. La couper ne laisse que les clés d'appareils : ces applications ne pourront plus se connecter. Prend effet après un redémarrage.
+- **Ancienne connexion Subsonic** : permet aux applis de se connecter avec un jeton tiré du mot de passe (`t` + `s`), comme beaucoup de clients Subsonic (Substreamer, Symfonium…). Le mot de passe est alors gardé chiffré à côté de son hachage, et seuls les mots de passe définis pendant que le réglage est actif marchent ainsi. Musonic Web et l'application Musonic utilisent des clés d'appareil et n'en ont pas besoin. Coupée, les applis qui utilisent le jeton ne se connectent plus ; celles qui envoient le mot de passe lui-même, si. Prend effet après un redémarrage.
 
 ## Bibliothèque
 

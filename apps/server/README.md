@@ -3,8 +3,8 @@
 The music server of the Musonic ecosystem: your library, your accounts and your playlists, for
 the Musonic apps and for any Subsonic client.
 
-> **Version 1.0.0.** Install it with Docker (x86 and ARM) or as a single program: see
-> [Install](#install). What changed: [CHANGELOG.md](CHANGELOG.md).
+> Install it with Docker (x86 and ARM) or as a single program: see [Install](#install).
+> Versions and what changed: [CHANGELOG.md](CHANGELOG.md).
 
 ## Install
 With Docker, in the folder where its data will live:
@@ -16,7 +16,7 @@ docker compose up -d
 docker compose exec musonic-server musonic-server user add <name> --admin
 ```
 
-The image is `ghcr.io/doodzdev/musonic-server` (tags `1`, `1.0`, `1.0.0`, `latest`);
+The image is `ghcr.io/doodzdev/musonic-server` (tags `X.Y.Z`, `X.Y`, `X` and `latest`, e.g. `1.2.2`, `1.2`, `1`);
 `docker compose pull && docker compose up -d` updates it. Put a reverse proxy with HTTPS in
 front: the server listens on `127.0.0.1:4533`.
 
@@ -46,7 +46,7 @@ Without Docker: each [release](https://github.com/DoodzDev/Musonic/releases) tag
   as files (see [docs/PROVIDERS.md](docs/PROVIDERS.md)).
 
 ## Build and run
-Requires Rust 1.88 or later. [ffmpeg](https://ffmpeg.org/) is needed to transcode (lower bit
+Requires Rust 1.89 or later. [ffmpeg](https://ffmpeg.org/) is needed to transcode (lower bit
 rates on mobile data); without it, files are sent as they are. `MUSONIC_FFMPEG` sets its path.
 
 ```sh

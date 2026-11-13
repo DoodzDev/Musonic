@@ -8,7 +8,7 @@
  *   (`ext-deezer-album-…`) are imported to the server when added to the
  *   library. Playback goes through the playback engine (playFromList).
  * @author DoodzProg
- * @version 2.0.4
+ * @version 2.0.5
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -20,7 +20,7 @@ import {State, useActiveTrack, usePlaybackState} from '../../services/player';
 import DetailScaffold from '../../components/detail/DetailScaffold';
 import {GlassButton, PlayShuffleRow, RoundAction} from '../../components/detail/DetailParts';
 import {usePlayButton} from '../../hooks/usePlayButton';
-import TrackRow from '../../components/ui/TrackRow';
+import TrackRow, {downloadStateOf} from '../../components/ui/TrackRow';
 import Text from '../../components/ui/Text';
 import Raised from '../../components/ui/Raised';
 import Badge from '../../components/ui/Badge';
@@ -262,7 +262,6 @@ export default function AlbumDetailScreen() {
   const renderItem = useCallback(({item, index}: {item: SubsonicSong; index: number}) => {
     const id = String(item.id);
     const isCurrent = active?.id != null && String(active.id) === id;
-    const dl = activeDownloads[id];
     return (
       <TrackRow
         title={item.title}
@@ -271,7 +270,7 @@ export default function AlbumDetailScreen() {
         number={item.track || index + 1}
         playback={isCurrent ? (state === State.Playing ? 'playing' : 'current') : 'idle'}
         liked={overrides[id] ?? likedSongIds.has(id)}
-        download={id in downloads ? 'done' : dl && (dl.status === 'queued' || dl.status === 'downloading') ? 'downloading' : 'none'}
+        download={downloadStateOf(id, downloads, activeDownloads)}
         onPress={() => playFromList(source, tracks, index)}
         onLongPress={() => setMenuSong(item)}
         onToggleLike={() => toggleLike(id, item.title, item.artist)}

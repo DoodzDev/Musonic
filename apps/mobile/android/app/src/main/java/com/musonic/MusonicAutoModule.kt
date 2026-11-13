@@ -1,6 +1,7 @@
 package com.musonic
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -8,6 +9,7 @@ import android.os.SystemClock
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.util.Log
 import androidx.media.MediaBrowserServiceCompat.Result
+import com.doublesymmetry.trackplayer.service.MediaSessionTokenHolder
 import com.doublesymmetry.trackplayer.service.MusonicCustomActions
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactApplicationContext
@@ -24,7 +26,8 @@ import com.facebook.react.modules.core.DeviceEventManagerModule
  * [MusonicCarAppService]) and the JS side (ADR-015): the car asks for the children of a node;
  * the lists of the snapshot are answered at once ([MusonicAutoSnapshot], ADR-022 step 2), the
  * others by JS with plain items (covers go through [MusonicArtwork]). A tapped track is played
- * by JS too.
+ * by JS too: when Musonic was closed, the lists come from the snapshot without JS, so a tap
+ * starts JS (the `MusonicAutoStart` task) and is played once JS is ready (ISS-040).
  * JS also sets the playback screen's shuffle / repeat / like buttons and gets their presses,
  * and registers the player's covers (served by [MusonicArtworkProvider], never a server URL).
  * Everything runs on the main thread.
@@ -44,6 +47,38 @@ object MusonicAutoBridge {
 
   /** Set once JS listens for requests, cleared when the React instance goes away. */
   var module: MusonicAutoModule? = null
+    set(value) {
+      field = value
+      if (value != null) main.post { flushQueued() }
+    }
+
+  /** A tap made while JS was not running: played when it is ready, unless it is too old by then. */
+  private class Queued(val send: (MusonicAutoModule) -> Unit, val at: Long)
+
+  private var queued: Queued? = null
+  private const val QUEUED_MAX_AGE_MS = 30_000L
+
+  /** Sends [send] to JS now, or starts JS and keeps it (only the last tap counts). */
+  private fun toJs(context: Context, send: (MusonicAutoModule) -> Unit) {
+    module?.let {
+      send(it)
+      return
+    }
+    queued = Queued(send, SystemClock.elapsedRealtime())
+    MediaSessionTokenHolder.startedByCar = true
+    try {
+      context.startService(Intent(context, MusonicAutoStartService::class.java))
+    } catch (error: IllegalStateException) {
+      Log.w(TAG, "Player start not allowed now", error)
+    }
+  }
+
+  private fun flushQueued() {
+    val tap = queued ?: return
+    val target = module ?: return
+    queued = null
+    if (SystemClock.elapsedRealtime() - tap.at <= QUEUED_MAX_AGE_MS) tap.send(target)
+  }
 
   /** The classic media browser's request; false when the list cannot be had: the caller answers empty. */
   fun loadChildren(context: Context, parentId: String, result: Result<MutableList<MediaItem>>): Boolean {
@@ -83,18 +118,14 @@ object MusonicAutoBridge {
     }
   }
 
-  /** A track tapped on a car screen: JS plays its whole list from it. False when JS is not running. */
-  fun play(mediaId: String): Boolean {
-    val target = module ?: return false
-    target.notifyPlay(mediaId)
-    return true
+  /** A track tapped on a car screen: JS plays its whole list from it (JS is started if needed). */
+  fun play(context: Context, mediaId: String) {
+    toJs(context) { it.notifyPlay(mediaId) }
   }
 
-  /** Play or Shuffle pressed on a list in the car; false when JS is not running. */
-  fun browseAction(action: String, mediaId: String): Boolean {
-    val target = module ?: return false
-    target.notifyBrowseAction(action, mediaId)
-    return true
+  /** Play or Shuffle pressed on a list in the car (JS is started if needed). */
+  fun browseAction(context: Context, action: String, mediaId: String) {
+    toJs(context) { it.notifyBrowseAction(action, mediaId) }
   }
 
   /** A podcast episode is playing (set by JS with the buttons): the car's playback screen adapts. */

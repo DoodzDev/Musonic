@@ -10,6 +10,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`docker stop` and `systemctl stop` stop the server cleanly** (SIGTERM, like Ctrl+C): it
+  finishes the requests in progress instead of being killed 10 seconds later.
+- **Import from Navidrome works with older Navidrome versions** that have no `scrobbles`
+  table: their play counts still come with the likes and ratings.
+- **The OpenSubsonic extensions say what the server does**: `songLyrics` and `transcodeOffset`
+  are announced, and `getUser` says `podcastRole: true`.
+- **« Back up now » with daily backups off keeps every copy made by hand** (it kept the last
+  14 only).
+- **Console**: the end of an invitation shows the server's real address (`http://` on a local
+  network, not always `https://`); « Check for updates » says « every 6 hours », as it does;
+  the dashboard no longer says Musonic Connect is coming; « Legacy Subsonic sign-in » says
+  what it really does (token sign-in only; Musonic Web and the Musonic app do not need it).
+- **« Check for updates » off means no request to GitHub at all**: the console's Musonic Web
+  card no longer asks for the latest version either.
+
+### Security
+- **Only administrators can make the server read every podcast feed again**
+  (`refreshPodcasts`); feeds are read on a schedule anyway.
+
 ## [1.2.2] - 2026-11-13
 
 ### Security

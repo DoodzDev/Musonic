@@ -11,7 +11,7 @@
  *   genre instead: all its songs, without the Magic pill. Built on the
  *   shared detail layout (`DetailScaffold`), like albums and playlists.
  * @author DoodzProg
- * @version 1.5.2
+ * @version 1.5.3
  * @license CC-BY-NC-4.0
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -28,7 +28,7 @@ import {blendDiscoveries, discoveryCount} from './mixModel';
 import {useSettingsStore} from '../../store/settingsStore';
 import {usePlayerStore} from '../../store/playerStore';
 import {useDownloadStore} from '../../store/downloadStore';
-import TrackRow from '../../components/ui/TrackRow';
+import TrackRow, {downloadStateOf} from '../../components/ui/TrackRow';
 import Text from '../../components/ui/Text';
 import Raised from '../../components/ui/Raised';
 import CoverArt from '../../components/CoverArt';
@@ -116,7 +116,6 @@ export default function MixDetailScreen() {
   const renderItem = useCallback(({item, index}: {item: SongLike; index: number}) => {
     const id = String(item.id);
     const isCurrent = active?.id != null && String(active.id) === id;
-    const dl = active_downloads[id];
     return (
       <TrackRow
         title={item.title}
@@ -125,7 +124,7 @@ export default function MixDetailScreen() {
         badges={id.startsWith('ext-') ? ['online'] : undefined}
         playback={isCurrent ? (state === State.Playing ? 'playing' : 'current') : 'idle'}
         liked={overrides[id] ?? likedSongIds.has(id)}
-        download={id in downloads ? 'done' : dl && (dl.status === 'queued' || dl.status === 'downloading') ? 'downloading' : 'none'}
+        download={downloadStateOf(id, downloads, active_downloads)}
         onPress={() => playFromList(source, tracks, index)}
         onToggleLike={() => toggleLike(id, item.title, item.artist)}
         onAddToPlaylist={() => setAddTo(item)}

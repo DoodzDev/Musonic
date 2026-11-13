@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- On a server that refuses token sign-in, the sign-in form says so (Subsonic code 41) instead of « Wrong username or password ».
+
 ## [1.3.0] - 2026-11-13
 
 ### Added
@@ -43,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Install Musonic Web as an app** (computer or phone): its own window and icon, from the browser's install button.
 - **Podcasts** (with Musonic Server): search shows and the episodes where someone speaks, open a show before following it, follow it and find it in the Library. Episodes resume where you stopped (on every device), play faster (up to 2×), jump back 15 s or forward 30 s; their transcript shows like lyrics when the show publishes one. A found episode opens its show and plays.
+- **Import a Spotify or Deezer playlist** (Library → Import, on a Musonic Server): paste the playlist's address, check its name, cover and songs, and Musonic makes it again with songs from your library and the online catalog. The import runs on the server (you can close the window) with its progress shown live, then a report lists the songs not found and the uncertain ones (a close version used instead). A Spotify playlist is read up to its first 100 songs; for the rest, put them in a second Spotify playlist and paste its address in the report: its songs are added to the same playlist. The report can look for the missing songs again. The report stays available from the playlist's page.
 
 ### Security
 - Cover and audio addresses (which carry the sign-in) are never sent to other sites as the page they come from.
@@ -55,11 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **A refused account goes back to the sign-in form with the reason** (key revoked, account suspended, password changed) instead of showing errors and an empty library.
-
-### Added
-- **Import a Spotify or Deezer playlist** (Library → Import, on a Musonic Server): paste the playlist's address, check its name, cover and songs, and Musonic makes it again with songs from your library and the online catalog. The import runs on the server (you can close the window) with its progress shown live, then a report lists the songs not found and the uncertain ones (a close version used instead). A Spotify playlist is read up to its first 100 songs; for the rest, put them in a second Spotify playlist and paste its address in the report: its songs are added to the same playlist. The report can look for the missing songs again. The report stays available from the playlist's page.
-
-### Fixed
 - **Plays are now counted.** The web client never told the server what you listened to, so "Recently played", "Most played" and the top songs stayed empty. A track counts once you have really listened to half of it (or 4 minutes, tracks under 30 s never count): skipping to the end does not count. The track also shows as "now playing" while it plays, and the home picks up the new plays on your next visit.
 - Liking an online track, or adding it to a playlist, now works: the track is first imported into your library (a message tells you while it downloads), then liked or added under its library id. Before, the server could not find it and nothing happened.
 
