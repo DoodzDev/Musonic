@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-11-13
+
 ### Fixed
 - On a server that refuses token sign-in, the sign-in form says so (Subsonic code 41) instead of « Wrong username or password ».
 
