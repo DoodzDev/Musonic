@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **`user add` no longer shows the password while you type it**, and the first start says how to
+  create the administrator (`user add … --admin`).
+
 ## [1.2.2] - 2026-11-13
 
 ### Security
