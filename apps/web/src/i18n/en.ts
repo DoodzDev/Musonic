@@ -2,7 +2,7 @@
  * @file en.ts
  * @description English strings of the web client. Same shape as fr.ts (checked by the type).
  * @author DoodzProg
- * @version 0.4.3
+ * @version 0.4.4
  * @license CC-BY-NC-4.0
  */
 
@@ -216,6 +216,10 @@ export const en: typeof fr = {
     crossfadeOff: 'Off',
     crossfadeSeconds: (seconds: number) => `${seconds} s`,
     crossfadeHint: 'The next track fades in over the end of the current one. Never when you skip a track yourself.',
+    timeShown: 'Time at the end of the bar',
+    timeTotal: (time: string) => `Length · ${time}`,
+    timeLeft: (time: string) => `Time left · ${time}`,
+    about: (setting: string) => `About: ${setting}`,
     scrobbling: {
       section: 'Scrobbling',
       hint: 'Send what you listen to (half a song, or 4 minutes) to your ListenBrainz or Last.fm account. Plays are sent from the server, even when this page is closed.',
@@ -232,6 +236,9 @@ export const en: typeof fr = {
       lastfmConnect: 'Connect Last.fm',
       lastfmWaiting: 'Allow Musonic on the Last.fm page that opened, then come back here.',
       lastfmUnavailable: 'Last.fm is not set up on this server: its administrator adds a Last.fm key in the console.',
+      save: 'Save',
+      serviceSaid: (message: string) => `The service said: « ${message} »`,
+      lastfmUnavailableShort: 'Not set up on this server: ask its administrator',
       failed: 'That did not work. Try again.',
     },
   },

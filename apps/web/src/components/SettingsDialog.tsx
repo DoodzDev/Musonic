@@ -4,9 +4,10 @@
  *   mobile app's order: playback (crossfade between tracks, 0 to 12 s, then the
  *   time left, remembered in the browser); the language (English / French),
  *   shared with the website; Musonic Connect and scrobbling (ListenBrainz,
- *   Last.fm) on a Musonic Server. Escape or a click outside closes it.
+ *   Last.fm) on a Musonic Server, in two columns on a computer. Explanations hide
+ *   behind a circled "i". Escape or a click outside closes it.
  * @author DoodzProg
- * @version 0.4.0
+ * @version 0.6.0
  * @license CC-BY-NC-4.0
  */
 
@@ -20,6 +21,11 @@ import { useConnect } from '../player/ConnectContext.ts';
 import { setCrossfade, useCrossfade } from '../player/crossfade.ts';
 import { setShowRemaining, useShowRemaining } from '../player/timeDisplay.ts';
 import { CloseIcon } from './icons/CloseIcon.tsx';
+import { InfoTip } from './InfoTip.tsx';
+import { formatTime } from '../lib/format.ts';
+import { usePlayer } from '../player/PlayerContext.tsx';
+import { usePosition } from '../player/position.ts';
+import { useTransport } from '../player/transport.ts';
 import { Slider } from './Slider.tsx';
 
 const t = tr.settings;
@@ -39,7 +45,7 @@ function ConnectSettings() {
     <div className="setting">
       <span className="setting-label">{c.section}</span>
       <label className="field-label">
-        <span>{c.deviceName}</span>
+        <span className="label-with-info">{c.deviceName} <InfoTip text={c.adminNotice} label={c.deviceName} /></span>
         <span className="field">
         <input
           className="field-input"
@@ -51,7 +57,6 @@ function ConnectSettings() {
         />
         </span>
       </label>
-      <p className="setting-hint">{c.adminNotice}</p>
     </div>
   );
 }
@@ -68,6 +73,7 @@ function ScrobblingSettings() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [waitingLastfm, setWaitingLastfm] = useState(false);
+  const [tokenOpen, setTokenOpen] = useState(false);
 
   const load = useCallback(() => {
     v1<ScrobblingState>(session, '/v1/me/scrobbling').then(setState).catch(() => setState(null));
@@ -93,11 +99,13 @@ function ScrobblingSettings() {
       .then((next) => {
         setState(next);
         setToken('');
+        setTokenOpen(false);
       })
       .catch((e: unknown) => setError(refused && e instanceof ApiError && e.status === 422 ? refused : s.failed))
       .finally(() => setBusy(false));
   };
   const disconnect = (service: 'listenbrainz' | 'lastfm') => run(v1<ScrobblingState>(session, `/v1/me/scrobbling/${service}`, { method: 'DELETE' }));
+  const sendToken = () => token.trim() && !busy && run(v1(session, '/v1/me/scrobbling/listenbrainz', { method: 'PUT', body: { token } }), s.tokenRefused);
   const connectLastfm = () => {
     setError(null);
     // Opened at once (a pop-up allowed by the click), then sent to Last.fm.
@@ -113,75 +121,101 @@ function ScrobblingSettings() {
         setError(s.failed);
       });
   };
-  const status = (v: ServiceState) => (
-    <>
-      <p className="setting-hint">{v.connected ? (v.name ? s.connectedAs(v.name) : s.connected) : s.notConnected}</p>
-      {v.problem && <p className="setting-hint is-warning">{s.refused}</p>}
-      {v.connected && v.pending > 0 && <p className="setting-hint">{s.pending(v.pending)}</p>}
-    </>
-  );
+  const line = (v: ServiceState) =>
+    v.problem ? s.refused : v.connected ? (v.name ? s.connectedAs(v.name) : s.connected) : s.notConnected;
+  const lastfmOff = state.lastfm.available === false && !state.lastfm.connected;
+  const lb = state.listenbrainz;
+  const lf = state.lastfm;
 
+  // One line per service: its name and state, the action on the right.
   return (
     <div className="setting">
-      <span className="setting-label">{s.section}</span>
-      <p className="setting-hint">{s.hint}</p>
-      <div className="scrobble-service">
-        <span className="scrobble-name">ListenBrainz</span>
-        {status(state.listenbrainz)}
-        {state.listenbrainz.connected && !state.listenbrainz.problem ? (
-          <button type="button" className="btn-quiet" disabled={busy} onClick={() => disconnect('listenbrainz')}>{s.disconnect}</button>
+      <span className="setting-label label-with-info">{s.section} <InfoTip text={s.hint} label={s.section} /></span>
+      <div className="scrobble-row">
+        <span className="scrobble-text">
+          <span className="scrobble-name">ListenBrainz</span>
+          <span className={'scrobble-state' + (lb.problem ? ' is-warning' : '')}>
+            {line(lb)}
+            {lb.connected && lb.pending > 0 ? ` · ${s.pending(lb.pending)}` : ''}
+            {lb.problem && <InfoTip text={s.serviceSaid(lb.problem)} label="ListenBrainz" />}
+          </span>
+        </span>
+        {lb.connected && !lb.problem ? (
+          <button type="button" className="btn-quiet btn-small" disabled={busy} onClick={() => disconnect('listenbrainz')}>{s.disconnect}</button>
         ) : (
-          <>
-            <label className="field-label">
-              <span>{s.token}</span>
-              <span className="field">
-                <input
-                  className="field-input"
-                  type="password"
-                  autoComplete="off"
-                  spellCheck={false}
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && token.trim() && !busy && run(v1(session, '/v1/me/scrobbling/listenbrainz', { method: 'PUT', body: { token } }), s.tokenRefused)}
-                />
-              </span>
-            </label>
-            <p className="setting-hint">{s.tokenHint}</p>
-            <button
-              type="button"
-              className="btn-tinted"
-              disabled={busy || !token.trim()}
-              onClick={() => run(v1(session, '/v1/me/scrobbling/listenbrainz', { method: 'PUT', body: { token } }), s.tokenRefused)}>
-              {s.connect}
-            </button>
-          </>
+          <button type="button" className="btn-tinted btn-small" disabled={busy} onClick={() => setTokenOpen((o) => !o)} aria-expanded={tokenOpen}>{s.connect}</button>
         )}
       </div>
-      <div className="scrobble-service">
-        <span className="scrobble-name">Last.fm</span>
-        {state.lastfm.available === false && !state.lastfm.connected ? (
-          <p className="setting-hint">{s.lastfmUnavailable}</p>
+      {tokenOpen && (
+        <div className="scrobble-token">
+          <span className="field">
+            <input
+              className="field-input"
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={s.token}
+              aria-label={s.token}
+              value={token}
+              autoFocus
+              onChange={(e) => setToken(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendToken()}
+            />
+          </span>
+          <button type="button" className="btn-tinted btn-small" disabled={busy || !token.trim()} onClick={sendToken}>{s.save}</button>
+          <p className="setting-hint">{s.tokenHint}</p>
+        </div>
+      )}
+      <div className="scrobble-row">
+        <span className="scrobble-text">
+          <span className="scrobble-name">Last.fm</span>
+          <span className={'scrobble-state' + (lf.problem ? ' is-warning' : '')}>
+            {lastfmOff ? s.lastfmUnavailableShort : line(lf)}
+            {lf.connected && lf.pending > 0 ? ` · ${s.pending(lf.pending)}` : ''}
+            {lf.problem && <InfoTip text={s.serviceSaid(lf.problem)} label="Last.fm" />}
+          </span>
+        </span>
+        {lastfmOff ? null : lf.connected && !lf.problem ? (
+          <button type="button" className="btn-quiet btn-small" disabled={busy} onClick={() => disconnect('lastfm')}>{s.disconnect}</button>
         ) : (
-          <>
-            {status(state.lastfm)}
-            {state.lastfm.connected && !state.lastfm.problem ? (
-              <button type="button" className="btn-quiet" disabled={busy} onClick={() => disconnect('lastfm')}>{s.disconnect}</button>
-            ) : (
-              <>
-                <button type="button" className="btn-tinted" disabled={busy} onClick={connectLastfm}>{s.lastfmConnect}</button>
-                {lastfmPending && <p className="setting-hint">{s.lastfmWaiting}</p>}
-              </>
-            )}
-          </>
+          <button type="button" className="btn-tinted btn-small" disabled={busy} onClick={connectLastfm}>{s.connect}</button>
         )}
       </div>
+      {lastfmPending && <p className="setting-hint">{s.lastfmWaiting}</p>}
       {error && <p className="setting-hint is-warning" role="alert">{error}</p>}
     </div>
   );
 }
 
-export function SettingsDialog({ onClose }: { onClose: () => void }) {
+/**
+ * Length or time left at the end of the progress bar: the examples are the song playing now
+ * (the time left moves as it plays), else 3:45 and -1:21.
+ */
+function TimeChoice() {
   const showRemaining = useShowRemaining();
+  const { current } = usePlayer();
+  const { duration, position: remote } = useTransport();
+  const local = usePosition();
+  const live = current != null && duration > 0;
+  const position = remote ?? local;
+  const total = live ? formatTime(duration) : '3:45';
+  const left = live ? `-${formatTime(Math.max(0, duration - position))}` : '-1:21';
+  return (
+    <>
+      <span id="setting-time">{t.timeShown}</span>
+      <div className="chips" role="radiogroup" aria-labelledby="setting-time">
+        <button type="button" role="radio" aria-checked={!showRemaining} className={'chip' + (!showRemaining ? ' is-on' : '')} onClick={() => setShowRemaining(false)}>
+          {t.timeTotal(total)}
+        </button>
+        <button type="button" role="radio" aria-checked={showRemaining} className={'chip time-chip' + (showRemaining ? ' is-on' : '')} onClick={() => setShowRemaining(true)}>
+          {t.timeLeft(left)}
+        </button>
+      </div>
+    </>
+  );
+}
+
+export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const crossfade = useCrossfade();
   const crossfadeText = crossfade > 0 ? t.crossfadeSeconds(crossfade) : t.crossfadeOff;
 
@@ -196,28 +230,27 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   // At the root of the page: above the player bar and the phone Dock, whatever opened it.
   return createPortal(
     <div className="dialog-backdrop" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="dialog" role="dialog" aria-modal="true" aria-label={t.title}>
+      <div className="dialog settings-dialog" role="dialog" aria-modal="true" aria-label={t.title}>
         <div className="dialog-head">
           <h2 className="dialog-title">{t.title}</h2>
           <button type="button" className="icon-btn" onClick={onClose} aria-label={t.close} title={t.close}>
             <CloseIcon size={18} />
           </button>
         </div>
+        {/* Two columns on a computer: everyday settings on the left, the account's links on the right. */}
+        <div className="settings-grid">
+        <div className="settings-col">
         <div className="setting">
           <span className="setting-label">{t.player}</span>
-          <span>{t.crossfade}</span>
+          <span className="label-with-info">{t.crossfade} <InfoTip text={t.crossfadeHint} label={t.crossfade} /></span>
           <div className="setting-slider">
             <Slider value={crossfade} max={MAX_CROSSFADE} step={1} label={t.crossfade} valueText={crossfadeText} onChange={setCrossfade} />
             <span className="setting-value" aria-hidden="true">{crossfadeText}</span>
           </div>
-          <p className="setting-hint">{t.crossfadeHint}</p>
-          <label className="setting-switch">
-            <span>{t.showRemaining}</span>
-            <input type="checkbox" role="switch" aria-checked={showRemaining} checked={showRemaining} onChange={(e) => setShowRemaining(e.target.checked)} />
-          </label>
+          <TimeChoice />
         </div>
         <div className="setting">
-          <span className="setting-label" id="setting-language">{t.language}</span>
+          <span className="setting-label label-with-info"><span id="setting-language">{t.language}</span> <InfoTip text={t.languageHint} label={t.language} /></span>
           <div className="chips" role="radiogroup" aria-labelledby="setting-language">
             {LANGUAGES.map((l) => (
               <button
@@ -232,10 +265,13 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
               </button>
             ))}
           </div>
-          <p className="setting-hint">{t.languageHint}</p>
         </div>
+        </div>
+        <div className="settings-col">
         <ConnectSettings />
         <ScrobblingSettings />
+        </div>
+        </div>
       </div>
     </div>,
     document.body,
