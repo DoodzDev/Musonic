@@ -3,7 +3,7 @@
  * @description French strings of the web client (source of truth: en.ts
  *   must have the same shape). Pick the active language through i18n/index.ts.
  * @author DoodzProg
- * @version 0.8.1
+ * @version 0.8.2
  * @license CC-BY-NC-4.0
  */
 
@@ -40,6 +40,7 @@ export const fr = {
       revoked: 'Ce navigateur a été déconnecté de votre compte. Reconnectez-vous.',
       suspended: 'Votre compte a été suspendu. Demandez à l’administrateur du serveur.',
       credentials: 'Votre mot de passe a changé ? Reconnectez-vous avec le nouveau.',
+      tokenUnsupported: 'Ce serveur refuse la connexion par jeton qu’utilise Musonic Web (code Subsonic 41). Demandez à son administrateur de l’autoriser.',
     },
   },
   layout: {

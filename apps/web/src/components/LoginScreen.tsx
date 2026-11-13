@@ -5,7 +5,7 @@
  *   ping checks the Subsonic token. "Remember me" keeps the session on this browser, after a
  *   warning about the stored key or token. Says why an account was refused.
  * @author DoodzProg
- * @version 0.5.0
+ * @version 0.5.1
  * @license CC-BY-NC-4.0
  */
 
@@ -79,6 +79,8 @@ export function LoginScreen({ onLogin, refused }: Props) {
       onLogin(session, remember);
     } catch (e) {
       if (e instanceof SubsonicError && e.status === 403) setError(t.errors.suspended);
+      // 41: the server takes no token, the only sign-in a browser can keep (AUD-015 F26).
+      else if (e instanceof SubsonicError && e.code === 41) setError(t.errors.tokenUnsupported);
       else if (e instanceof SubsonicError && e.isAuthError) setError(t.errors.auth);
       else if (e instanceof SubsonicError && e.isUnreachable) setError(t.errors.unreachable);
       else setError(t.errors.generic);

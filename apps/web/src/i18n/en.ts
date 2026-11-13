@@ -2,7 +2,7 @@
  * @file en.ts
  * @description English strings of the web client. Same shape as fr.ts (checked by the type).
  * @author DoodzProg
- * @version 0.4.1
+ * @version 0.4.2
  * @license CC-BY-NC-4.0
  */
 
@@ -40,6 +40,7 @@ export const en: typeof fr = {
       revoked: 'This browser was signed out of your account. Please sign in again.',
       suspended: 'Your account has been suspended. Ask the server’s administrator.',
       credentials: 'Did your password change? Please sign in with the new one.',
+      tokenUnsupported: 'This server refuses the token sign-in Musonic Web uses (Subsonic code 41). Ask its administrator to allow it.',
     },
   },
   layout: {
