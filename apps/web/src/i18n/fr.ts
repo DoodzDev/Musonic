@@ -3,7 +3,7 @@
  * @description French strings of the web client (source of truth: en.ts
  *   must have the same shape). Pick the active language through i18n/index.ts.
  * @author DoodzProg
- * @version 0.8.2
+ * @version 0.8.3
  * @license CC-BY-NC-4.0
  */
 
@@ -216,6 +216,24 @@ export const fr = {
     crossfadeOff: 'Désactivé',
     crossfadeSeconds: (seconds: number) => `${seconds} s`,
     crossfadeHint: 'Le titre suivant démarre en fondu sur la fin du titre en cours. Jamais quand vous passez un titre vous-même.',
+    scrobbling: {
+      section: 'Scrobbling',
+      hint: 'Envoyez ce que vous écoutez (la moitié d’un titre, ou 4 minutes) à votre compte ListenBrainz ou Last.fm. Les écoutes partent du serveur, même quand cette page est fermée.',
+      connectedAs: (name: string) => `Connecté en tant que ${name}`,
+      connected: 'Connecté',
+      notConnected: 'Non connecté',
+      refused: 'Le service a refusé la connexion : reconnectez-vous. Vos écoutes sont gardées d’ici là.',
+      pending: (n: number) => `${n} écoute${n > 1 ? 's' : ''} en attente d’envoi`,
+      disconnect: 'Déconnecter',
+      connect: 'Connecter',
+      token: 'Jeton ListenBrainz',
+      tokenHint: 'Il se trouve sur listenbrainz.org → votre profil → Settings → User token.',
+      tokenRefused: 'ListenBrainz a refusé ce jeton.',
+      lastfmConnect: 'Connecter Last.fm',
+      lastfmWaiting: 'Autorisez Musonic sur la page Last.fm qui s’est ouverte, puis revenez ici.',
+      lastfmUnavailable: 'Last.fm n’est pas configuré sur ce serveur : son administrateur ajoute une clé Last.fm dans la console.',
+      failed: 'Cela n’a pas marché. Réessayez.',
+    },
   },
   connect: {
     button: 'Appareils',

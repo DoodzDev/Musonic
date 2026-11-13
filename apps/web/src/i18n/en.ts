@@ -2,7 +2,7 @@
  * @file en.ts
  * @description English strings of the web client. Same shape as fr.ts (checked by the type).
  * @author DoodzProg
- * @version 0.4.2
+ * @version 0.4.3
  * @license CC-BY-NC-4.0
  */
 
@@ -216,6 +216,24 @@ export const en: typeof fr = {
     crossfadeOff: 'Off',
     crossfadeSeconds: (seconds: number) => `${seconds} s`,
     crossfadeHint: 'The next track fades in over the end of the current one. Never when you skip a track yourself.',
+    scrobbling: {
+      section: 'Scrobbling',
+      hint: 'Send what you listen to (half a song, or 4 minutes) to your ListenBrainz or Last.fm account. Plays are sent from the server, even when this page is closed.',
+      connectedAs: (name: string) => `Connected as ${name}`,
+      connected: 'Connected',
+      notConnected: 'Not connected',
+      refused: 'The service refused the connection: connect again. Your plays wait meanwhile.',
+      pending: (n: number) => `${n} play${n === 1 ? '' : 's'} waiting to be sent`,
+      disconnect: 'Disconnect',
+      connect: 'Connect',
+      token: 'ListenBrainz token',
+      tokenHint: 'Find it on listenbrainz.org → your profile → Settings → User token.',
+      tokenRefused: 'ListenBrainz refused this token.',
+      lastfmConnect: 'Connect Last.fm',
+      lastfmWaiting: 'Allow Musonic on the Last.fm page that opened, then come back here.',
+      lastfmUnavailable: 'Last.fm is not set up on this server: its administrator adds a Last.fm key in the console.',
+      failed: 'That did not work. Try again.',
+    },
   },
   connect: {
     button: 'Devices',

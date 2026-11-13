@@ -2,7 +2,7 @@
  * @file index.css
  * @description Design v2 tokens and styles of the web client (dark theme only).
  * @author DoodzProg
- * @version 0.8.0
+ * @version 0.8.1
  * @license CC-BY-NC-4.0
  */
 
@@ -436,7 +436,7 @@ h1, h2, p { margin: 0; }
 
 /* Dialog */
 .dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0, 0, 0, 0.55); }
-.dialog { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 18px; padding: 22px; border-radius: var(--radius-xl); background: var(--surface-1); box-shadow: var(--shadow-lg), var(--rim); }
+.dialog { width: 100%; max-width: 400px; max-height: calc(100vh - 40px); overflow-y: auto; display: flex; flex-direction: column; gap: 18px; padding: 22px; border-radius: var(--radius-xl); background: var(--surface-1); box-shadow: var(--shadow-lg), var(--rim); }
 .dialog-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
 .dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .field-area { height: auto; padding-top: 10px; padding-bottom: 10px; }
@@ -444,6 +444,11 @@ h1, h2, p { margin: 0; }
 .setting { display: flex; flex-direction: column; gap: 10px; }
 .setting-label { font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.4px; }
 .setting-hint { font-size: 13px; line-height: 18px; color: var(--text-2); }
+.setting-hint.is-warning { color: var(--destructive); }
+/* Scrobbling: one block per service, the button under its state. */
+.scrobble-service { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding-top: 10px; border-top: 0.5px solid var(--separator); }
+.scrobble-service .field-label { align-self: stretch; }
+.scrobble-name { font-size: 15px; font-weight: 600; }
 .setting-slider { display: flex; align-items: center; gap: 12px; }
 .setting-value { flex: none; min-width: 72px; font-size: 14px; font-weight: 500; color: var(--text-3); font-variant-numeric: tabular-nums; text-align: right; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
