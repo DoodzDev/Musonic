@@ -1,0 +1,100 @@
+---
+title: Scrobbling (ListenBrainz, Last.fm)
+description: Send what you listen to in Musonic to your ListenBrainz or Last.fm account — connect each service from the Android app or the web player, what counts as a play, and how an administrator sets up Last.fm.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+This page shows how to send what you listen to in Musonic to your **ListenBrainz** or **Last.fm** account, so your listening history follows you outside your server.
+
+**What you need**
+
+- An account on a **Musonic Server 1.3 or later** (scrobbling is not available with Navidrome or other servers through the Musonic apps).
+- A free ListenBrainz account, a Last.fm account, or both.
+- For Last.fm only: the server's administrator has set a Last.fm key once (see [For administrators](#for-administrators-set-up-lastfm)).
+
+**How it works.** Your plays are sent **by the server**, not by your phone: once a service is connected, every play counts, from the Android app, the web player or any other Subsonic app, even when the app is closed. A play counts when you listened to **half of the song, or 4 minutes**, whichever comes first. When a service is down, the server keeps your plays and tries again later.
+
+## Connect ListenBrainz
+
+<Steps>
+
+1. **Copy your ListenBrainz token.**
+
+   On [listenbrainz.org](https://listenbrainz.org), sign in, open your profile menu → **Settings**, and copy the **User token**. It is a long code: treat it like a password.
+
+2. **Open Musonic's settings.**
+
+   <Tabs syncKey="client">
+   <TabItem label="Android">
+   Tap your profile picture → **Settings**, then find **Scrobbling** and tap **ListenBrainz**.
+   </TabItem>
+   <TabItem label="Web player">
+   Click your profile picture at the top right → **Settings**, then scroll to **Scrobbling**.
+   </TabItem>
+   </Tabs>
+
+3. **Paste the token and confirm with "Connect".**
+
+   The server checks it with ListenBrainz before keeping it. Musonic then shows **Connected as** *your ListenBrainz name*. If ListenBrainz refuses the token, check that you copied all of it.
+
+</Steps>
+
+## Connect Last.fm
+
+<Steps>
+
+1. **Open Musonic's settings, then Scrobbling** (as above).
+
+   If Last.fm shows **Not set up on this server**, the administrator has not added a Last.fm key yet.
+
+2. **Tap or click "Last.fm" ("Connect Last.fm" in the web player).**
+
+   Last.fm's page opens in your browser. Sign in to Last.fm if it asks.
+
+3. **Allow Musonic on Last.fm's page.**
+
+   Last.fm then sends you to a page of your server saying **Last.fm connected**. Close it and go back to Musonic: Last.fm shows **Connected as** *your Last.fm name*.
+
+</Steps>
+
+<Aside type="note" title="Musonic never sees your Last.fm password">
+You sign in on Last.fm's own page. The server only keeps the session Last.fm gives it, encrypted, and you can disconnect at any time.
+</Aside>
+
+## Check, reconnect or disconnect
+
+- **Plays waiting**: when a service did not answer, Musonic shows how many plays wait to be sent. They go out by themselves when the service is back.
+- **Refused: connect again**: the service no longer accepts the connection (token changed, access removed on Last.fm). Nothing is lost: your plays wait. Connect the service again as above.
+- **Disconnect**: tap or click the connected service, then **Disconnect**. The plays already sent stay on your ListenBrainz or Last.fm account; plays still waiting are dropped.
+
+Last.fm refuses plays older than 14 days: those still waiting after that are dropped. ListenBrainz takes them at any time.
+
+## For administrators: set up Last.fm
+
+Last.fm needs an API key for each server. ListenBrainz needs nothing on the server side.
+
+<Steps>
+
+1. **Create a Last.fm API account.**
+
+   On [last.fm/api/account/create](https://www.last.fm/api/account/create), signed in with any Last.fm account, give it a name (for example *Musonic on my server*) and leave **Callback URL** empty. Last.fm then shows an **API key** and a **Shared secret**.
+
+2. **Add them in the console.**
+
+   Open the console → **Imports** → **Last.fm scrobbling** → **Add the key**, paste the API key and the shared secret, then **Save**. The server tests them with Last.fm before keeping them; the secret is stored encrypted and never shown again.
+
+3. **Tell your users.**
+
+   Each account can now connect its own Last.fm account from its settings.
+
+</Steps>
+
+<Aside type="tip" title="Behind a proxy">
+Last.fm sends the browser back to the address the app uses for your server (`https://music.example.com/v1/scrobbling/lastfm/callback`). It must be reachable from the browser, as it already is for the apps.
+</Aside>
+
+## Next steps
+
+- [Privacy](/docs/reference/privacy/): what each service receives.
+- [Other Subsonic apps](/docs/apps/other-clients/): their plays are sent too.

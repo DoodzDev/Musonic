@@ -1,0 +1,100 @@
+---
+title: Scrobbling (ListenBrainz, Last.fm)
+description: Envoyer ce que vous écoutez dans Musonic à votre compte ListenBrainz ou Last.fm — connecter chaque service depuis l'appli Android ou le lecteur web, ce qui compte comme une écoute, et comment un administrateur configure Last.fm.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Cette page explique comment envoyer ce que vous écoutez dans Musonic à votre compte **ListenBrainz** ou **Last.fm**, pour que votre historique d'écoute vous suive en dehors de votre serveur.
+
+**Ce qu'il vous faut**
+
+- Un compte sur un **Musonic Server 1.3 ou plus récent** (le scrobbling n'est pas disponible avec Navidrome ou d'autres serveurs dans les applis Musonic).
+- Un compte ListenBrainz gratuit, un compte Last.fm, ou les deux.
+- Pour Last.fm seulement : l'administrateur du serveur a ajouté une clé Last.fm une fois (voir [Pour les administrateurs](#pour-les-administrateurs--configurer-lastfm)).
+
+**Comment ça marche.** Vos écoutes sont envoyées **par le serveur**, pas par votre téléphone : une fois un service connecté, chaque écoute compte, depuis l'appli Android, le lecteur web ou n'importe quelle autre appli Subsonic, même quand l'appli est fermée. Une écoute compte quand vous avez écouté **la moitié du titre, ou 4 minutes**, au premier des deux. Quand un service ne répond pas, le serveur garde vos écoutes et réessaie plus tard.
+
+## Connecter ListenBrainz
+
+<Steps>
+
+1. **Copiez votre jeton ListenBrainz.**
+
+   Sur [listenbrainz.org](https://listenbrainz.org), connectez-vous, ouvrez le menu de votre profil → **Settings**, et copiez le **User token**. C'est un long code : gardez-le comme un mot de passe.
+
+2. **Ouvrez les réglages de Musonic.**
+
+   <Tabs syncKey="client">
+   <TabItem label="Android">
+   Touchez votre photo de profil → **Réglages**, puis trouvez **Scrobbling** et touchez **ListenBrainz**.
+   </TabItem>
+   <TabItem label="Lecteur web">
+   Cliquez sur votre photo de profil en haut à droite → **Réglages**, puis descendez jusqu'à **Scrobbling**.
+   </TabItem>
+   </Tabs>
+
+3. **Collez le jeton et validez avec « Connecter ».**
+
+   Le serveur le vérifie auprès de ListenBrainz avant de le garder. Musonic affiche ensuite **Connecté en tant que** *votre nom ListenBrainz*. Si ListenBrainz refuse le jeton, vérifiez que vous l'avez copié en entier.
+
+</Steps>
+
+## Connecter Last.fm
+
+<Steps>
+
+1. **Ouvrez les réglages de Musonic, puis Scrobbling** (comme ci-dessus).
+
+   Si Last.fm affiche **Non configuré sur ce serveur**, l'administrateur n'a pas encore ajouté de clé Last.fm.
+
+2. **Touchez ou cliquez sur « Last.fm » (« Connecter Last.fm » dans le lecteur web).**
+
+   La page de Last.fm s'ouvre dans votre navigateur. Connectez-vous à Last.fm s'il le demande.
+
+3. **Autorisez Musonic sur la page de Last.fm.**
+
+   Last.fm vous renvoie alors vers une page de votre serveur qui dit **Last.fm connected**. Fermez-la et revenez dans Musonic : Last.fm affiche **Connecté en tant que** *votre nom Last.fm*.
+
+</Steps>
+
+<Aside type="note" title="Musonic ne voit jamais votre mot de passe Last.fm">
+Vous vous connectez sur la page de Last.fm elle-même. Le serveur garde seulement la session que Last.fm lui donne, chiffrée, et vous pouvez vous déconnecter à tout moment.
+</Aside>
+
+## Vérifier, reconnecter ou déconnecter
+
+- **Écoutes en attente** : quand un service n'a pas répondu, Musonic indique combien d'écoutes attendent d'être envoyées. Elles partent toutes seules quand le service revient.
+- **Refusé : reconnectez-vous** : le service n'accepte plus la connexion (jeton changé, accès retiré sur Last.fm). Rien n'est perdu : vos écoutes attendent. Reconnectez le service comme ci-dessus.
+- **Déconnecter** : touchez ou cliquez sur le service connecté, puis **Déconnecter**. Les écoutes déjà envoyées restent sur votre compte ListenBrainz ou Last.fm ; celles encore en attente sont abandonnées.
+
+Last.fm refuse les écoutes de plus de 14 jours : celles encore en attente après ce délai sont abandonnées. ListenBrainz les accepte à tout moment.
+
+## Pour les administrateurs : configurer Last.fm
+
+Last.fm demande une clé d'API par serveur. ListenBrainz n'a besoin de rien côté serveur.
+
+<Steps>
+
+1. **Créez un compte d'API Last.fm.**
+
+   Sur [last.fm/api/account/create](https://www.last.fm/api/account/create), connecté avec n'importe quel compte Last.fm, donnez-lui un nom (par exemple *Musonic sur mon serveur*) et laissez **Callback URL** vide. Last.fm affiche alors une **API key** et un **Shared secret**.
+
+2. **Ajoutez-les dans la console.**
+
+   Ouvrez la console → **Imports** → **Scrobbling Last.fm** → **Ajouter la clé**, collez la clé d'API et le secret partagé, puis **Enregistrer**. Le serveur les teste auprès de Last.fm avant de les garder ; le secret est stocké chiffré et n'est plus jamais affiché.
+
+3. **Prévenez vos utilisateurs.**
+
+   Chaque compte peut maintenant connecter son propre compte Last.fm depuis ses réglages.
+
+</Steps>
+
+<Aside type="tip" title="Derrière un proxy">
+Last.fm renvoie le navigateur vers l'adresse que l'appli utilise pour votre serveur (`https://music.example.com/v1/scrobbling/lastfm/callback`). Elle doit être joignable depuis le navigateur, comme elle l'est déjà pour les applis.
+</Aside>
+
+## Pour aller plus loin
+
+- [Vie privée](/fr/docs/reference/privacy/) : ce que reçoit chaque service.
+- [Autres applis Subsonic](/fr/docs/apps/other-clients/) : leurs écoutes sont envoyées aussi.
