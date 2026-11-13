@@ -1474,6 +1474,11 @@ async fn expired_credentials_show_as_an_alert() {
 
 // Import from Navidrome -------------------------------------------------------------------
 
+/// Ids as Navidrome gives them (22 characters of base 62); `nd3` stays short to check an id
+/// that needs no shortening.
+const ND1: &str = "Hopp1p0lla7xQ2mZt9KbVw";
+const P1: &str = "R0adTr1p4cY8nLs3fJ6dHe";
+
 /// A Navidrome database with the tables and columns the import reads.
 fn fake_navidrome(dir: &std::path::Path) -> std::path::PathBuf {
     let path = dir.join("navidrome.db");
@@ -1510,6 +1515,15 @@ fn fake_navidrome(dir: &std::path::Path) -> std::path::PathBuf {
          INSERT INTO scrobbles VALUES ('nd1', 'u1', 1760000000), ('nd1', 'u1', 1760000500), ('nd3', 'u2', 1760000000);",
     )
     .unwrap();
+    c.execute_batch(&format!(
+        "UPDATE media_file SET id = '{ND1}' WHERE id = 'nd1';
+         UPDATE annotation SET item_id = '{ND1}' WHERE item_id = 'nd1';
+         UPDATE playlist_tracks SET media_file_id = '{ND1}' WHERE media_file_id = 'nd1';
+         UPDATE scrobbles SET media_file_id = '{ND1}' WHERE media_file_id = 'nd1';
+         UPDATE playlist SET id = '{P1}' WHERE id = 'p1';
+         UPDATE playlist_tracks SET playlist_id = '{P1}' WHERE playlist_id = 'p1';"
+    ))
+    .unwrap();
     path
 }
 
@@ -1533,8 +1547,15 @@ async fn navidrome_playlists_likes_and_plays_are_imported_with_their_ids() {
     );
     assert_eq!(r.plays, 2);
 
-    // The track answers under its Navidrome id, liked, rated, counted.
-    let s = lib.get("getSong?id=nd1").await["song"].clone();
+    // The track answers under its Navidrome id (a client kept it), liked, rated, counted; its
+    // id is the short form of it (ADR-026).
+    let (nd1, p1) = (
+        crate::ids::shorten(ND1).into_owned(),
+        crate::ids::shorten(P1).into_owned(),
+    );
+    assert_eq!(nd1.len(), crate::ids::SHORT_LEN);
+    let s = lib.get(&format!("getSong?id={ND1}")).await["song"].clone();
+    assert_eq!(s["id"], nd1.as_str());
     assert_eq!(s["title"], "Hoppípolla");
     assert_eq!(s["userRating"], 4);
     assert_eq!(s["playCount"], 5);
@@ -1550,11 +1571,12 @@ async fn navidrome_playlists_likes_and_plays_are_imported_with_their_ids() {
             .unwrap()
             .starts_with("2026-10-12T05:45")
     );
-    let r = lib.get("getPlaylist?id=p1").await;
+    let r = lib.get(&format!("getPlaylist?id={P1}")).await;
+    assert_eq!(r["playlist"]["id"], p1.as_str());
     assert_eq!(r["playlist"]["name"], "Road trip");
     assert_eq!(r["playlist"]["comment"], "Summer");
     assert_eq!(r["playlist"]["public"], true);
-    assert_eq!(lib.entries("p1").await, ["nd3", "nd1"]);
+    assert_eq!(lib.entries(&p1).await, ["nd3", nd1.as_str()]);
     let album = s["albumId"].as_str().unwrap();
     assert_eq!(
         lib.get(&format!("getAlbum?id={album}")).await["album"]["playCount"],
@@ -1571,14 +1593,17 @@ async fn navidrome_playlists_likes_and_plays_are_imported_with_their_ids() {
         (r.playlists, r.playlists_already_there, r.plays, r.ids_kept),
         (0, 1, 0, 0)
     );
-    assert_eq!(lib.entries("p1").await, ["nd3", "nd1"]);
+    assert_eq!(lib.entries(&p1).await, ["nd3", nd1.as_str()]);
     Scanner::new(lib.st.db.clone(), lib.root.clone())
         .await
         .unwrap()
         .scan(true)
         .await
         .unwrap();
-    assert_eq!(lib.get("getSong?id=nd1").await["song"]["playCount"], 5);
+    assert_eq!(
+        lib.get(&format!("getSong?id={nd1}")).await["song"]["playCount"],
+        5
+    );
 }
 
 #[tokio::test]

@@ -30,7 +30,7 @@ The command `musonic-server import-navidrome` reads a copy of `navidrome.db` (op
 | Ratings | Yes | On songs, albums and artists. |
 | Play counts and last play date | Yes | On songs, albums and artists. |
 | Play history | Yes | Each play recorded by Navidrome becomes a play in Musonic. |
-| Song and playlist ids | Kept by default | Songs and playlists take the id they had in Navidrome, so what the apps saved (downloads, caches) keeps working. `--new-ids` gives them new ones instead. |
+| Song and playlist ids | Kept by default | Songs and playlists take the id they had in Navidrome, in Musonic's short form (its first 11 characters); the server still answers to the full id, so what the apps saved (downloads, caches) keeps working. `--new-ids` gives them new ones instead. |
 | Album and artist ids | No | Musonic computes them from the tags. |
 | Accounts | No | You create them in Musonic first, with the same user names (step 6). |
 | Passwords | **Never** | The import does not read them. Each person gets a new password in Musonic. |

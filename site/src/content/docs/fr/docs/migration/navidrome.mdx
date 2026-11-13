@@ -30,7 +30,7 @@ La commande `musonic-server import-navidrome` lit une copie de `navidrome.db` (o
 | Notes | Oui | Sur les titres, albums et artistes. |
 | Nombres d'écoutes et date de dernière écoute | Oui | Sur les titres, albums et artistes. |
 | Historique d'écoute | Oui | Chaque écoute enregistrée par Navidrome devient une écoute dans Musonic. |
-| Identifiants des titres et des playlists | Gardés par défaut | Les titres et les playlists prennent l'identifiant qu'ils avaient dans Navidrome : ce que les applis ont enregistré (téléchargements, caches) continue de marcher. `--new-ids` leur en donne de nouveaux. |
+| Identifiants des titres et des playlists | Gardés par défaut | Les titres et les playlists prennent l'identifiant qu'ils avaient dans Navidrome, sous la forme courte de Musonic (ses 11 premiers caractères) ; le serveur répond toujours à l'identifiant complet, donc ce que les applis ont enregistré (téléchargements, caches) continue de marcher. `--new-ids` leur en donne de nouveaux. |
 | Identifiants des albums et artistes | Non | Musonic les calcule à partir des tags. |
 | Comptes | Non | Vous les créez d'abord dans Musonic, avec les mêmes noms d'utilisateur (étape 6). |
 | Mots de passe | **Jamais** | L'import ne les lit pas. Chaque personne reçoit un nouveau mot de passe dans Musonic. |
