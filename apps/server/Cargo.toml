@@ -38,6 +38,7 @@ lofty = "0.22"
 md-5 = "0.10"
 notify = "8"
 rand = "0.8"
+rpassword = "7"
 reqwest = { version = "0.12", default-features = false, features = ["json", "gzip", "rustls-tls", "stream"] }
 zip = { version = "9", default-features = false, features = ["deflate"] }
 rusqlite = { version = "0.41", features = ["bundled", "hooks", "functions"] }

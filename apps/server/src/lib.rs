@@ -157,8 +157,8 @@ pub async fn run(mut config: Config, mut ext: Extensions) -> Result<()> {
     let users = open_users(&config, db.clone())?;
     if users.count().await? == 0 {
         tracing::warn!(
-            "no account yet: create the administrator in the web client, with POST /v1/setup, \
-             or with `musonic-server user add <name> --admin`"
+            "no account yet: create the administrator with `musonic-server user add <name> --admin` \
+             (Docker: `docker compose exec musonic-server musonic-server user add <name> --admin`)"
         );
     }
     let mut state = server::AppState::new(db, library, users, config.data_dir.clone());
@@ -403,8 +403,11 @@ pub async fn add_user(config: Config, username: &str, admin: bool) -> Result<()>
     let db = Db::open(&config.data_dir.join("musonic.db"))?;
     let password = match std::env::var("MUSONIC_PASSWORD") {
         Ok(p) if !p.is_empty() => p,
+        // Typed in: not shown (AUD-015 F14). Piped in: read as it comes.
+        _ if std::io::IsTerminal::is_terminal(&std::io::stdin()) => {
+            rpassword::prompt_password(format!("Password for {username}: "))?
+        }
         _ => {
-            eprint!("Password for {username}: ");
             let mut line = String::new();
             std::io::stdin().read_line(&mut line)?;
             line.trim_end_matches(['\r', '\n']).to_owned()

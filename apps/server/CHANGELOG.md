@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **`user add` no longer shows the password while you type it**, and the first start says how to
+  create the administrator (`user add … --admin`).
+
 ### Fixed
 - **`docker stop` and `systemctl stop` stop the server cleanly** (SIGTERM, like Ctrl+C): it
   finishes the requests in progress instead of being killed 10 seconds later.
