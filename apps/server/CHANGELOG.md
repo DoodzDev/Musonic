@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-11-13
+
 ### Security
 - **The wrong-password limit can no longer be dodged with a forged header.** The visitor's
   address is read from `CF-Connecting-IP` / `X-Forwarded-For` only when the request comes from
