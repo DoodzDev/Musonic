@@ -5,7 +5,7 @@
  *   without a terminal and never shown. Any provider the server runs gets its card, under the
  *   name it gives itself (`ProviderInfo.name`), translated here for the built-in ones.
  * @author DoodzProg
- * @version 0.3.0
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
@@ -149,6 +149,45 @@ function YouTubeKeyModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
   );
 }
 
+function LastfmKeyModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [key, setKey] = useState('');
+  const [secret, setSecret] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const l = t.lastfm;
+  const ready = key.trim() !== '' && secret.trim() !== '' && !busy;
+  const save = () => {
+    setBusy(true);
+    setError(null);
+    api('/v1/admin/scrobbling/lastfm', { method: 'PUT', body: { key, secret } })
+      .then(() => {
+        onSaved();
+        onClose();
+      })
+      .catch((e: ApiError) => setError(e.status === 422 ? l.refused : e.message))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <Modal title={l.keyTitle} onClose={onClose}>
+      <p className="muted small">{l.keyHelp}</p>
+      <div className="field">
+        <label>{l.key}</label>
+        <input className="input" type="password" autoComplete="off" spellCheck={false} value={key} onChange={(e) => setKey(e.target.value)} autoFocus />
+      </div>
+      <div className="field">
+        <label>{l.secret}</label>
+        <input className="input" type="password" autoComplete="off" spellCheck={false} value={secret} onChange={(e) => setSecret(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && ready && save()} />
+      </div>
+      <p className="note">{t.imports.credStored}</p>
+      <ErrorLine error={error} />
+      <div className="actions">
+        <button className="btn ghost" onClick={onClose}>{t.common.cancel}</button>
+        <button className="btn primary" disabled={!ready} onClick={save}>{busy ? t.imports.credChecking : t.imports.credSave}</button>
+      </div>
+    </Modal>
+  );
+}
+
 type PodcastStatus = { indexConfigured: boolean; shows: number; episodes: number };
 
 export function ImportsPage() {
@@ -162,6 +201,8 @@ export function ImportsPage() {
   const [indexKey, setIndexKey] = useState(false);
   const [youtube, setYoutube] = useState<boolean | null>(null);
   const [youtubeKey, setYoutubeKey] = useState(false);
+  const [lastfm, setLastfm] = useState<boolean | null>(null);
+  const [lastfmKey, setLastfmKey] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const settings = useServerSettings();
@@ -169,6 +210,7 @@ export function ImportsPage() {
   const load = useCallback(() => {
     api<PodcastStatus>('/v1/admin/podcasts').then(setPodcasts).catch(() => setPodcasts(null));
     api<{ youtubeKeyConfigured: boolean }>('/v1/admin/imports/youtube').then((s) => setYoutube(s.youtubeKeyConfigured)).catch(() => setYoutube(null));
+    api<{ lastfmConfigured: boolean }>('/v1/admin/scrobbling/lastfm').then((s) => setLastfm(s.lastfmConfigured)).catch(() => setLastfm(null));
     const q = new URLSearchParams({ limit: String(limit) });
     if (state !== 'all') q.set('state', state);
     if (search.trim()) q.set('q', search.trim());
@@ -315,6 +357,19 @@ export function ImportsPage() {
           </div>
         </div>
       )}
+      {lastfm !== null && (
+        <div className="card mt">
+          <h2>{t.lastfm.title}</h2>
+          <div className="list-item">
+            <div className="small">
+              <b>Last.fm API</b>
+              <div className="muted">{lastfm ? t.lastfm.on : t.lastfm.off}</div>
+            </div>
+            <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => setLastfmKey(true)}>{lastfm ? t.lastfm.change : t.lastfm.add}</button>
+          </div>
+        </div>
+      )}
+      {lastfmKey && <LastfmKeyModal onClose={() => setLastfmKey(false)} onSaved={() => { setNotice(t.lastfm.saved); load(); }} />}
       {youtubeKey && <YouTubeKeyModal onClose={() => setYoutubeKey(false)} onSaved={() => { setNotice(t.youtube.saved); load(); }} />}
       {indexKey && <PodcastIndexModal onClose={() => setIndexKey(false)} onSaved={() => { setNotice(t.podcasts.saved); load(); }} />}
       {changing && <CredentialModal p={changing} onClose={() => setChanging(null)} onSaved={() => { setNotice(t.imports.credDone); load(); }} />}

@@ -91,13 +91,19 @@ pub struct AppState {
     pub playlist_imports: crate::playlist_import::PlaylistImports,
     /// Podcast shows, episodes and the directory (ADR-023).
     pub podcasts: crate::podcasts::Podcasts,
+    /// Plays sent to ListenBrainz and Last.fm.
+    pub scrobbling: Arc<crate::scrobbling::Scrobbling>,
 }
 
 impl AppState {
     pub fn new(db: Db, library: Option<LibraryService>, users: Users, data_dir: PathBuf) -> Self {
         let podcasts = crate::podcasts::Podcasts::new(db.clone()).expect("HTTP client");
+        let scrobbling = Arc::new(
+            crate::scrobbling::Scrobbling::new(db.clone(), users.clone()).expect("HTTP client"),
+        );
         Self {
             podcasts,
+            scrobbling,
             db,
             library,
             users,

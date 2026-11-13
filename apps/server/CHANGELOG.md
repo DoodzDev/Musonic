@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-13
+
+### Added
+- **Scrobbling to ListenBrainz and Last.fm**: each account connects its own accounts (a
+  ListenBrainz token; Last.fm through its sign-in page, once an administrator has set a Last.fm
+  API key and secret in the console). Plays go out in the background, by batches, and wait when
+  a service is down (tried again later, up to about a week); a refused token stops the sending
+  until the account reconnects. « Now playing » is sent too. Routes: `GET /v1/me/scrobbling`,
+  `PUT /v1/me/scrobbling/listenbrainz`, `POST /v1/me/scrobbling/lastfm`,
+  `DELETE /v1/me/scrobbling/{service}`, `GET/PUT /v1/admin/scrobbling/lastfm`; extension
+  `musonicServer` version 5.
+
 ## [1.2.3] - 2026-11-13
 
 ### Changed

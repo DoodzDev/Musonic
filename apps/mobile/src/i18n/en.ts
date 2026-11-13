@@ -3,7 +3,7 @@
  * @description English UI strings. Mirrors the structure of fr.ts exactly.
  *   Swap the active locale in i18n/index.ts to enable English.
  * @author DoodzProg
- * @version 1.6.0
+ * @version 1.7.0
  * @license CC-BY-NC-4.0
  */
 export const en = {
@@ -570,6 +570,27 @@ export const en = {
       sectionTitle: 'Language',
       system: 'Phone',
     },
+    scrobbling: {
+      note: 'Your plays (half a song, or 4 minutes) go to these accounts from the server, even when the app is closed.',
+      connectedAs: (name: string) => `Connected as ${name}`,
+      notConnected: 'Not connected',
+      refused: 'Refused: connect again',
+      pending: (n: number) => `${n} play${n === 1 ? '' : 's'} waiting`,
+      lastfmUnavailable: 'Not set up on this server',
+      lastfmUnavailableDesc: 'The server’s administrator adds a Last.fm key in the console.',
+      connected: 'Connected',
+      disconnectTitle: (service: string) => `Disconnect ${service}?`,
+      disconnectMessage: 'Your plays will no longer be sent there. Those already sent stay on your account.',
+      disconnect: 'Disconnect',
+      cancel: 'Cancel',
+      listenbrainzTitle: 'Connect ListenBrainz',
+      token: 'ListenBrainz token',
+      tokenHint: 'Find it on listenbrainz.org → your profile → Settings → User token.',
+      tokenRefused: 'ListenBrainz refused this token.',
+      checking: 'Checking…',
+      connect: 'Connect',
+      failed: 'That did not work. Try again.',
+    },
     mode: {
       label: 'Advanced settings',
       desc: 'Also shows the fine-grained settings: crossfade, landscape layout, storage limit.',
@@ -584,6 +605,7 @@ export const en = {
       display: 'Display',
       offline: 'Offline',
       connect: 'Musonic Connect',
+      scrobbling: 'Scrobbling',
       quality: 'Quality and downloads',
       appearance: 'Appearance',
     },

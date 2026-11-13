@@ -2,7 +2,7 @@
  * @file en.ts
  * @description English texts of the console (same keys as fr.ts, checked by the compiler).
  * @author DoodzProg
- * @version 0.3.1
+ * @version 0.4.0
  * @license CC-BY-NC-4.0
  */
 
@@ -483,6 +483,19 @@ export const en: Dict = {
     key: 'API key',
     refused: 'YouTube refused this key.',
     saved: 'YouTube key saved.',
+  },
+  lastfm: {
+    title: 'Last.fm scrobbling',
+    on: 'Key saved: each account can connect its Last.fm account (ListenBrainz needs nothing here).',
+    off: 'No key: accounts can only send their plays to ListenBrainz.',
+    add: 'Add the key',
+    change: 'Change the key',
+    keyTitle: 'Last.fm API account',
+    keyHelp: 'Free: last.fm/api/account/create → name it (e.g. Musonic on your server), leave the callback URL empty → copy the API key and the shared secret. The server tests them before keeping them; they stay on the server.',
+    key: 'API key',
+    secret: 'Shared secret',
+    refused: 'Last.fm refused this key and secret.',
+    saved: 'Last.fm key saved.',
   },
   podcasts: {
     title: 'Podcasts',

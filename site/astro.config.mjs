@@ -51,6 +51,7 @@ export default defineConfig({
             { slug: 'docs/apps/listening', label: 'Listen to music', translations: { fr: 'Écouter de la musique' } },
             { slug: 'docs/apps/import-playlists', label: 'Import your playlists', translations: { fr: 'Importer vos playlists' } },
             { slug: 'docs/apps/podcasts', label: 'Podcasts', translations: { fr: 'Podcasts' } },
+            { slug: 'docs/apps/scrobbling', label: 'Scrobbling (ListenBrainz, Last.fm)', translations: { fr: 'Scrobbling (ListenBrainz, Last.fm)' } },
             { slug: 'docs/apps/offline', label: 'Offline and data usage', translations: { fr: 'Hors ligne et données mobiles' } },
             { slug: 'docs/apps/android-auto', label: 'Android Auto', translations: { fr: 'Android Auto' } },
             { slug: 'docs/apps/other-clients', label: 'Other Subsonic apps', translations: { fr: 'Autres applis Subsonic' } },

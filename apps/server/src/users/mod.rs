@@ -175,6 +175,15 @@ const USER_COLUMNS: &str =
     "id, username, display_name, is_admin, created_at, last_login_at, suspended";
 
 impl Users {
+    /// A secret kept for an account (a service's token), sealed with the server's key.
+    pub fn seal(&self, plain: &str) -> Result<String> {
+        self.secrets.encrypt(plain)
+    }
+
+    pub fn unseal(&self, sealed: &str) -> Result<String> {
+        self.secrets.decrypt(sealed)
+    }
+
     pub fn new(db: Db, secrets: SecretBox, legacy_auth: bool) -> Self {
         Self {
             db,

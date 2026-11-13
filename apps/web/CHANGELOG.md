@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-13
+
+### Added
+- **Scrobbling** (Settings, with Musonic Server 1.3): connect your ListenBrainz account (paste your token) or your Last.fm account (allow Musonic on Last.fm's page). Your plays are then sent from the server, even when the page is closed.
+
+### Fixed
+- The Settings window shows above the player bar and the phone Dock, and scrolls when it is taller than the screen.
+
 ## [1.3.1] - 2026-11-13
 
 ### Fixed

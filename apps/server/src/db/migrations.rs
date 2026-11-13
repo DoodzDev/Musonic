@@ -51,6 +51,10 @@ pub const MIGRATIONS: &[(&str, &str)] = &[
         "0011_navidrome_short_ids",
         include_str!("../../migrations/0011_navidrome_short_ids.sql"),
     ),
+    (
+        "0012_scrobbling",
+        include_str!("../../migrations/0012_scrobbling.sql"),
+    ),
 ];
 
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;

@@ -2,20 +2,20 @@
  * @file index.tsx
  * @description Settings screen (Design v2, R5.8; order of the 2026-11-10 review):
  *   Playback (autoplay, crossfade), Quality and downloads (each quality explains
- *   the chosen level), Musonic Connect (on a Musonic Server), Appearance
+ *   the chosen level), Musonic Connect and Scrobbling (on a Musonic Server), Appearance
  *   (language, haptics), then « Advanced options », a second screen for the rest:
  *   magic shuffle, time left, Previous, the player kind, progress style, back
  *   online by itself, start tab, rotation, Home date, full screen, landscape
  *   layouts. Updates are checked from Profile > About. The visual choices show a
  *   small preview of each option.
  * @author DoodzProg
- * @version 3.2.0
+ * @version 3.3.0
  * @license CC-BY-NC-4.0
  */
-import React, {useState} from 'react';
-import {Alert, Platform, StatusBar, StyleSheet, View} from 'react-native';
+import React, {useCallback, useEffect, useState} from 'react';
+import {Alert, AppState, Linking, Platform, StatusBar, StyleSheet, View} from 'react-native';
 import Animated from 'react-native-reanimated';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Circle, Path, Rect} from 'react-native-svg';
 import Slider from '@react-native-community/slider';
@@ -37,6 +37,78 @@ import {useT} from '../../i18n';
 import {useConnectSnapshot} from '../../services/connect/useConnect';
 import {setSync} from '../../services/connect/connectService';
 import {playbackBridge, usePlayerStore} from '../../store/playerStore';
+import ListenBrainzTokenModal from '../../components/ListenBrainzTokenModal';
+import {
+  disconnectScrobbling,
+  lastfmSignInUrl,
+  scrobblingStatus,
+  type ScrobbleService,
+  type ScrobblingState,
+  type ServiceState,
+} from '../../services/scrobbling';
+
+const SERVICE_NAMES: Record<ScrobbleService, string> = {listenbrainz: 'ListenBrainz', lastfm: 'Last.fm'};
+
+/** Scrobbling on a Musonic Server (version 5): hidden when the server has none. */
+function ScrobblingGroup() {
+  const t = useT();
+  const s = t.settings.scrobbling;
+  const [state, setState] = useState<ScrobblingState | null>(null);
+  const [tokenOpen, setTokenOpen] = useState(false);
+  const load = useCallback(() => {
+    scrobblingStatus().then(setState).catch(() => setState(null));
+  }, []);
+  useFocusEffect(load);
+  // Back from Last.fm's page in the browser.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', next => next === 'active' && load());
+    return () => sub.remove();
+  }, [load]);
+  if (!state) return null;
+
+  const value = (v: ServiceState) =>
+    v.problem ? s.refused : v.connected ? (v.name ? s.connectedAs(v.name) : s.connected) : s.notConnected;
+  const description = (v: ServiceState) => (v.connected && v.pending > 0 ? s.pending(v.pending) : undefined);
+  const disconnect = (service: ScrobbleService) =>
+    Alert.alert(s.disconnectTitle(SERVICE_NAMES[service]), s.disconnectMessage, [
+      {text: s.cancel, style: 'cancel'},
+      {text: s.disconnect, style: 'destructive', onPress: () => disconnectScrobbling(service).then(setState).catch(() => Alert.alert(s.failed))},
+    ]);
+  const openLastfm = () =>
+    lastfmSignInUrl()
+      .then(url => Linking.openURL(url))
+      .catch(() => Alert.alert(s.failed));
+  const lastfmOff = state.lastfm.available === false && !state.lastfm.connected;
+
+  return (
+    <>
+      <ListGroup caption={t.settings.sections.scrobbling} note={s.note}>
+        <ListItem
+          label="ListenBrainz"
+          value={value(state.listenbrainz)}
+          description={description(state.listenbrainz)}
+          accessory="chevron"
+          onPress={() => (state.listenbrainz.connected && !state.listenbrainz.problem ? disconnect('listenbrainz') : setTokenOpen(true))}
+        />
+        <ListItem
+          label="Last.fm"
+          value={lastfmOff ? s.lastfmUnavailable : value(state.lastfm)}
+          description={lastfmOff ? s.lastfmUnavailableDesc : description(state.lastfm)}
+          accessory={lastfmOff ? undefined : 'chevron'}
+          onPress={lastfmOff ? undefined : () => (state.lastfm.connected && !state.lastfm.problem ? disconnect('lastfm') : openLastfm())}
+        />
+      </ListGroup>
+      <ListenBrainzTokenModal
+        visible={tokenOpen}
+        onClose={() => setTokenOpen(false)}
+        onConnected={next => {
+          setState(next);
+          setTokenOpen(false);
+        }}
+      />
+    </>
+  );
+}
 
 // ─── Previews ─────────────────────────────────────────────────────────────────
 
@@ -291,6 +363,8 @@ export default function SettingsScreen({advanced = false}: {advanced?: boolean})
           />
         </ListGroup>
       ) : null}
+
+      {server?.apiKey ? <ScrobblingGroup /> : null}
 
       <ListGroup caption={t.settings.sections.appearance}>
         <Block label={t.settings.language.sectionTitle}>
