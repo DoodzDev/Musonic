@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Scrobbling** (Settings, with Musonic Server 1.3): connect your ListenBrainz account (paste your token) or your Last.fm account (allow Musonic on Last.fm's page). Your plays are then sent from the server, even when the app is closed.
+
 ### Removed
 - **The iOS app is no longer built or published.** Musonic now focuses on Android, where installing it is simple (one APK) and where the app can use everything the phone offers (Android Auto, the native player, downloads). An IPA had to be sideloaded with AltStore or Sideloadly, which few people know how or are able to do. On iPhone, use Musonic Web from the Home Screen (made for phone screens since web 1.3.0). Releases up to 2.4.0 keep their IPA.
 

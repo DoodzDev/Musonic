@@ -4,7 +4,7 @@
  *   Add keys here first, then mirror them in en.ts. The i18n/index.ts hook
  *   selects the active locale based on settingsStore.language.
  * @author DoodzProg
- * @version 1.6.0
+ * @version 1.7.0
  * @license CC-BY-NC-4.0
  */
 // French UI strings — single source of truth for all user-visible text.
@@ -577,6 +577,27 @@ export const t = {
       sectionTitle: 'Langue',
       system: 'Téléphone',
     },
+    scrobbling: {
+      note: 'Vos écoutes (la moitié d’un titre, ou 4 minutes) partent vers ces comptes depuis le serveur, même quand l’appli est fermée.',
+      connectedAs: (name: string) => `Connecté en tant que ${name}`,
+      notConnected: 'Non connecté',
+      refused: 'Refusé : reconnectez-vous',
+      pending: (n: number) => `${n} écoute${n > 1 ? 's' : ''} en attente`,
+      lastfmUnavailable: 'Non configuré sur ce serveur',
+      lastfmUnavailableDesc: 'L’administrateur du serveur ajoute une clé Last.fm dans la console.',
+      connected: 'Connecté',
+      disconnectTitle: (service: string) => `Déconnecter ${service} ?`,
+      disconnectMessage: 'Vos écoutes n’y seront plus envoyées. Celles déjà envoyées restent sur votre compte.',
+      disconnect: 'Déconnecter',
+      cancel: 'Annuler',
+      listenbrainzTitle: 'Connecter ListenBrainz',
+      token: 'Jeton ListenBrainz',
+      tokenHint: 'Il se trouve sur listenbrainz.org → votre profil → Settings → User token.',
+      tokenRefused: 'ListenBrainz a refusé ce jeton.',
+      checking: 'Vérification…',
+      connect: 'Connecter',
+      failed: 'Cela n’a pas marché. Réessayez.',
+    },
     mode: {
       label: 'Réglages avancés',
       desc: 'Affiche aussi les réglages précis : fondu entre les titres, disposition en mode paysage, limite de stockage.',
@@ -591,6 +612,7 @@ export const t = {
       display: 'Affichage',
       offline: 'Hors ligne',
       connect: 'Musonic Connect',
+      scrobbling: 'Scrobbling',
       quality: 'Qualité et téléchargements',
       appearance: 'Apparence',
     },
